@@ -189,6 +189,48 @@ tbody tr:hover td{background:var(--bg-hover);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-row td{text-align:center;padding:32px;color:var(--text-3);}
 
+/* ═══ ATENDIMENTO ═══ */
+.atend-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
+.atend-tab{padding:9px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:-1px}
+.atend-tab:hover{color:var(--text-1)}
+.atend-tab.active{color:var(--accent-text);border-bottom-color:var(--accent)}
+.atend-panel{display:none}
+.atend-panel.active{display:block}
+.atend-start-area{display:flex;align-items:center;justify-content:center;min-height:300px}
+.atend-start-card{text-align:center;padding:40px}
+.atend-start-icon{font-size:48px;margin-bottom:16px}
+.atend-start-title{font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:6px}
+.atend-start-sub{font-size:12px;color:var(--text-3)}
+.atend-header-bar{display:flex;align-items:center;gap:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 20px;margin-bottom:16px}
+.atend-cronometro{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--accent-text);min-width:100px}
+.atend-header-info{font-size:11px;color:var(--text-3)}
+.atend-body{display:grid;grid-template-columns:1fr 260px;gap:16px;align-items:start}
+.atend-col-main{display:flex;flex-direction:column;gap:16px}
+.atend-col-side{position:sticky;top:66px}
+.resumo-row{display:flex;justify-content:space-between;align-items:center;font-size:11px}
+.resumo-label{color:var(--text-3)}
+.resumo-val{color:var(--text-1);font-weight:500;text-align:right;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.colab-card{display:flex;align-items:center;gap:12px;margin-top:12px;padding:12px;background:var(--bg-hover);border-radius:var(--radius-md);border:1px solid var(--border)}
+.colab-card-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.colab-card-nome{font-size:13px;font-weight:600;color:var(--text-1)}
+.colab-card-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.autocomplete-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:var(--bg-hover)}
+.itens-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;cursor:pointer;transition:all var(--transition);position:relative}
+.item-card:hover{border-color:var(--accent)}
+.item-card-selected{border-color:var(--accent);background:var(--accent-soft)}
+.item-card-img{width:100%;height:72px;border-radius:6px;background:var(--bg-hover);margin-bottom:8px;overflow:hidden}
+.item-card-nome{font-size:11px;font-weight:500;color:var(--text-1);line-height:1.3}
+.item-card-cat{font-size:10px;color:var(--text-3);margin-top:2px}
+.item-card-check{position:absolute;top:6px;right:6px;width:18px;height:18px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.item-sel-row{display:flex;align-items:center;gap:8px}
+.item-sel-nome{font-size:11px;font-weight:500;color:var(--text-1);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.validacao-row{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:var(--radius-sm)}
+.validacao-erro{background:var(--red-soft);color:var(--red)}
+.validacao-aviso{background:var(--yellow-soft);color:var(--yellow)}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;animation:fadeIn .15s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -492,7 +534,280 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
       <!-- PLACEHOLDERS -->
-      <div class="view" id="view-atendimento"><div class="empty-state"><div class="es-icon">🤝</div><div class="es-title">Atendimento</div><div class="es-sub">Em desenvolvimento</div></div></div>
+<!-- ═══════════════════════════════════════════
+     VIEW — ATENDIMENTO COLABORADOR
+═══════════════════════════════════════════ -->
+<div class="view" id="view-atendimento">
+
+  <!-- TABS -->
+  <div class="atend-tabs">
+    <button class="atend-tab active" onclick="switchAtendTab('iniciar', this)">Iniciar Atendimento</button>
+    <button class="atend-tab" onclick="switchAtendTab('mobilizar', this)">Mobilizar Colaborador</button>
+    <button class="atend-tab" onclick="switchAtendTab('consulta', this)">Consulta do Dia</button>
+  </div>
+
+  <!-- ── TAB: INICIAR ATENDIMENTO ── -->
+  <div class="atend-panel active" id="atend-panel-iniciar">
+
+    <!-- CRONÔMETRO + BOTÃO INICIAR -->
+    <div id="atendEstadoInicial" class="atend-start-area">
+      <div class="atend-start-card">
+        <div class="atend-start-icon">🤝</div>
+        <div class="atend-start-title">Iniciar novo atendimento</div>
+        <div class="atend-start-sub">O cronômetro será iniciado automaticamente</div>
+        <button class="btn btn-primary" style="margin-top:20px;padding:10px 28px;font-size:13px" onclick="iniciarAtendimento()">▶ Iniciar Atendimento</button>
+      </div>
+    </div>
+
+    <!-- ATENDIMENTO EM ANDAMENTO -->
+    <div id="atendEmAndamento" class="hidden">
+
+      <!-- HEADER COM CRONÔMETRO -->
+      <div class="atend-header-bar">
+        <div class="atend-cronometro" id="atendCronometro">00:00:00</div>
+        <div class="atend-header-info">
+          <span id="atendDataDisplay">—</span>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:11px;color:var(--red);border-color:var(--red)" onclick="cancelarAtendimento()">✕ Cancelar</button>
+          <button class="btn btn-primary" id="btnConcluirAtendimento" onclick="concluirAtendimento()" disabled>Concluir Atendimento</button>
+        </div>
+      </div>
+
+      <div class="atend-body">
+
+        <!-- COLUNA ESQUERDA: COLABORADOR + ITENS -->
+        <div class="atend-col-main">
+
+          <!-- IDENTIFICAÇÃO DO COLABORADOR -->
+          <div class="card" id="cardColabSection">
+            <div class="card-header">
+              <div><div class="card-title">Identificação do Colaborador</div></div>
+            </div>
+            <div style="padding:16px">
+              <div style="position:relative">
+                <input id="atendColabBusca" class="form-input" type="text"
+                  placeholder="Digite nome ou matrícula..."
+                  oninput="filtrarColabAtend(this.value)"
+                  autocomplete="off">
+                <div id="atendColabSugestoes" class="autocomplete-list hidden"></div>
+              </div>
+
+              <!-- CARD DO COLABORADOR IDENTIFICADO -->
+              <div id="atendColabCard" class="colab-card hidden">
+                <div class="colab-card-avatar" id="atendColabAvatar">—</div>
+                <div class="colab-card-info">
+                  <div class="colab-card-nome" id="atendColabNome">—</div>
+                  <div class="colab-card-sub" id="atendColabSub">—</div>
+                </div>
+                <span class="tag tag-green" id="atendColabStatus">Ativo</span>
+                <button class="row-action" style="margin-left:auto" onclick="limparColaboradorAtend()">Trocar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ITENS DO ATENDIMENTO -->
+          <div class="card" id="cardItensSection">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Itens do Atendimento</div>
+                <div class="card-sub" id="atendItensCount">Nenhum item adicionado</div>
+              </div>
+              <div style="margin-left:auto">
+                <button class="btn btn-primary" id="btnAbrirModalItens" onclick="abrirModalItens()" disabled>+ Adicionar Itens</button>
+              </div>
+            </div>
+
+            <!-- LISTA DE ITENS -->
+            <div id="atendItensList">
+              <div class="empty-state" style="padding:28px">
+                <div class="es-icon">📦</div>
+                <div class="es-title">Nenhum item adicionado</div>
+                <div class="es-sub">Identifique o colaborador e clique em "Adicionar Itens"</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- COLUNA DIREITA: RESUMO -->
+        <div class="atend-col-side">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Resumo</div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+              <div class="resumo-row"><span class="resumo-label">Colaborador</span><span class="resumo-val" id="resumoColab">—</span></div>
+              <div class="resumo-row"><span class="resumo-label">Função</span><span class="resumo-val" id="resumoFuncao">—</span></div>
+              <div class="resumo-row"><span class="resumo-label">Data</span><span class="resumo-val" id="resumoData">—</span></div>
+              <div class="resumo-row"><span class="resumo-label">Itens</span><span class="resumo-val" id="resumoItens">0</span></div>
+              <div class="resumo-row"><span class="resumo-label">Tempo</span><span class="resumo-val" id="resumoTempo">00:00:00</span></div>
+              <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
+                <div id="atendMsgResumo" style="font-size:11px;color:var(--text-3);text-align:center">Aguardando colaborador...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: MOBILIZAR ── -->
+  <div class="atend-panel" id="atend-panel-mobilizar">
+    <div class="card" style="max-width:560px;margin:0 auto">
+      <div class="card-header">
+        <div><div class="card-title">Mobilizar Colaborador</div><div class="card-sub">Atendimento automático pela dotação da função</div></div>
+      </div>
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label class="form-label">Colaborador</label>
+          <div style="position:relative">
+            <input id="mobColabBusca" class="form-input" type="text" placeholder="Digite nome ou matrícula..." oninput="filtrarColabMob(this.value)" autocomplete="off">
+            <div id="mobColabSugestoes" class="autocomplete-list hidden"></div>
+          </div>
+        </div>
+        <div id="mobColabCard" class="colab-card hidden">
+          <div class="colab-card-avatar" id="mobColabAvatar">—</div>
+          <div class="colab-card-info">
+            <div class="colab-card-nome" id="mobColabNome">—</div>
+            <div class="colab-card-sub" id="mobColabSub">—</div>
+          </div>
+        </div>
+        <div id="mobItensPreview" class="hidden">
+          <div class="card-title" style="margin-bottom:10px">Itens para mobilizar</div>
+          <div id="mobItensList" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+        <button class="btn btn-primary" id="btnMobilizar" onclick="executarMobilizacao()" disabled style="margin-top:4px">▶ Gerar Atendimento Automático</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: CONSULTA ── -->
+  <div class="atend-panel" id="atend-panel-consulta">
+    <div class="card">
+      <div class="card-header">
+        <div><div class="card-title">Atendimentos de Hoje</div><div class="card-sub" id="consultaDataLabel">—</div></div>
+        <div class="card-actions">
+          <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarConsultaAtend(this.value)">
+          <button class="btn btn-ghost" onclick="carregarConsultaAtendimentos()">↻ Atualizar</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Colaborador</th><th>Função</th><th>Itens</th><th>Horário</th><th>Tempo</th><th>Status</th><th></th></tr></thead>
+        <tbody id="consultaAtendBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: PENDÊNCIA DE ASSINATURA
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalPendencia">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Assinatura Pendente</div>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">✍️</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:8px" id="pendenciaNome">—</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:20px">Este colaborador possui um atendimento anterior pendente de assinatura. É necessário confirmar o recebimento antes de realizar um novo atendimento.</div>
+      <div style="display:flex;gap:8px;justify-content:center">
+        <button class="btn btn-ghost" onclick="fecharModalPendencia()">Cancelar</button>
+        <button class="btn btn-primary" onclick="abrirLinkPendencia()">Abrir link de assinatura</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: ADICIONAR ITENS
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalItens">
+  <div class="modal-box" style="max-width:800px;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Selecionar Itens</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px">Selecione os itens e defina quantidade e motivo</div>
+      </div>
+      <button class="modal-close" onclick="fecharModalItens()">×</button>
+    </div>
+
+    <!-- BUSCA + FILTRO -->
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;gap:8px">
+      <input id="modalItensBusca" class="search-box" style="flex:1;width:auto" type="text" placeholder="Buscar item..." oninput="filtrarModalItens(this.value)">
+      <select id="modalItensFiltroCategoria" class="form-input" style="width:160px" onchange="filtrarModalItens(document.getElementById('modalItensBusca').value)">
+        <option value="">Todas categorias</option>
+      </select>
+    </div>
+
+    <!-- GRID DE ITENS -->
+    <div style="flex:1;overflow-y:auto;padding:16px">
+      <div id="modalItensGrid" class="itens-grid"></div>
+    </div>
+
+    <!-- ITENS SELECIONADOS -->
+    <div id="modalItensSelecionados" style="border-top:1px solid var(--border);padding:14px 20px;background:var(--bg);display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Itens selecionados</div>
+      <div id="modalItensSelecionadosList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <div class="modal-footer">
+      <span style="font-size:11px;color:var(--text-3)" id="modalItensContador">0 itens selecionados</span>
+      <button class="btn btn-ghost" onclick="fecharModalItens()">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarItens" onclick="confirmarItensModal()" disabled>Incluir no Atendimento</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: VALIDAÇÕES
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalValidacoes">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">Resultado das Validações</div>
+    </div>
+    <div class="modal-body">
+      <div id="validacoesLista" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalValidacoes()">Revisar itens</button>
+      <button class="btn btn-primary" id="btnProsseguirValidacoes" onclick="prosseguirAposValidacoes()">Prosseguir assim mesmo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: ATENDIMENTO FINALIZADO
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalFinalizado">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title">✓ Atendimento Registrado</div>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:4px" id="finalizadoNome">—</div>
+        <div style="font-size:11px;color:var(--text-3)" id="finalizadoResumo">—</div>
+      </div>
+      <!-- QR CODE -->
+      <div style="background:white;border-radius:var(--radius-md);padding:16px;display:inline-block;margin-bottom:16px">
+        <div id="finalizadoQR" style="width:160px;height:160px;display:flex;align-items:center;justify-content:center;color:#333;font-size:11px">Gerando...</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:20px">Colaborador pode escanear para assinar o recebimento</div>
+      <!-- AÇÕES -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <button class="btn btn-ghost" style="justify-content:center" onclick="copiarLinkAtendimento()">📋 Copiar link</button>
+        <button class="btn btn-ghost" style="justify-content:center" onclick="enviarWhatsApp()">💬 WhatsApp</button>
+        <button class="btn btn-ghost" style="justify-content:center" onclick="enviarTablet()">📱 Enviar ao tablet</button>
+        <button class="btn btn-ghost" style="justify-content:center" onclick="imprimirFicha()">🖨️ Imprimir ficha</button>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="fecharModalFinalizado()">Novo Atendimento</button>
+    </div>
+  </div>
+</div>
+
       <div class="view" id="view-assinaturas"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Assinaturas Pendentes</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-solicitacoes"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Solicitações</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-entrada"><div class="empty-state"><div class="es-icon">📥</div><div class="es-title">Entrada de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -754,6 +1069,7 @@ function iniciarApp() {
     document.getElementById('menuRecuperacaoSenha').style.display = '';
     verificarSolicitacoesSenhaPendentes();
   }
+  carregarArmazens();
   mostrarTela('app');
   showView('home');
 }
@@ -935,6 +1251,635 @@ function toast(msg, tipo='info', dur=3500) {
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(()=>{ el.style.cssText='opacity:0;transform:translateX(20px);transition:.3s ease'; setTimeout(()=>el.remove(),300); }, dur);
 }
+
+// ═══════════════════════════════════════════
+// ATENDIMENTO — ESTADO GLOBAL
+// ═══════════════════════════════════════════
+const ATEND = {
+  ativo:      false,
+  id:         null,
+  inicio:     null,
+  cronometro: null,
+  segundos:   0,
+  colab:      null,
+  itens:      [],          // itens já no atendimento
+  itensModal: [],          // seleção atual no modal
+  linkGerado: null,
+  tokenGerado: null,
+  pendenciaToken: null,
+};
+
+// ═══════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════
+function switchAtendTab(nome, btnEl) {
+  document.querySelectorAll('.atend-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.atend-panel').forEach(p => p.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
+  document.getElementById('atend-panel-' + nome).classList.add('active');
+  if (nome === 'consulta') carregarConsultaAtendimentos();
+}
+
+// ═══════════════════════════════════════════
+// INICIAR / CANCELAR ATENDIMENTO
+// ═══════════════════════════════════════════
+function iniciarAtendimento() {
+  ATEND.ativo    = true;
+  ATEND.id       = 'atd_' + Date.now();
+  ATEND.inicio   = Date.now();
+  ATEND.segundos = 0;
+  ATEND.colab    = null;
+  ATEND.itens    = [];
+
+  const hoje = new Date();
+  const dataFmt = hoje.toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('atendDataDisplay').textContent = dataFmt;
+  document.getElementById('resumoData').textContent = hoje.toLocaleDateString('pt-BR');
+
+  document.getElementById('atendEstadoInicial').classList.add('hidden');
+  document.getElementById('atendEmAndamento').classList.remove('hidden');
+
+  // Inicia cronômetro
+  ATEND.cronometro = setInterval(() => {
+    ATEND.segundos++;
+    const h = String(Math.floor(ATEND.segundos / 3600)).padStart(2,'0');
+    const m = String(Math.floor((ATEND.segundos % 3600) / 60)).padStart(2,'0');
+    const s = String(ATEND.segundos % 60).padStart(2,'0');
+    const fmt = `${h}:${m}:${s}`;
+    document.getElementById('atendCronometro').textContent = fmt;
+    document.getElementById('resumoTempo').textContent = fmt;
+  }, 1000);
+
+  // Limpa colaborador
+  limparColaboradorAtend();
+}
+
+function cancelarAtendimento() {
+  if (!confirm('Cancelar o atendimento em andamento?')) return;
+  resetarAtendimento();
+}
+
+function resetarAtendimento() {
+  clearInterval(ATEND.cronometro);
+  Object.assign(ATEND, { ativo:false, id:null, inicio:null, cronometro:null, segundos:0, colab:null, itens:[], linkGerado:null, tokenGerado:null });
+  document.getElementById('atendEstadoInicial').classList.remove('hidden');
+  document.getElementById('atendEmAndamento').classList.add('hidden');
+  document.getElementById('atendColabBusca').value = '';
+  renderItensAtendimento();
+}
+
+// ═══════════════════════════════════════════
+// AUTOCOMPLETE COLABORADOR
+// ═══════════════════════════════════════════
+let _colabAtendTimer = null;
+function filtrarColabAtend(q) {
+  clearTimeout(_colabAtendTimer);
+  const lista = document.getElementById('atendColabSugestoes');
+  if (q.length < 2) { lista.classList.add('hidden'); return; }
+  _colabAtendTimer = setTimeout(() => {
+    const resultados = (_colaboradores || [])
+      .filter(c => c.status === 'ativo' &&
+        ((c.nome||'').toLowerCase().includes(q.toLowerCase()) ||
+         (c.matricula||'').toLowerCase().includes(q.toLowerCase())))
+      .slice(0, 8);
+    if (!resultados.length) { lista.classList.add('hidden'); return; }
+    lista.innerHTML = resultados.map(c => `
+      <div class="autocomplete-item" onclick="selecionarColabAtend('${c.id}')">
+        <div style="font-weight:500;color:var(--text-1)">${c.nome}</div>
+        <div style="font-size:10px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div>
+      </div>`).join('');
+    lista.classList.remove('hidden');
+  }, 200);
+}
+
+async function selecionarColabAtend(id) {
+  const colab = (_colaboradores || []).find(c => c.id === id);
+  if (!colab) return;
+  document.getElementById('atendColabSugestoes').classList.add('hidden');
+  document.getElementById('atendColabBusca').value = colab.nome;
+
+  // Verifica pendência de assinatura
+  const data = await api(`/atendimentos?colaborador_id=${id}`);
+  if (data) {
+    const pendente = (data.atendimentos || []).find(a => a.status === 'PENDENTE' || a.status === 'EXPIRADO');
+    if (pendente && pendente.status === 'PENDENTE') {
+      ATEND.pendenciaToken = pendente.token;
+      document.getElementById('pendenciaNome').textContent = colab.nome;
+      document.getElementById('modalPendencia').classList.remove('hidden');
+      return;
+    }
+  }
+
+  confirmarColabAtend(colab);
+}
+
+function confirmarColabAtend(colab) {
+  ATEND.colab = colab;
+  document.getElementById('atendColabCard').classList.remove('hidden');
+  document.getElementById('atendColabAvatar').textContent = colab.nome.substring(0,2).toUpperCase();
+  document.getElementById('atendColabNome').textContent   = colab.nome;
+  document.getElementById('atendColabSub').textContent    = `${colab.matricula||'—'} • ${colab.funcao||'—'}`;
+  const statusTag = colab.status === 'ativo'
+    ? '<span class="tag tag-green">Ativo</span>'
+    : '<span class="tag tag-gray">Inativo</span>';
+  document.getElementById('atendColabStatus').outerHTML = statusTag;
+
+  document.getElementById('resumoColab').textContent  = colab.nome;
+  document.getElementById('resumoFuncao').textContent = colab.funcao || '—';
+  document.getElementById('atendMsgResumo').textContent = 'Colaborador identificado';
+  document.getElementById('btnAbrirModalItens').disabled = false;
+  document.getElementById('btnConcluirAtendimento').disabled = ATEND.itens.length === 0;
+}
+
+function limparColaboradorAtend() {
+  ATEND.colab = null;
+  ATEND.itens = [];
+  document.getElementById('atendColabCard').classList.add('hidden');
+  document.getElementById('atendColabBusca').value = '';
+  document.getElementById('resumoColab').textContent  = '—';
+  document.getElementById('resumoFuncao').textContent = '—';
+  document.getElementById('atendMsgResumo').textContent = 'Aguardando colaborador...';
+  document.getElementById('btnAbrirModalItens').disabled = true;
+  document.getElementById('btnConcluirAtendimento').disabled = true;
+  renderItensAtendimento();
+}
+
+// ═══════════════════════════════════════════
+// MODAL ITENS
+// ═══════════════════════════════════════════
+let _itensModal = [];
+let _itensSelecionadosModal = {}; // { itemId: { item, qtd, motivo, armazem } }
+
+async function abrirModalItens() {
+  if (!ATEND.colab) return;
+  document.getElementById('modalItens').classList.remove('hidden');
+  document.getElementById('modalItensBusca').value = '';
+  _itensSelecionadosModal = {};
+
+  // Popula filtro de categorias
+  const cats = [...new Set((_itens||[]).map(i => i.categoria).filter(Boolean))].sort();
+  const sel  = document.getElementById('modalItensFiltroCategoria');
+  sel.innerHTML = '<option value="">Todas categorias</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  renderModalItens(_itens || []);
+}
+
+function fecharModalItens() {
+  document.getElementById('modalItens').classList.add('hidden');
+}
+
+function filtrarModalItens(q) {
+  const cat = document.getElementById('modalItensFiltroCategoria').value;
+  let lista = _itens || [];
+  if (q)   lista = lista.filter(i => (i.descricao||'').toLowerCase().includes(q.toLowerCase()) || (i.codigo||'').toLowerCase().includes(q.toLowerCase()));
+  if (cat) lista = lista.filter(i => i.categoria === cat);
+  renderModalItens(lista);
+}
+
+function renderModalItens(lista) {
+  const grid = document.getElementById('modalItensGrid');
+  if (!lista.length) {
+    grid.innerHTML = '<div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum item encontrado</div></div>';
+    return;
+  }
+  // Pega armazéns do usuário logado
+  const armazensUsuario = _armazens || [];
+
+  grid.innerHTML = lista.map(item => {
+    const selecionado = !!_itensSelecionadosModal[item.id];
+    const imgHtml = item.img
+      ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">`
+      : `<div style="font-size:28px;display:flex;align-items:center;justify-content:center;height:100%">📦</div>`;
+    return `
+      <div class="item-card ${selecionado ? 'item-card-selected' : ''}" id="icard-${item.id}" onclick="toggleItemModal('${item.id}')">
+        <div class="item-card-img">${imgHtml}</div>
+        <div class="item-card-info">
+          <div class="item-card-nome">${item.descricao}</div>
+          <div class="item-card-cat">${item.categoria||'—'}</div>
+        </div>
+        ${selecionado ? '<div class="item-card-check">✓</div>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function toggleItemModal(itemId) {
+  const item = (_itens||[]).find(i => i.id === itemId);
+  if (!item) return;
+
+  if (_itensSelecionadosModal[itemId]) {
+    delete _itensSelecionadosModal[itemId];
+  } else {
+    // Pega armazéns disponíveis com saldo
+    const armazensDisp = (_armazens||[]);
+    _itensSelecionadosModal[itemId] = { item, qtd: 1, motivo: '', armazem: armazensDisp[0]?.id || '' };
+  }
+
+  renderModalItens(filtrarModalItensAtual());
+  renderItensSelecionadosModal();
+  atualizarContadorModal();
+}
+
+function filtrarModalItensAtual() {
+  const q   = document.getElementById('modalItensBusca').value;
+  const cat = document.getElementById('modalItensFiltroCategoria').value;
+  let lista = _itens || [];
+  if (q)   lista = lista.filter(i => (i.descricao||'').toLowerCase().includes(q.toLowerCase()));
+  if (cat) lista = lista.filter(i => i.categoria === cat);
+  return lista;
+}
+
+function renderItensSelecionadosModal() {
+  const container = document.getElementById('modalItensSelecionadosList');
+  const wrapper   = document.getElementById('modalItensSelecionados');
+  const selecionados = Object.values(_itensSelecionadosModal);
+
+  if (!selecionados.length) { wrapper.style.display = 'none'; return; }
+  wrapper.style.display = 'block';
+
+  const armazensOpts = (_armazens||[]).map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  const motivosOpts  = ['Entrega inicial','Reposição','Troca por desgaste','Troca por extravio','Troca por dano'].map(m => `<option value="${m}">${m}</option>`).join('');
+
+  container.innerHTML = selecionados.map(s => `
+    <div class="item-sel-row">
+      <div class="item-sel-nome">${s.item.descricao}</div>
+      <select class="form-input" style="width:140px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','armazem',this.value)">${armazensOpts}</select>
+      <input type="number" class="form-input" style="width:70px;font-size:11px;text-align:center" min="1" value="${s.qtd}" onchange="atualizarItemModal('${s.item.id}','qtd',this.value)" placeholder="Qtd">
+      <select class="form-input" style="width:160px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','motivo',this.value)">
+        <option value="">Selecione o motivo</option>
+        ${motivosOpts}
+      </select>
+      <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="toggleItemModal('${s.item.id}')">✕</button>
+    </div>`).join('');
+}
+
+function atualizarItemModal(itemId, campo, valor) {
+  if (_itensSelecionadosModal[itemId]) {
+    _itensSelecionadosModal[itemId][campo] = campo === 'qtd' ? Number(valor) : valor;
+  }
+}
+
+function atualizarContadorModal() {
+  const total = Object.keys(_itensSelecionadosModal).length;
+  document.getElementById('modalItensContador').textContent = `${total} ${total===1?'item':'itens'} selecionado${total===1?'':'s'}`;
+  document.getElementById('btnConfirmarItens').disabled = total === 0;
+}
+
+async function confirmarItensModal() {
+  const selecionados = Object.values(_itensSelecionadosModal);
+  if (!selecionados.length) return;
+
+  // Valida campos obrigatórios
+  const semMotivo = selecionados.filter(s => !s.motivo);
+  if (semMotivo.length) {
+    toast(`Selecione o motivo para: ${semMotivo.map(s => s.item.descricao).join(', ')}`, 'warn');
+    return;
+  }
+
+  // Valida saldo e regras em lote
+  const erros = [];
+  const avisos = [];
+
+  for (const s of selecionados) {
+    // Verifica saldo
+    const saldos = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
+    const saldo  = saldos?.saldos?.[0]?.saldo || 0;
+    if (saldo < s.qtd) {
+      erros.push({ item: s.item.descricao, msg: `Saldo insuficiente! Disponível: ${saldo} | Solicitado: ${s.qtd}` });
+    }
+  }
+
+  if (erros.length) {
+    mostrarValidacoes(erros, avisos);
+    return;
+  }
+
+  if (avisos.length) {
+    mostrarValidacoes([], avisos);
+    // Armazena para confirmar depois
+    ATEND._pendingItens = selecionados;
+    return;
+  }
+
+  adicionarItensAoAtendimento(selecionados);
+}
+
+function mostrarValidacoes(erros, avisos) {
+  const lista = document.getElementById('validacoesLista');
+  lista.innerHTML = [
+    ...erros.map(e  => `<div class="validacao-row validacao-erro"><span>✕</span><div><div style="font-weight:600">${e.item}</div><div style="font-size:11px;margin-top:2px">${e.msg}</div></div></div>`),
+    ...avisos.map(a => `<div class="validacao-row validacao-aviso"><span>⚠</span><div><div style="font-weight:600">${a.item}</div><div style="font-size:11px;margin-top:2px">${a.msg}</div></div></div>`),
+  ].join('');
+  document.getElementById('btnProsseguirValidacoes').style.display = erros.length ? 'none' : '';
+  document.getElementById('modalValidacoes').classList.remove('hidden');
+}
+
+function fecharModalValidacoes() { document.getElementById('modalValidacoes').classList.add('hidden'); }
+
+function prosseguirAposValidacoes() {
+  fecharModalValidacoes();
+  if (ATEND._pendingItens) {
+    adicionarItensAoAtendimento(ATEND._pendingItens);
+    ATEND._pendingItens = null;
+  }
+}
+
+function adicionarItensAoAtendimento(selecionados) {
+  for (const s of selecionados) {
+    const armazem = (_armazens||[]).find(a => a.id === s.armazem);
+    ATEND.itens.push({
+      itemId:      s.item.id,
+      descricao:   s.item.descricao,
+      codigo:      s.item.codigo || '',
+      armazemId:   s.armazem,
+      nomeArmazem: armazem?.nome || '',
+      quantidade:  s.qtd,
+      motivo:      s.motivo,
+      un_med:      s.item.un_med || 'UN',
+    });
+  }
+  fecharModalItens();
+  renderItensAtendimento();
+  document.getElementById('btnConcluirAtendimento').disabled = false;
+  toast(`${selecionados.length} ${selecionados.length===1?'item adicionado':'itens adicionados'} ao atendimento`, 'success');
+}
+
+// ═══════════════════════════════════════════
+// RENDER ITENS DO ATENDIMENTO
+// ═══════════════════════════════════════════
+function renderItensAtendimento() {
+  const container = document.getElementById('atendItensList');
+  const count     = document.getElementById('atendItensCount');
+  const resumo    = document.getElementById('resumoItens');
+
+  resumo.textContent = ATEND.itens.length;
+  count.textContent  = ATEND.itens.length
+    ? `${ATEND.itens.length} ${ATEND.itens.length===1?'item':'itens'} no atendimento`
+    : 'Nenhum item adicionado';
+
+  if (!ATEND.itens.length) {
+    container.innerHTML = `<div class="empty-state" style="padding:28px"><div class="es-icon">📦</div><div class="es-title">Nenhum item adicionado</div><div class="es-sub">Clique em "Adicionar Itens"</div></div>`;
+    return;
+  }
+
+  container.innerHTML = `<table>
+    <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th></th></tr></thead>
+    <tbody>
+      ${ATEND.itens.map((it, i) => `
+        <tr>
+          <td class="td-main">${it.descricao}</td>
+          <td>${it.nomeArmazem||'—'}</td>
+          <td>${it.quantidade} ${it.un_med||'UN'}</td>
+          <td><span class="tag tag-gray">${it.motivo}</span></td>
+          <td><button class="row-action" style="color:var(--red)" onclick="removerItemAtendimento(${i})">✕</button></td>
+        </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function removerItemAtendimento(idx) {
+  ATEND.itens.splice(idx, 1);
+  renderItensAtendimento();
+  if (!ATEND.itens.length) document.getElementById('btnConcluirAtendimento').disabled = true;
+}
+
+// ═══════════════════════════════════════════
+// CONCLUIR ATENDIMENTO
+// ═══════════════════════════════════════════
+async function concluirAtendimento() {
+  if (!ATEND.colab || !ATEND.itens.length) return;
+
+  const btn = document.getElementById('btnConcluirAtendimento');
+  btn.disabled  = true;
+  btn.textContent = 'Salvando...';
+
+  clearInterval(ATEND.cronometro);
+
+  const agora  = new Date();
+  const inicio = new Date(ATEND.inicio);
+
+  const registro = {
+    id:               ATEND.id,
+    colaboradorId:    ATEND.colab.id,
+    nomeColaborador:  ATEND.colab.nome,
+    funcaoColaborador:ATEND.colab.funcao || '',
+    data:             agora.toISOString().split('T')[0],
+    horaInicio:       inicio.toTimeString().substring(0,8),
+    horaFim:          agora.toTimeString().substring(0,8),
+    tempoSegundos:    ATEND.segundos,
+    qtdItens:         ATEND.itens.length,
+    itens:            ATEND.itens,
+    usuario:          GCA.usuario?.nome || 'Sistema',
+    criadoEm:         agora.toISOString(),
+  };
+
+  const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
+
+  if (!res || !res.ok) {
+    toast(res?.erro || 'Erro ao salvar atendimento', 'error');
+    btn.disabled = false;
+    btn.textContent = 'Concluir Atendimento';
+    clearInterval(ATEND.cronometro);
+    ATEND.cronometro = setInterval(() => { ATEND.segundos++; }, 1000);
+    return;
+  }
+
+  // Gera token de assinatura
+  const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
+  if (resToken?.ok) {
+    ATEND.tokenGerado = resToken.token;
+    ATEND.linkGerado  = `https://confirmacao.gcasistema.com.br/?token=${resToken.token}`;
+  }
+
+  abrirModalFinalizado(registro);
+  toast('Atendimento registrado com sucesso!', 'success');
+}
+
+// ═══════════════════════════════════════════
+// MODAL FINALIZADO
+// ═══════════════════════════════════════════
+function abrirModalFinalizado(registro) {
+  document.getElementById('finalizadoNome').textContent  = registro.nomeColaborador;
+  document.getElementById('finalizadoResumo').textContent = `${registro.qtdItens} ${registro.qtdItens===1?'item':'itens'} • ${registro.data}`;
+
+  // QR Code
+  const qrDiv = document.getElementById('finalizadoQR');
+  if (ATEND.linkGerado) {
+    qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(ATEND.linkGerado)}" style="width:160px;height:160px">`;
+  } else {
+    qrDiv.textContent = 'Link não disponível';
+  }
+
+  document.getElementById('modalFinalizado').classList.remove('hidden');
+}
+
+function fecharModalFinalizado() {
+  document.getElementById('modalFinalizado').classList.add('hidden');
+  resetarAtendimento();
+}
+
+function copiarLinkAtendimento() {
+  if (!ATEND.linkGerado) return;
+  navigator.clipboard.writeText(ATEND.linkGerado);
+  toast('Link copiado!', 'success');
+}
+
+function enviarWhatsApp() {
+  if (!ATEND.linkGerado) return;
+  const msg = encodeURIComponent(`Olá! Confirme o recebimento dos materiais: ${ATEND.linkGerado}`);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+function enviarTablet() {
+  toast('Atendimento enviado ao tablet!', 'success');
+}
+
+function imprimirFicha() {
+  toast('Em desenvolvimento', 'info');
+}
+
+// ═══════════════════════════════════════════
+// MODAL PENDÊNCIA
+// ═══════════════════════════════════════════
+function fecharModalPendencia() {
+  document.getElementById('modalPendencia').classList.add('hidden');
+  limparColaboradorAtend();
+}
+
+function abrirLinkPendencia() {
+  if (ATEND.pendenciaToken) {
+    window.open(`https://confirmacao.gcasistema.com.br/?token=${ATEND.pendenciaToken}`, '_blank');
+  }
+  fecharModalPendencia();
+}
+
+// ═══════════════════════════════════════════
+// MOBILIZAR COLABORADOR
+// ═══════════════════════════════════════════
+let _mobColab = null;
+let _mobColabTimer = null;
+
+function filtrarColabMob(q) {
+  clearTimeout(_mobColabTimer);
+  const lista = document.getElementById('mobColabSugestoes');
+  if (q.length < 2) { lista.classList.add('hidden'); return; }
+  _mobColabTimer = setTimeout(() => {
+    const resultados = (_colaboradores||[]).filter(c =>
+      c.status === 'ativo' &&
+      ((c.nome||'').toLowerCase().includes(q.toLowerCase()) ||
+       (c.matricula||'').toLowerCase().includes(q.toLowerCase()))
+    ).slice(0, 8);
+    if (!resultados.length) { lista.classList.add('hidden'); return; }
+    lista.innerHTML = resultados.map(c => `
+      <div class="autocomplete-item" onclick="selecionarColabMob('${c.id}')">
+        <div style="font-weight:500;color:var(--text-1)">${c.nome}</div>
+        <div style="font-size:10px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div>
+      </div>`).join('');
+    lista.classList.remove('hidden');
+  }, 200);
+}
+
+async function selecionarColabMob(id) {
+  _mobColab = (_colaboradores||[]).find(c => c.id === id);
+  if (!_mobColab) return;
+  document.getElementById('mobColabSugestoes').classList.add('hidden');
+  document.getElementById('mobColabBusca').value = _mobColab.nome;
+  document.getElementById('mobColabCard').classList.remove('hidden');
+  document.getElementById('mobColabAvatar').textContent = _mobColab.nome.substring(0,2).toUpperCase();
+  document.getElementById('mobColabNome').textContent   = _mobColab.nome;
+  document.getElementById('mobColabSub').textContent    = `${_mobColab.matricula||'—'} • ${_mobColab.funcao||'—'}`;
+
+  // Busca dotação da função e calcula itens faltantes
+  toast('Verificando dotação...', 'info');
+  const dotacao = await api(`/dotacao?funcao=${encodeURIComponent(_mobColab.funcao||'')}`);
+  const fichaEpi = await api(`/ficha-epi?colaborador_id=${id}`);
+
+  const itensColab  = (fichaEpi?.itens || []).map(f => f.item_id);
+  const itensDotacao = (dotacao?.itens || []);
+  const itensFaltando = itensDotacao.filter(d => !itensColab.includes(d.item_id));
+
+  if (!itensFaltando.length) {
+    document.getElementById('mobItensPreview').classList.remove('hidden');
+    document.getElementById('mobItensList').innerHTML = `<div style="color:var(--green);font-size:12px">✓ Colaborador já possui todos os itens da dotação!</div>`;
+    document.getElementById('btnMobilizar').disabled = true;
+    return;
+  }
+
+  document.getElementById('mobItensPreview').classList.remove('hidden');
+  document.getElementById('mobItensList').innerHTML = itensFaltando.map(i => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--text-1);flex:1">${i.descricao||i.item_id}</span>
+      <span class="tag tag-yellow">Faltando</span>
+    </div>`).join('');
+  document.getElementById('btnMobilizar').disabled = false;
+}
+
+async function executarMobilizacao() {
+  toast('Em desenvolvimento', 'info');
+}
+
+// ═══════════════════════════════════════════
+// CONSULTA DO DIA
+// ═══════════════════════════════════════════
+let _consultaAtendimentos = [];
+
+async function carregarConsultaAtendimentos() {
+  const tbody = document.getElementById('consultaAtendBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  const hoje = new Date();
+  document.getElementById('consultaDataLabel').textContent = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long'});
+  const data = await api('/atendimentos');
+  if (!data) return;
+  _consultaAtendimentos = data.atendimentos || [];
+  renderConsultaAtendimentos(_consultaAtendimentos);
+}
+
+function renderConsultaAtendimentos(lista) {
+  const tbody = document.getElementById('consultaAtendBody');
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum atendimento hoje</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(a => {
+    let itens = []; try { itens = JSON.parse(a.itens_json||'[]'); } catch {}
+    const hora  = a.hora_inicio ? a.hora_inicio.substring(0,5) : '—';
+    const tempo = a.tempo_segundos ? formatarTempo(a.tempo_segundos) : '—';
+    return `<tr>
+      <td class="td-main">${a.nome_colaborador||'—'}</td>
+      <td>${a.funcao_colaborador||'—'}</td>
+      <td>${itens.length} ${itens.length===1?'item':'itens'}</td>
+      <td class="td-mono">${hora}</td>
+      <td class="td-mono">${tempo}</td>
+      <td>${statusTag(a.status)}</td>
+      <td><button class="row-action" onclick="verDetalhesAtendimento('${a.id}')">Ver</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarConsultaAtend(q) {
+  renderConsultaAtendimentos(_consultaAtendimentos.filter(a =>
+    (a.nome_colaborador||'').toLowerCase().includes(q.toLowerCase())
+  ));
+}
+
+function verDetalhesAtendimento(id) { toast('Em desenvolvimento', 'info'); }
+
+function formatarTempo(seg) {
+  const h = Math.floor(seg/3600);
+  const m = Math.floor((seg%3600)/60);
+  const s = seg%60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// Carregar armazéns globalmente
+let _armazens = [];
+async function carregarArmazens() {
+  if (_armazens.length) return;
+  const data = await api('/armazens');
+  if (data) _armazens = data.armazens || [];
+}
+
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
