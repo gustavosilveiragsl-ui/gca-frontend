@@ -1926,34 +1926,96 @@ async function selecionarColabMob(id) {
   document.getElementById('mobColabAvatar').textContent = _mobColab.nome.substring(0,2).toUpperCase();
   document.getElementById('mobColabNome').textContent   = _mobColab.nome;
   document.getElementById('mobColabSub').textContent    = `${_mobColab.matricula||'—'} • ${_mobColab.funcao||'—'}`;
+  document.getElementById('btnMobilizar').disabled = true;
+  document.getElementById('mobItensPreview').classList.remove('hidden');
+  document.getElementById('mobItensList').innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
 
-  // Busca dotação da função e calcula itens faltantes
-  toast('Verificando dotação...', 'info');
-  const dotacao = await api(`/dotacao?funcao=${encodeURIComponent(_mobColab.funcao||'')}`);
-  const fichaEpi = await api(`/ficha-epi?colaborador_id=${id}`);
+  const data = await api(`/mobilizacao/${id}`);
+  if (!data) return;
 
-  const itensColab  = (fichaEpi?.itens || []).map(f => f.item_id);
-  const itensDotacao = (dotacao?.itens || []);
-  const itensFaltando = itensDotacao.filter(d => !itensColab.includes(d.item_id));
-
-  if (!itensFaltando.length) {
-    document.getElementById('mobItensPreview').classList.remove('hidden');
-    document.getElementById('mobItensList').innerHTML = `<div style="color:var(--green);font-size:12px">✓ Colaborador já possui todos os itens da dotação!</div>`;
-    document.getElementById('btnMobilizar').disabled = true;
+  if (data.semDotacao) {
+    document.getElementById('mobItensList').innerHTML = `<div style="color:var(--text-3);font-size:12px">Função "${_mobColab.funcao}" não possui dotação cadastrada.</div>`;
     return;
   }
 
-  document.getElementById('mobItensPreview').classList.remove('hidden');
-  document.getElementById('mobItensList').innerHTML = itensFaltando.map(i => `
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:11px;color:var(--text-1);flex:1">${i.descricao||i.item_id}</span>
-      <span class="tag tag-yellow">Faltando</span>
+  if (data.completo) {
+    document.getElementById('mobItensList').innerHTML = `<div style="color:var(--green);font-size:12px">✓ Colaborador já possui todos os itens da dotação!</div>`;
+    return;
+  }
+
+  // Salva os itens para usar na mobilização
+  window._mobItensPendentes   = data.itens || [];
+  window._mobItensComTamanho  = data.itensComTamanho || [];
+
+  const lista = [...(data.itens||[]), ...(data.itensComTamanho||[])];
+  document.getElementById('mobItensList').innerHTML = lista.map(i => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:11px;color:var(--text-1);flex:1">${i.descricao||i.baseNome}</span>
+      <span style="font-size:10px;color:var(--text-3)">Faltam: ${i.faltam}</span>
+      ${i.temTamanho ? '<span class="tag tag-yellow">Requer tamanho</span>' : '<span class="tag tag-accent">Auto</span>'}
     </div>`).join('');
-  document.getElementById('btnMobilizar').disabled = false;
+
+  document.getElementById('btnMobilizar').disabled = data.itens.length === 0 && data.itensComTamanho.length === 0;
 }
 
 async function executarMobilizacao() {
-  toast('Em desenvolvimento', 'info');
+  if (!_mobColab || !window._mobItensPendentes) return;
+
+  const itens    = window._mobItensPendentes;
+  const comTamanho = window._mobItensComTamanho || [];
+
+  if (!itens.length && !comTamanho.length) {
+    toast('Nenhum item pendente', 'warn'); return;
+  }
+
+  // Garante armazéns carregados
+  await carregarArmazens();
+  const armazem = _armazens[0];
+  if (!armazem) { toast('Nenhum armazém disponível', 'error'); return; }
+
+  // Monta lista de itens para o atendimento
+  const itensAtendimento = [];
+  for (const it of itens) {
+    const itemLocal = (_itens||[]).find(i => i.id === it.itemId);
+    if (!itemLocal) continue;
+    itensAtendimento.push({
+      itemId:      itemLocal.id,
+      descricao:   itemLocal.descricao,
+      codigo:      itemLocal.codigo || '',
+      armazemId:   armazem.id,
+      nomeArmazem: armazem.nome,
+      quantidade:  it.faltam,
+      motivo:      'Entrega inicial',
+      un_med:      itemLocal.un_med || 'UN',
+    });
+  }
+
+  if (!itensAtendimento.length && !comTamanho.length) {
+    toast('Nenhum item automático disponível', 'warn'); return;
+  }
+
+  // Muda para a aba de atendimento e inicia
+  switchAtendTab('iniciar', document.querySelector('.atend-tab'));
+  iniciarAtendimento();
+
+  // Aguarda e seleciona colaborador
+  setTimeout(async () => {
+    await selecionarColabAtend(_mobColab.id);
+    setTimeout(() => {
+      // Adiciona itens direto ao atendimento
+      ATEND.itens = itensAtendimento;
+      renderItensAtendimento();
+      document.getElementById('btnConcluirAtendimento').disabled = false;
+
+      // Avisa sobre itens com tamanho
+      if (comTamanho.length) {
+        const nomes = comTamanho.map(i => i.baseNome).join(', ');
+        toast(`${itensAtendimento.length} item(ns) pré-carregados. Adicione manualmente com o tamanho correto: ${nomes}`, 'warn', 8000);
+      } else {
+        toast(`🚀 Mobilização: ${itensAtendimento.length} item(ns) pré-carregados. Revise e finalize.`, 'success', 5000);
+      }
+    }, 800);
+  }, 400);
 }
 
 // ═══════════════════════════════════════════
@@ -2000,7 +2062,66 @@ function filtrarConsultaAtend(q) {
   ));
 }
 
-function verDetalhesAtendimento(id) { toast('Em desenvolvimento', 'info'); }
+function verDetalhesAtendimento(id) {
+  const atend = _consultaAtendimentos.find(a => a.id === id);
+  if (!atend) return;
+  let itens = []; try { itens = JSON.parse(atend.itens_json||'[]'); } catch {}
+  const hora  = atend.hora_inicio ? atend.hora_inicio.substring(0,5) : '—';
+  const tempo = atend.tempo_segundos ? formatarTempo(atend.tempo_segundos) : '—';
+
+  // Cria modal dinâmico
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:560px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">${atend.nome_colaborador||'—'}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${atend.funcao_colaborador||'—'} • ${atend.data||'—'} • ${hora}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${statusTag(atend.status)}
+          <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">TEMPO</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-1);font-family:var(--font-mono)">${tempo}</div>
+          </div>
+          <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ITENS</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text-1)">${itens.length} ${itens.length===1?'item':'itens'}</div>
+          </div>
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Qtd</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
+          </tr></thead>
+          <tbody>
+            ${itens.map(i => `<tr>
+              <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||'—'}</td>
+              <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)">${i.quantidade} ${i.un_med||'UN'}</td>
+              <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${i.motivo||'—'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        ${atend.status === 'PENDENTE' && atend.token ? `<button class="btn btn-ghost" onclick="copiarLink('https://confirmacao.gcasistema.com.br/?token=${atend.token}')">📋 Copiar link</button>` : ''}
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function copiarLink(link) {
+  navigator.clipboard.writeText(link);
+  toast('Link copiado!', 'success');
+}
 
 function formatarTempo(seg) {
   const h = Math.floor(seg/3600);
