@@ -747,7 +747,7 @@ tbody tr:hover td{background:var(--bg-hover);}
     </div>
 
     <!-- ITENS SELECIONADOS -->
-    <div id="modalItensSelecionados" style="border-top:1px solid var(--border);padding:14px 20px;background:var(--bg);display:none">
+    <div id="modalItensSelecionados" style="border-top:1px solid var(--border);padding:14px 20px;background:var(--bg);display:none;max-height:240px;overflow-y:auto;flex-shrink:0">
       <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Itens selecionados</div>
       <div id="modalItensSelecionadosList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
@@ -1572,9 +1572,13 @@ function toggleItemModal(itemId) {
   if (_itensSelecionadosModal[itemId]) {
     delete _itensSelecionadosModal[itemId];
   } else {
-    // Pega armazéns disponíveis com saldo
-    const armazensDisp = (_armazens||[]);
-    _itensSelecionadosModal[itemId] = { item, qtd: 1, motivo: '', armazem: armazensDisp[0]?.id || '' };
+    const userArmazens = (() => {
+      const arr = GCA.usuario?.armazens;
+      const parsed = Array.isArray(arr) ? arr : (typeof arr === 'string' ? JSON.parse(arr||'[]') : []);
+      return parsed.length ? _armazens.filter(a => parsed.includes(a.id)) : _armazens;
+    })();
+    const armazPadrao = userArmazens[0]?.id || _armazens[0]?.id || '';
+    _itensSelecionadosModal[itemId] = { item, qtd: 1, motivo: '', armazem: armazPadrao };
   }
 
   renderModalItens(filtrarModalItensAtual());
@@ -1599,17 +1603,30 @@ function renderItensSelecionadosModal() {
   if (!selecionados.length) { wrapper.style.display = 'none'; return; }
   wrapper.style.display = 'block';
 
-  const armazensOpts = (_armazens||[]).map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
-  const motivosOpts  = ['Entrega inicial','Reposição','Troca por desgaste','Troca por extravio','Troca por dano'].map(m => `<option value="${m}">${m}</option>`).join('');
+  const armazensUsuario = (() => {
+    const userArmazens = GCA.usuario?.armazens;
+    const arr = Array.isArray(userArmazens) ? userArmazens : (typeof userArmazens === 'string' ? JSON.parse(userArmazens || '[]') : []);
+    return arr.length ? _armazens.filter(a => arr.includes(a.id)) : _armazens;
+  })();
+  const armazensOpts = armazensUsuario.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  const motivosOpts  = ['Entrega inicial','Troca desgaste','Troca recuperação','Troca por dano','Perda','Roubo'].map(m => `<option value="${m}">${m}</option>`).join('');
 
   container.innerHTML = selecionados.map(s => `
-    <div class="item-sel-row">
+    <div class="item-sel-row" id="selrow-${s.item.id}">
       <div class="item-sel-nome">${s.item.descricao}</div>
-      <select class="form-input" style="width:140px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','armazem',this.value)">${armazensOpts}</select>
+      ${armazensUsuario.length === 1
+        ? `<span style="font-size:11px;color:var(--text-2);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${armazensUsuario[0].nome}</span>`
+        : `<select class="form-input" style="width:140px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','armazem',this.value)">${armazensOpts}</select>`
+      }
       <input type="number" class="form-input" style="width:70px;font-size:11px;text-align:center" min="1" value="${s.qtd}" onchange="atualizarItemModal('${s.item.id}','qtd',this.value)" placeholder="Qtd">
-      <select class="form-input" style="width:160px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','motivo',this.value)">
+      <select class="form-input" style="width:160px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','motivo',this.value);mostrarCampoRecuperacao('${s.item.id}',this.value)">
         <option value="">Selecione o motivo</option>
         ${motivosOpts}
+      </select>
+      <select class="form-input" style="width:130px;font-size:11px;display:none" id="recup-${s.item.id}" onchange="atualizarItemModal('${s.item.id}','tipoRecuperacao',this.value)">
+        <option value="">Tipo</option>
+        <option value="Laudar">Laudar</option>
+        <option value="Manutenção">Manutenção</option>
       </select>
       <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="toggleItemModal('${s.item.id}')">✕</button>
     </div>`).join('');
@@ -1619,6 +1636,11 @@ function atualizarItemModal(itemId, campo, valor) {
   if (_itensSelecionadosModal[itemId]) {
     _itensSelecionadosModal[itemId][campo] = campo === 'qtd' ? Number(valor) : valor;
   }
+}
+
+function mostrarCampoRecuperacao(itemId, motivo) {
+  const el = document.getElementById(`recup-${itemId}`);
+  if (el) el.style.display = motivo === 'Troca recuperação' ? '' : 'none';
 }
 
 function atualizarContadorModal() {
