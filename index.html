@@ -851,6 +851,62 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+
+<!-- MODAL BLOQUEIO -->
+<div class="modal-overlay hidden" id="modalBloqueio">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header"><div class="modal-title" id="modalBloqueioTitulo">Bloqueado</div></div>
+    <div class="modal-body" style="text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">🚫</div>
+      <div style="font-size:13px;color:var(--text-2)" id="modalBloqueioMsg"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-primary" style="width:100%;justify-content:center" onclick="document.getElementById('modalBloqueio').classList.add('hidden')">Entendi</button></div>
+  </div>
+</div>
+
+<!-- MODAL DURABILIDADE -->
+<div class="modal-overlay hidden" id="modalDurabilidade">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title">⚠️ Item fora do prazo</div></div>
+    <div class="modal-body">
+      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:12px" id="durabilidadeItem"></div>
+      <div style="background:var(--yellow-soft);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius-md);padding:14px;font-size:12px;color:var(--yellow)">
+        <div>Última retirada: <strong id="durabilidadeUltima"></strong></div>
+        <div style="margin-top:6px" id="durabilidadeDias"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-top:12px">Deseja prosseguir com o lançamento mesmo assim?</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="confirmarDurabilidade(false)">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarDurabilidade(true)">Prosseguir assim mesmo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TROCA TAMANHO -->
+<div class="modal-overlay hidden" id="modalTrocaTamanho">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header"><div class="modal-title">🔄 Troca de Tamanho</div></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:14px">O colaborador já possui um item do mesmo tipo com tamanho diferente:</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-md);padding:12px">
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">POSSUI ATUALMENTE</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="trocaTamanhoAntigo"></div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="trocaTamanhoSaldo"></div>
+        </div>
+        <div style="background:var(--green-soft);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-md);padding:12px">
+          <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">NOVO ITEM</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="trocaTamanhoNovo"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="confirmarTrocaTamanho(false)">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarTrocaTamanho(true)">Confirmar Troca</button>
+    </div>
+  </div>
+</div>
 <div id="toastContainer"></div>
 
 <script>
@@ -1569,39 +1625,93 @@ async function confirmarItensModal() {
   const selecionados = Object.values(_itensSelecionadosModal);
   if (!selecionados.length) return;
 
-  // Valida campos obrigatórios
   const semMotivo = selecionados.filter(s => !s.motivo);
   if (semMotivo.length) {
     toast(`Selecione o motivo para: ${semMotivo.map(s => s.item.descricao).join(', ')}`, 'warn');
     return;
   }
 
-  // Valida saldo e regras em lote
-  const erros = [];
-  const avisos = [];
+  const btn = document.getElementById('btnConfirmarItens');
+  btn.disabled = true;
+  btn.textContent = 'Validando...';
 
-  for (const s of selecionados) {
-    // Verifica saldo
-    const saldos = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
-    const saldo  = saldos?.data?.[0]?.saldo || saldos?.saldos?.[0]?.saldo || 0;
-    if (saldo < s.qtd) {
-      erros.push({ item: s.item.descricao, msg: `Saldo insuficiente! Disponível: ${saldo} | Solicitado: ${s.qtd}` });
+  try {
+    for (const s of selecionados) {
+      // PASSO 1: Validar nível/categoria
+      const resNivel = await api('/validacoes/nivel', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) });
+      if (resNivel && !resNivel.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Item bloqueado', resNivel.erro); return; }
+
+      // PASSO 2: Validar dotação da função
+      const resDot = await api('/validacoes/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
+      if (resDot && !resDot.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Fora da dotação', resDot.erro); return; }
+
+      // PASSO 3: Verificar saldo
+      const resSaldo = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
+      const saldo = resSaldo?.data?.[0]?.saldo || 0;
+      if (saldo < s.qtd) { fecharModalItens(); mostrarModalBloqueio('🚫 Saldo insuficiente', `"${s.item.descricao}" — Disponível: ${saldo} | Solicitado: ${s.qtd}`); return; }
+
+      // PASSO 4: Verificar durabilidade (avisa, não bloqueia)
+      const motivoLower = (s.motivo || '').toLowerCase();
+      if (motivoLower !== 'entrega inicial') {
+        const resDur = await api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) });
+        if (resDur && !resDur.dentro && resDur.ultimaEntrega) {
+          const confirmar = await mostrarModalDurabilidade(s.item.descricao, resDur.ultimaEntrega, resDur.diasDecorridos, resDur.prazoMinDias);
+          if (!confirmar) return;
+        }
+      }
+
+      // PASSO 5: Verificar troca de tamanho
+      const resTroca = await api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) });
+      if (resTroca?.troca) {
+        const confirmar = await mostrarModalTrocaTamanho(resTroca.troca, s.item.descricao);
+        if (!confirmar) return;
+      }
     }
-  }
 
-  if (erros.length) {
-    mostrarValidacoes(erros, avisos);
-    return;
+    adicionarItensAoAtendimento(selecionados);
+  } catch (err) {
+    console.error('[validacao]', err);
+    toast('Erro ao validar itens', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Incluir no Atendimento';
   }
+}
 
-  if (avisos.length) {
-    mostrarValidacoes([], avisos);
-    // Armazena para confirmar depois
-    ATEND._pendingItens = selecionados;
-    return;
-  }
+function mostrarModalBloqueio(titulo, mensagem) {
+  document.getElementById('modalBloqueioTitulo').textContent = titulo;
+  document.getElementById('modalBloqueioMsg').textContent    = mensagem;
+  document.getElementById('modalBloqueio').classList.remove('hidden');
+}
 
-  adicionarItensAoAtendimento(selecionados);
+function mostrarModalDurabilidade(item, ultimaEntrega, diasDecorridos, prazoMinDias) {
+  return new Promise(resolve => {
+    document.getElementById('durabilidadeItem').textContent   = item;
+    document.getElementById('durabilidadeUltima').textContent = new Date(ultimaEntrega).toLocaleDateString('pt-BR');
+    document.getElementById('durabilidadeDias').textContent   = `${diasDecorridos} dia(s) de ${prazoMinDias} previstos`;
+    document.getElementById('modalDurabilidade').classList.remove('hidden');
+    window._durabilidadeResolve = resolve;
+  });
+}
+
+function confirmarDurabilidade(sim) {
+  document.getElementById('modalDurabilidade').classList.add('hidden');
+  if (window._durabilidadeResolve) { window._durabilidadeResolve(sim); window._durabilidadeResolve = null; }
+}
+
+function mostrarModalTrocaTamanho(troca, itemNovo) {
+  return new Promise(resolve => {
+    document.getElementById('trocaTamanhoAntigo').textContent = troca.nomeAntigo;
+    document.getElementById('trocaTamanhoNovo').textContent   = itemNovo;
+    document.getElementById('trocaTamanhoSaldo').textContent  = `${troca.saldoAntigo} em mãos`;
+    document.getElementById('modalTrocaTamanho').classList.remove('hidden');
+    window._trocaTamanhoResolve = resolve;
+  });
+}
+
+function confirmarTrocaTamanho(sim) {
+  document.getElementById('modalTrocaTamanho').classList.add('hidden');
+  if (window._trocaTamanhoResolve) { window._trocaTamanhoResolve(sim); window._trocaTamanhoResolve = null; }
 }
 
 function mostrarValidacoes(erros, avisos) {
