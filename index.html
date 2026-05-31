@@ -1469,10 +1469,16 @@ function confirmarColabAtend(colab) {
   document.getElementById('atendColabAvatar').textContent = colab.nome.substring(0,2).toUpperCase();
   document.getElementById('atendColabNome').textContent   = colab.nome;
   document.getElementById('atendColabSub').textContent    = `${colab.matricula||'—'} • ${colab.funcao||'—'}`;
-  const statusTag = colab.status === 'ativo'
-    ? '<span class="tag tag-green">Ativo</span>'
-    : '<span class="tag tag-gray">Inativo</span>';
-  document.getElementById('atendColabStatus').outerHTML = statusTag;
+  const statusEl = document.getElementById('atendColabStatus');
+  if (statusEl) {
+    if (colab.status === 'ativo') {
+      statusEl.className = 'tag tag-green'; statusEl.textContent = 'Ativo';
+    } else if (colab.status === 'ferias') {
+      statusEl.className = 'tag tag-yellow'; statusEl.textContent = 'Férias';
+    } else {
+      statusEl.className = 'tag tag-gray'; statusEl.textContent = 'Inativo';
+    }
+  }
 
   document.getElementById('resumoColab').textContent  = colab.nome;
   document.getElementById('resumoFuncao').textContent = colab.funcao || '—';
