@@ -1177,8 +1177,8 @@ async function carregarKPIs() {
     api(`/itens?por_pagina=1`),
     api(`/atendimentos`),
   ]);
-  if (colabs) { document.getElementById('kpiColaboradores').textContent = colabs.total??'—'; document.getElementById('kpiColaboradoresDelta').textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade; }
-  if (itens)  { document.getElementById('kpiItens').textContent = itens.total??'—'; document.getElementById('kpiItensDelta').textContent = 'tipos cadastrados'; }
+  if (colabs) { document.getElementById('kpiColaboradores').textContent = (colabs.data||colabs.colaboradores||[]).length||'—'; document.getElementById('kpiColaboradoresDelta').textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade; }
+  if (itens)  { document.getElementById('kpiItens').textContent = (itens.data||itens.itens||[]).length||'—'; document.getElementById('kpiItensDelta').textContent = 'tipos cadastrados'; }
   if (atends) {
     const lista = atends.atendimentos||[];
     document.getElementById('kpiAtendimentos').textContent = lista.length;
@@ -1219,7 +1219,7 @@ async function carregarColaboradores() {
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const data = await api('/colaboradores?por_pagina=500');
   if (!data) return;
-  _colaboradores = data.colaboradores||[];
+  _colaboradores = data.data||data.colaboradores||[];
   document.getElementById('subColaboradores').textContent = `${_colaboradores.length} colaboradores cadastrados`;
   renderColaboradores(_colaboradores);
 }
@@ -1237,7 +1237,7 @@ async function carregarItens() {
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const data = await api('/itens?por_pagina=500');
   if (!data) return;
-  _itens = data.itens||[];
+  _itens = data.data||data.itens||[];
   document.getElementById('subItens').textContent = `${_itens.length} itens cadastrados`;
   renderItens(_itens);
 }
@@ -1883,19 +1883,19 @@ let _armazens = [];
 async function carregarArmazens() {
   if (_armazens.length) return;
   const data = await api('/armazens');
-  if (data) _armazens = data.armazens || [];
+  if (data) _armazens = data.data || data.armazens || [];
 }
 
 // Carrega colaboradores silenciosamente para o atendimento
 async function carregarColaboradoresAtendimento() {
   const data = await api('/colaboradores?por_pagina=1000');
-  if (data) _colaboradores = data.colaboradores || [];
+  if (data) _colaboradores = data.data || data.colaboradores || [];
 }
 
 // Carrega itens silenciosamente para o atendimento
 async function carregarItensAtendimento() {
   const data = await api('/itens?por_pagina=1000');
-  if (data) _itens = data.itens || [];
+  if (data) _itens = data.data || data.itens || [];
 }
 
 
