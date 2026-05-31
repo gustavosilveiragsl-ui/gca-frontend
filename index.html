@@ -7,575 +7,228 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-/* ═══════════════════════════════════════════
-   DESIGN TOKENS
-═══════════════════════════════════════════ */
 :root {
-  --accent:       #6366f1;
-  --accent-hover: #4f46e5;
-  --accent-soft:  #1e1b4b;
-  --accent-text:  #818cf8;
+  --accent:#6366f1;--accent-hover:#4f46e5;--accent-soft:#1e1b4b;--accent-text:#818cf8;
+  --green:#22c55e;--green-soft:#052e16;--yellow:#fbbf24;--yellow-soft:#1c1300;
+  --red:#f87171;--red-soft:#1c0a0a;--blue:#38bdf8;--blue-soft:#0c1a2e;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --font-main:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;
+  --transition:0.15s ease;
+}
+[data-theme="dark"]{--bg:#0a0a0f;--bg-card:#0f0f17;--bg-hover:#0f172a;--border:#1e1e2e;--border-mid:#2a2a3e;--text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#475569;--sidebar-bg:#0c0c14;}
+[data-theme="light"]{--bg:#f8fafc;--bg-card:#ffffff;--bg-hover:#f1f5f9;--border:#e2e8f0;--border-mid:#cbd5e1;--text-1:#0f172a;--text-2:#475569;--text-3:#94a3b8;--sidebar-bg:#ffffff;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:13px;}
+body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;}
+button{font-family:var(--font-main);cursor:pointer;}
+input,select,textarea{font-family:var(--font-main);}
+.hidden{display:none!important;}
 
-  --green:        #22c55e;
-  --green-soft:   #052e16;
-  --yellow:       #fbbf24;
-  --yellow-soft:  #1c1300;
-  --red:          #f87171;
-  --red-soft:     #1c0a0a;
-  --blue:         #38bdf8;
-  --blue-soft:    #0c1a2e;
+/* LOADING */
+#loadingScreen{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px;transition:opacity 0.4s ease;}
+#loadingScreen img{width:140px;opacity:.9;}
+.loading-bar{width:160px;height:2px;background:#1e1e2e;border-radius:2px;overflow:hidden;}
+.loading-bar-fill{height:100%;width:0%;background:var(--accent);border-radius:2px;animation:loadBar 1.2s ease forwards;}
+@keyframes loadBar{to{width:100%;}}
 
-  --radius-sm:  6px;
-  --radius-md:  10px;
-  --radius-lg:  14px;
+/* LOGIN */
+#loginView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+[data-theme="dark"] #loginView::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 20% 50%,rgba(99,102,241,.06) 0%,transparent 70%),radial-gradient(ellipse 400px 300px at 80% 20%,rgba(99,102,241,.04) 0%,transparent 70%);pointer-events:none;}
+.login-card{width:100%;max-width:380px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;position:relative;animation:fadeUp .4s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.login-logo{display:flex;justify-content:center;margin-bottom:28px;}
+.login-logo img{height:48px;object-fit:contain;}
+.login-title{font-size:16px;font-weight:600;color:var(--text-1);margin-bottom:4px;text-align:center;}
+.login-sub{font-size:12px;color:var(--text-3);text-align:center;margin-bottom:28px;}
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:11px;font-weight:500;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.form-input{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:13px;outline:none;transition:border-color var(--transition);}
+.form-input:focus{border-color:var(--accent);}
+.form-input::placeholder{color:var(--text-3);}
+.btn-login{width:100%;padding:11px;background:var(--accent);color:white;font-size:13px;font-weight:600;border:none;border-radius:var(--radius-sm);margin-top:8px;transition:background var(--transition);display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-login:hover{background:var(--accent-hover);}
+.btn-login:disabled{opacity:.6;cursor:not-allowed;}
+.login-error{margin-top:12px;padding:10px 12px;background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);color:var(--red);font-size:12px;text-align:center;}
+.login-theme-toggle{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-3);font-size:14px;display:flex;align-items:center;justify-content:center;}
+.forgot-link{display:block;text-align:center;font-size:11px;color:var(--text-3);margin-top:12px;cursor:pointer;text-decoration:none;}
+.forgot-link:hover{color:var(--accent-text);}
 
-  --font-main: 'DM Sans', -apple-system, sans-serif;
-  --font-mono: 'DM Mono', monospace;
+/* ESQUECI SENHA */
+#forgotView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+.forgot-card{width:100%;max-width:380px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;animation:fadeUp .4s ease;}
+.forgot-back{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);cursor:pointer;margin-bottom:20px;}
+.forgot-back:hover{color:var(--accent-text);}
+.forgot-info{font-size:12px;color:var(--text-3);margin-bottom:20px;line-height:1.6;}
+.forgot-success{padding:14px;background:var(--green-soft);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-sm);color:var(--green);font-size:12px;text-align:center;margin-top:12px;}
 
-  --transition: 0.15s ease;
-}
+/* SELEÇÃO UNIDADE */
+#unidadeView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+.unidade-card{width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;animation:fadeUp .3s ease;}
+.unidade-logo{display:flex;justify-content:center;margin-bottom:24px;}
+.unidade-logo img{height:40px;object-fit:contain;}
+.unidade-title{font-size:15px;font-weight:600;color:var(--text-1);text-align:center;margin-bottom:6px;}
+.unidade-sub{font-size:12px;color:var(--text-3);text-align:center;margin-bottom:28px;}
+.unidade-options{display:flex;flex-direction:column;gap:10px;}
+.unidade-btn{padding:16px 20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-1);font-size:13px;font-weight:500;text-align:left;display:flex;align-items:center;gap:14px;transition:all var(--transition);}
+.unidade-btn:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);}
+.u-icon{font-size:22px;}
+.u-name{font-size:14px;font-weight:600;}
+.u-desc{font-size:11px;color:var(--text-3);margin-top:2px;}
 
-[data-theme="dark"] {
-  --bg:         #0a0a0f;
-  --bg-card:    #0f0f17;
-  --bg-hover:   #0f172a;
-  --border:     #1e1e2e;
-  --border-mid: #2a2a3e;
-  --text-1:     #f1f5f9;
-  --text-2:     #94a3b8;
-  --text-3:     #475569;
-  --sidebar-bg: #0c0c14;
-}
+/* APP */
+#appView{display:flex;min-height:100vh;}
 
-[data-theme="light"] {
-  --bg:         #f8fafc;
-  --bg-card:    #ffffff;
-  --bg-hover:   #f1f5f9;
-  --border:     #e2e8f0;
-  --border-mid: #cbd5e1;
-  --text-1:     #0f172a;
-  --text-2:     #475569;
-  --text-3:     #94a3b8;
-  --sidebar-bg: #ffffff;
-}
+/* SIDEBAR */
+.sidebar{width:224px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sidebar-logo{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.sidebar-logo img{height:28px;object-fit:contain;}
+.sidebar-unit-badge{margin-left:auto;font-size:9px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);padding:3px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:background var(--transition);}
+.sidebar-unit-badge:hover{background:var(--accent);color:white;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:6px 8px;}
+.sidebar-nav::-webkit-scrollbar{width:3px;}
+.sidebar-nav::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
-/* ═══════════════════════════════════════════
-   RESET & BASE
-═══════════════════════════════════════════ */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 13px; }
-body {
-  font-family: var(--font-main);
-  background: var(--bg);
-  color: var(--text-1);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
-button { font-family: var(--font-main); cursor: pointer; }
-input, select, textarea { font-family: var(--font-main); }
-.hidden { display: none !important; }
+/* NAV GROUPS COLAPSÁVEIS */
+.nav-group{margin-bottom:2px;}
+.nav-group-header{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;cursor:pointer;border-radius:var(--radius-sm);transition:background var(--transition);}
+.nav-group-header:hover{background:var(--bg-hover);}
+.nav-group-label{font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:1px;}
+.nav-group-arrow{font-size:10px;color:var(--text-3);transition:transform .2s ease;}
+.nav-group-arrow.open{transform:rotate(90deg);}
+.nav-group-items{overflow:hidden;max-height:0;transition:max-height .25s ease;}
+.nav-group-items.open{max-height:500px;}
 
-/* ═══════════════════════════════════════════
-   LOADING SCREEN
-═══════════════════════════════════════════ */
-#loadingScreen {
-  position: fixed; inset: 0;
-  background: #0a0a0f;
-  display: flex; align-items: center; justify-content: center;
-  z-index: 9999;
-  flex-direction: column; gap: 20px;
-  transition: opacity 0.4s ease;
-}
-#loadingScreen img { width: 140px; opacity: 0.9; }
-.loading-bar {
-  width: 160px; height: 2px;
-  background: #1e1e2e; border-radius: 2px; overflow: hidden;
-}
-.loading-bar-fill {
-  height: 100%; width: 0%;
-  background: var(--accent);
-  border-radius: 2px;
-  animation: loadBar 1.2s ease forwards;
-}
-@keyframes loadBar { to { width: 100%; } }
+/* NAV ITEMS */
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:var(--radius-sm);color:var(--text-2);font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;width:100%;text-align:left;transition:all var(--transition);}
+.nav-item:hover{background:var(--bg-hover);color:var(--text-1);}
+.nav-item.active{background:var(--accent-soft);color:var(--accent-text);}
+.ni-icon{font-size:13px;width:18px;text-align:center;flex-shrink:0;}
+.ni-badge{margin-left:auto;background:var(--accent);color:white;font-size:9px;padding:1px 5px;border-radius:10px;font-weight:700;}
 
-/* ═══════════════════════════════════════════
-   LOGIN
-═══════════════════════════════════════════ */
-#loginView {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg);
-  padding: 24px;
-}
+/* SIDEBAR FOOTER */
+.sidebar-footer{border-top:1px solid var(--border);padding:10px;}
+.sidebar-user{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--radius-sm);cursor:pointer;transition:background var(--transition);}
+.sidebar-user:hover{background:var(--bg-hover);}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
+.user-name{font-size:11px;font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;}
+.user-role{font-size:10px;color:var(--text-3);}
+.logout-btn{margin-left:auto;padding:4px 8px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;flex-shrink:0;}
+.logout-btn:hover{color:var(--red);border-color:var(--red);}
 
-[data-theme="dark"] #loginView::before {
-  content: '';
-  position: fixed; inset: 0;
-  background:
-    radial-gradient(ellipse 600px 400px at 20% 50%, rgba(99,102,241,0.06) 0%, transparent 70%),
-    radial-gradient(ellipse 400px 300px at 80% 20%, rgba(99,102,241,0.04) 0%, transparent 70%);
-  pointer-events: none;
-}
+/* MAIN */
+.main-area{margin-left:224px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{height:50px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:12px;background:var(--bg);position:sticky;top:0;z-index:50;}
+.topbar-title{font-size:13px;font-weight:600;color:var(--text-1);}
+.topbar-crumb{font-size:11px;color:var(--text-3);margin-left:2px;}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+.btn{padding:6px 14px;border-radius:var(--radius-sm);font-size:11px;font-weight:500;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all var(--transition);}
+.btn-primary{background:var(--accent);color:white;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg-hover);color:var(--text-1);}
+.theme-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-3);font-size:14px;display:flex;align-items:center;justify-content:center;}
+.theme-btn:hover{background:var(--bg-hover);color:var(--text-1);}
+.page-content{padding:24px;flex:1;}
 
-.login-card {
-  width: 100%; max-width: 380px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 36px 32px;
-  position: relative;
-  animation: fadeUp 0.4s ease;
-}
+/* VIEWS */
+.view{display:none;}
+.view.active{display:block;}
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-3);}
+.kpi-icon{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.kpi-value{font-size:26px;font-weight:700;color:var(--text-1);line-height:1;}
+.kpi-delta{font-size:10px;color:var(--text-3);margin-top:6px;}
+.kpi-delta.up{color:var(--green);}
+.kpi-delta.warn{color:var(--yellow);}
+.kpi-delta.down{color:var(--red);}
 
-.login-logo {
-  display: flex; justify-content: center;
-  margin-bottom: 28px;
-}
-.login-logo img { height: 48px; object-fit: contain; }
+/* QUICK ACTIONS */
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.quick-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color var(--transition);width:100%;text-align:left;}
+.quick-card:hover{border-color:var(--accent);}
+.qc-icon{font-size:22px;flex-shrink:0;}
+.qc-label{font-size:12px;font-weight:600;color:var(--text-1);}
+.qc-sub{font-size:10px;color:var(--text-3);margin-top:2px;}
 
-.login-title {
-  font-size: 16px; font-weight: 600; color: var(--text-1);
-  margin-bottom: 4px; text-align: center;
-}
-.login-sub {
-  font-size: 12px; color: var(--text-3);
-  text-align: center; margin-bottom: 28px;
-}
+/* CARDS/TABELAS */
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden;}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card-title{font-size:12px;font-weight:600;color:var(--text-1);}
+.card-sub{font-size:10px;color:var(--text-3);margin-top:2px;}
+.card-actions{display:flex;gap:8px;align-items:center;margin-left:auto;}
+.search-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;color:var(--text-1);font-size:11px;outline:none;width:200px;transition:border-color var(--transition);}
+.search-box:focus{border-color:var(--accent);}
+.search-box::placeholder{color:var(--text-3);}
+table{width:100%;border-collapse:collapse;}
+thead th{padding:9px 18px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody td{padding:11px 18px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);white-space:nowrap;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:var(--bg-hover);}
+.td-main{color:var(--text-1)!important;font-weight:500;}
+.td-mono{font-family:var(--font-mono);font-size:11px;}
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;}
+.tag-green{background:var(--green-soft);color:var(--green);}
+.tag-yellow{background:var(--yellow-soft);color:var(--yellow);}
+.tag-red{background:var(--red-soft);color:var(--red);}
+.tag-blue{background:var(--blue-soft);color:var(--blue);}
+.tag-accent{background:var(--accent-soft);color:var(--accent-text);}
+.tag-gray{background:var(--border);color:var(--text-3);}
+.row-action{padding:4px 10px;border-radius:4px;background:var(--bg-hover);color:var(--text-2);border:1px solid var(--border);font-size:10px;font-weight:500;}
+.row-action:hover{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
 
-.form-group { margin-bottom: 14px; }
-.form-label {
-  display: block; font-size: 11px; font-weight: 500;
-  color: var(--text-2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.form-input {
-  width: 100%; padding: 10px 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-1);
-  font-size: 13px;
-  outline: none;
-  transition: border-color var(--transition);
-}
-.form-input:focus { border-color: var(--accent); }
-.form-input::placeholder { color: var(--text-3); }
+/* EMPTY / LOADING */
+.empty-state{padding:48px 24px;text-align:center;color:var(--text-3);}
+.es-icon{font-size:32px;margin-bottom:12px;opacity:.5;}
+.es-title{font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:4px;}
+.es-sub{font-size:11px;}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-row td{text-align:center;padding:32px;color:var(--text-3);}
 
-.btn-login {
-  width: 100%; padding: 11px;
-  background: var(--accent);
-  color: white; font-size: 13px; font-weight: 600;
-  border: none; border-radius: var(--radius-sm);
-  margin-top: 8px;
-  transition: background var(--transition);
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.btn-login:hover { background: var(--accent-hover); }
-.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;animation:fadeIn .15s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:460px;animation:slideUp .2s ease;}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:13px;font-weight:600;color:var(--text-1);}
+.modal-close{width:28px;height:28px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-3);font-size:16px;line-height:1;}
+.modal-close:hover{background:var(--bg-hover);color:var(--text-1);}
+.modal-body{padding:20px;}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
 
-.login-error {
-  margin-top: 12px; padding: 10px 12px;
-  background: var(--red-soft); border: 1px solid rgba(248,113,113,0.2);
-  border-radius: var(--radius-sm);
-  color: var(--red); font-size: 12px; text-align: center;
-}
-
-.login-theme-toggle {
-  position: absolute; top: 16px; right: 16px;
-  width: 30px; height: 30px; border-radius: var(--radius-sm);
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text-3); font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* ═══════════════════════════════════════════
-   SELEÇÃO DE UNIDADE
-═══════════════════════════════════════════ */
-#unidadeView {
-  min-height: 100vh;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg); padding: 24px;
-}
-.unidade-card {
-  width: 100%; max-width: 420px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 36px 32px;
-  animation: fadeUp 0.3s ease;
-}
-.unidade-logo { display: flex; justify-content: center; margin-bottom: 24px; }
-.unidade-logo img { height: 40px; object-fit: contain; }
-.unidade-title { font-size: 15px; font-weight: 600; color: var(--text-1); text-align: center; margin-bottom: 6px; }
-.unidade-sub { font-size: 12px; color: var(--text-3); text-align: center; margin-bottom: 28px; }
-.unidade-options { display: flex; flex-direction: column; gap: 10px; }
-.unidade-btn {
-  padding: 16px 20px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text-1);
-  font-size: 13px; font-weight: 500;
-  text-align: left;
-  display: flex; align-items: center; gap: 14px;
-  transition: all var(--transition);
-}
-.unidade-btn:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-text); }
-.unidade-btn .u-icon { font-size: 22px; }
-.unidade-btn .u-name { font-size: 14px; font-weight: 600; }
-.unidade-btn .u-desc { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-
-/* ═══════════════════════════════════════════
-   APP SHELL
-═══════════════════════════════════════════ */
-#appView { display: flex; min-height: 100vh; }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: 224px; flex-shrink: 0;
-  background: var(--sidebar-bg);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  position: fixed; top: 0; left: 0; bottom: 0;
-  z-index: 100;
-  transition: transform 0.2s ease;
-}
-
-.sidebar-logo {
-  padding: 18px 16px 14px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px;
-}
-.sidebar-logo img { height: 30px; object-fit: contain; }
-.sidebar-unit {
-  margin-left: auto;
-  font-size: 9px; font-weight: 600;
-  background: var(--accent-soft); color: var(--accent-text);
-  padding: 3px 7px; border-radius: 20px;
-  text-transform: uppercase; letter-spacing: 0.5px;
-}
-
-.sidebar-nav { flex: 1; overflow-y: auto; padding: 8px 8px; }
-.sidebar-nav::-webkit-scrollbar { width: 3px; }
-.sidebar-nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-.nav-group { margin-bottom: 4px; }
-.nav-group-label {
-  font-size: 9px; font-weight: 600; color: var(--text-3);
-  text-transform: uppercase; letter-spacing: 1px;
-  padding: 8px 10px 4px;
-}
-.nav-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 7px 10px; border-radius: var(--radius-sm);
-  color: var(--text-2); font-size: 12px; font-weight: 500;
-  cursor: pointer; border: none; background: none;
-  width: 100%; text-align: left;
-  transition: all var(--transition);
-  position: relative;
-}
-.nav-item:hover { background: var(--bg-hover); color: var(--text-1); }
-.nav-item.active { background: var(--accent-soft); color: var(--accent-text); }
-.nav-item .ni-icon { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
-.nav-item .ni-badge {
-  margin-left: auto;
-  background: var(--accent); color: white;
-  font-size: 9px; padding: 1px 5px; border-radius: 10px; font-weight: 700;
-}
-
-.sidebar-footer {
-  border-top: 1px solid var(--border);
-  padding: 12px;
-}
-.sidebar-user {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px; border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: background var(--transition);
-}
-.sidebar-user:hover { background: var(--bg-hover); }
-.user-avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--accent-soft); color: var(--accent-text);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
-}
-.user-name  { font-size: 11px; font-weight: 600; color: var(--text-1); }
-.user-role  { font-size: 10px; color: var(--text-3); }
-.logout-btn {
-  margin-left: auto; padding: 4px 8px;
-  background: transparent; border: 1px solid var(--border);
-  border-radius: var(--radius-sm); color: var(--text-3); font-size: 10px;
-}
-.logout-btn:hover { color: var(--red); border-color: var(--red); }
-
-/* ── MAIN ── */
-.main-area { margin-left: 224px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
-
-.topbar {
-  height: 50px;
-  border-bottom: 1px solid var(--border);
-  display: flex; align-items: center;
-  padding: 0 24px; gap: 12px;
-  background: var(--bg);
-  position: sticky; top: 0; z-index: 50;
-}
-.topbar-title { font-size: 13px; font-weight: 600; color: var(--text-1); }
-.topbar-crumb { font-size: 11px; color: var(--text-3); margin-left: 2px; }
-.topbar-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-
-.btn {
-  padding: 6px 14px; border-radius: var(--radius-sm);
-  font-size: 11px; font-weight: 500;
-  border: none; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px;
-  transition: all var(--transition);
-}
-.btn-primary { background: var(--accent); color: white; }
-.btn-primary:hover { background: var(--accent-hover); }
-.btn-ghost {
-  background: transparent; color: var(--text-2);
-  border: 1px solid var(--border);
-}
-.btn-ghost:hover { background: var(--bg-hover); color: var(--text-1); }
-.btn-danger { background: var(--red-soft); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
-
-.theme-btn {
-  width: 32px; height: 32px; border-radius: var(--radius-sm);
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text-3); font-size: 14px;
-  display: flex; align-items: center; justify-content: center;
-}
-.theme-btn:hover { background: var(--bg-hover); color: var(--text-1); }
-
-.page-content { padding: 24px; flex: 1; }
-
-/* ═══════════════════════════════════════════
-   VIEWS
-═══════════════════════════════════════════ */
-.view { display: none; }
-.view.active { display: block; }
-
-/* ═══════════════════════════════════════════
-   DASHBOARD
-═══════════════════════════════════════════ */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px; margin-bottom: 20px;
-}
-.kpi-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-.kpi-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.kpi-label { font-size: 11px; font-weight: 500; color: var(--text-3); }
-.kpi-icon {
-  width: 30px; height: 30px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center; font-size: 14px;
-}
-.kpi-value { font-size: 26px; font-weight: 700; color: var(--text-1); line-height: 1; }
-.kpi-delta { font-size: 10px; color: var(--text-3); margin-top: 6px; }
-.kpi-delta.up   { color: var(--green); }
-.kpi-delta.warn { color: var(--yellow); }
-.kpi-delta.down { color: var(--red); }
-
-.quick-grid {
-  display: grid; grid-template-columns: repeat(4, 1fr);
-  gap: 10px; margin-bottom: 20px;
-}
-.quick-card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-md); padding: 14px;
-  display: flex; align-items: center; gap: 12px;
-  cursor: pointer; transition: border-color var(--transition);
-  border: none; width: 100%; text-align: left;
-}
-.quick-card:hover { border: 1px solid var(--accent); }
-.quick-card { border: 1px solid var(--border); }
-.qc-icon { font-size: 22px; flex-shrink: 0; }
-.qc-label { font-size: 12px; font-weight: 600; color: var(--text-1); }
-.qc-sub   { font-size: 10px; color: var(--text-3); margin-top: 2px; }
-
-/* ═══════════════════════════════════════════
-   TABELAS
-═══════════════════════════════════════════ */
-.card {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-md); margin-bottom: 16px;
-  overflow: hidden;
-}
-.card-header {
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-}
-.card-title { font-size: 12px; font-weight: 600; color: var(--text-1); }
-.card-sub   { font-size: 10px; color: var(--text-3); margin-top: 2px; }
-.card-actions { display: flex; gap: 8px; align-items: center; margin-left: auto; }
-
-.search-box {
-  background: var(--bg); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 6px 10px;
-  color: var(--text-1); font-size: 11px; outline: none;
-  width: 200px; transition: border-color var(--transition);
-}
-.search-box:focus { border-color: var(--accent); }
-.search-box::placeholder { color: var(--text-3); }
-
-table { width: 100%; border-collapse: collapse; }
-thead th {
-  padding: 9px 18px; text-align: left;
-  font-size: 10px; font-weight: 600;
-  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-tbody td {
-  padding: 11px 18px; font-size: 12px; color: var(--text-2);
-  border-bottom: 1px solid var(--border);
-  white-space: nowrap;
-}
-tbody tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: var(--bg-hover); }
-.td-main { color: var(--text-1) !important; font-weight: 500; }
-.td-mono { font-family: var(--font-mono); font-size: 11px; }
-
-.tag {
-  display: inline-flex; align-items: center;
-  padding: 2px 8px; border-radius: 4px;
-  font-size: 10px; font-weight: 600;
-}
-.tag-green  { background: var(--green-soft);  color: var(--green); }
-.tag-yellow { background: var(--yellow-soft); color: var(--yellow); }
-.tag-red    { background: var(--red-soft);    color: var(--red); }
-.tag-blue   { background: var(--blue-soft);   color: var(--blue); }
-.tag-accent { background: var(--accent-soft); color: var(--accent-text); }
-.tag-gray   { background: var(--border);      color: var(--text-3); }
-
-.row-action {
-  padding: 4px 10px; border-radius: 4px;
-  background: var(--bg-hover); color: var(--text-2);
-  border: 1px solid var(--border); font-size: 10px; font-weight: 500;
-}
-.row-action:hover { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
-
-/* ═══════════════════════════════════════════
-   EMPTY STATE
-═══════════════════════════════════════════ */
-.empty-state {
-  padding: 48px 24px; text-align: center;
-  color: var(--text-3);
-}
-.empty-state .es-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.5; }
-.empty-state .es-title { font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 4px; }
-.empty-state .es-sub   { font-size: 11px; }
-
-/* ═══════════════════════════════════════════
-   LOADING INLINE
-═══════════════════════════════════════════ */
-.spinner {
-  width: 18px; height: 18px;
-  border: 2px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-  display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.loading-row td { text-align: center; padding: 32px; color: var(--text-3); }
-
-/* ═══════════════════════════════════════════
-   MODAIS
-═══════════════════════════════════════════ */
-.modal-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 200; padding: 24px;
-  animation: fadeIn 0.15s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.modal-box {
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); width: 100%; max-width: 520px;
-  max-height: 85vh; overflow-y: auto;
-  animation: slideUp 0.2s ease;
-}
-@keyframes slideUp { from { transform: translateY(16px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.modal-header {
-  padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-}
-.modal-title { font-size: 13px; font-weight: 600; color: var(--text-1); }
-.modal-close {
-  width: 28px; height: 28px; border-radius: var(--radius-sm);
-  background: transparent; border: 1px solid var(--border);
-  color: var(--text-3); font-size: 16px; line-height: 1;
-}
-.modal-close:hover { background: var(--bg-hover); color: var(--text-1); }
-.modal-body { padding: 20px; }
-.modal-footer {
-  padding: 14px 20px; border-top: 1px solid var(--border);
-  display: flex; gap: 8px; justify-content: flex-end;
-}
-
-/* ═══════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════ */
-#toastContainer {
-  position: fixed; bottom: 20px; right: 20px;
-  display: flex; flex-direction: column; gap: 8px;
-  z-index: 9999;
-}
-.toast {
-  padding: 12px 16px; border-radius: var(--radius-md);
-  font-size: 12px; font-weight: 500;
-  display: flex; align-items: center; gap: 10px;
-  min-width: 240px; max-width: 360px;
-  animation: toastIn 0.3s ease;
-  border: 1px solid transparent;
-}
-@keyframes toastIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
-.toast-success { background: var(--green-soft);  border-color: rgba(34,197,94,0.2);  color: var(--green); }
-.toast-error   { background: var(--red-soft);    border-color: rgba(248,113,113,0.2); color: var(--red); }
-.toast-info    { background: var(--accent-soft); border-color: rgba(99,102,241,0.2);  color: var(--accent-text); }
-.toast-warn    { background: var(--yellow-soft); border-color: rgba(251,191,36,0.2);  color: var(--yellow); }
+/* TOAST */
+#toastContainer{position:fixed;bottom:20px;right:20px;display:flex;flex-direction:column;gap:8px;z-index:9999;}
+.toast{padding:12px 16px;border-radius:var(--radius-md);font-size:12px;font-weight:500;display:flex;align-items:center;gap:10px;min-width:240px;max-width:360px;animation:toastIn .3s ease;border:1px solid transparent;}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast-success{background:var(--green-soft);border-color:rgba(34,197,94,.2);color:var(--green);}
+.toast-error{background:var(--red-soft);border-color:rgba(248,113,113,.2);color:var(--red);}
+.toast-info{background:var(--accent-soft);border-color:rgba(99,102,241,.2);color:var(--accent-text);}
+.toast-warn{background:var(--yellow-soft);border-color:rgba(251,191,36,.2);color:var(--yellow);}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════
-     LOADING
-═══════════════════════════════════════════ -->
+<!-- LOADING -->
 <div id="loadingScreen">
   <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA">
   <div class="loading-bar"><div class="loading-bar-fill"></div></div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     LOGIN
-═══════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="loginView" class="hidden">
   <div class="login-card">
-    <button class="login-theme-toggle theme-btn" onclick="toggleTheme()" title="Alternar tema">
-      <span id="themeIcon">☀️</span>
-    </button>
-    <div class="login-logo">
-      <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA Sistema">
-    </div>
+    <button class="login-theme-toggle theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span></button>
+    <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA Sistema"></div>
     <div class="login-title">Acesse sua conta</div>
     <div class="login-sub">Sistema de Almoxarifado Industrial</div>
     <div class="form-group">
       <label class="form-label">Usuário</label>
-      <input id="loginUser" class="form-input" type="text" placeholder="seu.usuario" autocomplete="username">
+      <input id="loginUser" class="form-input" type="text" placeholder="Seu usuário" autocomplete="username">
     </div>
     <div class="form-group">
       <label class="form-label">Senha</label>
@@ -584,152 +237,149 @@ tbody tr:hover td { background: var(--bg-hover); }
     <button class="btn-login" id="btnLogin" onclick="fazerLogin()">
       <span id="loginBtnText">Entrar</span>
     </button>
+    <a class="forgot-link" onclick="mostrarEsqueciSenha()">Esqueci minha senha</a>
     <div id="loginError" class="login-error hidden"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     SELEÇÃO DE UNIDADE
-═══════════════════════════════════════════ -->
+<!-- ESQUECI SENHA -->
+<div id="forgotView" class="hidden">
+  <div class="forgot-card">
+    <div class="forgot-back" onclick="voltarLogin()">← Voltar ao login</div>
+    <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
+    <div class="login-title">Recuperar senha</div>
+    <div class="forgot-info">Digite seu usuário abaixo. Um administrador receberá a solicitação e redefinirá sua senha em breve.</div>
+    <div class="form-group">
+      <label class="form-label">Usuário</label>
+      <input id="forgotUser" class="form-input" type="text" placeholder="Seu usuário">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nova senha desejada</label>
+      <input id="forgotNovaSenha" class="form-input" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-login" onclick="solicitarRecuperacao()">Enviar solicitação</button>
+    <div id="forgotMsg" class="hidden"></div>
+  </div>
+</div>
+
+<!-- SELEÇÃO DE UNIDADE -->
 <div id="unidadeView" class="hidden">
   <div class="unidade-card">
-    <div class="unidade-logo">
-      <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA">
-    </div>
+    <div class="unidade-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
     <div class="unidade-title">Selecione a unidade</div>
-    <div class="unidade-sub">Você tem acesso a mais de uma filial</div>
+    <div class="unidade-sub" id="unidadeSub">Você tem acesso a mais de uma filial</div>
     <div class="unidade-options" id="unidadeOptions"></div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     APP
-═══════════════════════════════════════════ -->
+<!-- APP -->
 <div id="appView" class="hidden">
 
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-logo">
       <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA">
-      <span class="sidebar-unit" id="sidebarUnit">—</span>
+      <span class="sidebar-unit-badge" id="sidebarUnit" onclick="trocarUnidade()" title="Clique para trocar de unidade">—</span>
     </div>
     <div class="sidebar-nav">
 
-      <div class="nav-group">
-        <div class="nav-group-label">Principal</div>
-        <button class="nav-item active" data-view="home" onclick="showView('home', this)">
+      <!-- Principal (sem colapso) -->
+      <div style="padding:6px 0 2px">
+        <button class="nav-item active" data-view="home" onclick="showView('home',this)">
           <span class="ni-icon">⊞</span> Dashboard
         </button>
-        <button class="nav-item" data-view="atendimento" onclick="showView('atendimento', this)">
+        <button class="nav-item" data-view="atendimento" onclick="showView('atendimento',this)">
           <span class="ni-icon">🤝</span> Atendimento
         </button>
-        <button class="nav-item" data-view="assinaturas" onclick="showView('assinaturas', this)">
+        <button class="nav-item" data-view="assinaturas" onclick="showView('assinaturas',this)">
           <span class="ni-icon">✍️</span> Assinaturas
           <span class="ni-badge" id="badgeAssinaturas" style="display:none">0</span>
         </button>
-        <button class="nav-item" data-view="solicitacoes" onclick="showView('solicitacoes', this)">
+        <button class="nav-item" data-view="solicitacoes" onclick="showView('solicitacoes',this)">
           <span class="ni-icon">📋</span> Solicitações
           <span class="ni-badge" id="badgeSolicitacoes" style="display:none">0</span>
         </button>
       </div>
 
+      <!-- Estoque -->
       <div class="nav-group">
-        <div class="nav-group-label">Estoque</div>
-        <button class="nav-item" data-view="entrada" onclick="showView('entrada', this)">
-          <span class="ni-icon">📥</span> Entrada
-        </button>
-        <button class="nav-item" data-view="saida" onclick="showView('saida', this)">
-          <span class="ni-icon">📤</span> Saída
-        </button>
-        <button class="nav-item" data-view="transferencia" onclick="showView('transferencia', this)">
-          <span class="ni-icon">🔄</span> Transferência
-        </button>
-        <button class="nav-item" data-view="estoque" onclick="showView('estoque', this)">
-          <span class="ni-icon">📦</span> Consulta de Estoque
-        </button>
-        <button class="nav-item" data-view="movimentacoes" onclick="showView('movimentacoes', this)">
-          <span class="ni-icon">📊</span> Movimentações
-        </button>
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Estoque</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="entrada" onclick="showView('entrada',this)"><span class="ni-icon">📥</span> Entrada</button>
+          <button class="nav-item" data-view="saida" onclick="showView('saida',this)"><span class="ni-icon">📤</span> Saída</button>
+          <button class="nav-item" data-view="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon">🔄</span> Transferência</button>
+          <button class="nav-item" data-view="estoque" onclick="showView('estoque',this)"><span class="ni-icon">📦</span> Consulta de Estoque</button>
+          <button class="nav-item" data-view="movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon">📊</span> Movimentações</button>
+        </div>
       </div>
 
+      <!-- Financeiro -->
       <div class="nav-group">
-        <div class="nav-group-label">Financeiro</div>
-        <button class="nav-item" data-view="descontos" onclick="showView('descontos', this)">
-          <span class="ni-icon">💰</span> Descontos
-        </button>
-        <button class="nav-item" data-view="solicitacoes-compra" onclick="showView('solicitacoes-compra', this)">
-          <span class="ni-icon">🛒</span> Solicitações de Compra
-        </button>
-        <button class="nav-item" data-view="protheus" onclick="showView('protheus', this)">
-          <span class="ni-icon">🗂️</span> Lançamentos Protheus
-        </button>
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Financeiro</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="descontos" onclick="showView('descontos',this)"><span class="ni-icon">💰</span> Descontos</button>
+          <button class="nav-item" data-view="solicitacoes-compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
+          <button class="nav-item" data-view="protheus" onclick="showView('protheus',this)"><span class="ni-icon">🗂️</span> Lançamentos Protheus</button>
+        </div>
       </div>
 
+      <!-- ENEL -->
       <div class="nav-group">
-        <div class="nav-group-label">ENEL</div>
-        <button class="nav-item" data-view="atendimento-enel" onclick="showView('atendimento-enel', this)">
-          <span class="ni-icon">⚡</span> Atendimento ENEL
-        </button>
-        <button class="nav-item" data-view="devolucao-enel" onclick="showView('devolucao-enel', this)">
-          <span class="ni-icon">↩️</span> Devolução ENEL
-        </button>
-        <button class="nav-item" data-view="medidores" onclick="showView('medidores', this)">
-          <span class="ni-icon">📟</span> Medidores
-        </button>
-        <button class="nav-item" data-view="estoque-enel" onclick="showView('estoque-enel', this)">
-          <span class="ni-icon">🔌</span> Estoque ENEL
-        </button>
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">ENEL</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="atendimento-enel" onclick="showView('atendimento-enel',this)"><span class="ni-icon">⚡</span> Atendimento ENEL</button>
+          <button class="nav-item" data-view="devolucao-enel" onclick="showView('devolucao-enel',this)"><span class="ni-icon">↩️</span> Devolução ENEL</button>
+          <button class="nav-item" data-view="medidores" onclick="showView('medidores',this)"><span class="ni-icon">📟</span> Medidores</button>
+          <button class="nav-item" data-view="estoque-enel" onclick="showView('estoque-enel',this)"><span class="ni-icon">🔌</span> Estoque ENEL</button>
+        </div>
       </div>
 
+      <!-- Gestão -->
       <div class="nav-group">
-        <div class="nav-group-label">Gestão</div>
-        <button class="nav-item" data-view="ficha-epi" onclick="showView('ficha-epi', this)">
-          <span class="ni-icon">🔖</span> Ficha EPI
-        </button>
-        <button class="nav-item" data-view="laudos" onclick="showView('laudos', this)">
-          <span class="ni-icon">📝</span> Laudos NR10
-        </button>
-        <button class="nav-item" data-view="viaturas" onclick="showView('viaturas', this)">
-          <span class="ni-icon">🚗</span> Laudos Viaturas
-        </button>
-        <button class="nav-item" data-view="descarte" onclick="showView('descarte', this)">
-          <span class="ni-icon">🗑️</span> Descarte
-        </button>
-        <button class="nav-item" data-view="recuperados" onclick="showView('recuperados', this)">
-          <span class="ni-icon">♻️</span> Recuperados
-        </button>
-        <button class="nav-item" data-view="indicadores" onclick="showView('indicadores', this)">
-          <span class="ni-icon">📈</span> Indicadores
-        </button>
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Gestão</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="ficha-epi" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
+          <button class="nav-item" data-view="laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
+          <button class="nav-item" data-view="viaturas" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
+          <button class="nav-item" data-view="descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
+          <button class="nav-item" data-view="recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
+          <button class="nav-item" data-view="indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
+        </div>
       </div>
 
+      <!-- Cadastros -->
       <div class="nav-group">
-        <div class="nav-group-label">Cadastros</div>
-        <button class="nav-item" data-view="colaboradores" onclick="showView('colaboradores', this)">
-          <span class="ni-icon">👥</span> Colaboradores
-        </button>
-        <button class="nav-item" data-view="itens" onclick="showView('itens', this)">
-          <span class="ni-icon">📦</span> Itens
-        </button>
-        <button class="nav-item" data-view="armazens" onclick="showView('armazens', this)">
-          <span class="ni-icon">🏭</span> Armazéns
-        </button>
-        <button class="nav-item" data-view="equipes" onclick="showView('equipes', this)">
-          <span class="ni-icon">🚐</span> Equipes
-        </button>
-        <button class="nav-item" data-view="dotacao" onclick="showView('dotacao', this)">
-          <span class="ni-icon">🗂️</span> Dotação por Função
-        </button>
-        <button class="nav-item" data-view="usuarios" onclick="showView('usuarios', this)">
-          <span class="ni-icon">🔐</span> Usuários
-        </button>
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Cadastros</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon">👥</span> Colaboradores</button>
+          <button class="nav-item" data-view="itens" onclick="showView('itens',this)"><span class="ni-icon">📦</span> Itens</button>
+          <button class="nav-item" data-view="armazens" onclick="showView('armazens',this)"><span class="ni-icon">🏭</span> Armazéns</button>
+          <button class="nav-item" data-view="equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
+          <button class="nav-item" data-view="dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
+          <button class="nav-item" data-view="usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
+        </div>
       </div>
 
     </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="user-avatar" id="userAvatar">—</div>
-        <div>
+        <div style="min-width:0">
           <div class="user-name" id="userName">—</div>
           <div class="user-role" id="userRole">—</div>
         </div>
@@ -746,162 +396,93 @@ tbody tr:hover td { background: var(--bg-hover); }
         <span class="topbar-crumb" id="topbarCrumb"></span>
       </div>
       <div class="topbar-right">
-        <button class="theme-btn" onclick="toggleTheme()" title="Alternar tema">
-          <span id="themeIconApp">☀️</span>
-        </button>
-        <button class="btn btn-primary" id="topbarAction" onclick="topbarActionFn()">
-          + Novo Atendimento
-        </button>
+        <button class="theme-btn" onclick="toggleTheme()"><span id="themeIconApp">☀️</span></button>
+        <button class="btn btn-primary" onclick="showView('atendimento')">+ Novo Atendimento</button>
       </div>
     </div>
 
     <div class="page-content">
 
-      <!-- ── HOME / DASHBOARD ── -->
+      <!-- DASHBOARD -->
       <div class="view active" id="view-home">
         <div class="kpi-grid">
           <div class="kpi-card">
-            <div class="kpi-top">
-              <span class="kpi-label">Colaboradores</span>
-              <div class="kpi-icon" style="background:var(--accent-soft)">👥</div>
-            </div>
+            <div class="kpi-top"><span class="kpi-label">Colaboradores</span><div class="kpi-icon" style="background:var(--accent-soft)">👥</div></div>
             <div class="kpi-value" id="kpiColaboradores">—</div>
             <div class="kpi-delta" id="kpiColaboradoresDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top">
-              <span class="kpi-label">Atendimentos hoje</span>
-              <div class="kpi-icon" style="background:var(--green-soft)">✓</div>
-            </div>
+            <div class="kpi-top"><span class="kpi-label">Atendimentos hoje</span><div class="kpi-icon" style="background:var(--green-soft)">✓</div></div>
             <div class="kpi-value" id="kpiAtendimentos">—</div>
             <div class="kpi-delta up" id="kpiAtendimentosDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top">
-              <span class="kpi-label">Itens no estoque</span>
-              <div class="kpi-icon" style="background:var(--yellow-soft)">📦</div>
-            </div>
+            <div class="kpi-top"><span class="kpi-label">Itens no estoque</span><div class="kpi-icon" style="background:var(--yellow-soft)">📦</div></div>
             <div class="kpi-value" id="kpiItens">—</div>
             <div class="kpi-delta warn" id="kpiItensDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top">
-              <span class="kpi-label">Solicitações abertas</span>
-              <div class="kpi-icon" style="background:var(--red-soft)">📋</div>
-            </div>
+            <div class="kpi-top"><span class="kpi-label">Solicitações abertas</span><div class="kpi-icon" style="background:var(--red-soft)">📋</div></div>
             <div class="kpi-value" id="kpiSolicitacoes">—</div>
             <div class="kpi-delta down" id="kpiSolicitacoesDelta">carregando...</div>
           </div>
         </div>
-
         <div class="quick-grid">
-          <button class="quick-card" onclick="showView('atendimento')">
-            <div class="qc-icon">🤝</div>
-            <div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div>
-          </button>
-          <button class="quick-card" onclick="showView('entrada')">
-            <div class="qc-icon">📥</div>
-            <div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div>
-          </button>
-          <button class="quick-card" onclick="showView('transferencia')">
-            <div class="qc-icon">🔄</div>
-            <div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div>
-          </button>
-          <button class="quick-card" onclick="showView('indicadores')">
-            <div class="qc-icon">📈</div>
-            <div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div>
-          </button>
+          <button class="quick-card" onclick="showView('atendimento')"><div class="qc-icon">🤝</div><div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div></button>
+          <button class="quick-card" onclick="showView('entrada')"><div class="qc-icon">📥</div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
+          <button class="quick-card" onclick="showView('transferencia')"><div class="qc-icon">🔄</div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
+          <button class="quick-card" onclick="showView('indicadores')"><div class="qc-icon">📈</div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
         </div>
-
         <div class="card">
           <div class="card-header">
-            <div>
-              <div class="card-title">Atendimentos de Hoje</div>
-              <div class="card-sub" id="dashDataAtual">—</div>
-            </div>
+            <div><div class="card-title">Atendimentos de Hoje</div><div class="card-sub" id="dashDataAtual">—</div></div>
             <div class="card-actions">
               <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarDashAtendimentos(this.value)">
               <button class="btn btn-ghost" onclick="carregarDashAtendimentos()">↻ Atualizar</button>
             </div>
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>Colaborador</th>
-                <th>Itens</th>
-                <th>Horário</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="dashAtendimentosBody">
-              <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
-            </tbody>
+            <thead><tr><th>Colaborador</th><th>Itens</th><th>Horário</th><th>Status</th><th></th></tr></thead>
+            <tbody id="dashAtendimentosBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ── COLABORADORES ── -->
+      <!-- COLABORADORES -->
       <div class="view" id="view-colaboradores">
         <div class="card">
           <div class="card-header">
-            <div>
-              <div class="card-title">Colaboradores</div>
-              <div class="card-sub" id="subColaboradores">carregando...</div>
-            </div>
+            <div><div class="card-title">Colaboradores</div><div class="card-sub" id="subColaboradores">carregando...</div></div>
             <div class="card-actions">
               <input class="search-box" type="text" placeholder="Buscar por nome ou matrícula..." oninput="filtrarColaboradores(this.value)">
-              <button class="btn btn-primary" onclick="abrirModalNovoColaborador()">+ Novo</button>
+              <button class="btn btn-primary" onclick="toast('Em desenvolvimento','info')">+ Novo</button>
             </div>
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Matrícula</th>
-                <th>Função</th>
-                <th>Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="colaboradoresBody">
-              <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
-            </tbody>
+            <thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Status</th><th></th></tr></thead>
+            <tbody id="colaboradoresBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ── ITENS ── -->
+      <!-- ITENS -->
       <div class="view" id="view-itens">
         <div class="card">
           <div class="card-header">
-            <div>
-              <div class="card-title">Itens</div>
-              <div class="card-sub" id="subItens">carregando...</div>
-            </div>
+            <div><div class="card-title">Itens</div><div class="card-sub" id="subItens">carregando...</div></div>
             <div class="card-actions">
               <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarItens(this.value)">
-              <button class="btn btn-primary" onclick="abrirModalNovoItem()">+ Novo</button>
+              <button class="btn btn-primary" onclick="toast('Em desenvolvimento','info')">+ Novo</button>
             </div>
           </div>
           <table>
-            <thead>
-              <tr>
-                <th>Descrição</th>
-                <th>Código</th>
-                <th>Categoria</th>
-                <th>Un.</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="itensBody">
-              <tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>
-            </tbody>
+            <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th>Un.</th><th></th></tr></thead>
+            <tbody id="itensBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
       </div>
 
-      <!-- ── VIEWS PLACEHOLDER ── -->
+      <!-- PLACEHOLDERS -->
       <div class="view" id="view-atendimento"><div class="empty-state"><div class="es-icon">🤝</div><div class="es-title">Atendimento</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-assinaturas"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Assinaturas Pendentes</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-solicitacoes"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Solicitações</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -928,55 +509,31 @@ tbody tr:hover td { background: var(--bg-hover); }
       <div class="view" id="view-dotacao"><div class="empty-state"><div class="es-icon">🗂️</div><div class="es-title">Dotação por Função</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-usuarios"><div class="empty-state"><div class="es-icon">🔐</div><div class="es-title">Usuários</div><div class="es-sub">Em desenvolvimento</div></div></div>
 
-    </div><!-- /page-content -->
-  </div><!-- /main-area -->
-</div><!-- /appView -->
+    </div>
+  </div>
+</div>
 
-<!-- TOAST CONTAINER -->
 <div id="toastContainer"></div>
 
 <script>
-// ═══════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════
 const API = 'https://gca-backend-production.up.railway.app';
+const GCA = { token:null, usuario:null, unidade:null, tokenTemp:null, unidades:[] };
+const NOMES_UNIDADE = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
 
-// ═══════════════════════════════════════════
-// ESTADO GLOBAL
-// ═══════════════════════════════════════════
-const GCA = {
-  token:    null,
-  usuario:  null,
-  unidade:  null,
-  tokenTemp: null,
-  unidades:  [],
-};
-
-// ═══════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════
+// ── INIT ──
 window.addEventListener('load', () => {
-  // Aplica tema salvo
   const tema = localStorage.getItem('gca_tema') || 'dark';
   document.documentElement.setAttribute('data-theme', tema);
   atualizarIconeTema(tema);
-
-  // Simula loading e verifica sessão
   setTimeout(() => {
-    const token = localStorage.getItem('gca_token');
+    const token   = localStorage.getItem('gca_token');
     const usuario = localStorage.getItem('gca_usuario');
     const unidade = localStorage.getItem('gca_unidade');
-
     if (token && usuario && unidade) {
-      GCA.token   = token;
-      GCA.unidade = unidade;
+      GCA.token = token; GCA.unidade = unidade;
       try { GCA.usuario = JSON.parse(usuario); } catch { GCA.usuario = {}; }
-      esconderLoading();
-      iniciarApp();
-    } else {
-      esconderLoading();
-      mostrarView('login');
-    }
+      esconderLoading(); iniciarApp();
+    } else { esconderLoading(); mostrarTela('login'); }
   }, 1200);
 });
 
@@ -986,88 +543,60 @@ function esconderLoading() {
   setTimeout(() => el.classList.add('hidden'), 400);
 }
 
-// ═══════════════════════════════════════════
-// TEMA
-// ═══════════════════════════════════════════
+// ── TEMA ──
 function toggleTheme() {
-  const atual = document.documentElement.getAttribute('data-theme');
-  const novo  = atual === 'dark' ? 'light' : 'dark';
+  const novo = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', novo);
   localStorage.setItem('gca_tema', novo);
   atualizarIconeTema(novo);
 }
-
 function atualizarIconeTema(tema) {
-  const icone = tema === 'dark' ? '☀️' : '🌙';
-  ['themeIcon', 'themeIconApp'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = icone;
-  });
+  const ic = tema === 'dark' ? '☀️' : '🌙';
+  ['themeIcon','themeIconApp'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = ic; });
 }
 
-// ═══════════════════════════════════════════
-// NAVEGAÇÃO DE TELAS
-// ═══════════════════════════════════════════
-function mostrarView(nome) {
-  document.getElementById('loginView').classList.add('hidden');
-  document.getElementById('unidadeView').classList.add('hidden');
-  document.getElementById('appView').classList.add('hidden');
-  if (nome === 'login')   document.getElementById('loginView').classList.remove('hidden');
-  if (nome === 'unidade') document.getElementById('unidadeView').classList.remove('hidden');
-  if (nome === 'app')     document.getElementById('appView').classList.remove('hidden');
+// ── NAVEGAÇÃO DE TELAS ──
+function mostrarTela(nome) {
+  ['loginView','forgotView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = { login:'loginView', forgot:'forgotView', unidade:'unidadeView', app:'appView' };
+  if (map[nome]) document.getElementById(map[nome]).classList.remove('hidden');
 }
 
-const viewTitles = {
-  'home':               ['Dashboard', '/ Visão geral'],
-  'atendimento':        ['Atendimento', '/ Novo atendimento'],
-  'assinaturas':        ['Assinaturas', '/ Pendentes'],
-  'solicitacoes':       ['Solicitações', '/ Gestão'],
-  'entrada':            ['Entrada', '/ Registrar recebimento'],
-  'saida':              ['Saída', '/ Registrar saída'],
-  'transferencia':      ['Transferência', '/ Entre armazéns'],
-  'estoque':            ['Estoque', '/ Consulta'],
-  'movimentacoes':      ['Movimentações', '/ Histórico'],
-  'descontos':          ['Descontos', '/ Materiais'],
-  'solicitacoes-compra':['Solicitações de Compra', ''],
-  'protheus':           ['Protheus', '/ Lançamentos'],
-  'atendimento-enel':   ['ENEL', '/ Atendimento'],
-  'devolucao-enel':     ['ENEL', '/ Devolução'],
-  'medidores':          ['ENEL', '/ Medidores'],
-  'estoque-enel':       ['ENEL', '/ Estoque'],
-  'ficha-epi':          ['Ficha EPI', ''],
-  'laudos':             ['Laudos', '/ NR10'],
-  'viaturas':           ['Laudos', '/ Viaturas'],
-  'descarte':           ['Gestão', '/ Descarte'],
-  'recuperados':        ['Gestão', '/ Recuperados'],
-  'indicadores':        ['Indicadores', '/ Relatórios'],
-  'colaboradores':      ['Colaboradores', '/ Cadastro'],
-  'itens':              ['Itens', '/ Cadastro'],
-  'armazens':           ['Armazéns', '/ Cadastro'],
-  'equipes':            ['Equipes', '/ Cadastro'],
-  'dotacao':            ['Dotação', '/ Por Função'],
-  'usuarios':           ['Usuários', '/ Gestão'],
+const VIEW_TITLES = {
+  home:['Dashboard','/ Visão geral'], atendimento:['Atendimento','/ Novo'],
+  assinaturas:['Assinaturas','/ Pendentes'], solicitacoes:['Solicitações','/ Gestão'],
+  entrada:['Entrada','/ Recebimento'], saida:['Saída','/ Registrar'],
+  transferencia:['Transferência','/ Entre armazéns'], estoque:['Estoque','/ Consulta'],
+  movimentacoes:['Movimentações','/ Histórico'], descontos:['Descontos','/ Materiais'],
+  'solicitacoes-compra':['Solicitações de Compra',''], protheus:['Protheus','/ Lançamentos'],
+  'atendimento-enel':['ENEL','/ Atendimento'], 'devolucao-enel':['ENEL','/ Devolução'],
+  medidores:['ENEL','/ Medidores'], 'estoque-enel':['ENEL','/ Estoque'],
+  'ficha-epi':['Ficha EPI',''], laudos:['Laudos','/ NR10'], viaturas:['Laudos','/ Viaturas'],
+  descarte:['Gestão','/ Descarte'], recuperados:['Gestão','/ Recuperados'],
+  indicadores:['Indicadores','/ Relatórios'], colaboradores:['Colaboradores','/ Cadastro'],
+  itens:['Itens','/ Cadastro'], armazens:['Armazéns','/ Cadastro'],
+  equipes:['Equipes','/ Cadastro'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'],
 };
 
 function showView(nome, btnEl) {
-  // Atualiza nav ativo
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  if (btnEl) btnEl.classList.add('active');
-  else {
-    const btn = document.querySelector(`.nav-item[data-view="${nome}"]`);
-    if (btn) btn.classList.add('active');
+  const btn = btnEl || document.querySelector(`.nav-item[data-view="${nome}"]`);
+  if (btn) {
+    btn.classList.add('active');
+    // Abre o grupo pai se estiver fechado
+    const grupo = btn.closest('.nav-group-items');
+    if (grupo && !grupo.classList.contains('open')) {
+      grupo.classList.add('open');
+      const arrow = grupo.previousElementSibling?.querySelector('.nav-group-arrow');
+      if (arrow) arrow.classList.add('open');
+    }
   }
-
-  // Esconde todas as views
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const target = document.getElementById('view-' + nome);
   if (target) target.classList.add('active');
-
-  // Atualiza topbar
-  const info = viewTitles[nome] || [nome, ''];
+  const info = VIEW_TITLES[nome] || [nome,''];
   document.getElementById('topbarTitle').textContent = info[0];
   document.getElementById('topbarCrumb').textContent = info[1];
-
-  // Carrega dados da view
   onViewLoad(nome);
 }
 
@@ -1077,111 +606,104 @@ function onViewLoad(nome) {
   if (nome === 'itens')         carregarItens();
 }
 
-// ═══════════════════════════════════════════
-// AUTH
-// ═══════════════════════════════════════════
+// ── SIDEBAR GRUPOS COLAPSÁVEIS ──
+function toggleNavGroup(headerEl) {
+  const items = headerEl.nextElementSibling;
+  const arrow = headerEl.querySelector('.nav-group-arrow');
+  items.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+// ── AUTH ──
 async function fazerLogin() {
   const username = document.getElementById('loginUser').value.trim();
   const senha    = document.getElementById('loginPass').value;
   const errEl    = document.getElementById('loginError');
   const btnEl    = document.getElementById('btnLogin');
   const txtEl    = document.getElementById('loginBtnText');
-
   errEl.classList.add('hidden');
   if (!username || !senha) { mostrarErroLogin('Preencha usuário e senha.'); return; }
-
   btnEl.disabled = true;
   txtEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div>';
-
   try {
-    const res  = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password: senha }),
-    });
+    const res  = await fetch(`${API}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ username, password: senha }) });
     const data = await res.json();
-
     if (!data.ok) { mostrarErroLogin(data.erro || 'Credenciais inválidas.'); return; }
-
     if (data.selecionar_unidade) {
       GCA.tokenTemp = data.token_temp;
       GCA.unidades  = data.unidades || [];
-      mostrarSelecaoUnidade(data.nome, data.unidades);
+      mostrarSelecaoUnidade(data.usuario?.nome || data.nome, data.unidades);
       return;
     }
-
     finalizarLogin(data);
-  } catch (err) {
-    mostrarErroLogin('Erro de conexão. Verifique sua internet.');
-  } finally {
-    btnEl.disabled = false;
-    txtEl.textContent = 'Entrar';
-  }
+  } catch { mostrarErroLogin('Erro de conexão. Verifique sua internet.'); }
+  finally { btnEl.disabled = false; txtEl.textContent = 'Entrar'; }
 }
 
 function mostrarErroLogin(msg) {
   const el = document.getElementById('loginError');
-  el.textContent = msg;
-  el.classList.remove('hidden');
+  el.textContent = msg; el.classList.remove('hidden');
+}
+
+function mostrarEsqueciSenha() { mostrarTela('forgot'); }
+function voltarLogin() { mostrarTela('login'); }
+
+async function solicitarRecuperacao() {
+  const usuario   = document.getElementById('forgotUser').value.trim();
+  const novaSenha = document.getElementById('forgotNovaSenha').value;
+  const msgEl     = document.getElementById('forgotMsg');
+  if (!usuario || !novaSenha) { toast('Preencha todos os campos','error'); return; }
+  // Por ora apenas registra a solicitação localmente — rota de recuperação será implementada no backend
+  msgEl.className = 'forgot-success';
+  msgEl.textContent = '✓ Solicitação enviada! Um administrador redefinirá sua senha em breve.';
+  msgEl.classList.remove('hidden');
+  setTimeout(() => voltarLogin(), 3000);
 }
 
 function mostrarSelecaoUnidade(nome, unidades) {
-  mostrarView('unidade');
-  document.querySelector('.unidade-sub').textContent = `Olá, ${nome}! Selecione a filial de acesso.`;
-
-  const container = document.getElementById('unidadeOptions');
-  const nomes = { marica: 'Maricá', rio_das_ostras: 'Rio das Ostras' };
-  const icons = { marica: '🏙️', rio_das_ostras: '🌊' };
-  const descs = { marica: 'Unidade de Maricá - RJ', rio_das_ostras: 'Unidade de Rio das Ostras - RJ' };
-
-  container.innerHTML = unidades.map(u => `
+  mostrarTela('unidade');
+  document.getElementById('unidadeSub').textContent = `Olá, ${nome || 'usuário'}! Selecione a filial de acesso.`;
+  const icons = { marica:'🏙️', rio_das_ostras:'🌊' };
+  const descs = { marica:'Unidade de Maricá – RJ', rio_das_ostras:'Unidade de Rio das Ostras – RJ' };
+  document.getElementById('unidadeOptions').innerHTML = unidades.map(u => `
     <button class="unidade-btn" onclick="selecionarUnidade('${u}')">
-      <span class="u-icon">${icons[u] || '🏢'}</span>
-      <div>
-        <div class="u-name">${nomes[u] || u}</div>
-        <div class="u-desc">${descs[u] || ''}</div>
-      </div>
-    </button>
-  `).join('');
+      <span class="u-icon">${icons[u]||'🏢'}</span>
+      <div><div class="u-name">${NOMES_UNIDADE[u]||u}</div><div class="u-desc">${descs[u]||''}</div></div>
+    </button>`).join('');
 }
 
 async function selecionarUnidade(unidade) {
   try {
-    const res  = await fetch(`${API}/auth/selecionar-unidade`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token_temp: GCA.tokenTemp, unidade }),
-    });
+    const res  = await fetch(`${API}/auth/selecionar-unidade`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ token_temp:GCA.tokenTemp, unidade }) });
     const data = await res.json();
-    if (!data.ok) { toast('Erro ao selecionar unidade', 'error'); return; }
+    if (!data.ok) { toast('Erro ao selecionar unidade','error'); return; }
     finalizarLogin(data);
-  } catch {
-    toast('Erro de conexão', 'error');
-  }
+  } catch { toast('Erro de conexão','error'); }
 }
 
 function finalizarLogin(data) {
   GCA.token   = data.token;
   GCA.usuario = data.usuario;
   GCA.unidade = data.usuario?.unidade || data.unidade;
-
+  GCA.unidades = data.usuario?.unidades || [];
   localStorage.setItem('gca_token',   GCA.token);
   localStorage.setItem('gca_unidade', GCA.unidade);
   localStorage.setItem('gca_usuario', JSON.stringify(GCA.usuario));
-
   iniciarApp();
 }
 
 function iniciarApp() {
   const u = GCA.usuario || {};
-  const nomes = { marica: 'Maricá', rio_das_ostras: 'Rio das Ostras' };
-
-  document.getElementById('sidebarUnit').textContent = nomes[GCA.unidade] || GCA.unidade;
+  document.getElementById('sidebarUnit').textContent = NOMES_UNIDADE[GCA.unidade] || GCA.unidade;
   document.getElementById('userName').textContent    = u.nome || u.name || '—';
   document.getElementById('userRole').textContent    = u.role || '—';
-  document.getElementById('userAvatar').textContent  = (u.nome || u.name || 'U').substring(0, 2).toUpperCase();
-
-  mostrarView('app');
+  document.getElementById('userAvatar').textContent  = (u.nome||u.name||'U').substring(0,2).toUpperCase();
+  // Mostra tooltip de troca apenas se tiver múltiplas unidades
+  const badge = document.getElementById('sidebarUnit');
+  const unidades = GCA.unidades || [];
+  badge.title = unidades.length > 1 ? 'Clique para trocar de unidade' : NOMES_UNIDADE[GCA.unidade] || GCA.unidade;
+  badge.style.cursor = unidades.length > 1 ? 'pointer' : 'default';
+  mostrarTela('app');
   showView('home');
 }
 
@@ -1190,234 +712,138 @@ function fazerLogout() {
   localStorage.removeItem('gca_usuario');
   localStorage.removeItem('gca_unidade');
   GCA.token = GCA.usuario = GCA.unidade = null;
-  mostrarView('login');
+  mostrarTela('login');
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginError').classList.add('hidden');
 }
 
-// ═══════════════════════════════════════════
-// API HELPER
-// ═══════════════════════════════════════════
-async function api(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${GCA.token}`,
-      ...(opts.headers || {}),
-    },
+function trocarUnidade() {
+  const unidades = GCA.unidades || [];
+  if (unidades.length <= 1) return;
+  // Reutiliza a tela de seleção de unidade
+  GCA.tokenTemp = GCA.token; // passa o token atual como temp para reautenticar
+  mostrarSelecaoUnidade(GCA.usuario?.nome, unidades);
+  // Sobrescreve o handler para trocar sem reautenticar
+  document.querySelectorAll('.unidade-btn').forEach((btn, i) => {
+    btn.onclick = async () => {
+      const unidade = unidades[i];
+      try {
+        const res  = await fetch(`${API}/auth/selecionar-unidade`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ token_temp:GCA.tokenTemp, unidade }) });
+        const data = await res.json();
+        if (!data.ok) { toast('Erro ao trocar unidade','error'); return; }
+        finalizarLogin(data);
+        toast(`Unidade alterada para ${NOMES_UNIDADE[unidade]||unidade}`,'success');
+      } catch { toast('Erro de conexão','error'); }
+    };
   });
+}
+
+// ── API HELPER ──
+async function api(path, opts={}) {
+  const res = await fetch(`${API}${path}`, { ...opts, headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
   if (res.status === 401) { fazerLogout(); return null; }
   return res.json();
 }
 
-// ═══════════════════════════════════════════
-// DASHBOARD
-// ═══════════════════════════════════════════
+// ── DASHBOARD ──
 async function carregarDashboard() {
   const hoje = new Date();
-  document.getElementById('dashDataAtual').textContent =
-    hoje.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  await Promise.all([
-    carregarKPIs(),
-    carregarDashAtendimentos(),
-  ]);
+  document.getElementById('dashDataAtual').textContent = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  await Promise.all([carregarKPIs(), carregarDashAtendimentos()]);
 }
 
 async function carregarKPIs() {
-  const [colabs, itens, atends, sols] = await Promise.all([
+  const [colabs, itens, atends] = await Promise.all([
     api(`/colaboradores?por_pagina=1`),
     api(`/itens?por_pagina=1`),
     api(`/atendimentos`),
-    api(`/solicitacoes?status=ABERTO&por_pagina=1`),
   ]);
-
-  if (colabs) {
-    document.getElementById('kpiColaboradores').textContent = colabs.total ?? '—';
-    document.getElementById('kpiColaboradoresDelta').textContent = `${GCA.unidade === 'marica' ? 'Maricá' : 'Rio das Ostras'}`;
-  }
-  if (itens) {
-    document.getElementById('kpiItens').textContent = itens.total ?? '—';
-    document.getElementById('kpiItensDelta').textContent = 'tipos de itens cadastrados';
-  }
+  if (colabs) { document.getElementById('kpiColaboradores').textContent = colabs.total??'—'; document.getElementById('kpiColaboradoresDelta').textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade; }
+  if (itens)  { document.getElementById('kpiItens').textContent = itens.total??'—'; document.getElementById('kpiItensDelta').textContent = 'tipos cadastrados'; }
   if (atends) {
-    const lista = atends.atendimentos || [];
+    const lista = atends.atendimentos||[];
     document.getElementById('kpiAtendimentos').textContent = lista.length;
-    const ass = lista.filter(a => a.status === 'ASSINADO').length;
+    const ass = lista.filter(a=>a.status==='ASSINADO').length;
     document.getElementById('kpiAtendimentosDelta').textContent = `${ass} assinados`;
   }
-  if (sols) {
-    document.getElementById('kpiSolicitacoes').textContent = sols.total ?? '—';
-    document.getElementById('kpiSolicitacoesDelta').textContent = 'pendentes de atendimento';
-  }
+  document.getElementById('kpiSolicitacoes').textContent = '—';
+  document.getElementById('kpiSolicitacoesDelta').textContent = 'em breve';
 }
 
 async function carregarDashAtendimentos() {
   const tbody = document.getElementById('dashAtendimentosBody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-
   const data = await api('/atendimentos');
   if (!data) return;
-
-  const lista = data.atendimentos || [];
-  if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum atendimento hoje</div></div></td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = lista.slice(0, 20).map(a => {
-    let itens = [];
-    try { itens = JSON.parse(a.itens_json || '[]'); } catch {}
-    const tag = statusTag(a.status);
-    const hora = a.hora_inicio ? a.hora_inicio.substring(0,5) : '—';
-    return `<tr>
-      <td class="td-main">${a.nome_colaborador || '—'}</td>
-      <td>${itens.length} ${itens.length === 1 ? 'item' : 'itens'}</td>
-      <td class="td-mono">${hora}</td>
-      <td>${tag}</td>
-      <td><button class="row-action">Ver</button></td>
-    </tr>`;
+  const lista = data.atendimentos||[];
+  if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum atendimento hoje</div></div></td></tr>`; return; }
+  tbody.innerHTML = lista.slice(0,20).map(a => {
+    let itens=[]; try{itens=JSON.parse(a.itens_json||'[]')}catch{}
+    const hora = a.hora_inicio?a.hora_inicio.substring(0,5):'—';
+    return `<tr><td class="td-main">${a.nome_colaborador||'—'}</td><td>${itens.length} ${itens.length===1?'item':'itens'}</td><td class="td-mono">${hora}</td><td>${statusTag(a.status)}</td><td><button class="row-action">Ver</button></td></tr>`;
   }).join('');
 }
 
 function filtrarDashAtendimentos(q) {
-  const rows = document.querySelectorAll('#dashAtendimentosBody tr');
-  rows.forEach(row => {
-    const txt = row.textContent.toLowerCase();
-    row.style.display = txt.includes(q.toLowerCase()) ? '' : 'none';
-  });
+  document.querySelectorAll('#dashAtendimentosBody tr').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'; });
 }
 
-function statusTag(status) {
-  const map = {
-    'ASSINADO':     '<span class="tag tag-green">Assinado</span>',
-    'PENDENTE':     '<span class="tag tag-yellow">Pendente</span>',
-    'EXPIRADO':     '<span class="tag tag-gray">Expirado</span>',
-    'EM_ANDAMENTO': '<span class="tag tag-accent">Em andamento</span>',
-  };
-  return map[status] || `<span class="tag tag-gray">${status || '—'}</span>`;
+function statusTag(s) {
+  const m = { ASSINADO:'<span class="tag tag-green">Assinado</span>', PENDENTE:'<span class="tag tag-yellow">Pendente</span>', EXPIRADO:'<span class="tag tag-gray">Expirado</span>', EM_ANDAMENTO:'<span class="tag tag-accent">Em andamento</span>' };
+  return m[s]||`<span class="tag tag-gray">${s||'—'}</span>`;
 }
 
-// ═══════════════════════════════════════════
-// COLABORADORES
-// ═══════════════════════════════════════════
-let _colaboradores = [];
-
+// ── COLABORADORES ──
+let _colaboradores=[];
 async function carregarColaboradores() {
   const tbody = document.getElementById('colaboradoresBody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-
   const data = await api('/colaboradores?por_pagina=500');
   if (!data) return;
-
-  _colaboradores = data.colaboradores || [];
+  _colaboradores = data.colaboradores||[];
   document.getElementById('subColaboradores').textContent = `${_colaboradores.length} colaboradores cadastrados`;
   renderColaboradores(_colaboradores);
 }
-
 function renderColaboradores(lista) {
   const tbody = document.getElementById('colaboradoresBody');
-  if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">👥</div><div class="es-title">Nenhum colaborador encontrado</div></div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = lista.slice(0, 100).map(c => `
-    <tr>
-      <td class="td-main">${c.nome || '—'}</td>
-      <td class="td-mono">${c.matricula || '—'}</td>
-      <td>${c.funcao || '—'}</td>
-      <td>${c.status === 'ativo' ? '<span class="tag tag-green">Ativo</span>' : '<span class="tag tag-gray">Inativo</span>'}</td>
-      <td><button class="row-action" onclick="verColaborador('${c.id}')">Ver</button></td>
-    </tr>
-  `).join('');
+  if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">👥</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
+  tbody.innerHTML = lista.slice(0,100).map(c=>`<tr><td class="td-main">${c.nome||'—'}</td><td class="td-mono">${c.matricula||'—'}</td><td>${c.funcao||'—'}</td><td>${c.status==='ativo'?'<span class="tag tag-green">Ativo</span>':'<span class="tag tag-gray">Inativo</span>'}</td><td><button class="row-action">Ver</button></td></tr>`).join('');
 }
+function filtrarColaboradores(q) { renderColaboradores(_colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())||(c.matricula||'').toLowerCase().includes(q.toLowerCase()))); }
 
-function filtrarColaboradores(q) {
-  const filtrado = _colaboradores.filter(c =>
-    (c.nome || '').toLowerCase().includes(q.toLowerCase()) ||
-    (c.matricula || '').toLowerCase().includes(q.toLowerCase())
-  );
-  renderColaboradores(filtrado);
-}
-
-function verColaborador(id) { toast('Em desenvolvimento', 'info'); }
-function abrirModalNovoColaborador() { toast('Em desenvolvimento', 'info'); }
-
-// ═══════════════════════════════════════════
-// ITENS
-// ═══════════════════════════════════════════
-let _itens = [];
-
+// ── ITENS ──
+let _itens=[];
 async function carregarItens() {
   const tbody = document.getElementById('itensBody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-
   const data = await api('/itens?por_pagina=500');
   if (!data) return;
-
-  _itens = data.itens || [];
+  _itens = data.itens||[];
   document.getElementById('subItens').textContent = `${_itens.length} itens cadastrados`;
   renderItens(_itens);
 }
-
 function renderItens(lista) {
   const tbody = document.getElementById('itensBody');
-  if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum item encontrado</div></div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = lista.slice(0, 100).map(i => `
-    <tr>
-      <td class="td-main">${i.descricao || '—'}</td>
-      <td class="td-mono">${i.codigo || '—'}</td>
-      <td>${i.categoria || '—'}</td>
-      <td>${i.un_med || i.unidade || '—'}</td>
-      <td><button class="row-action" onclick="verItem('${i.id}')">Ver</button></td>
-    </tr>
-  `).join('');
+  if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
+  tbody.innerHTML = lista.slice(0,100).map(i=>`<tr><td class="td-main">${i.descricao||'—'}</td><td class="td-mono">${i.codigo||'—'}</td><td>${i.categoria||'—'}</td><td>${i.un_med||i.unidade||'—'}</td><td><button class="row-action">Ver</button></td></tr>`).join('');
 }
+function filtrarItens(q) { renderItens(_itens.filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase()))); }
 
-function filtrarItens(q) {
-  const filtrado = _itens.filter(i =>
-    (i.descricao || '').toLowerCase().includes(q.toLowerCase()) ||
-    (i.codigo || '').toLowerCase().includes(q.toLowerCase())
-  );
-  renderItens(filtrado);
-}
-
-function verItem(id) { toast('Em desenvolvimento', 'info'); }
-function abrirModalNovoItem() { toast('Em desenvolvimento', 'info'); }
-
-// ═══════════════════════════════════════════
-// TOPBAR ACTION
-// ═══════════════════════════════════════════
-function topbarActionFn() { showView('atendimento'); }
-
-// ═══════════════════════════════════════════
-// TOAST
-// ═══════════════════════════════════════════
-function toast(msg, tipo = 'info', duracao = 3500) {
-  const icons = { success: '✓', error: '✕', info: 'ℹ', warn: '⚠' };
+// ── TOAST ──
+function toast(msg, tipo='info', dur=3500) {
+  const icons={success:'✓',error:'✕',info:'ℹ',warn:'⚠'};
   const el = document.createElement('div');
-  el.className = `toast toast-${tipo}`;
-  el.innerHTML = `<span>${icons[tipo]}</span><span>${msg}</span>`;
+  el.className=`toast toast-${tipo}`;
+  el.innerHTML=`<span>${icons[tipo]}</span><span>${msg}</span>`;
   document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateX(20px)';
-    el.style.transition = '0.3s ease';
-    setTimeout(() => el.remove(), 300);
-  }, duracao);
+  setTimeout(()=>{ el.style.cssText='opacity:0;transform:translateX(20px);transition:.3s ease'; setTimeout(()=>el.remove(),300); }, dur);
 }
 
 // ── ENTER no login ──
-document.addEventListener('DOMContentLoaded', () => {
-  ['loginUser','loginPass'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
-  });
+document.addEventListener('DOMContentLoaded',()=>{
+  ['loginUser','loginPass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter') fazerLogin(); }); });
+  document.getElementById('forgotUser')?.addEventListener('keydown',e=>{ if(e.key==='Enter') solicitarRecuperacao(); });
 });
 </script>
 </body>
