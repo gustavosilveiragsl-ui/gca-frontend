@@ -1446,6 +1446,13 @@ let _itensSelecionadosModal = {}; // { itemId: { item, qtd, motivo, armazem } }
 
 async function abrirModalItens() {
   if (!ATEND.colab) return;
+
+  // Garante que armazéns e itens estejam carregados
+  await Promise.all([
+    _armazens.length ? Promise.resolve() : carregarArmazens(),
+    _itens.length    ? Promise.resolve() : carregarItensAtendimento(),
+  ]);
+
   document.getElementById('modalItens').classList.remove('hidden');
   document.getElementById('modalItensBusca').value = '';
   _itensSelecionadosModal = {};
@@ -1576,7 +1583,7 @@ async function confirmarItensModal() {
   for (const s of selecionados) {
     // Verifica saldo
     const saldos = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
-    const saldo  = saldos?.saldos?.[0]?.saldo || 0;
+    const saldo  = saldos?.data?.[0]?.saldo || saldos?.saldos?.[0]?.saldo || 0;
     if (saldo < s.qtd) {
       erros.push({ item: s.item.descricao, msg: `Saldo insuficiente! Disponível: ${saldo} | Solicitado: ${s.qtd}` });
     }
