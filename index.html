@@ -676,8 +676,11 @@ async function solicitarRecuperacao() {
   const usuario   = document.getElementById('forgotUser').value.trim();
   const novaSenha = document.getElementById('forgotNovaSenha').value;
   const msgEl     = document.getElementById('forgotMsg');
+  const btnEl     = document.querySelector('#forgotView .btn-login');
   msgEl.classList.add('hidden');
   if (!usuario || !novaSenha) { toast('Preencha todos os campos','error'); return; }
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Enviando...';
   try {
     const res  = await fetch(`${API}/auth/solicitar-recuperacao`, {
       method: 'POST',
@@ -697,6 +700,9 @@ async function solicitarRecuperacao() {
     setTimeout(() => voltarLogin(), 3000);
   } catch {
     toast('Erro de conexão', 'error');
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = 'Enviar solicitação';
   }
 }
 
