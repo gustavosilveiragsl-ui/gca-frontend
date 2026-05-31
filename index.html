@@ -214,7 +214,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 .colab-card-avatar{width:36px;height:36px;border-radius:50%;background:var(--accent-soft);color:var(--accent-text);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
 .colab-card-nome{font-size:13px;font-weight:600;color:var(--text-1)}
 .colab-card-sub{font-size:11px;color:var(--text-3);margin-top:2px}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.autocomplete-list{position:fixed;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);z-index:999;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3);min-width:300px}
 .autocomplete-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
 .autocomplete-item:last-child{border-bottom:none}
 .autocomplete-item:hover{background:var(--bg-hover)}
@@ -1337,6 +1337,25 @@ function resetarAtendimento() {
 // ═══════════════════════════════════════════
 // AUTOCOMPLETE COLABORADOR
 // ═══════════════════════════════════════════
+function mostrarAutocomplete(listaId, inputId, resultados, onSelectFn) {
+  const lista = document.getElementById(listaId);
+  const input = document.getElementById(inputId);
+  if (!resultados.length) { lista.classList.add('hidden'); return; }
+
+  // Posiciona com base nas coordenadas reais do input
+  const rect = input.getBoundingClientRect();
+  lista.style.top    = (rect.bottom + 4) + 'px';
+  lista.style.left   = rect.left + 'px';
+  lista.style.width  = rect.width + 'px';
+
+  lista.innerHTML = resultados.map(c => `
+    <div class="autocomplete-item" onclick="${onSelectFn}('${c.id}')">
+      <div style="font-weight:500;color:var(--text-1)">${c.nome}</div>
+      <div style="font-size:10px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div>
+    </div>`).join('');
+  lista.classList.remove('hidden');
+}
+
 let _colabAtendTimer = null;
 function filtrarColabAtend(q) {
   clearTimeout(_colabAtendTimer);
@@ -1348,13 +1367,22 @@ function filtrarColabAtend(q) {
         ((c.nome||'').toLowerCase().includes(q.toLowerCase()) ||
          (c.matricula||'').toLowerCase().includes(q.toLowerCase())))
       .slice(0, 8);
-    if (!resultados.length) { lista.classList.add('hidden'); return; }
-    lista.innerHTML = resultados.map(c => `
-      <div class="autocomplete-item" onclick="selecionarColabAtend('${c.id}')">
-        <div style="font-weight:500;color:var(--text-1)">${c.nome}</div>
-        <div style="font-size:10px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div>
-      </div>`).join('');
-    lista.classList.remove('hidden');
+    mostrarAutocomplete('atendColabSugestoes', 'atendColabBusca', resultados, 'selecionarColabAtend');
+  }, 200);
+}
+
+let _mobColabTimer = null;
+function filtrarColabMob(q) {
+  clearTimeout(_mobColabTimer);
+  const lista = document.getElementById('mobColabSugestoes');
+  if (q.length < 2) { lista.classList.add('hidden'); return; }
+  _mobColabTimer = setTimeout(() => {
+    const resultados = (_colaboradores||[]).filter(c =>
+      c.status === 'ativo' &&
+      ((c.nome||'').toLowerCase().includes(q.toLowerCase()) ||
+       (c.matricula||'').toLowerCase().includes(q.toLowerCase()))
+    ).slice(0, 8);
+    mostrarAutocomplete('mobColabSugestoes', 'mobColabBusca', resultados, 'selecionarColabMob');
   }, 200);
 }
 
@@ -1764,25 +1792,7 @@ function abrirLinkPendencia() {
 let _mobColab = null;
 let _mobColabTimer = null;
 
-function filtrarColabMob(q) {
-  clearTimeout(_mobColabTimer);
-  const lista = document.getElementById('mobColabSugestoes');
-  if (q.length < 2) { lista.classList.add('hidden'); return; }
-  _mobColabTimer = setTimeout(() => {
-    const resultados = (_colaboradores||[]).filter(c =>
-      c.status === 'ativo' &&
-      ((c.nome||'').toLowerCase().includes(q.toLowerCase()) ||
-       (c.matricula||'').toLowerCase().includes(q.toLowerCase()))
-    ).slice(0, 8);
-    if (!resultados.length) { lista.classList.add('hidden'); return; }
-    lista.innerHTML = resultados.map(c => `
-      <div class="autocomplete-item" onclick="selecionarColabMob('${c.id}')">
-        <div style="font-weight:500;color:var(--text-1)">${c.nome}</div>
-        <div style="font-size:10px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div>
-      </div>`).join('');
-    lista.classList.remove('hidden');
-  }, 200);
-}
+// filtrarColabMob definida acima
 
 async function selecionarColabMob(id) {
   _mobColab = (_colaboradores||[]).find(c => c.id === id);
