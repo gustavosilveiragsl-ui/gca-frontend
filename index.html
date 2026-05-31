@@ -1765,21 +1765,41 @@ function prosseguirAposValidacoes() {
 function adicionarItensAoAtendimento(selecionados) {
   for (const s of selecionados) {
     const armazem = (_armazens||[]).find(a => a.id === s.armazem);
+    const requerEnsaio = !!(s.item.requer_ensaio || s.item.requerEnsaio);
+    const ehPar = (s.item.un_med||'').toUpperCase() === 'PAR';
     ATEND.itens.push({
-      itemId:      s.item.id,
-      descricao:   s.item.descricao,
-      codigo:      s.item.codigo || '',
-      armazemId:   s.armazem,
-      nomeArmazem: armazem?.nome || '',
-      quantidade:  s.qtd,
-      motivo:      s.motivo,
-      un_med:      s.item.un_med || 'UN',
+      itemId:          s.item.id,
+      descricao:       s.item.descricao,
+      codigo:          s.item.codigo || '',
+      armazemId:       s.armazem,
+      nomeArmazem:     armazem?.nome || '',
+      quantidade:      s.qtd,
+      motivo:          s.motivo,
+      tipoRecuperacao: s.tipoRecuperacao || '',
+      un_med:          s.item.un_med || 'UN',
+      requerEnsaio,
+      qtdSeriais:      requerEnsaio ? (ehPar ? 2 : 1) : 0,
+      seriais:         requerEnsaio ? (ehPar ? ['',''] : ['']) : [],
+      serialRetorno:   [],
+      seriaisDisponiveis: [],
     });
   }
   fecharModalItens();
   renderItensAtendimento();
+  // Carrega seriais disponíveis para itens que requerem ensaio
+  ATEND.itens.forEach((it, idx) => {
+    if (it.requerEnsaio) carregarSeriaisDisponiveis(it.itemId, idx);
+  });
   document.getElementById('btnConcluirAtendimento').disabled = false;
   toast(`${selecionados.length} ${selecionados.length===1?'item adicionado':'itens adicionados'} ao atendimento`, 'success');
+}
+
+async function carregarSeriaisDisponiveis(itemId, idx) {
+  const data = await api(`/ensaios/seriais-disponiveis/${itemId}`);
+  if (data?.seriais) {
+    ATEND.itens[idx].seriaisDisponiveis = data.seriais.map(s => s.serial);
+    renderItensAtendimento();
+  }
 }
 
 // ═══════════════════════════════════════════
@@ -1803,14 +1823,34 @@ function renderItensAtendimento() {
   container.innerHTML = `<table>
     <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th></th></tr></thead>
     <tbody>
-      ${ATEND.itens.map((it, i) => `
+      ${ATEND.itens.map((it, i) => {
+        const serialBlock = it.requerEnsaio ? it.seriais.map((s, si) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <input
+              list="seriais-${i}-${si}"
+              class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono)"
+              placeholder="Serial ${si+1}"
+              value="${s||''}"
+              oninput="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase()"
+            >
+            <datalist id="seriais-${i}-${si}">
+              ${(it.seriaisDisponiveis||[]).map(sv => `<option value="${sv}">`).join('')}
+            </datalist>
+          </div>`).join('') : '';
+
+        return `
         <tr>
-          <td class="td-main">${it.descricao}</td>
+          <td class="td-main">
+            ${it.descricao}
+            ${it.requerEnsaio ? `<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>` : ''}
+            ${serialBlock}
+          </td>
           <td>${it.nomeArmazem||'—'}</td>
           <td>${it.quantidade} ${it.un_med||'UN'}</td>
           <td><span class="tag tag-gray">${it.motivo}</span></td>
           <td><button class="row-action" style="color:var(--red)" onclick="removerItemAtendimento(${i})">✕</button></td>
-        </tr>`).join('')}
+        </tr>`;
+      }).join('')}
     </tbody>
   </table>`;
 }
@@ -1826,6 +1866,23 @@ function removerItemAtendimento(idx) {
 // ═══════════════════════════════════════════
 async function concluirAtendimento() {
   if (!ATEND.colab || !ATEND.itens.length) return;
+
+  // Valida seriais obrigatórios
+  for (const it of ATEND.itens) {
+    if (!it.requerEnsaio) continue;
+    const seriais = (it.seriais||[]).filter(s => s && s.trim());
+    if (seriais.length < it.qtdSeriais) {
+      toast(`Informe ${it.qtdSeriais === 2 ? 'os 2 seriais' : 'o serial'} do item: ${it.descricao}`, 'error', 5000);
+      return;
+    }
+    // Valida se serial existe no estoque
+    for (const serial of seriais) {
+      if (!(it.seriaisDisponiveis||[]).includes(serial.toUpperCase())) {
+        toast(`Serial "${serial}" não encontrado no estoque para ${it.descricao}`, 'error', 5000);
+        return;
+      }
+    }
+  }
 
   const btn = document.getElementById('btnConcluirAtendimento');
   btn.disabled  = true;
@@ -1867,6 +1924,19 @@ async function concluirAtendimento() {
   if (resToken?.ok) {
     ATEND.tokenGerado = resToken.token;
     ATEND.linkGerado  = `https://confirmacao.gcasistema.com.br/?token=${resToken.token}`;
+  }
+
+  // Atualiza seriais de itens com ensaio NR10
+  const itensComSerial = ATEND.itens.filter(it => it.requerEnsaio && it.seriais?.length);
+  if (itensComSerial.length) {
+    await api('/ensaios/atualizar-seriais', {
+      method: 'POST',
+      body: JSON.stringify({
+        itens:            itensComSerial,
+        colaborador_id:   ATEND.colab.id,
+        nome_colaborador: ATEND.colab.nome,
+      })
+    });
   }
 
   abrirModalFinalizado(registro);
