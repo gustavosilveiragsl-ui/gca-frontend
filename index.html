@@ -4050,33 +4050,61 @@ const _movPorPag = 30;
 async function carregarMovimentacoes() {
   const tbody = document.getElementById('movBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
 
-  const data = await api('/movimentacoes?limit=500');
+  // Padrão: últimos 30 dias
+  const hoje = new Date();
+  const d30  = new Date(); d30.setDate(d30.getDate() - 30);
+  const ini  = document.getElementById('movFiltroInicio');
+  const fim  = document.getElementById('movFiltroFim');
+  if (ini && !ini.value) ini.value = d30.toISOString().split('T')[0];
+  if (fim && !fim.value) fim.value = hoje.toISOString().split('T')[0];
+
+  // Popula filtro armazém
+  const selArm = document.getElementById('movFiltroArmazem');
+  if (selArm && selArm.options.length <= 1 && _armazens.length) {
+    selArm.innerHTML = '<option value="">Todos os armazéns</option>' +
+      _armazens.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  }
+
+  await buscarMovimentacoes();
+}
+
+async function buscarMovimentacoes() {
+  const tbody = document.getElementById('movBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const tipo = document.getElementById('movFiltroTipo')?.value || '';
+  const arm  = document.getElementById('movFiltroArmazem')?.value || '';
+  const ini  = document.getElementById('movFiltroInicio')?.value || '';
+  const fim  = document.getElementById('movFiltroFim')?.value || '';
+
+  let url = `/movimentacoes?pagina=${_movPagina}&por_pagina=${_movPorPag}`;
+  if (tipo) url += `&tipo=${tipo}`;
+  if (arm)  url += `&armazem=${arm}`;
+  if (ini)  url += `&data_inicio=${ini}`;
+  if (fim)  url += `&data_fim=${fim}`;
+
+  const data = await api(url);
   if (!data) return;
-  _movData = data.registros || data.movimentacoes || data.data || [];
 
-  // KPIs
+  _movData = data.registros || [];
+  const total     = data.total || 0;
+  const totalPags = data.totalPaginas || 1;
+
   document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo?.toUpperCase() === 'ENTRADA').length;
   document.getElementById('movKpiSaidas').textContent   = _movData.filter(m => m.tipo?.toUpperCase() === 'SAIDA').length;
   document.getElementById('movKpiTransf').textContent   = _movData.filter(m => m.tipo?.toUpperCase() === 'TRANSFERENCIA').length;
-  document.getElementById('movKpiTotal').textContent    = _movData.length;
+  document.getElementById('movKpiTotal').textContent    = total;
 
-  // Popula filtro armazém
-  const armazens = [...new Map(_movData.map(m => [m.armazemId||m.armazem_id, m])).values()];
-  const selArm = document.getElementById('movFiltroArmazem');
-  if (selArm) {
-    selArm.innerHTML = '<option value="">Todos os armazéns</option>' +
-      armazens.filter(m => m.armazemId||m.armazem_id).map(m => `<option value="${m.armazemId||m.armazem_id}">${m.nomeArmazem||m.nome_armazem||m.armazemId}</option>`).join('');
-  }
-
-  filtrarMovimentacoes();
+  renderMovimentacoes(total, totalPags);
 }
 
 function filtrarMovimentacoes() {
   _movPagina = 1;
   buscarMovimentacoes();
 }
+
 
 function renderMovimentacoes(total, totalPags) {
   const tbody  = document.getElementById('movBody');
