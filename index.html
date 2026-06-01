@@ -1831,11 +1831,13 @@ function renderItensAtendimento() {
               class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono)"
               placeholder="Serial ${si+1}"
               value="${s||''}"
-              oninput="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase()"
+              oninput="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})"
+              onchange="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})"
             >
             <datalist id="seriais-${i}-${si}">
               ${(it.seriaisDisponiveis||[]).map(sv => `<option value="${sv}">`).join('')}
             </datalist>
+            <span id="serial-status-${i}-${si}" style="font-size:10px;font-weight:600;min-width:60px"></span>
           </div>`).join('') : '';
 
         return `
@@ -1859,6 +1861,27 @@ function removerItemAtendimento(idx) {
   ATEND.itens.splice(idx, 1);
   renderItensAtendimento();
   if (!ATEND.itens.length) document.getElementById('btnConcluirAtendimento').disabled = true;
+}
+
+function validarSerial(inputEl, itemIdx, serialIdx) {
+  const valor     = (inputEl.value || '').trim().toUpperCase();
+  const statusEl  = document.getElementById(`serial-status-${itemIdx}-${serialIdx}`);
+  if (!statusEl) return;
+
+  if (!valor) { statusEl.textContent = ''; inputEl.style.borderColor = ''; return; }
+
+  const disponiveis = ATEND.itens[itemIdx]?.seriaisDisponiveis || [];
+  const valido      = disponiveis.includes(valor);
+
+  if (valido) {
+    statusEl.textContent   = '✓ Válido';
+    statusEl.style.color   = 'var(--green)';
+    inputEl.style.borderColor = 'var(--green)';
+  } else {
+    statusEl.textContent   = '✕ Inválido';
+    statusEl.style.color   = 'var(--red)';
+    inputEl.style.borderColor = 'var(--red)';
+  }
 }
 
 // ═══════════════════════════════════════════
