@@ -948,7 +948,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div>
                   <label class="form-label">Item *</label>
-                  <input id="entItemBusca" class="form-input" placeholder="Buscar por descrição ou código..." oninput="filtrarItensEnt(this.value)" autocomplete="off">
+                  <input id="entItemBusca" class="form-input" placeholder="Buscar por descrição ou código..." oninput="filtrarItensEnt(this.value)" onblur="setTimeout(()=>document.getElementById('entItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
                   <div id="entItemSugestoes" class="autocomplete-list hidden"></div>
                 </div>
                 <div>
@@ -1052,7 +1052,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div>
                   <label class="form-label">Item *</label>
-                  <input id="saiItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSai(this.value)" autocomplete="off">
+                  <input id="saiItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSai(this.value)" onblur="setTimeout(()=>document.getElementById('saiItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
                   <div id="saiItemSugestoes" class="autocomplete-list hidden"></div>
                 </div>
                 <div>
@@ -1066,7 +1066,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
                 <div>
                   <label class="form-label">Colaborador (opcional)</label>
-                  <input id="saiColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabSai(this.value)" autocomplete="off">
+                  <input id="saiColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabSai(this.value)" onblur="setTimeout(()=>document.getElementById('saiColabSugestoes').classList.add('hidden'),200)" autocomplete="off">
                   <div id="saiColabSugestoes" class="autocomplete-list hidden"></div>
                 </div>
                 <div>
@@ -1164,7 +1164,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
               <div>
                 <label class="form-label">Item *</label>
-                <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" autocomplete="off">
+                <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" onblur="setTimeout(()=>document.getElementById('trfItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
                 <div id="trfItemSugestoes" class="autocomplete-list hidden"></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
