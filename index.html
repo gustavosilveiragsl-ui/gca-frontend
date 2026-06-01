@@ -1031,61 +1031,91 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── SAÍDA ── -->
       <div class="view" id="view-saida">
-        <div class="card" style="max-width:700px">
-          <div class="card-header"><div><div class="card-title">Saída de Material</div><div class="card-sub">Registre materiais que estão saindo do estoque</div></div></div>
-          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label class="form-label">Item *</label>
-                <input id="saiItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSai(this.value)" autocomplete="off">
-                <div id="saiItemSugestoes" class="autocomplete-list hidden"></div>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Saída de Material</div><div class="card-sub">Registre materiais que estão saindo do estoque</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Item *</label>
+                  <input id="saiItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSai(this.value)" autocomplete="off">
+                  <div id="saiItemSugestoes" class="autocomplete-list hidden"></div>
+                </div>
+                <div>
+                  <label class="form-label">Armazém *</label>
+                  <select id="saiArmazem" class="form-input" onchange="verificarSaldoSaida()"><option value="">Selecione...</option></select>
+                </div>
+              </div>
+              <div id="saiSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+                Saldo disponível: <strong id="saiSaldoValor" style="color:var(--accent-text)">—</strong>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Colaborador (opcional)</label>
+                  <input id="saiColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabSai(this.value)" autocomplete="off">
+                  <div id="saiColabSugestoes" class="autocomplete-list hidden"></div>
+                </div>
+                <div>
+                  <label class="form-label">Data da Saída *</label>
+                  <input id="saiData" class="form-input" type="date">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Quantidade *</label>
+                  <input id="saiQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0" oninput="atualizarTotalSaida()">
+                </div>
+                <div>
+                  <label class="form-label">Motivo *</label>
+                  <select id="saiMotivo" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="Entrega a Colaborador">Entrega a Colaborador</option>
+                    <option value="Transferência entre Armazéns">Transferência entre Armazéns</option>
+                    <option value="Descarte">Descarte</option>
+                    <option value="Perda/Extravio">Perda / Extravio</option>
+                    <option value="Ajuste de Estoque">Ajuste de Estoque</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
               </div>
               <div>
-                <label class="form-label">Armazém *</label>
-                <select id="saiArmazem" class="form-input" onchange="verificarSaldoSaida()"><option value="">Selecione...</option></select>
+                <label class="form-label">Observação (opcional)</label>
+                <textarea id="saiObs" class="form-input" rows="2" style="resize:vertical" placeholder="Informações adicionais..."></textarea>
               </div>
-            </div>
-            <div id="saiSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
-              Saldo disponível: <strong id="saiSaldoValor" style="color:var(--accent-text)">—</strong>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label class="form-label">Colaborador (opcional)</label>
-                <input id="saiColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabSai(this.value)" autocomplete="off">
-                <div id="saiColabSugestoes" class="autocomplete-list hidden"></div>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarSaida()">✓ Registrar Saída</button>
+                <button class="btn btn-ghost" onclick="limparSaida()">Limpar</button>
               </div>
-              <div>
-                <label class="form-label">Data da Saída *</label>
-                <input id="saiData" class="form-input" type="date">
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label class="form-label">Quantidade *</label>
-                <input id="saiQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0">
-              </div>
-              <div>
-                <label class="form-label">Motivo *</label>
-                <select id="saiMotivo" class="form-input">
-                  <option value="">Selecione...</option>
-                  <option value="Entrega a Colaborador">Entrega a Colaborador</option>
-                  <option value="Transferência entre Armazéns">Transferência entre Armazéns</option>
-                  <option value="Descarte">Descarte</option>
-                  <option value="Perda/Extravio">Perda / Extravio</option>
-                  <option value="Ajuste de Estoque">Ajuste de Estoque</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label class="form-label">Observação (opcional)</label>
-              <textarea id="saiObs" class="form-input" rows="2" style="resize:vertical" placeholder="Informações adicionais..."></textarea>
-            </div>
-            <div style="display:flex;gap:10px">
-              <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarSaida()">✓ Registrar Saída</button>
-              <button class="btn btn-ghost" onclick="limparSaida()">Limpar</button>
             </div>
           </div>
+
+          <!-- PREVIEW ITEM -->
+          <div class="card">
+            <div style="padding:16px;text-align:center">
+              <div id="saiPreviewVazio" style="color:var(--text-3);padding:40px 0">
+                <div style="font-size:40px;margin-bottom:8px">📦</div>
+                <div style="font-size:12px">Selecione um item para ver detalhes</div>
+              </div>
+              <div id="saiPreviewDados" class="hidden">
+                <img id="saiPreviewImg" src="" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:12px">
+                <div id="saiPreviewNome" style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px"></div>
+                <div id="saiPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:12px"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left">
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-size:10px;color:var(--text-3)">VALOR UN.</div>
+                    <div id="saiPreviewValor" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-size:10px;color:var(--text-3)">TOTAL</div>
+                    <div id="saiPreviewTotal" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ÚLTIMAS SAÍDAS -->
@@ -1102,46 +1132,63 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── TRANSFERÊNCIA ── -->
       <div class="view" id="view-transferencia">
-        <div class="card" style="max-width:600px">
-          <div class="card-header"><div><div class="card-title">Transferência entre Armazéns</div><div class="card-sub">Transfira itens de um armazém para outro</div></div></div>
-          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
-            <div>
-              <label class="form-label">Item *</label>
-              <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" autocomplete="off">
-              <div id="trfItemSugestoes" class="autocomplete-list hidden"></div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Transferência entre Armazéns</div><div class="card-sub">Transfira itens de um armazém para outro</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
               <div>
-                <label class="form-label">Armazém de Origem *</label>
-                <select id="trfOrigem" class="form-input" onchange="verificarSaldoTrf()"><option value="">Selecione...</option></select>
+                <label class="form-label">Item *</label>
+                <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" autocomplete="off">
+                <div id="trfItemSugestoes" class="autocomplete-list hidden"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Armazém de Origem *</label>
+                  <select id="trfOrigem" class="form-input" onchange="verificarSaldoTrf()"><option value="">Selecione...</option></select>
+                </div>
+                <div>
+                  <label class="form-label">Armazém de Destino *</label>
+                  <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select>
+                </div>
+              </div>
+              <div id="trfSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+                Saldo disponível na origem: <strong id="trfSaldoValor" style="color:var(--accent-text)">—</strong>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Quantidade *</label>
+                  <input id="trfQtd" class="form-input" type="number" min="1" value="1">
+                </div>
+                <div>
+                  <label class="form-label">Data *</label>
+                  <input id="trfData" class="form-input" type="date">
+                </div>
               </div>
               <div>
-                <label class="form-label">Armazém de Destino *</label>
-                <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select>
+                <label class="form-label">Observação (opcional)</label>
+                <textarea id="trfObs" class="form-input" rows="2" style="resize:vertical" placeholder="Ex: Reforço de estoque..."></textarea>
               </div>
-            </div>
-            <div id="trfSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
-              Saldo disponível na origem: <strong id="trfSaldoValor" style="color:var(--accent-text)">—</strong>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div>
-                <label class="form-label">Quantidade *</label>
-                <input id="trfQtd" class="form-input" type="number" min="1" value="1">
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarTransferencia()">↔ Transferir</button>
+                <button class="btn btn-ghost" onclick="limparTransferencia()">Limpar</button>
               </div>
-              <div>
-                <label class="form-label">Data *</label>
-                <input id="trfData" class="form-input" type="date">
-              </div>
-            </div>
-            <div>
-              <label class="form-label">Observação (opcional)</label>
-              <textarea id="trfObs" class="form-input" rows="2" style="resize:vertical" placeholder="Ex: Reforço de estoque..."></textarea>
-            </div>
-            <div style="display:flex;gap:10px">
-              <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarTransferencia()">↔ Transferir</button>
-              <button class="btn btn-ghost" onclick="limparTransferencia()">Limpar</button>
             </div>
           </div>
+
+          <!-- ÚLTIMAS TRANSFERÊNCIAS -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Últimas Transferências</div></div>
+              <button class="btn btn-ghost" onclick="carregarUltimasTransferencias()">↻ Atualizar</button>
+            </div>
+            <table>
+              <thead><tr><th>Item</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Data</th></tr></thead>
+              <tbody id="trfHistoricoBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+
         </div>
       </div>
       <div class="view" id="view-estoque"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Consulta de Estoque</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -1381,7 +1428,7 @@ function onViewLoad(nome) {
   if (nome === 'solicitacoes')       carregarSolicitacoes();
   if (nome === 'entrada')            { populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { populateArmazens('saiArmazem'); carregarUltimasSaidas();   initMovDateFields(); }
-  if (nome === 'transferencia')      { populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); }
+  if (nome === 'transferencia')      { populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -3391,12 +3438,30 @@ function populateArmazens(selectId, all = true) {
 }
 
 // ── ENTRADA ──
+function mostrarAutocompleteItens(listaId, inputId, resultados, onSelectFn) {
+  const lista = document.getElementById(listaId);
+  const input = document.getElementById(inputId);
+  if (!lista || !input) return;
+  if (!resultados.length) { lista.classList.add('hidden'); return; }
+  const rect = input.getBoundingClientRect();
+  lista.style.top   = (rect.bottom + 4) + 'px';
+  lista.style.left  = rect.left + 'px';
+  lista.style.width = rect.width + 'px';
+  lista.innerHTML = resultados.map(i => `
+    <div class="autocomplete-item" onclick="${onSelectFn}('${i.id}')">
+      <div style="font-weight:500;color:var(--text-1);font-size:12px">${i.descricao}</div>
+      <div style="font-size:10px;color:var(--text-3)">${i.codigo||'—'} • ${i.categoria||'—'}</div>
+    </div>`).join('');
+  lista.classList.remove('hidden');
+}
+
 function filtrarItensEnt(q) {
+  if (q.length < 2) { document.getElementById('entItemSugestoes').classList.add('hidden'); return; }
   const lista = (_itens||[]).filter(i => {
     const s = q.toLowerCase();
     return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
   }).slice(0,15);
-  mostrarAutocomplete('entItemSugestoes','entItemBusca', lista, 'selecionarItemEnt');
+  mostrarAutocompleteItens('entItemSugestoes','entItemBusca', lista, 'selecionarItemEnt');
 }
 function selecionarItemEnt(id) {
   _entItemSel = (_itens||[]).find(i => i.id === id);
@@ -3472,18 +3537,37 @@ async function carregarUltimasEntradas() {
 
 // ── SAÍDA ──
 function filtrarItensSai(q) {
+  if (q.length < 2) { document.getElementById('saiItemSugestoes').classList.add('hidden'); return; }
   const lista = (_itens||[]).filter(i => {
     const s = q.toLowerCase();
     return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
   }).slice(0,15);
-  mostrarAutocomplete('saiItemSugestoes','saiItemBusca', lista, 'selecionarItemSai');
+  mostrarAutocompleteItens('saiItemSugestoes','saiItemBusca', lista, 'selecionarItemSai');
 }
 function selecionarItemSai(id) {
   _saiItemSel = (_itens||[]).find(i => i.id === id);
   if (!_saiItemSel) return;
   document.getElementById('saiItemBusca').value = _saiItemSel.descricao;
   document.getElementById('saiItemSugestoes').classList.add('hidden');
+  // Preview
+  document.getElementById('saiPreviewVazio')?.classList.add('hidden');
+  document.getElementById('saiPreviewDados')?.classList.remove('hidden');
+  const img = document.getElementById('saiPreviewImg');
+  if (img) { img.src = _saiItemSel.img || ''; img.style.display = _saiItemSel.img ? '' : 'none'; }
+  document.getElementById('saiPreviewNome').textContent = _saiItemSel.descricao;
+  document.getElementById('saiPreviewCod').textContent  = `${_saiItemSel.codigo||'—'} • ${_saiItemSel.categoria||'—'}`;
+  atualizarTotalSaida();
   verificarSaldoSaida();
+}
+
+function atualizarTotalSaida() {
+  if (!_saiItemSel) return;
+  const qtd   = parseFloat(document.getElementById('saiQtd')?.value) || 0;
+  const valor = parseFloat(_saiItemSel.valor_un) || 0;
+  const elV = document.getElementById('saiPreviewValor');
+  const elT = document.getElementById('saiPreviewTotal');
+  if (elV) elV.textContent = valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  if (elT) elT.textContent = (qtd*valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 }
 function filtrarColabSai(q) {
   const lista = (_colaboradores||[]).filter(c => {
@@ -3543,6 +3627,27 @@ function limparSaida() {
   const hoje = new Date().toISOString().split('T')[0];
   const dt = document.getElementById('saiData'); if(dt) dt.value = hoje;
   document.getElementById('saiSaldoBox')?.classList.add('hidden');
+  document.getElementById('saiPreviewVazio')?.classList.remove('hidden');
+  document.getElementById('saiPreviewDados')?.classList.add('hidden');
+}
+
+async function carregarUltimasTransferencias() {
+  const tbody = document.getElementById('trfHistoricoBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const data = await api('/movimentacoes?tipo=transferencia&limit=20');
+  const lista = data?.movimentacoes || [];
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-title">Nenhuma transferência</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(m => `<tr>
+    <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
+    <td style="font-size:11px">${m.nome_armazem||'—'}</td>
+    <td style="font-size:11px">${m.nome_armazem_destino||'—'}</td>
+    <td>${m.quantidade} ${m.un_med||'UN'}</td>
+    <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
+  </tr>`).join('');
 }
 
 async function carregarUltimasSaidas() {
@@ -3555,11 +3660,12 @@ async function carregarUltimasSaidas() {
 
 // ── TRANSFERÊNCIA ──
 function filtrarItensTrf(q) {
+  if (q.length < 2) { document.getElementById('trfItemSugestoes').classList.add('hidden'); return; }
   const lista = (_itens||[]).filter(i => {
     const s = q.toLowerCase();
     return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
   }).slice(0,15);
-  mostrarAutocomplete('trfItemSugestoes','trfItemBusca', lista, 'selecionarItemTrf');
+  mostrarAutocompleteItens('trfItemSugestoes','trfItemBusca', lista, 'selecionarItemTrf');
 }
 function selecionarItemTrf(id) {
   _trfItemSel = (_itens||[]).find(i => i.id === id);
