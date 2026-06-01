@@ -963,7 +963,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                 </div>
                 <div>
                   <label class="form-label">Quantidade *</label>
-                  <input id="entQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0">
+                  <input id="entQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0" oninput="atualizarTotalEntrada()">
                 </div>
               </div>
               <div>
@@ -1000,15 +1000,27 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div id="entPreviewDados" class="hidden">
                 <img id="entPreviewImg" src="" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:12px">
                 <div id="entPreviewNome" style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px"></div>
-                <div id="entPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:12px"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left">
-                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
-                    <div style="font-size:10px;color:var(--text-3)">VALOR UN.</div>
-                    <div id="entPreviewValor" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                <div id="entPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:8px"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;margin-bottom:6px">
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">VALOR UN.</div>
+                    <div id="entPreviewValor" style="font-size:12px;font-weight:600;color:var(--green)">—</div>
                   </div>
-                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
-                    <div style="font-size:10px;color:var(--text-3)">TOTAL</div>
-                    <div id="entPreviewTotal" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">TOTAL</div>
+                    <div id="entPreviewTotal" style="font-size:12px;font-weight:600;color:var(--green)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">UN. MEDIDA</div>
+                    <div id="entPreviewUnMed" style="font-size:12px;font-weight:600;color:var(--text-1)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">CA</div>
+                    <div id="entPreviewCA" style="font-size:12px;font-weight:600;color:var(--text-1)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px;grid-column:span 2">
+                    <div style="font-size:9px;color:var(--text-3)">POSIÇÃO</div>
+                    <div id="entPreviewPos" style="font-size:11px;font-weight:600;color:var(--text-1)">—</div>
                   </div>
                 </div>
               </div>
@@ -1048,7 +1060,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <select id="saiArmazem" class="form-input" onchange="verificarSaldoSaida()"><option value="">Selecione...</option></select>
                 </div>
               </div>
-              <div id="saiSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+              <div id="saiSaldoBox" class="hidden" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px;color:var(--text-2)">
                 Saldo disponível: <strong id="saiSaldoValor" style="color:var(--accent-text)">—</strong>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -1101,15 +1113,27 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div id="saiPreviewDados" class="hidden">
                 <img id="saiPreviewImg" src="" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:12px">
                 <div id="saiPreviewNome" style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px"></div>
-                <div id="saiPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:12px"></div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left">
-                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
-                    <div style="font-size:10px;color:var(--text-3)">VALOR UN.</div>
-                    <div id="saiPreviewValor" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                <div id="saiPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:8px"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;text-align:left;margin-bottom:6px">
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">VALOR UN.</div>
+                    <div id="saiPreviewValor" style="font-size:12px;font-weight:600;color:var(--red)">—</div>
                   </div>
-                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
-                    <div style="font-size:10px;color:var(--text-3)">TOTAL</div>
-                    <div id="saiPreviewTotal" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">TOTAL</div>
+                    <div id="saiPreviewTotal" style="font-size:12px;font-weight:600;color:var(--red)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">UN. MEDIDA</div>
+                    <div id="saiPreviewUnMed" style="font-size:12px;font-weight:600;color:var(--text-1)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+                    <div style="font-size:9px;color:var(--text-3)">CA</div>
+                    <div id="saiPreviewCA" style="font-size:12px;font-weight:600;color:var(--text-1)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px;grid-column:span 2">
+                    <div style="font-size:9px;color:var(--text-3)">POSIÇÃO</div>
+                    <div id="saiPreviewPos" style="font-size:11px;font-weight:600;color:var(--text-1)">—</div>
                   </div>
                 </div>
               </div>
@@ -1153,7 +1177,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select>
                 </div>
               </div>
-              <div id="trfSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+              <div id="trfSaldoBox" class="hidden" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px;color:var(--text-2)">
                 Saldo disponível na origem: <strong id="trfSaldoValor" style="color:var(--accent-text)">—</strong>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -3468,15 +3492,16 @@ function selecionarItemEnt(id) {
   if (!_entItemSel) return;
   document.getElementById('entItemBusca').value = _entItemSel.descricao;
   document.getElementById('entItemSugestoes').classList.add('hidden');
-  // Preview
-  const vazio = document.getElementById('entPreviewVazio');
-  const dados  = document.getElementById('entPreviewDados');
-  if (vazio) vazio.classList.add('hidden');
-  if (dados) dados.classList.remove('hidden');
+  document.getElementById('entPreviewVazio')?.classList.add('hidden');
+  document.getElementById('entPreviewDados')?.classList.remove('hidden');
   const img = document.getElementById('entPreviewImg');
   if (img) { img.src = _entItemSel.img || ''; img.style.display = _entItemSel.img ? '' : 'none'; }
   document.getElementById('entPreviewNome').textContent = _entItemSel.descricao;
   document.getElementById('entPreviewCod').textContent  = `${_entItemSel.codigo||'—'} • ${_entItemSel.categoria||'—'}`;
+  document.getElementById('entPreviewUnMed').textContent = _entItemSel.un_med || '—';
+  document.getElementById('entPreviewCA').textContent   = _entItemSel.ca || '—';
+  const pos = [_entItemSel.corredor, _entItemSel.prateleira, _entItemSel.box].filter(Boolean).join(' / ') || '—';
+  document.getElementById('entPreviewPos').textContent  = pos;
   atualizarTotalEntrada();
 }
 function atualizarTotalEntrada() {
@@ -3549,13 +3574,16 @@ function selecionarItemSai(id) {
   if (!_saiItemSel) return;
   document.getElementById('saiItemBusca').value = _saiItemSel.descricao;
   document.getElementById('saiItemSugestoes').classList.add('hidden');
-  // Preview
   document.getElementById('saiPreviewVazio')?.classList.add('hidden');
   document.getElementById('saiPreviewDados')?.classList.remove('hidden');
   const img = document.getElementById('saiPreviewImg');
   if (img) { img.src = _saiItemSel.img || ''; img.style.display = _saiItemSel.img ? '' : 'none'; }
   document.getElementById('saiPreviewNome').textContent = _saiItemSel.descricao;
   document.getElementById('saiPreviewCod').textContent  = `${_saiItemSel.codigo||'—'} • ${_saiItemSel.categoria||'—'}`;
+  document.getElementById('saiPreviewUnMed').textContent = _saiItemSel.un_med || '—';
+  document.getElementById('saiPreviewCA').textContent   = _saiItemSel.ca || '—';
+  const pos = [_saiItemSel.corredor, _saiItemSel.prateleira, _saiItemSel.box].filter(Boolean).join(' / ') || '—';
+  document.getElementById('saiPreviewPos').textContent  = pos;
   atualizarTotalSaida();
   verificarSaldoSaida();
 }
