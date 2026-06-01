@@ -1365,7 +1365,7 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-indicadores"><div class="empty-state"><div class="es-icon">📈</div><div class="es-title">Indicadores</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <!-- ── ARMAZÉNS ── -->
       <div class="view" id="view-armazens">
-        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Armazém</div><div class="card-sub">Cadastre os locais de armazenamento</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
@@ -1389,7 +1389,7 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── EQUIPES ── -->
       <div class="view" id="view-equipes">
-        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Equipe</div><div class="card-sub">Cadastre as equipes de campo</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
@@ -1419,7 +1419,7 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── DOTAÇÃO ── -->
       <div class="view" id="view-dotacao">
-        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Dotação</div><div class="card-sub">Define o EPI obrigatório por função</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
@@ -1455,14 +1455,14 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <button class="btn btn-ghost" onclick="carregarDotacao()">↻</button>
               </div>
             </div>
-            <table><thead><tr><th>Função</th><th>Item</th><th>Qtd Max</th><th>Nível</th><th>Grupo</th><th></th></tr></thead>
+            <table><thead><tr><th>Função</th><th>Itens</th><th></th></tr></thead>
             <tbody id="dotBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
       </div>
       <!-- ── USUÁRIOS ── -->
       <div class="view" id="view-usuarios">
-        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Usuário</div><div class="card-sub">Gerencie o acesso ao sistema</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
@@ -1472,9 +1472,10 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div><label class="form-label">Senha *</label><input id="usrSenha" class="form-input" type="password" placeholder="Senha de acesso"></div>
               <div><label class="form-label">Perfil *</label>
                 <select id="usrRole" class="form-input">
-                  <option value="admin">Administrador</option>
-                  <option value="almoxarife">Almoxarife</option>
-                  <option value="supervisor">Supervisor</option>
+                  <option value="admin">Administrador (acesso total)</option>
+                  <option value="gestor">Gestor (visualiza e gerencia)</option>
+                  <option value="almoxarife">Assistente (acesso limitado)</option>
+                  <option value="seguranca">Segurança (gestão de segurança)</option>
                   <option value="visualizador">Visualizador</option>
                 </select>
               </div>
@@ -1507,7 +1508,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <button class="btn btn-primary" onclick="salvarPermissoes()">💾 Salvar permissões</button>
               </div>
             </div>
-            <div id="permissoesGrid" style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+            <div id="permissoesGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
           </div>
 
           <div class="card">
@@ -4594,7 +4595,7 @@ async function carregarEquipesView() {
     <td style="font-size:11px">${e.nome_equipe||e.nome||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${e.atividades||'—'}</td>
     <td>${e.status==='ativo'?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
-    <td><button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button></td>
+    <td style="display:flex;gap:4px"><button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button><button class="row-action" style="color:var(--red)" onclick="excluirEquipe('${e.id}')">✕</button></td>
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
 }
 
@@ -4667,17 +4668,61 @@ function renderDotacao() {
   const q     = (document.getElementById('dotBusca')?.value||'').toLowerCase();
   let lista   = _dotData;
   if (q) lista = lista.filter(d => (d.funcao||'').toLowerCase().includes(q) || (d.item_base_nome||'').toLowerCase().includes(q));
-  tbody.innerHTML = lista.length ? lista.map(d => `<tr>
-    <td class="td-main">${d.funcao||'—'}</td>
-    <td style="font-size:11px">${d.item_base_nome||'—'}</td>
-    <td style="text-align:center">${d.quantidade_maxima||1}</td>
-    <td style="font-size:11px">${d.nivel_minimo||'Todos'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${d.grupo||'—'}</td>
-    <td>
-      <button class="row-action" onclick="editarDotacao('${d.id}')">Editar</button>
-      <button class="row-action" style="color:var(--red)" onclick="excluirDotacao('${d.id}')">✕</button>
-    </td>
-  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma dotação</div></div></td></tr>`;
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma dotação</div></div></td></tr>`;
+    return;
+  }
+
+  // Agrupa por função
+  const grupos = {};
+  lista.forEach(d => {
+    const f = d.funcao || '—';
+    if (!grupos[f]) grupos[f] = [];
+    grupos[f].push(d);
+  });
+
+  tbody.innerHTML = Object.entries(grupos).map(([funcao, itens]) => `
+    <tr style="cursor:pointer;background:var(--bg)" onclick="toggleDotacaoFuncao('${funcao.replace(/'/g,"\\'")}',this)">
+      <td class="td-main" style="font-weight:600">${funcao}</td>
+      <td style="font-size:11px;color:var(--text-3)">${itens.length} item(ns)</td>
+      <td style="text-align:right;font-size:11px;color:var(--text-3)">▼ Ver itens</td>
+    </tr>
+    <tr id="dotRow_${funcao.replace(/[^a-zA-Z0-9]/g,'_')}" style="display:none">
+      <td colspan="3" style="padding:0 0 8px 0">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--bg)">
+            <th style="padding:6px 12px;font-size:10px;color:var(--text-3);text-align:left">Item</th>
+            <th style="padding:6px;font-size:10px;color:var(--text-3);text-align:center">Qtd Max</th>
+            <th style="padding:6px;font-size:10px;color:var(--text-3)">Nível</th>
+            <th style="padding:6px;font-size:10px;color:var(--text-3)">Grupo</th>
+            <th style="padding:6px"></th>
+          </tr></thead>
+          <tbody>
+            ${itens.map(d => `<tr>
+              <td style="padding:6px 12px;font-size:11px;color:var(--text-1)">${d.item_base_nome||'—'}</td>
+              <td style="padding:6px;font-size:11px;text-align:center">${d.quantidade_maxima||1}</td>
+              <td style="padding:6px;font-size:11px;color:var(--text-3)">${d.nivel_minimo||'Todos'}</td>
+              <td style="padding:6px;font-size:11px;color:var(--text-3)">${d.grupo||'—'}</td>
+              <td style="padding:6px;display:flex;gap:4px">
+                <button class="row-action" onclick="editarDotacao('${d.id}')">Editar</button>
+                <button class="row-action" style="color:var(--red)" onclick="excluirDotacao('${d.id}')">✕</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </td>
+    </tr>`).join('');
+}
+
+function toggleDotacaoFuncao(funcao, trEl) {
+  const key = funcao.replace(/[^a-zA-Z0-9]/g,'_');
+  const row = document.getElementById(`dotRow_${key}`);
+  if (!row) return;
+  const aberto = row.style.display !== 'none';
+  row.style.display = aberto ? 'none' : '';
+  const seta = trEl.querySelector('td:last-child');
+  if (seta) seta.textContent = aberto ? '▼ Ver itens' : '▲ Fechar';
 }
 
 async function salvarDotacao() {
@@ -4740,12 +4785,13 @@ async function carregarUsuariosView() {
     return `<tr>
       <td class="td-main">${u.nome||'—'}</td>
       <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}</td>
-      <td><span class="tag tag-accent">${u.role||'—'}</span></td>
+      <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
       <td style="font-size:11px">${uniStr}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
         <button class="row-action" style="color:var(--accent-text);border-color:var(--accent)" onclick="abrirPermissoes('${u.id}')">🔐 Permissões</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirUsuario('${u.id}','${(u.nome||'').replace(/'/g,'')}')">✕</button>
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum usuário</div></div></td></tr>`;
@@ -4941,6 +4987,20 @@ const PERFIS_PERMISSOES = {
     ver_estoque:true, ver_movimentacoes:true,
   }
 };
+
+async function excluirEquipe(id) {
+  if (!confirm('Excluir esta equipe?')) return;
+  const res = await api(`/equipes/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Equipe excluída!', 'success'); carregarEquipesView(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+async function excluirUsuario(id, nome) {
+  if (!confirm(`Excluir o usuário "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  const res = await api(`/usuarios/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Usuário excluído!', 'success'); carregarUsuariosView(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
