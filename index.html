@@ -656,6 +656,7 @@ tbody tr:hover td{background:var(--bg-hover);}
     <div class="card" style="max-width:560px;margin:0 auto">
       <div class="card-header">
         <div><div class="card-title">Mobilizar Colaborador</div><div class="card-sub">Atendimento automático pela dotação da função</div></div>
+        <button class="btn btn-ghost" onclick="limparMobilizar()" style="font-size:11px">✕ Limpar</button>
       </div>
       <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
         <div>
@@ -973,11 +974,17 @@ const VIEW_TITLES = {
 };
 
 function showView(nome, btnEl) {
+  // Se sair da tela de atendimento com atendimento ativo, cancela
+  const viewAtual = document.querySelector('.view.active')?.id;
+  if (viewAtual === 'view-atendimento' && nome !== 'atendimento' && ATEND.ativo) {
+    if (!confirm('Você tem um atendimento em andamento. Deseja cancelar e sair?')) return;
+    resetarAtendimento();
+  }
+
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   const btn = btnEl || document.querySelector(`.nav-item[data-view="${nome}"]`);
   if (btn) {
     btn.classList.add('active');
-    // Abre o grupo pai se estiver fechado
     const grupo = btn.closest('.nav-group-items');
     if (grupo && !grupo.classList.contains('open')) {
       grupo.classList.add('open');
@@ -1340,6 +1347,18 @@ function switchAtendTab(nome, btnEl) {
   if (btnEl) btnEl.classList.add('active');
   document.getElementById('atend-panel-' + nome).classList.add('active');
   if (nome === 'consulta') carregarConsultaAtendimentos();
+  if (nome === 'mobilizar') limparMobilizar();
+}
+
+function limparMobilizar() {
+  _mobColab = null;
+  window._mobItensPendentes  = null;
+  window._mobItensComTamanho = null;
+  document.getElementById('mobColabBusca').value = '';
+  document.getElementById('mobColabCard').classList.add('hidden');
+  document.getElementById('mobItensPreview').classList.add('hidden');
+  document.getElementById('mobItensList').innerHTML = '';
+  document.getElementById('btnMobilizar').disabled = true;
 }
 
 // ═══════════════════════════════════════════
