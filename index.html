@@ -1451,7 +1451,7 @@ function onViewLoad(nome) {
   if (nome === 'assinaturas')        carregarAssinaturas();
   if (nome === 'solicitacoes')       carregarSolicitacoes();
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
-  if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas();   initMovDateFields(); }
+  if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
@@ -3616,7 +3616,8 @@ async function verificarSaldoSaida() {
   const box     = document.getElementById('saiSaldoBox');
   if (!_saiItemSel || !armazem) { box?.classList.add('hidden'); return; }
   const data = await api(`/saldos?item_id=${_saiItemSel.id}&armazem_id=${armazem}`);
-  const saldo = data?.saldo ?? data?.saldos?.[0]?.saldo ?? 0;
+  const registro = data?.data?.[0];
+  const saldo = registro?.saldo ?? 0;
   document.getElementById('saiSaldoValor').textContent = `${saldo} ${_saiItemSel.un_med||'UN'}`;
   box?.classList.remove('hidden');
 }
@@ -3708,7 +3709,8 @@ async function verificarSaldoTrf() {
   const box    = document.getElementById('trfSaldoBox');
   if (!_trfItemSel || !origem) { box?.classList.add('hidden'); return; }
   const data = await api(`/saldos?item_id=${_trfItemSel.id}&armazem_id=${origem}`);
-  const saldo = data?.saldo ?? data?.saldos?.[0]?.saldo ?? 0;
+  const registro = data?.data?.[0];
+  const saldo = registro?.saldo ?? 0;
   document.getElementById('trfSaldoValor').textContent = `${saldo} ${_trfItemSel.un_med||'UN'}`;
   box?.classList.remove('hidden');
 }
