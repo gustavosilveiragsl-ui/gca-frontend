@@ -809,7 +809,61 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
-      <div class="view" id="view-assinaturas"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Assinaturas Pendentes</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── ASSINATURAS ── -->
+      <div class="view" id="view-assinaturas">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon" style="background:var(--yellow-soft)">✍️</div></div>
+            <div class="kpi-value" id="assKpiPendentes">—</div>
+            <div class="kpi-delta warn">aguardando assinatura</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Expirados</span><div class="kpi-icon" style="background:var(--red-soft)">⏰</div></div>
+            <div class="kpi-value" id="assKpiExpirados">—</div>
+            <div class="kpi-delta down">link vencido</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon" style="background:var(--green-soft)">✓</div></div>
+            <div class="kpi-value" id="assKpiAssinados">—</div>
+            <div class="kpi-delta up">confirmados</div>
+          </div>
+        </div>
+
+        <!-- TABELA -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Gestão de Assinaturas</div><div class="card-sub">Gerencie confirmações de recebimento dos atendimentos</div></div>
+            <div class="card-actions">
+              <select id="assFiltroStatus" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
+                <option value="">Todos os status</option>
+                <option value="PENDENTE">Pendentes</option>
+                <option value="ASSINADO">Assinados</option>
+                <option value="EXPIRADO">Expirados</option>
+              </select>
+              <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarAssinaturas(this.value)">
+              <button class="btn btn-ghost" onclick="carregarAssinaturas()">↻ Atualizar</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Colaborador</th>
+                <th>Data</th>
+                <th>Itens</th>
+                <th>Status</th>
+                <th>Expira em</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="assBody">
+              <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
       <div class="view" id="view-solicitacoes"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Solicitações</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-entrada"><div class="empty-state"><div class="es-icon">📥</div><div class="es-title">Entrada de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-saida"><div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Saída de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -905,6 +959,32 @@ tbody tr:hover td{background:var(--bg-hover);}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="confirmarTrocaTamanho(false)">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmarTrocaTamanho(true)">Confirmar Troca</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CANCELAR ATENDIMENTO -->
+<div class="modal-overlay hidden" id="modalCancelarAtendimento">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">Cancelar Atendimento</div>
+      <button class="modal-close" onclick="fecharModalCancelar()">×</button>
+    </div>
+    <div class="modal-body" id="cancelarAtendBody">
+      <div style="text-align:center;margin-bottom:16px"><div style="font-size:32px">⚠️</div></div>
+      <div style="font-size:13px;color:var(--text-1);margin-bottom:4px;font-weight:600" id="cancelarAtendNome"></div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:16px" id="cancelarAtendInfo"></div>
+      <div style="background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-md);padding:12px;font-size:12px;color:var(--red);margin-bottom:16px">
+        Esta ação irá estornar todos os saldos e remover os registros do banco. Esta ação não pode ser desfeita.
+      </div>
+      <div id="cancelarSenhaWrap" class="hidden">
+        <label class="form-label">Senha de cancelamento</label>
+        <input id="cancelarSenhaInput" class="form-input" type="password" placeholder="Digite a senha" style="margin-bottom:12px">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalCancelar()">Voltar</button>
+      <button class="btn btn-danger" onclick="confirmarCancelarAtendimento()" id="btnConfirmarCancelar">🗑️ Cancelar Atendimento</button>
     </div>
   </div>
 </div>
@@ -1006,6 +1086,7 @@ function onViewLoad(nome) {
   if (nome === 'colaboradores')      carregarColaboradores();
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
+  if (nome === 'assinaturas')        carregarAssinaturas();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -2286,6 +2367,210 @@ async function carregarItensAtendimento() {
   if (data) _itens = data.data || data.itens || [];
 }
 
+
+// ═══════════════════════════════════════════
+// ASSINATURAS
+// ═══════════════════════════════════════════
+let _assinaturas = [];
+let _assQuery    = '';
+
+async function carregarAssinaturas() {
+  const tbody = document.getElementById('assBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/atendimentos/pendentes');
+  if (!data) return;
+
+  const agora = new Date();
+  const hoje  = agora.toISOString().split('T')[0];
+
+  _assinaturas = (data.data || []).map(a => {
+    const exp = a.expiracao ? new Date(a.expiracao) : null;
+    const expirado = exp && agora > exp;
+    const status = a.status === 'ASSINADO' ? 'ASSINADO' : (expirado ? 'EXPIRADO' : 'PENDENTE');
+    return { ...a, statusCalc: status, expiracaoDate: exp };
+  });
+
+  // KPIs
+  const pendentes = _assinaturas.filter(a => a.statusCalc === 'PENDENTE').length;
+  const expirados = _assinaturas.filter(a => a.statusCalc === 'EXPIRADO').length;
+  const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && a.data === hoje).length;
+
+  document.getElementById('assKpiPendentes').textContent = pendentes;
+  document.getElementById('assKpiExpirados').textContent = expirados;
+  document.getElementById('assKpiAssinados').textContent = assinados;
+
+  // Badge na sidebar
+  const badge = document.getElementById('badgeAssinaturas');
+  if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
+
+  filtrarAssinaturas();
+}
+
+function filtrarAssinaturas(busca) {
+  if (busca !== undefined) _assQuery = busca;
+  const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
+  const q = (_assQuery || '').toLowerCase();
+
+  let lista = _assinaturas;
+  if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
+  if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
+
+  renderAssinaturas(lista);
+}
+
+function renderAssinaturas(lista) {
+  const tbody = document.getElementById('assBody');
+  if (!tbody) return;
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Nenhum registro encontrado</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(a => {
+    const tag = a.statusCalc === 'ASSINADO'
+      ? '<span class="tag tag-green">Assinado</span>'
+      : a.statusCalc === 'EXPIRADO'
+        ? '<span class="tag tag-gray">Expirado</span>'
+        : '<span class="tag tag-yellow">Pendente</span>';
+
+    const expiraEm = a.expiracaoDate && a.statusCalc === 'PENDENTE'
+      ? formatarTempoRestante(a.expiracaoDate)
+      : '—';
+
+    let itens = []; try { itens = JSON.parse(a.itens_json || a.itens || '[]'); } catch {}
+    const qtdItens = itens.length || a.qtdItens || 0;
+
+    const acoes = a.statusCalc === 'ASSINADO' ? `
+      <div style="display:flex;gap:6px">
+        <button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}','${(a.nomeColaborador||'').replace(/'/g,"\\'")}','${a.data}',${qtdItens},true)">Cancelar</button>
+      </div>` : `
+      <div style="display:flex;gap:6px">
+        <button class="row-action" onclick="reenviarLink('${a.id}','${a.token||''}')">↺ Reenviar</button>
+        <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}','${(a.nomeColaborador||'').replace(/'/g,"\\'")}','${a.data}',${qtdItens},false)">Cancelar</button>
+      </div>`;
+
+    return `<tr>
+      <td class="td-main">${a.nomeColaborador||'—'}</td>
+      <td>${a.data||'—'}</td>
+      <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
+      <td>${tag}</td>
+      <td style="font-size:11px;color:var(--text-3)">${expiraEm}</td>
+      <td>${acoes}</td>
+    </tr>`;
+  }).join('');
+}
+
+function formatarTempoRestante(data) {
+  const diff = data - new Date();
+  if (diff <= 0) return 'Expirado';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  return `${h}h ${m}min`;
+}
+
+// ── Reenviar link ──
+function reenviarLink(id, token) {
+  const link = `https://confirmacao.gcasistema.com.br/?token=${token}`;
+  // Abre modal de reenvio igual ao fim do atendimento
+  document.getElementById('finalizadoNome').textContent  = '—';
+  document.getElementById('finalizadoResumo').textContent = 'Reenvio de link';
+  const qrDiv = document.getElementById('finalizadoQR');
+  qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}" style="width:160px;height:160px">`;
+  ATEND.linkGerado = link;
+  document.getElementById('modalFinalizado').classList.remove('hidden');
+}
+
+// ── Ver itens ──
+function verItensAtendimento(id) {
+  const atend = _assinaturas.find(a => a.id === id);
+  if (!atend) return;
+  let itens = []; try { itens = JSON.parse(atend.itens_json || atend.itens || '[]'); } catch {}
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-header">
+        <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${atend.data||'—'}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+            <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Qtd</th>
+            <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
+          </tr></thead>
+          <tbody>
+            ${itens.map(i => `<tr>
+              <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||'—'}</td>
+              <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade}</td>
+              <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${i.motivo||'—'}</span></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer"><button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button></div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+// ── Ver PDF ──
+function verPdfAtendimento(id) {
+  toast('Geração de PDF em desenvolvimento', 'info');
+}
+
+// ── Modal Cancelar ──
+let _cancelarId = null;
+let _cancelarAssinado = false;
+
+function abrirModalCancelar(id, nome, data, qtdItens, assinado) {
+  _cancelarId      = id;
+  _cancelarAssinado = assinado;
+  document.getElementById('cancelarAtendNome').textContent = nome;
+  document.getElementById('cancelarAtendInfo').textContent = `${data} • ${qtdItens} item(ns)`;
+  const senhaWrap = document.getElementById('cancelarSenhaWrap');
+  senhaWrap.classList.toggle('hidden', !assinado);
+  if (assinado) document.getElementById('cancelarSenhaInput').value = '';
+  document.getElementById('modalCancelarAtendimento').classList.remove('hidden');
+}
+
+function fecharModalCancelar() {
+  document.getElementById('modalCancelarAtendimento').classList.add('hidden');
+  _cancelarId = null;
+}
+
+async function confirmarCancelarAtendimento() {
+  if (!_cancelarId) return;
+  const btn = document.getElementById('btnConfirmarCancelar');
+  btn.disabled = true;
+  btn.textContent = 'Cancelando...';
+
+  const body = {};
+  if (_cancelarAssinado) {
+    const senha = document.getElementById('cancelarSenhaInput').value;
+    if (!senha) { toast('Digite a senha de cancelamento', 'error'); btn.disabled = false; btn.textContent = '🗑️ Cancelar Atendimento'; return; }
+    body.senha = senha;
+  }
+
+  const res = await api(`/atendimentos/${_cancelarId}/cancelar`, { method:'POST', body: JSON.stringify(body) });
+
+  btn.disabled = false;
+  btn.textContent = '🗑️ Cancelar Atendimento';
+
+  if (res?.ok) {
+    toast('Atendimento cancelado! Saldos estornados.', 'success');
+    fecharModalCancelar();
+    carregarAssinaturas();
+  } else {
+    toast(res?.erro || 'Erro ao cancelar', 'error');
+  }
+}
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
