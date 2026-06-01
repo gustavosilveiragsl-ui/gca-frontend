@@ -1363,10 +1363,147 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-descarte"><div class="empty-state"><div class="es-icon">🗑️</div><div class="es-title">Descarte</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-recuperados"><div class="empty-state"><div class="es-icon">♻️</div><div class="es-title">Recuperados</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-indicadores"><div class="empty-state"><div class="es-icon">📈</div><div class="es-title">Indicadores</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-armazens"><div class="empty-state"><div class="es-icon">🏭</div><div class="es-title">Armazéns</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-equipes"><div class="empty-state"><div class="es-icon">🚐</div><div class="es-title">Equipes</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-dotacao"><div class="empty-state"><div class="es-icon">🗂️</div><div class="es-title">Dotação por Função</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-usuarios"><div class="empty-state"><div class="es-icon">🔐</div><div class="es-title">Usuários</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── ARMAZÉNS ── -->
+      <div class="view" id="view-armazens">
+        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Armazém</div><div class="card-sub">Cadastre os locais de armazenamento</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="armEditId">
+              <div><label class="form-label">Nome *</label><input id="armNome" class="form-input" placeholder="Ex: Armazém Central Maricá"></div>
+              <div><label class="form-label">Tipo</label>
+                <select id="armTipo" class="form-input">
+                  <option value="almoxarifado">Almoxarifado</option>
+                  <option value="guardado">Guardado</option>
+                  <option value="externo">Externo</option>
+                </select>
+              </div>
+              <div><label class="form-label">Localização</label><input id="armLocalizacao" class="form-input" placeholder="Ex: Rua das Flores, 100"></div>
+              <div><label class="form-label">Responsável</label><input id="armResponsavel" class="form-input" placeholder="Nome do responsável"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarArmazem()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormArmazem()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Armazéns Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('armBody',this.value,[0,1])"></div>
+            <table><thead><tr><th>Nome</th><th>Tipo</th><th>Localização</th><th>Responsável</th><th></th></tr></thead>
+            <tbody id="armBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- ── EQUIPES ── -->
+      <div class="view" id="view-equipes">
+        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Equipe</div><div class="card-sub">Cadastre as equipes de campo</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="eqEditId">
+              <div><label class="form-label">Nome da Equipe *</label><input id="eqNome" class="form-input" placeholder="Ex: Equipe SOC 01"></div>
+              <div><label class="form-label">Tipo</label>
+                <select id="eqTipo" class="form-input">
+                  <option value="SOC">SOC</option>
+                  <option value="ENEL">ENEL</option>
+                  <option value="Manutenção">Manutenção</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div><label class="form-label">Veículo / Placa</label><input id="eqVeiculo" class="form-input" placeholder="Ex: ABC-1234"></div>
+              <div><label class="form-label">Líder</label><input id="eqLider" class="form-input" placeholder="Nome do líder da equipe"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarEquipe()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormEquipe()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Equipes Cadastradas</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('eqBody',this.value,[0,1])"></div>
+            <table><thead><tr><th>Nome</th><th>Tipo</th><th>Veículo</th><th>Líder</th><th></th></tr></thead>
+            <tbody id="eqBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- ── DOTAÇÃO ── -->
+      <div class="view" id="view-dotacao">
+        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Dotação</div><div class="card-sub">Define o EPI obrigatório por função</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="dotEditId">
+              <div><label class="form-label">Função *</label><input id="dotFuncao" class="form-input" placeholder="Ex: ELETRICISTA"></div>
+              <div><label class="form-label">Item *</label>
+                <input id="dotItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensDot(this.value)" autocomplete="off">
+                <div id="dotItemSugestoes" class="autocomplete-list hidden"></div>
+                <input type="hidden" id="dotItemId">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Qtd. Máxima *</label><input id="dotQtdMax" class="form-input" type="number" min="1" value="1"></div>
+                <div><label class="form-label">Nível Mínimo</label>
+                  <select id="dotNivel" class="form-input">
+                    <option value="Todos">Todos</option>
+                    <option value="Pleno">Pleno</option>
+                    <option value="Junior">Junior</option>
+                  </select>
+                </div>
+              </div>
+              <div><label class="form-label">Grupo (opcional)</label><input id="dotGrupo" class="form-input" placeholder="Ex: CALCADO"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarDotacao()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormDotacao()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Dotações Cadastradas</div>
+              <div class="card-actions">
+                <input class="search-box" type="text" id="dotBusca" placeholder="Buscar função ou item..." oninput="renderDotacao()">
+                <button class="btn btn-ghost" onclick="carregarDotacao()">↻</button>
+              </div>
+            </div>
+            <table><thead><tr><th>Função</th><th>Item</th><th>Qtd Max</th><th>Nível</th><th>Grupo</th><th></th></tr></thead>
+            <tbody id="dotBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- ── USUÁRIOS ── -->
+      <div class="view" id="view-usuarios">
+        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Usuário</div><div class="card-sub">Gerencie o acesso ao sistema</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="usrEditId">
+              <div><label class="form-label">Nome *</label><input id="usrNome" class="form-input" placeholder="Nome completo"></div>
+              <div><label class="form-label">Username *</label><input id="usrUsername" class="form-input" placeholder="Ex: joao.silva"></div>
+              <div><label class="form-label">Senha *</label><input id="usrSenha" class="form-input" type="password" placeholder="Senha de acesso"></div>
+              <div><label class="form-label">Perfil *</label>
+                <select id="usrRole" class="form-input">
+                  <option value="admin">Administrador</option>
+                  <option value="almoxarife">Almoxarife</option>
+                  <option value="supervisor">Supervisor</option>
+                  <option value="visualizador">Visualizador</option>
+                </select>
+              </div>
+              <div><label class="form-label">Unidades</label>
+                <div style="display:flex;gap:12px;margin-top:4px">
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniMarica" value="marica"> Maricá</label>
+                  <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniRdo" value="rio_das_ostras"> Rio das Ostras</label>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarUsuario()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormUsuario()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Usuários Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('usrBody',this.value,[0,1])"></div>
+            <table><thead><tr><th>Nome</th><th>Username</th><th>Perfil</th><th>Unidades</th><th>Status</th><th></th></tr></thead>
+            <tbody id="usrBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
 
       <!-- RECUPERAÇÃO DE SENHA (admin) -->
       <div class="view" id="view-recuperacao-senha">
@@ -1609,6 +1746,10 @@ function onViewLoad(nome) {
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
   if (nome === 'estoque')            { if (!_itens.length) carregarItensAtendimento().then(carregarEstoque); else carregarEstoque(); }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
+  if (nome === 'armazens')           carregarArmazensView();
+  if (nome === 'equipes')            carregarEquipesView();
+  if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
+  if (nome === 'usuarios')           carregarUsuariosView();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -4267,6 +4408,276 @@ function calcularPrevisao() {
         <td style="padding:8px;text-align:right;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${a.valorTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
       </tr>`).join('')}</tbody>
     </table>`;
+}
+
+// ═══════════════════════════════════════════
+// CADASTROS — ARMAZÉNS / EQUIPES / DOTAÇÃO / USUÁRIOS
+// ═══════════════════════════════════════════
+
+// ── Helper: filtrar tabela por texto ──
+function filtrarTabela(tbodyId, q, colunas=[0]) {
+  const tbody = document.getElementById(tbodyId);
+  if (!tbody) return;
+  const termo = q.toLowerCase();
+  Array.from(tbody.rows).forEach(row => {
+    const texto = colunas.map(c => row.cells[c]?.textContent||'').join(' ').toLowerCase();
+    row.style.display = texto.includes(termo) ? '' : 'none';
+  });
+}
+
+// ════════════ ARMAZÉNS ════════════
+async function carregarArmazensView() {
+  const tbody = document.getElementById('armBody');
+  if (!tbody) return;
+  const data = await api('/armazens');
+  if (!data) return;
+  const lista = data.data || data.armazens || [];
+  tbody.innerHTML = lista.length ? lista.map(a => `<tr>
+    <td class="td-main">${a.nome}</td>
+    <td style="font-size:11px">${a.tipo||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
+    <td><button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button></td>
+  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
+}
+
+async function salvarArmazem() {
+  const id   = document.getElementById('armEditId').value;
+  const body = {
+    nome:         document.getElementById('armNome').value.trim(),
+    tipo:         document.getElementById('armTipo').value,
+    localizacao:  document.getElementById('armLocalizacao').value.trim(),
+    responsavel:  document.getElementById('armResponsavel').value.trim(),
+  };
+  if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
+  const res = await api(id ? `/armazens/${id}` : '/armazens', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) { toast('Armazém salvo!', 'success'); limparFormArmazem(); carregarArmazensView(); }
+  else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarArmazem(id) {
+  // busca dados locais dos armazéns
+  api(`/armazens`).then(data => {
+    const a = (data?.data||data?.armazens||[]).find(x => x.id === id);
+    if (!a) return;
+    document.getElementById('armEditId').value = id;
+    document.getElementById('armNome').value = a.nome||'';
+    document.getElementById('armTipo').value = a.tipo||'almoxarifado';
+    document.getElementById('armLocalizacao').value = a.localizacao||'';
+    document.getElementById('armResponsavel').value = a.responsavel||'';
+  });
+}
+
+function limparFormArmazem() {
+  ['armEditId','armNome','armLocalizacao','armResponsavel'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const t = document.getElementById('armTipo'); if(t) t.selectedIndex = 0;
+}
+
+// ════════════ EQUIPES ════════════
+async function carregarEquipesView() {
+  const tbody = document.getElementById('eqBody');
+  if (!tbody) return;
+  const data = await api('/equipes');
+  if (!data) return;
+  const lista = data.data || data.equipes || [];
+  tbody.innerHTML = lista.length ? lista.map(e => `<tr>
+    <td class="td-main">${e.nome}</td>
+    <td style="font-size:11px">${e.tipo||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${e.veiculo||e.placa||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${e.lider||'—'}</td>
+    <td><button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button></td>
+  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
+}
+
+async function salvarEquipe() {
+  const id   = document.getElementById('eqEditId').value;
+  const body = {
+    nome:    document.getElementById('eqNome').value.trim(),
+    tipo:    document.getElementById('eqTipo').value,
+    veiculo: document.getElementById('eqVeiculo').value.trim(),
+    lider:   document.getElementById('eqLider').value.trim(),
+  };
+  if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
+  const res = await api(id ? `/equipes/${id}` : '/equipes', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) { toast('Equipe salva!', 'success'); limparFormEquipe(); carregarEquipesView(); }
+  else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarEquipe(id) {
+  api('/equipes').then(data => {
+    const e = (data?.data||data?.equipes||[]).find(x => x.id === id);
+    if (!e) return;
+    document.getElementById('eqEditId').value = id;
+    document.getElementById('eqNome').value = e.nome||'';
+    document.getElementById('eqTipo').value = e.tipo||'SOC';
+    document.getElementById('eqVeiculo').value = e.veiculo||e.placa||'';
+    document.getElementById('eqLider').value = e.lider||'';
+  });
+}
+
+function limparFormEquipe() {
+  ['eqEditId','eqNome','eqVeiculo','eqLider'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const t = document.getElementById('eqTipo'); if(t) t.selectedIndex = 0;
+}
+
+// ════════════ DOTAÇÃO ════════════
+let _dotData = [];
+
+function filtrarItensDot(q) {
+  if (q.length < 2) { document.getElementById('dotItemSugestoes').classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i => {
+    const s = q.toLowerCase();
+    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
+  }).slice(0,10);
+  mostrarAutocompleteItens('dotItemSugestoes','dotItemBusca', lista, 'selecionarItemDot');
+}
+
+function selecionarItemDot(id) {
+  const item = (_itens||[]).find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('dotItemBusca').value = item.descricao;
+  document.getElementById('dotItemId').value    = id;
+  document.getElementById('dotItemSugestoes').classList.add('hidden');
+}
+
+async function carregarDotacao() {
+  const tbody = document.getElementById('dotBody');
+  if (!tbody) return;
+  const data = await api('/validacoes/dotacao-lista');
+  if (!data) return;
+  _dotData = data.data || data.dotacao || [];
+  renderDotacao();
+}
+
+function renderDotacao() {
+  const tbody = document.getElementById('dotBody');
+  const q     = (document.getElementById('dotBusca')?.value||'').toLowerCase();
+  let lista   = _dotData;
+  if (q) lista = lista.filter(d => (d.funcao||'').toLowerCase().includes(q) || (d.item_base_nome||'').toLowerCase().includes(q));
+  tbody.innerHTML = lista.length ? lista.map(d => `<tr>
+    <td class="td-main">${d.funcao||'—'}</td>
+    <td style="font-size:11px">${d.item_base_nome||'—'}</td>
+    <td style="text-align:center">${d.quantidade_maxima||1}</td>
+    <td style="font-size:11px">${d.nivel_minimo||'Todos'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${d.grupo||'—'}</td>
+    <td>
+      <button class="row-action" onclick="editarDotacao('${d.id}')">Editar</button>
+      <button class="row-action" style="color:var(--red)" onclick="excluirDotacao('${d.id}')">✕</button>
+    </td>
+  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma dotação</div></div></td></tr>`;
+}
+
+async function salvarDotacao() {
+  const id     = document.getElementById('dotEditId').value;
+  const itemId = document.getElementById('dotItemId').value;
+  const body   = {
+    funcao:           document.getElementById('dotFuncao').value.trim().toUpperCase(),
+    item_id:          itemId,
+    item_base_nome:   document.getElementById('dotItemBusca').value.trim(),
+    quantidade_maxima: Number(document.getElementById('dotQtdMax').value) || 1,
+    nivel_minimo:     document.getElementById('dotNivel').value,
+    grupo:            document.getElementById('dotGrupo').value.trim().toUpperCase() || null,
+  };
+  if (!body.funcao || !itemId) { toast('Função e item são obrigatórios', 'warn'); return; }
+  const res = await api(id ? `/validacoes/dotacao/${id}` : '/validacoes/dotacao', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) { toast('Dotação salva!', 'success'); limparFormDotacao(); carregarDotacao(); }
+  else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarDotacao(id) {
+  const d = _dotData.find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('dotEditId').value = id;
+  document.getElementById('dotFuncao').value = d.funcao||'';
+  document.getElementById('dotItemBusca').value = d.item_base_nome||'';
+  document.getElementById('dotItemId').value    = d.item_id||'';
+  document.getElementById('dotQtdMax').value    = d.quantidade_maxima||1;
+  document.getElementById('dotNivel').value     = d.nivel_minimo||'Todos';
+  document.getElementById('dotGrupo').value     = d.grupo||'';
+}
+
+async function excluirDotacao(id) {
+  if (!confirm('Excluir esta dotação?')) return;
+  const res = await api(`/validacoes/dotacao/${id}`, { method: 'DELETE' });
+  if (res?.ok) { toast('Dotação excluída!', 'success'); carregarDotacao(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+function limparFormDotacao() {
+  ['dotEditId','dotItemBusca','dotItemId','dotFuncao','dotGrupo'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('dotQtdMax').value = '1';
+  document.getElementById('dotNivel').value  = 'Todos';
+}
+
+// ════════════ USUÁRIOS ════════════
+async function carregarUsuariosView() {
+  const tbody = document.getElementById('usrBody');
+  if (!tbody) return;
+  const data = await api('/usuarios');
+  if (!data) return;
+  const lista = data.data || data.usuarios || [];
+  tbody.innerHTML = lista.length ? lista.map(u => {
+    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades) : (u.unidades||[]); } catch {}
+    const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
+    return `<tr>
+      <td class="td-main">${u.nome||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}</td>
+      <td><span class="tag tag-accent">${u.role||'—'}</span></td>
+      <td style="font-size:11px">${uniStr}</td>
+      <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
+      <td><button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum usuário</div></div></td></tr>`;
+}
+
+async function salvarUsuario() {
+  const id    = document.getElementById('usrEditId').value;
+  const unis  = [];
+  if (document.getElementById('usrUniMarica')?.checked)  unis.push('marica');
+  if (document.getElementById('usrUniRdo')?.checked)     unis.push('rio_das_ostras');
+  const body  = {
+    nome:     document.getElementById('usrNome').value.trim(),
+    username: document.getElementById('usrUsername').value.trim(),
+    role:     document.getElementById('usrRole').value,
+    unidades: unis,
+  };
+  const senha = document.getElementById('usrSenha').value;
+  if (senha) body.password = senha;
+  if (!body.nome || !body.username) { toast('Nome e username obrigatórios', 'warn'); return; }
+  if (!id && !senha) { toast('Senha obrigatória para novo usuário', 'warn'); return; }
+  const res = await api(id ? `/usuarios/${id}` : '/usuarios', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) { toast('Usuário salvo!', 'success'); limparFormUsuario(); carregarUsuariosView(); }
+  else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarUsuario(id) {
+  api('/usuarios').then(data => {
+    const u = (data?.data||data?.usuarios||[]).find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('usrEditId').value   = id;
+    document.getElementById('usrNome').value     = u.nome||'';
+    document.getElementById('usrUsername').value = u.username||'';
+    document.getElementById('usrSenha').value    = '';
+    document.getElementById('usrRole').value     = u.role||'almoxarife';
+    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades) : (u.unidades||[]); } catch {}
+    document.getElementById('usrUniMarica').checked = unis.includes('marica');
+    document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
+  });
+}
+
+function limparFormUsuario() {
+  ['usrEditId','usrNome','usrUsername','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('usrRole').value = 'almoxarife';
+  document.getElementById('usrUniMarica').checked = false;
+  document.getElementById('usrUniRdo').checked    = false;
 }
 
 // ── ENTER no login ──
