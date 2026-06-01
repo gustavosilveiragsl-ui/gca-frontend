@@ -937,9 +937,213 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
 
       </div>
-      <div class="view" id="view-entrada"><div class="empty-state"><div class="es-icon">📥</div><div class="es-title">Entrada de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-saida"><div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Saída de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-transferencia"><div class="empty-state"><div class="es-icon">🔄</div><div class="es-title">Transferência</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── ENTRADA ── -->
+      <div class="view" id="view-entrada">
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Entrada de Material</div><div class="card-sub">Registre materiais que estão entrando no estoque</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Item *</label>
+                  <input id="entItemBusca" class="form-input" placeholder="Buscar por descrição ou código..." oninput="filtrarItensEnt(this.value)" autocomplete="off">
+                  <div id="entItemSugestoes" class="autocomplete-list hidden"></div>
+                </div>
+                <div>
+                  <label class="form-label">Armazém *</label>
+                  <select id="entArmazem" class="form-input"><option value="">Selecione...</option></select>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="form-label">Data da Entrada *</label>
+                  <input id="entData" class="form-input" type="date">
+                </div>
+                <div>
+                  <label class="form-label">Quantidade *</label>
+                  <input id="entQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0">
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Motivo *</label>
+                <select id="entMotivo" class="form-input">
+                  <option value="">Selecione o motivo...</option>
+                  <option value="Compra/Aquisição">Compra / Aquisição</option>
+                  <option value="Devolução de Colaborador">Devolução de Colaborador</option>
+                  <option value="Transferência entre Armazéns">Transferência entre Armazéns</option>
+                  <option value="Doação/Recebimento">Recebimento / Doação</option>
+                  <option value="Ajuste de Estoque">Ajuste de Estoque</option>
+                  <option value="Garantia/Troca">Garantia / Troca</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Observação (opcional)</label>
+                <textarea id="entObs" class="form-input" rows="2" placeholder="Ex: NF 12345, Fornecedor XYZ..." style="resize:vertical"></textarea>
+              </div>
+              <div style="display:flex;gap:10px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarEntrada()">✓ Registrar Entrada</button>
+                <button class="btn btn-ghost" onclick="limparEntrada()">Limpar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PREVIEW ITEM -->
+          <div class="card" id="entPreviewCard">
+            <div style="padding:16px;text-align:center">
+              <div id="entPreviewVazio" style="color:var(--text-3);padding:40px 0">
+                <div style="font-size:40px;margin-bottom:8px">📦</div>
+                <div style="font-size:12px">Selecione um item para ver detalhes</div>
+              </div>
+              <div id="entPreviewDados" class="hidden">
+                <img id="entPreviewImg" src="" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);margin-bottom:12px">
+                <div id="entPreviewNome" style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px"></div>
+                <div id="entPreviewCod" style="font-size:11px;color:var(--text-3);margin-bottom:12px"></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left">
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-size:10px;color:var(--text-3)">VALOR UN.</div>
+                    <div id="entPreviewValor" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  </div>
+                  <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+                    <div style="font-size:10px;color:var(--text-3)">TOTAL</div>
+                    <div id="entPreviewTotal" style="font-size:13px;font-weight:600;color:var(--green)">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ÚLTIMAS ENTRADAS -->
+        <div class="card" style="margin-top:20px">
+          <div class="card-header">
+            <div><div class="card-title">Últimas Entradas</div><div class="card-sub">Registros mais recentes</div></div>
+            <button class="btn btn-ghost" onclick="carregarUltimasEntradas()">↻ Atualizar</button>
+          </div>
+          <table>
+            <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th>Data</th><th>Usuário</th></tr></thead>
+            <tbody id="entHistoricoBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ── SAÍDA ── -->
+      <div class="view" id="view-saida">
+        <div class="card" style="max-width:700px">
+          <div class="card-header"><div><div class="card-title">Saída de Material</div><div class="card-sub">Registre materiais que estão saindo do estoque</div></div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="form-label">Item *</label>
+                <input id="saiItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSai(this.value)" autocomplete="off">
+                <div id="saiItemSugestoes" class="autocomplete-list hidden"></div>
+              </div>
+              <div>
+                <label class="form-label">Armazém *</label>
+                <select id="saiArmazem" class="form-input" onchange="verificarSaldoSaida()"><option value="">Selecione...</option></select>
+              </div>
+            </div>
+            <div id="saiSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+              Saldo disponível: <strong id="saiSaldoValor" style="color:var(--accent-text)">—</strong>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="form-label">Colaborador (opcional)</label>
+                <input id="saiColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabSai(this.value)" autocomplete="off">
+                <div id="saiColabSugestoes" class="autocomplete-list hidden"></div>
+              </div>
+              <div>
+                <label class="form-label">Data da Saída *</label>
+                <input id="saiData" class="form-input" type="date">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="form-label">Quantidade *</label>
+                <input id="saiQtd" class="form-input" type="number" min="0.01" step="0.01" placeholder="0">
+              </div>
+              <div>
+                <label class="form-label">Motivo *</label>
+                <select id="saiMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Entrega a Colaborador">Entrega a Colaborador</option>
+                  <option value="Transferência entre Armazéns">Transferência entre Armazéns</option>
+                  <option value="Descarte">Descarte</option>
+                  <option value="Perda/Extravio">Perda / Extravio</option>
+                  <option value="Ajuste de Estoque">Ajuste de Estoque</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Observação (opcional)</label>
+              <textarea id="saiObs" class="form-input" rows="2" style="resize:vertical" placeholder="Informações adicionais..."></textarea>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarSaida()">✓ Registrar Saída</button>
+              <button class="btn btn-ghost" onclick="limparSaida()">Limpar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ÚLTIMAS SAÍDAS -->
+        <div class="card" style="margin-top:20px">
+          <div class="card-header">
+            <div><div class="card-title">Últimas Saídas</div></div>
+            <button class="btn btn-ghost" onclick="carregarUltimasSaidas()">↻ Atualizar</button>
+          </div>
+          <table>
+            <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th>Data</th><th>Usuário</th></tr></thead>
+            <tbody id="saiHistoricoBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ── TRANSFERÊNCIA ── -->
+      <div class="view" id="view-transferencia">
+        <div class="card" style="max-width:600px">
+          <div class="card-header"><div><div class="card-title">Transferência entre Armazéns</div><div class="card-sub">Transfira itens de um armazém para outro</div></div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label class="form-label">Item *</label>
+              <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" autocomplete="off">
+              <div id="trfItemSugestoes" class="autocomplete-list hidden"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="form-label">Armazém de Origem *</label>
+                <select id="trfOrigem" class="form-input" onchange="verificarSaldoTrf()"><option value="">Selecione...</option></select>
+              </div>
+              <div>
+                <label class="form-label">Armazém de Destino *</label>
+                <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select>
+              </div>
+            </div>
+            <div id="trfSaldoBox" class="hidden" style="background:var(--accent-soft);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px">
+              Saldo disponível na origem: <strong id="trfSaldoValor" style="color:var(--accent-text)">—</strong>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div>
+                <label class="form-label">Quantidade *</label>
+                <input id="trfQtd" class="form-input" type="number" min="1" value="1">
+              </div>
+              <div>
+                <label class="form-label">Data *</label>
+                <input id="trfData" class="form-input" type="date">
+              </div>
+            </div>
+            <div>
+              <label class="form-label">Observação (opcional)</label>
+              <textarea id="trfObs" class="form-input" rows="2" style="resize:vertical" placeholder="Ex: Reforço de estoque..."></textarea>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarTransferencia()">↔ Transferir</button>
+              <button class="btn btn-ghost" onclick="limparTransferencia()">Limpar</button>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="view" id="view-estoque"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Consulta de Estoque</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-movimentacoes"><div class="empty-state"><div class="es-icon">📊</div><div class="es-title">Movimentações</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-descontos"><div class="empty-state"><div class="es-icon">💰</div><div class="es-title">Descontos</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -1175,6 +1379,9 @@ function onViewLoad(nome) {
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        carregarAssinaturas();
   if (nome === 'solicitacoes')       carregarSolicitacoes();
+  if (nome === 'entrada')            { populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
+  if (nome === 'saida')              { populateArmazens('saiArmazem'); carregarUltimasSaidas();   initMovDateFields(); }
+  if (nome === 'transferencia')      { populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -3159,6 +3366,270 @@ function atenderSolicitacao(id) {
   } else {
     toast(`Solicitação vinculada! Selecione o colaborador e inicie o atendimento.`, 'info', 5000);
   }
+}
+
+// ═══════════════════════════════════════════
+// MOVIMENTAÇÕES — ENTRADA / SAÍDA / TRANSFERÊNCIA
+// ═══════════════════════════════════════════
+let _entItemSel = null;
+let _saiItemSel = null; let _saiColabSel = null;
+let _trfItemSel = null;
+
+function initMovDateFields() {
+  const hoje = new Date().toISOString().split('T')[0];
+  ['entData','saiData','trfData'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.value) el.value = hoje;
+  });
+}
+
+function populateArmazens(selectId, all = true) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const opts = (_armazens||[]).map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+  sel.innerHTML = `<option value="">Selecione...</option>${opts}`;
+}
+
+// ── ENTRADA ──
+function filtrarItensEnt(q) {
+  const lista = (_itens||[]).filter(i => {
+    const s = q.toLowerCase();
+    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
+  }).slice(0,15);
+  mostrarAutocomplete('entItemSugestoes','entItemBusca', lista, 'selecionarItemEnt');
+}
+function selecionarItemEnt(id) {
+  _entItemSel = (_itens||[]).find(i => i.id === id);
+  if (!_entItemSel) return;
+  document.getElementById('entItemBusca').value = _entItemSel.descricao;
+  document.getElementById('entItemSugestoes').classList.add('hidden');
+  // Preview
+  const vazio = document.getElementById('entPreviewVazio');
+  const dados  = document.getElementById('entPreviewDados');
+  if (vazio) vazio.classList.add('hidden');
+  if (dados) dados.classList.remove('hidden');
+  const img = document.getElementById('entPreviewImg');
+  if (img) { img.src = _entItemSel.img || ''; img.style.display = _entItemSel.img ? '' : 'none'; }
+  document.getElementById('entPreviewNome').textContent = _entItemSel.descricao;
+  document.getElementById('entPreviewCod').textContent  = `${_entItemSel.codigo||'—'} • ${_entItemSel.categoria||'—'}`;
+  atualizarTotalEntrada();
+}
+function atualizarTotalEntrada() {
+  if (!_entItemSel) return;
+  const qtd   = parseFloat(document.getElementById('entQtd')?.value) || 0;
+  const valor = parseFloat(_entItemSel.valor_un) || 0;
+  const total = (qtd * valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const vun   = valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  const elV = document.getElementById('entPreviewValor');
+  const elT = document.getElementById('entPreviewTotal');
+  if (elV) elV.textContent = vun;
+  if (elT) elT.textContent = total;
+}
+
+async function registrarEntrada() {
+  const itemId   = _entItemSel?.id;
+  const armazem  = document.getElementById('entArmazem')?.value;
+  const data     = document.getElementById('entData')?.value;
+  const qtd      = parseFloat(document.getElementById('entQtd')?.value);
+  const motivo   = document.getElementById('entMotivo')?.value;
+  const obs      = document.getElementById('entObs')?.value || '';
+
+  if (!itemId || !armazem || !data || !qtd || !motivo) {
+    toast('Preencha todos os campos obrigatórios', 'warn'); return;
+  }
+
+  const res = await api('/movimentacoes', {
+    method: 'POST',
+    body: JSON.stringify({ tipo:'entrada', item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, obs })
+  });
+
+  if (res?.ok) {
+    toast('Entrada registrada com sucesso!', 'success');
+    limparEntrada();
+    carregarUltimasEntradas();
+  } else {
+    toast(res?.erro || 'Erro ao registrar entrada', 'error');
+  }
+}
+
+function limparEntrada() {
+  _entItemSel = null;
+  ['entItemBusca','entQtd','entObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['entArmazem','entMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex = 0; });
+  const hoje = new Date().toISOString().split('T')[0];
+  const dt = document.getElementById('entData'); if(dt) dt.value = hoje;
+  document.getElementById('entPreviewVazio')?.classList.remove('hidden');
+  document.getElementById('entPreviewDados')?.classList.add('hidden');
+}
+
+async function carregarUltimasEntradas() {
+  const tbody = document.getElementById('entHistoricoBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const data = await api('/movimentacoes?tipo=entrada&limit=20');
+  renderHistoricoMov(tbody, data?.movimentacoes || []);
+}
+
+// ── SAÍDA ──
+function filtrarItensSai(q) {
+  const lista = (_itens||[]).filter(i => {
+    const s = q.toLowerCase();
+    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
+  }).slice(0,15);
+  mostrarAutocomplete('saiItemSugestoes','saiItemBusca', lista, 'selecionarItemSai');
+}
+function selecionarItemSai(id) {
+  _saiItemSel = (_itens||[]).find(i => i.id === id);
+  if (!_saiItemSel) return;
+  document.getElementById('saiItemBusca').value = _saiItemSel.descricao;
+  document.getElementById('saiItemSugestoes').classList.add('hidden');
+  verificarSaldoSaida();
+}
+function filtrarColabSai(q) {
+  const lista = (_colaboradores||[]).filter(c => {
+    const s = q.toLowerCase();
+    return (c.nome||'').toLowerCase().includes(s) || (c.matricula||'').toLowerCase().includes(s);
+  }).slice(0,10);
+  mostrarAutocomplete('saiColabSugestoes','saiColabBusca', lista, 'selecionarColabSai');
+}
+function selecionarColabSai(id) {
+  _saiColabSel = (_colaboradores||[]).find(c => c.id === id);
+  if (!_saiColabSel) return;
+  document.getElementById('saiColabBusca').value = _saiColabSel.nome;
+  document.getElementById('saiColabSugestoes').classList.add('hidden');
+}
+
+async function verificarSaldoSaida() {
+  const armazem = document.getElementById('saiArmazem')?.value;
+  const box     = document.getElementById('saiSaldoBox');
+  if (!_saiItemSel || !armazem) { box?.classList.add('hidden'); return; }
+  const data = await api(`/saldos?item_id=${_saiItemSel.id}&armazem_id=${armazem}`);
+  const saldo = data?.saldo ?? data?.saldos?.[0]?.saldo ?? 0;
+  document.getElementById('saiSaldoValor').textContent = `${saldo} ${_saiItemSel.un_med||'UN'}`;
+  box?.classList.remove('hidden');
+}
+
+async function registrarSaida() {
+  const itemId   = _saiItemSel?.id;
+  const armazem  = document.getElementById('saiArmazem')?.value;
+  const data     = document.getElementById('saiData')?.value;
+  const qtd      = parseFloat(document.getElementById('saiQtd')?.value);
+  const motivo   = document.getElementById('saiMotivo')?.value;
+  const obs      = document.getElementById('saiObs')?.value || '';
+  const colabId  = _saiColabSel?.id || null;
+
+  if (!itemId || !armazem || !data || !qtd || !motivo) {
+    toast('Preencha todos os campos obrigatórios', 'warn'); return;
+  }
+
+  const res = await api('/movimentacoes', {
+    method: 'POST',
+    body: JSON.stringify({ tipo:'saida', item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, obs, colaborador_id:colabId })
+  });
+
+  if (res?.ok) {
+    toast('Saída registrada com sucesso!', 'success');
+    limparSaida();
+    carregarUltimasSaidas();
+  } else {
+    toast(res?.erro || 'Erro ao registrar saída', 'error');
+  }
+}
+
+function limparSaida() {
+  _saiItemSel = null; _saiColabSel = null;
+  ['saiItemBusca','saiQtd','saiObs','saiColabBusca'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  ['saiArmazem','saiMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
+  const hoje = new Date().toISOString().split('T')[0];
+  const dt = document.getElementById('saiData'); if(dt) dt.value = hoje;
+  document.getElementById('saiSaldoBox')?.classList.add('hidden');
+}
+
+async function carregarUltimasSaidas() {
+  const tbody = document.getElementById('saiHistoricoBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const data = await api('/movimentacoes?tipo=saida&limit=20');
+  renderHistoricoMov(tbody, data?.movimentacoes || []);
+}
+
+// ── TRANSFERÊNCIA ──
+function filtrarItensTrf(q) {
+  const lista = (_itens||[]).filter(i => {
+    const s = q.toLowerCase();
+    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
+  }).slice(0,15);
+  mostrarAutocomplete('trfItemSugestoes','trfItemBusca', lista, 'selecionarItemTrf');
+}
+function selecionarItemTrf(id) {
+  _trfItemSel = (_itens||[]).find(i => i.id === id);
+  if (!_trfItemSel) return;
+  document.getElementById('trfItemBusca').value = _trfItemSel.descricao;
+  document.getElementById('trfItemSugestoes').classList.add('hidden');
+  verificarSaldoTrf();
+}
+
+async function verificarSaldoTrf() {
+  const origem = document.getElementById('trfOrigem')?.value;
+  const box    = document.getElementById('trfSaldoBox');
+  if (!_trfItemSel || !origem) { box?.classList.add('hidden'); return; }
+  const data = await api(`/saldos?item_id=${_trfItemSel.id}&armazem_id=${origem}`);
+  const saldo = data?.saldo ?? data?.saldos?.[0]?.saldo ?? 0;
+  document.getElementById('trfSaldoValor').textContent = `${saldo} ${_trfItemSel.un_med||'UN'}`;
+  box?.classList.remove('hidden');
+}
+
+async function registrarTransferencia() {
+  const itemId  = _trfItemSel?.id;
+  const origem  = document.getElementById('trfOrigem')?.value;
+  const destino = document.getElementById('trfDestino')?.value;
+  const qtd     = parseFloat(document.getElementById('trfQtd')?.value);
+  const data    = document.getElementById('trfData')?.value;
+  const obs     = document.getElementById('trfObs')?.value || '';
+
+  if (!itemId || !origem || !destino || !qtd || !data) {
+    toast('Preencha todos os campos obrigatórios', 'warn'); return;
+  }
+  if (origem === destino) {
+    toast('Origem e destino não podem ser iguais', 'warn'); return;
+  }
+
+  const res = await api('/movimentacoes', {
+    method: 'POST',
+    body: JSON.stringify({ tipo:'transferencia', item_id:itemId, armazem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, obs })
+  });
+
+  if (res?.ok) {
+    toast('Transferência realizada com sucesso!', 'success');
+    limparTransferencia();
+  } else {
+    toast(res?.erro || 'Erro ao transferir', 'error');
+  }
+}
+
+function limparTransferencia() {
+  _trfItemSel = null;
+  ['trfItemBusca','trfQtd','trfObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = id==='trfQtd'?'1':''; });
+  ['trfOrigem','trfDestino'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
+  const hoje = new Date().toISOString().split('T')[0];
+  const dt = document.getElementById('trfData'); if(dt) dt.value = hoje;
+  document.getElementById('trfSaldoBox')?.classList.add('hidden');
+}
+
+// ── RENDER HISTÓRICO COMUM ──
+function renderHistoricoMov(tbody, lista) {
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhum registro</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(m => `<tr>
+    <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
+    <td style="font-size:11px">${m.nome_armazem||'—'}</td>
+    <td>${m.quantidade} ${m.un_med||'UN'}</td>
+    <td><span class="tag tag-gray">${m.motivo||'—'}</span></td>
+    <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
+    <td style="font-size:11px;color:var(--text-3)">${m.usuario_nome||'—'}</td>
+  </tr>`).join('');
 }
 
 // ── ENTER no login ──
