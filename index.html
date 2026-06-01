@@ -1426,9 +1426,9 @@ function onViewLoad(nome) {
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        carregarAssinaturas();
   if (nome === 'solicitacoes')       carregarSolicitacoes();
-  if (nome === 'entrada')            { populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
-  if (nome === 'saida')              { populateArmazens('saiArmazem'); carregarUltimasSaidas();   initMovDateFields(); }
-  if (nome === 'transferencia')      { populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
+  if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
+  if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas();   initMovDateFields(); }
+  if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
