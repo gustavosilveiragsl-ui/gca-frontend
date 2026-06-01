@@ -2016,60 +2016,7 @@ function renderItensAtendimento() {
   container.innerHTML = `<table>
     <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th></th></tr></thead>
     <tbody>
-      ${ATEND.itens.map((it, i) => {
-        const motivoLower = (it.motivo||'').toLowerCase();
-        const ehTroca = motivoLower.includes('troca') || motivoLower.includes('desgaste') || motivoLower.includes('recupera') || motivoLower.includes('dano');
-
-        // Serial novo (saindo do estoque)
-        const serialNovoBlock = it.requerEnsaio ? `
-          <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
-          ${it.seriais.map((s, si) => `
-          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-            <input
-              list="seriais-${i}-${si}"
-              class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono)"
-              placeholder="Serial ${si+1}"
-              value="${s||''}"
-              oninput="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})"
-              onchange="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})"
-            >
-            <datalist id="seriais-${i}-${si}">
-              ${(it.seriaisDisponiveis||[]).map(sv => `<option value="${sv}">`).join('')}
-            </datalist>
-            <span id="serial-status-${i}-${si}" style="font-size:10px;font-weight:600;min-width:60px"></span>
-          </div>`).join('')}` : '';
-
-        // Serial retorno (devolvido pelo colaborador) — só em motivos de troca
-        const serialRetornoBlock = (it.requerEnsaio && ehTroca) ? `
-          <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
-          ${it.seriais.map((s, si) => `
-          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-            <input
-              list="retorno-${i}-${si}"
-              class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono);border-color:var(--yellow)"
-              placeholder="Retorno ${si+1}"
-              value="${(it.serialRetorno||[])[si]||''}"
-              oninput="if(!ATEND.itens[${i}].serialRetorno)ATEND.itens[${i}].serialRetorno=[];ATEND.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()"
-            >
-            <datalist id="retorno-${i}-${si}">
-              ${(it.seriaisComColab||[]).map(sv => `<option value="${sv}">`).join('')}
-            </datalist>
-          </div>`).join('')}` : '';
-
-        return `
-        <tr>
-          <td class="td-main">
-            ${it.descricao}
-            ${it.requerEnsaio ? `<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>` : ''}
-            ${serialNovoBlock}
-            ${serialRetornoBlock}
-          </td>
-          <td>${it.nomeArmazem||'—'}</td>
-          <td>${it.quantidade} ${it.un_med||'UN'}</td>
-          <td><span class="tag tag-gray">${it.motivo}</span></td>
-          <td><button class="row-action" style="color:var(--red)" onclick="removerItemAtendimento(${i})">✕</button></td>
-        </tr>`;
-      }).join('')}
+      ${ATEND.itens.map((it, i) => renderItemAtendimento(it, i)).join('')}
     </tbody>
   </table>`;
 }
@@ -2589,12 +2536,12 @@ function renderAssinaturas(lista) {
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
         <button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>
-        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}','${(a.nomeColaborador||'').replace(/'/g,"\\'")}','${a.data}',${qtdItens},true)">Cancelar</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
         <button class="row-action" onclick="reenviarLink('${a.id}','${a.token||''}')">↺ Reenviar</button>
         <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
-        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}','${(a.nomeColaborador||'').replace(/'/g,"\\'")}','${a.data}',${qtdItens},false)">Cancelar</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>`;
 
     return `<tr>
@@ -2840,8 +2787,8 @@ function renderSolicitacoes() {
   tbody.innerHTML = pagina.map(s => {
     const statusTag = solStatusTag(s.status);
     const priorTag  = s.prioridade === 'Urgente'
-      ? '<span class="tag tag-red">🚨 Urgente</span>'
-      : '<span class="tag tag-gray">Normal</span>';
+      ? '<span style="color:#ef4444;font-weight:700;font-size:11px">🚨 Urgente</span>'
+      : '<span style="color:#64748b;font-weight:500;font-size:11px">🔵 Normal</span>';
 
     let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
     const qtd = itens.length || s.qtd_itens || 0;
@@ -2931,20 +2878,9 @@ async function abrirModalSolicitacao(id) {
     ${obs ? `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:16px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
 
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Itens solicitados</div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-      <thead><tr>
-        <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
-        <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
-        <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center">Qtd</th>
-      </tr></thead>
-      <tbody>
-        ${itens.map(i => `<tr>
-          <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.nome||i.descricao||i.item_descricao||'—'}</td>
-          <td style="padding:8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${i.motivo||'—'}</td>
-          <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade||1}</td>
-        </tr>`).join('')}
-      </tbody>
-    </table>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+      ${itens.map(i => renderItemSolicitacao(i)).join('')}
+    </div>
 
     ${historico.length ? `
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Histórico</div>
@@ -2960,20 +2896,24 @@ async function abrirModalSolicitacao(id) {
     </div>` : ''}`;
 
   // Botões de ação conforme status
-  const podeAtender = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
+  const podeAtender   = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
+  const podeEditar    = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
+  const podeCancelar  = !['FINALIZADO','CANCELADO'].includes(s.status);
+
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
+      ${podeAtender ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}');fecharModalSolicitacao()">🤝 Iniciar Atendimento</button>` : ''}
+      ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')">✏️ Editar</button>` : ''}
       ${podeAtender ? `
-        <button class="btn btn-primary" onclick="atenderSolicitacao('${id}');fecharModalSolicitacao()">🤝 Iniciar Atendimento</button>
         <select class="form-input" id="solNovoStatus" style="width:180px;font-size:11px">
           <option value="">Alterar status...</option>
-          <option value="VISUALIZADO">Visualizado</option>
-          <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
-          <option value="EM TRANSITO">Em Trânsito</option>
-          <option value="CANCELADO">Cancelado</option>
+          <option value="VISUALIZADO">👁️ Visualizado</option>
+          <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>
+          <option value="EM TRANSITO">🚚 Em Trânsito</option>
         </select>
         <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Atualizar</button>
       ` : ''}
+      ${podeCancelar ? `<button class="btn" style="background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.2)" onclick="cancelarSolicitacao('${id}')">✕ Cancelar</button>` : ''}
       <button class="btn btn-ghost" style="margin-left:auto" onclick="fecharModalSolicitacao()">Fechar</button>
     </div>`;
 
@@ -2997,6 +2937,140 @@ async function alterarStatusSolicitacao(id) {
     renderSolicitacoes();
   } else {
     toast(res?.erro || 'Erro ao atualizar', 'error');
+  }
+}
+
+function renderItemAtendimento(it, i) {
+  const motivoLower = (it.motivo||'').toLowerCase();
+  const ehTroca = motivoLower.includes('troca') || motivoLower.includes('desgaste') || motivoLower.includes('recupera') || motivoLower.includes('dano');
+
+  const serialNovoBlock = it.requerEnsaio ? `
+    <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
+    ${(it.seriais||[]).map((s, si) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <input list="seriais-${i}-${si}" class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono)"
+        placeholder="Serial ${si+1}" value="${s||''}"
+        oninput="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})"
+        onchange="ATEND.itens[${i}].seriais[${si}]=this.value.toUpperCase();validarSerial(this,${i},${si})">
+      <datalist id="seriais-${i}-${si}">
+        ${(it.seriaisDisponiveis||[]).map(sv => `<option value="${sv}">`).join('')}
+      </datalist>
+      <span id="serial-status-${i}-${si}" style="font-size:10px;font-weight:600;min-width:60px"></span>
+    </div>`).join('')}` : '';
+
+  const serialRetornoBlock = (it.requerEnsaio && ehTroca) ? `
+    <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
+    ${(it.seriais||[]).map((s, si) => `
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+      <input list="retorno-${i}-${si}" class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono);border-color:var(--yellow)"
+        placeholder="Retorno ${si+1}" value="${(it.serialRetorno||[])[si]||''}"
+        oninput="if(!ATEND.itens[${i}].serialRetorno)ATEND.itens[${i}].serialRetorno=[];ATEND.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()">
+      <datalist id="retorno-${i}-${si}">
+        ${(it.seriaisComColab||[]).map(sv => `<option value="${sv}">`).join('')}
+      </datalist>
+    </div>`).join('')}` : '';
+
+  return `<tr>
+    <td class="td-main">
+      ${it.descricao}
+      ${it.requerEnsaio ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}
+      ${serialNovoBlock}
+      ${serialRetornoBlock}
+    </td>
+    <td>${it.nomeArmazem||'—'}</td>
+    <td>${it.quantidade} ${it.un_med||'UN'}</td>
+    <td><span class="tag tag-gray">${it.motivo}</span></td>
+    <td><button class="row-action" style="color:var(--red)" onclick="removerItemAtendimento(${i})">✕</button></td>
+  </tr>`;
+}
+
+function renderItemSolicitacao(i) {
+  const partes = (i.motivo||'').split(' — Justificativa: ');
+  const motivoTexto    = partes[0] || '—';
+  const justificativa  = partes[1] || '';
+  const foraPrazo      = i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias;
+  return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-1)">${i.nome||i.descricao||'—'}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        ${i.trocaTamanho ? '<span style="color:#a855f7;font-size:10px;font-weight:600">👕 Troca de Tamanho</span>' : ''}
+        <span style="font-size:11px;color:var(--text-2)">${i.quantidade||1} un.</span>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3)">Motivo: <span style="color:var(--text-2)">${motivoTexto}</span></div>
+    ${justificativa ? `<div style="font-size:11px;color:var(--yellow);margin-top:4px">💬 Justificativa: ${justificativa}</div>` : ''}
+    ${foraPrazo ? `<div style="margin-top:8px;background:var(--yellow-soft);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius-sm);padding:8px;font-size:11px">
+      <div style="color:var(--yellow);font-weight:600;margin-bottom:4px">⚠️ Item fora do prazo de durabilidade</div>
+      <div style="display:flex;gap:16px;color:var(--text-2)">
+        <span>Durou: <strong style="color:var(--red)">${i.diasDecorridos} dias</strong></span>
+        <span>→</span>
+        <span>Estimado: <strong style="color:var(--green)">${i.prazoMinDias} dias</strong></span>
+      </div>
+    </div>` : ''}
+  </div>`;
+}
+
+async function cancelarSolicitacao(id) {
+  if (!confirm('Cancelar esta solicitação? Esta ação não pode ser desfeita.')) return;
+  const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'CANCELADO' }) });
+  if (res?.ok) {
+    const s = _solicitacoes.find(x => x.id === id);
+    if (s) s.status = 'CANCELADO';
+    toast('Solicitação cancelada!', 'success');
+    fecharModalSolicitacao();
+    atualizarKpisSolicitacoes();
+    renderSolicitacoes();
+  } else {
+    toast(res?.erro || 'Erro ao cancelar', 'error');
+  }
+}
+
+function editarSolicitacao(id) {
+  const s = _solicitacoes.find(x => x.id === id);
+  if (!s) return;
+  let itens = []; try { itens = JSON.parse(s.itens_json || '[]'); } catch {}
+
+  // Abre modal de edição inline
+  const body = document.getElementById('solModalBody');
+  const footer = document.getElementById('solModalFooter');
+
+  body.innerHTML = `
+    <div style="font-size:12px;color:var(--text-2);margin-bottom:12px">Edite os itens da solicitação. Você pode alterar quantidades ou remover itens.</div>
+    <div id="editItensContainer" style="display:flex;flex-direction:column;gap:8px">
+      ${itens.map((i, idx) => `
+        <div id="editItem-${idx}" style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm)">
+          <div style="flex:1;font-size:12px;color:var(--text-1)">${i.nome||i.descricao||'—'}</div>
+          <input type="number" min="1" value="${i.quantidade||1}" style="width:60px;font-size:11px" class="form-input"
+            onchange="window._editItens[${idx}].quantidade=Number(this.value)">
+          <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="document.getElementById('editItem-${idx}').remove();window._editItens.splice(${idx},1)">✕</button>
+        </div>`).join('')}
+    </div>`;
+
+  window._editItens = JSON.parse(JSON.stringify(itens));
+
+  footer.innerHTML = `
+    <div style="display:flex;gap:8px;width:100%">
+      <button class="btn btn-primary" onclick="salvarEdicaoSolicitacao('${id}')">💾 Salvar alterações</button>
+      <button class="btn btn-ghost" onclick="abrirModalSolicitacao('${id}')">← Voltar</button>
+    </div>`;
+}
+
+async function salvarEdicaoSolicitacao(id) {
+  const itens = window._editItens || [];
+  if (!itens.length) { toast('A solicitação precisa ter pelo menos 1 item', 'warn'); return; }
+
+  const res = await api(`/solicitacoes/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify({ itens_json: JSON.stringify(itens) })
+  });
+
+  if (res?.ok) {
+    const s = _solicitacoes.find(x => x.id === id);
+    if (s) s.itens_json = JSON.stringify(itens);
+    toast('Solicitação atualizada!', 'success');
+    abrirModalSolicitacao(id);
+  } else {
+    toast(res?.erro || 'Erro ao salvar', 'error');
   }
 }
 
