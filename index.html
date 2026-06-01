@@ -2381,7 +2381,10 @@ let _assQuery    = '';
 async function carregarAssinaturas() {
   const tbody = document.getElementById('assBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+  // Garante colaboradores carregados para buscar setor
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
 
   const data = await api('/atendimentos/pendentes');
   if (!data) return;
@@ -2456,9 +2459,9 @@ function renderAssinaturas(lista) {
     let itens = []; try { itens = JSON.parse(a.itens_json || a.itens || '[]'); } catch {}
     const qtdItens = itens.length || a.qtdItens || 0;
 
-    // Busca setor do colaborador
-    const colab  = (_colaboradores||[]).find(c => c.nome === a.nomeColaborador);
-    const setor  = colab?.setor || a.funcao_colaborador || '—';
+    // Busca setor do colaborador pelo ID ou nome
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    const setor = colab?.setor || '—';
 
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
