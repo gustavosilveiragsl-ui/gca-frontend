@@ -367,6 +367,19 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
       </div>
 
+      <!-- Consulta -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Consulta</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="consulta-itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
+          <button class="nav-item" data-view="consulta-colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
+          <button class="nav-item" data-view="consulta-dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
+        </div>
+      </div>
+
       <!-- Financeiro -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
@@ -1443,6 +1456,74 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
       </div>
       <div class="view" id="view-descontos"><div class="empty-state"><div class="es-icon">💰</div><div class="es-title">Descontos</div><div class="es-sub">Em desenvolvimento</div></div></div>
+
+      <!-- ── CONSULTA DE ITENS ── -->
+      <div class="view" id="view-consulta-itens">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Consulta de Itens</div><div class="card-sub" id="subConsultaItens">—</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="consultaItensBusca" placeholder="Buscar por descrição, código ou CA..." oninput="renderConsultaItens()">
+              <select class="form-input" id="consultaItensCategoria" style="width:150px;font-size:11px" onchange="renderConsultaItens()">
+                <option value="">Todas categorias</option>
+              </select>
+              <select class="form-input" id="consultaItensFiltro" style="width:130px;font-size:11px" onchange="renderConsultaItens()">
+                <option value="">Todos</option>
+                <option value="nr10">⚡ NR10</option>
+                <option value="serie">🔢 Com série</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th style="text-align:center">Un.</th><th style="text-align:center">Est. Mín.</th><th style="text-align:right">Valor Un.</th><th>Posição</th><th></th></tr></thead>
+            <tbody id="consultaItensBody"><tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr></tbody>
+          </table>
+          <div id="consultaItensPag"></div>
+        </div>
+      </div>
+
+      <!-- ── CONSULTA DE COLABORADORES ── -->
+      <div class="view" id="view-consulta-colaboradores">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Consulta de Colaboradores</div><div class="card-sub" id="subConsultaColabs">—</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="consultaColabBusca" placeholder="Buscar por nome, matrícula ou função..." oninput="renderConsultaColabs()">
+              <select class="form-input" id="consultaColabStatus" style="width:130px;font-size:11px" onchange="renderConsultaColabs()">
+                <option value="">Todos os status</option>
+                <option value="ativo">✓ Ativos</option>
+                <option value="ferias">🏖 Férias</option>
+                <option value="desligado">✕ Desligados</option>
+              </select>
+              <select class="form-input" id="consultaColabFuncao" style="width:160px;font-size:11px" onchange="renderConsultaColabs()">
+                <option value="">Todas as funções</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Status</th><th>Nível</th><th></th></tr></thead>
+            <tbody id="consultaColabBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── CONSULTA DE DOTAÇÃO ── -->
+      <div class="view" id="view-consulta-dotacao">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Consulta de Dotação por Função</div><div class="card-sub">O que cada função deve receber</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="consultaDotBusca" placeholder="Buscar função..." oninput="renderConsultaDotacao()">
+              <select class="form-input" id="consultaDotNivel" style="width:130px;font-size:11px" onchange="renderConsultaDotacao()">
+                <option value="">Todos os níveis</option>
+                <option value="Pleno">Pleno</option>
+                <option value="Junior">Junior</option>
+              </select>
+            </div>
+          </div>
+          <div id="consultaDotGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
+        </div>
+      </div>
       <div class="view" id="view-solicitacoes-compra"><div class="empty-state"><div class="es-icon">🛒</div><div class="es-title">Solicitações de Compra</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-protheus"><div class="empty-state"><div class="es-icon">🗂️</div><div class="es-title">Lançamentos Protheus</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-atendimento-enel"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Atendimento ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -1747,6 +1828,105 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL CONSULTA COLABORADOR -->
+<div class="modal-overlay hidden" id="modalConsultaColab" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:860px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:16px">
+        <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0">👤</div>
+        <div>
+          <div class="modal-title" id="ccNome">—</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="ccSub">—</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span id="ccStatus"></span>
+        <button class="modal-close" onclick="fecharConsultaColab()">×</button>
+      </div>
+    </div>
+    <div class="modal-body">
+
+      <!-- DADOS + KPIs -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+          <div style="font-size:10px;color:var(--text-3)">FUNÇÃO</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="ccFuncao">—</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+          <div style="font-size:10px;color:var(--text-3)">SETOR</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="ccSetor">—</div>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px">
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#22c55e" id="ccTotalAtend">—</div>
+          <div style="font-size:10px;color:var(--text-3)">Total Atendimentos</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#3b82f6" id="ccTotalTipos">—</div>
+          <div style="font-size:10px;color:var(--text-3)">Tipos de Itens</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:13px;font-weight:700;color:#f59e0b;line-height:1.3" id="ccItemTop">—</div>
+          <div style="font-size:10px;color:var(--text-3)">Item Mais Retirado</div>
+        </div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:700;color:#a855f7" id="ccItensEmMaos">—</div>
+          <div style="font-size:10px;color:var(--text-3)">Itens em Mãos</div>
+        </div>
+      </div>
+
+      <!-- AÇÕES -->
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+        <button class="btn btn-ghost" style="font-size:11px" onclick="toggleHistoricoColab()">📋 Ver Histórico</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:#a855f7;border-color:#a855f7" onclick="devolverAoEstoque()">↩️ Devolver ao Estoque</button>
+        <button class="btn btn-ghost" style="font-size:11px" id="ccBtnDotacao" onclick="toggleDotacaoColab()">📋 Ver Dotação</button>
+      </div>
+
+      <!-- SALDO EM MÃOS -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Saldo em Mãos por Item</div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
+        <thead><tr>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total Entregue</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Total Trocado</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#a855f7;border-bottom:1px solid var(--border)">Em Mãos</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Última Retirada</th>
+        </tr></thead>
+        <tbody id="ccSaldoBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)"><div class="spinner"></div></td></tr></tbody>
+      </table>
+      <div style="font-size:11px;color:var(--text-3)" id="ccSaldoResumo"></div>
+
+      <!-- DOTAÇÃO (colapsável) -->
+      <div id="secDotacaoColab" style="display:none;margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:#22c55e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📋 Status de Dotação</div>
+        <div id="dotacaoColabGrid"></div>
+      </div>
+
+      <!-- HISTÓRICO (colapsável) -->
+      <div id="secHistoricoColab" style="display:none;margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:#a855f7;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📜 Histórico Completo</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data</th>
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Motivo</th>
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Armazém</th>
+          </tr></thead>
+          <tbody id="ccHistoricoBody"></tbody>
+        </table>
+      </div>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharConsultaColab()">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toastContainer"></div>
 
 <script>
@@ -1809,7 +1989,9 @@ const VIEW_TITLES = {
   descarte:['Gestão','/ Descarte'], recuperados:['Gestão','/ Recuperados'],
   indicadores:['Indicadores','/ Relatórios'], colaboradores:['Colaboradores','/ Cadastro'],
   itens:['Itens','/ Cadastro'], armazens:['Armazéns','/ Cadastro'],
-  equipes:['Equipes','/ Cadastro'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'],
+  'consulta-itens':          ['Consulta de Itens','/ Detalhes'],
+  'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
+  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'],
 };
 
 function showView(nome, btnEl) {
@@ -1856,6 +2038,9 @@ function onViewLoad(nome) {
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           carregarUsuariosView();
+  if (nome === 'consulta-itens')     carregarConsultaItens();
+  if (nome === 'consulta-colaboradores') carregarConsultaColabs();
+  if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -5219,6 +5404,265 @@ function limparFormColab() {
   document.getElementById('colabStatus').value = 'ativo';
   document.getElementById('colabNivel').value  = 'Pleno';
   document.getElementById('colabFormTitulo').textContent = 'Novo Colaborador';
+}
+
+// ═══════════════════════════════════════════
+// CONSULTA — ITENS / COLABORADORES / DOTAÇÃO
+// ═══════════════════════════════════════════
+let _consultaItensData  = [];
+let _consultaColabData  = [];
+let _consultaDotData    = [];
+let _consultaColabAtual = null;
+let _ciPagina = 1; const _ciPorPag = 50;
+
+// ── CONSULTA ITENS ──
+async function carregarConsultaItens() {
+  if (!_itens.length) await carregarItensAtendimento();
+  _consultaItensData = _itens;
+  document.getElementById('subConsultaItens').textContent = `${_itens.length} itens cadastrados`;
+
+  // Popula filtro categoria
+  const cats = [...new Set(_itens.map(i => i.categoria).filter(Boolean))].sort();
+  const sel  = document.getElementById('consultaItensCategoria');
+  if (sel) sel.innerHTML = '<option value="">Todas categorias</option>' + cats.map(c=>`<option value="${c}">${c}</option>`).join('');
+
+  renderConsultaItens();
+}
+
+function renderConsultaItens() {
+  const tbody = document.getElementById('consultaItensBody');
+  const busca = (document.getElementById('consultaItensBusca')?.value||'').toLowerCase();
+  const cat   = document.getElementById('consultaItensCategoria')?.value||'';
+  const filtro= document.getElementById('consultaItensFiltro')?.value||'';
+
+  let lista = _consultaItensData;
+  if (busca) lista = lista.filter(i => (i.descricao||'').toLowerCase().includes(busca) || (i.codigo||'').toLowerCase().includes(busca) || (i.ca||'').toLowerCase().includes(busca));
+  if (cat)   lista = lista.filter(i => i.categoria === cat);
+  if (filtro === 'nr10')  lista = lista.filter(i => i.requer_ensaio);
+  if (filtro === 'serie') lista = lista.filter(i => i.possui_serie);
+
+  document.getElementById('subConsultaItens').textContent = `${lista.length} de ${_consultaItensData.length} itens`;
+
+  const total  = lista.length;
+  const inicio = (_ciPagina-1)*_ciPorPag;
+  const pagina = lista.slice(inicio, inicio+_ciPorPag);
+
+  tbody.innerHTML = pagina.map(i => {
+    const pos = [i.corredor,i.prateleira,i.box].filter(Boolean).join('/') || '—';
+    return `<tr>
+      <td class="td-main">${i.descricao||'—'}
+        ${i.requer_ensaio?'<span style="color:#6366f1;font-size:10px;font-weight:700;margin-left:4px">⚡ NR10</span>':''}
+        ${i.possui_serie?'<span style="color:#f59e0b;font-size:10px;margin-left:4px">🔢</span>':''}
+      </td>
+      <td class="td-mono">${i.codigo||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${i.categoria||'—'}</td>
+      <td style="text-align:center;font-size:11px">${i.un_med||'—'}</td>
+      <td style="text-align:center;font-size:11px">${i.estoque_min||0}</td>
+      <td style="text-align:right;font-size:11px">${Number(i.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+      <td style="font-size:11px;color:var(--text-3)">${pos}</td>
+      <td><button class="row-action" onclick="abrirModalItem('${i.id}')">Ver</button></td>
+    </tr>`;
+  }).join('');
+
+  // Paginação
+  const totalPag = Math.ceil(total/_ciPorPag);
+  const pag = document.getElementById('consultaItensPag');
+  pag.innerHTML = total > _ciPorPag ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
+      <span>Exibindo ${inicio+1}–${Math.min(inicio+_ciPorPag,total)} de ${total}</span>
+      <div style="display:flex;gap:6px">
+        <button class="row-action" ${_ciPagina===1?'disabled':''} onclick="_ciPagina--;renderConsultaItens()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_ciPagina}/${totalPag}</span>
+        <button class="row-action" ${_ciPagina===totalPag?'disabled':''} onclick="_ciPagina++;renderConsultaItens()">Próxima →</button>
+      </div>
+    </div>` : '';
+}
+
+// ── CONSULTA COLABORADORES ──
+async function carregarConsultaColabs() {
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
+  _consultaColabData = _colaboradores;
+  document.getElementById('subConsultaColabs').textContent = `${_colaboradores.length} colaboradores`;
+
+  // Popula filtro funções
+  const funcoes = [...new Set(_colaboradores.map(c=>c.funcao).filter(Boolean))].sort();
+  const sel = document.getElementById('consultaColabFuncao');
+  if (sel) sel.innerHTML = '<option value="">Todas as funções</option>' + funcoes.map(f=>`<option value="${f}">${f}</option>`).join('');
+
+  renderConsultaColabs();
+}
+
+function renderConsultaColabs() {
+  const tbody  = document.getElementById('consultaColabBody');
+  const busca  = (document.getElementById('consultaColabBusca')?.value||'').toLowerCase();
+  const status = document.getElementById('consultaColabStatus')?.value||'';
+  const funcao = document.getElementById('consultaColabFuncao')?.value||'';
+
+  let lista = _consultaColabData;
+  if (busca)  lista = lista.filter(c=>(c.nome||'').toLowerCase().includes(busca)||(c.matricula||'').toLowerCase().includes(busca));
+  if (status) lista = lista.filter(c=>c.status===status);
+  if (funcao) lista = lista.filter(c=>c.funcao===funcao);
+
+  document.getElementById('subConsultaColabs').textContent = `${lista.length} de ${_consultaColabData.length} colaboradores`;
+
+  tbody.innerHTML = lista.slice(0,200).map(c => {
+    const stTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
+      : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px">🏖 Férias</span>'
+      : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+    return `<tr style="cursor:pointer" onclick="abrirConsultaColab('${c.id}')">
+      <td class="td-main">${c.nome||'—'}</td>
+      <td class="td-mono">${c.matricula||'—'}</td>
+      <td style="font-size:11px">${c.funcao||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${c.setor||'—'}</td>
+      <td>${stTag}</td>
+      <td style="font-size:11px;color:var(--text-3)">${c.nivel||'—'}</td>
+      <td><button class="row-action" onclick="event.stopPropagation();abrirConsultaColab('${c.id}')">Ver Ficha</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function abrirConsultaColab(id) {
+  _consultaColabAtual = id;
+  document.getElementById('modalConsultaColab').classList.remove('hidden');
+  document.getElementById('ccSaldoBody').innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
+  document.getElementById('secHistoricoColab').style.display = 'none';
+  document.getElementById('secDotacaoColab').style.display   = 'none';
+
+  const data = await api(`/consulta/colaborador/${id}`);
+  if (!data?.ok) { toast('Erro ao carregar ficha', 'error'); return; }
+
+  const c = data.colaborador;
+  document.getElementById('ccNome').textContent    = c.nome||'—';
+  document.getElementById('ccSub').textContent     = `${c.matricula||'—'} • ${c.funcao||'—'}`;
+  document.getElementById('ccFuncao').textContent  = c.funcao||'—';
+  document.getElementById('ccSetor').textContent   = c.setor||'—';
+
+  const stTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
+    : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px">🏖 Férias</span>'
+    : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+  document.getElementById('ccStatus').innerHTML = stTag;
+
+  // KPIs
+  const itens = data.itens || [];
+  const totalEmMaos = itens.reduce((s,i)=>s+i.saldoEmMaos, 0);
+  document.getElementById('ccTotalAtend').textContent  = data.totalAtendimentos||0;
+  document.getElementById('ccTotalTipos').textContent  = itens.length;
+  document.getElementById('ccItemTop').textContent     = data.itemMaisRetirado||'—';
+  document.getElementById('ccItensEmMaos').textContent = totalEmMaos;
+
+  // Saldo em mãos
+  const tbody = document.getElementById('ccSaldoBody');
+  if (!itens.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3)">Nenhuma retirada encontrada</td></tr>`;
+  } else {
+    tbody.innerHTML = itens.map(it => {
+      const cor = it.saldoEmMaos > 0 ? '#22c55e' : it.saldoEmMaos < 0 ? '#ef4444' : 'var(--text-3)';
+      return `<tr>
+        <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${it.descricao||'—'}</td>
+        <td style="padding:8px;text-align:center;font-size:12px;color:#22c55e;border-bottom:1px solid var(--border)">${it.totalEntregue}</td>
+        <td style="padding:8px;text-align:center;font-size:12px;color:#f59e0b;border-bottom:1px solid var(--border)">${it.totalTrocado}</td>
+        <td style="padding:8px;text-align:center;font-size:14px;font-weight:700;color:${cor};border-bottom:1px solid var(--border)">${it.saldoEmMaos}</td>
+        <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${formatarData(it.ultimaData)}</td>
+      </tr>`;
+    }).join('');
+    document.getElementById('ccSaldoResumo').textContent = `Total em mãos: ${totalEmMaos} itens`;
+  }
+
+  // Histórico
+  const hist = data.historico || [];
+  document.getElementById('ccHistoricoBody').innerHTML = hist.map(h=>`<tr>
+    <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${formatarData(h.data)}</td>
+    <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${h.item||'—'}</td>
+    <td style="padding:6px 8px;text-align:center;font-size:11px;border-bottom:1px solid var(--border)">${h.quantidade}</td>
+    <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${h.motivo}</td>
+    <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${h.armazem}</td>
+  </tr>`).join('');
+
+  // Dotação
+  const dot = data.dotacao || [];
+  if (dot.length) {
+    document.getElementById('dotacaoColabGrid').innerHTML = dot.map(d => {
+      const temItem = itens.find(i => i.item_id === d.item_id || (i.descricao||'').includes(d.item_base_nome||''));
+      const saldo   = temItem ? temItem.saldoEmMaos : 0;
+      const max     = Number(d.quantidade_maxima||0);
+      const ok      = saldo >= max;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px;border-bottom:1px solid var(--border)">
+        <div style="font-size:12px;color:var(--text-1)">${d.item_base_nome||'—'}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--text-3)">${saldo}/${max}</span>
+          <span style="font-size:12px">${ok?'✅':'⚠️'}</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function fecharConsultaColab() {
+  document.getElementById('modalConsultaColab').classList.add('hidden');
+  _consultaColabAtual = null;
+}
+
+function toggleHistoricoColab() {
+  const sec = document.getElementById('secHistoricoColab');
+  sec.style.display = sec.style.display === 'none' ? '' : 'none';
+}
+
+function toggleDotacaoColab() {
+  const sec = document.getElementById('secDotacaoColab');
+  sec.style.display = sec.style.display === 'none' ? '' : 'none';
+}
+
+function devolverAoEstoque() {
+  toast('Devolução ao estoque em breve', 'info');
+}
+
+// ── CONSULTA DOTAÇÃO ──
+async function carregarConsultaDotacao() {
+  const grid = document.getElementById('consultaDotGrid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:span 3;text-align:center;padding:32px"><div class="spinner"></div></div>';
+
+  const data = await api('/dotacao');
+  if (!data) return;
+  _consultaDotData = data.data || [];
+  renderConsultaDotacao();
+}
+
+function renderConsultaDotacao() {
+  const grid   = document.getElementById('consultaDotGrid');
+  const busca  = (document.getElementById('consultaDotBusca')?.value||'').toLowerCase();
+  const nivel  = document.getElementById('consultaDotNivel')?.value||'';
+
+  let lista = _consultaDotData;
+  if (busca) lista = lista.filter(d=>(d.funcao||'').toLowerCase().includes(busca));
+  if (nivel) lista = lista.filter(d=>d.nivel_minimo===nivel||d.nivel_minimo==='Todos');
+
+  // Agrupa por função
+  const grupos = {};
+  lista.forEach(d => {
+    const f = d.funcao||'—';
+    if (!grupos[f]) grupos[f] = [];
+    grupos[f].push(d);
+  });
+
+  if (!Object.keys(grupos).length) {
+    grid.innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-3);padding:32px">Nenhuma dotação encontrada</div>';
+    return;
+  }
+
+  grid.innerHTML = Object.entries(grupos).map(([funcao, itens]) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-1);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">${funcao}</div>
+      ${itens.map(d=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:11px">
+          <span style="color:var(--text-2)">${d.item_base_nome||'—'}</span>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span style="color:var(--text-3)">Máx: ${d.quantidade_maxima||1}</span>
+            ${d.nivel_minimo&&d.nivel_minimo!=='Todos'?`<span style="color:#6366f1;font-size:9px;font-weight:600">${d.nivel_minimo}</span>`:''}
+            ${d.grupo?`<span style="color:var(--text-3);font-size:9px">${d.grupo}</span>`:''}
+          </div>
+        </div>`).join('')}
+    </div>`).join('');
 }
 
 // ── ENTER no login ──
