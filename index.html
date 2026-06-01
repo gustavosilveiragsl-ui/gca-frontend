@@ -785,7 +785,8 @@ tbody tr:hover td{background:var(--bg-hover);}
 <div class="modal-overlay hidden" id="modalFinalizado">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <div class="modal-title">✓ Atendimento Registrado</div>
+      <div class="modal-title" id="finalizadoTitulo">✓ Atendimento Registrado</div>
+      <button class="modal-close" onclick="fecharModalFinalizado()">×</button>
     </div>
     <div class="modal-body" style="text-align:center">
       <div style="margin-bottom:16px">
@@ -804,7 +805,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         <button class="btn btn-ghost" style="justify-content:center" onclick="enviarTablet()">📱 Enviar ao tablet</button>
         <button class="btn btn-ghost" style="justify-content:center" onclick="imprimirFicha()">🖨️ Imprimir ficha</button>
       </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="fecharModalFinalizado()">Novo Atendimento</button>
+      <button class="btn btn-primary" id="btnNovoAtendimento" style="width:100%;justify-content:center;margin-top:8px" onclick="fecharModalFinalizado()">Novo Atendimento</button>
     </div>
   </div>
 </div>
@@ -2086,6 +2087,8 @@ function abrirModalFinalizado(registro) {
 
 function fecharModalFinalizado() {
   document.getElementById('modalFinalizado').classList.add('hidden');
+  document.getElementById('finalizadoTitulo').textContent = '✓ Atendimento Registrado';
+  document.getElementById('btnNovoAtendimento').style.display = '';
   resetarAtendimento();
 }
 
@@ -2292,7 +2295,7 @@ function verDetalhesAtendimento(id) {
       <div class="modal-header">
         <div>
           <div class="modal-title">${atend.nome_colaborador||'—'}</div>
-          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${atend.funcao_colaborador||'—'} • ${atend.data||'—'} • ${hora}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${atend.funcao_colaborador||'—'} • ${formatarData(atend.data)} • ${hora}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           ${statusTag(atend.status)}
@@ -2456,13 +2459,19 @@ function renderAssinaturas(lista) {
 
     return `<tr>
       <td class="td-main">${a.nomeColaborador||'—'}</td>
-      <td>${a.data||'—'}</td>
+      <td>${formatarData(a.data)}</td>
       <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
       <td>${tag}</td>
       <td style="font-size:11px;color:var(--text-3)">${expiraEm}</td>
       <td>${acoes}</td>
     </tr>`;
   }).join('');
+}
+
+function formatarData(data) {
+  if (!data) return '—';
+  const [y, m, d] = data.split('-');
+  return `${d}/${m}/${y}`;
 }
 
 function formatarTempoRestante(data) {
@@ -2476,9 +2485,10 @@ function formatarTempoRestante(data) {
 // ── Reenviar link ──
 function reenviarLink(id, token) {
   const link = `https://confirmacao.gcasistema.com.br/?token=${token}`;
-  // Abre modal de reenvio igual ao fim do atendimento
-  document.getElementById('finalizadoNome').textContent  = '—';
-  document.getElementById('finalizadoResumo').textContent = 'Reenvio de link';
+  document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
+  document.getElementById('finalizadoNome').textContent    = '—';
+  document.getElementById('finalizadoResumo').textContent  = 'Escaneie ou compartilhe o link abaixo';
+  document.getElementById('btnNovoAtendimento').style.display = 'none';
   const qrDiv = document.getElementById('finalizadoQR');
   qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}" style="width:160px;height:160px">`;
   ATEND.linkGerado = link;
@@ -2486,17 +2496,28 @@ function reenviarLink(id, token) {
 }
 
 // ── Ver itens ──
-function verItensAtendimento(id) {
+async function verItensAtendimento(id) {
   const atend = _assinaturas.find(a => a.id === id);
   if (!atend) return;
-  let itens = []; try { itens = JSON.parse(atend.itens_json || atend.itens || '[]'); } catch {}
+
+  let itens = [];
+  // Tenta parsear do objeto local
+  try { itens = JSON.parse(atend.itens_json || atend.itens || '[]'); } catch {}
+
+  // Se não tem itens locais, busca da API
+  if (!itens.length) {
+    const data = await api(`/atendimentos/${id}`);
+    if (data?.atendimento) {
+      try { itens = JSON.parse(data.atendimento.itens_json || '[]'); } catch {}
+    }
+  }
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
     <div class="modal-box" style="max-width:520px">
       <div class="modal-header">
-        <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${atend.data||'—'}</div></div>
+        <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${formatarData(atend.data)}</div></div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
       <div class="modal-body">
