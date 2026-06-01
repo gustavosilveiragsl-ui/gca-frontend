@@ -3684,9 +3684,9 @@ async function registrarEntrada() {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
   }
 
-  const res = await api('/movimentacoes', {
+  const res = await api('/movimentacoes/entrada', {
     method: 'POST',
-    body: JSON.stringify({ tipo:'entrada', item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, obs })
+    body: JSON.stringify({ item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs })
   });
 
   if (res?.ok) {
@@ -3791,9 +3791,9 @@ async function registrarSaida() {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
   }
 
-  const res = await api('/movimentacoes', {
+  const res = await api('/movimentacoes/saida', {
     method: 'POST',
-    body: JSON.stringify({ tipo:'saida', item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, obs, colaborador_id:colabId })
+    body: JSON.stringify({ item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs, colaborador_id:colabId })
   });
 
   if (res?.ok) {
@@ -3886,9 +3886,9 @@ async function registrarTransferencia() {
     toast('Origem e destino não podem ser iguais', 'warn'); return;
   }
 
-  const res = await api('/movimentacoes', {
+  const res = await api('/movimentacoes/transferencia', {
     method: 'POST',
-    body: JSON.stringify({ tipo:'transferencia', item_id:itemId, armazem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, obs })
+    body: JSON.stringify({ item_id:itemId, armazem_origem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, observacao:obs })
   });
 
   if (res?.ok) {
