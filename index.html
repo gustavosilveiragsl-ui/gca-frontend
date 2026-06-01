@@ -851,6 +851,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <thead>
               <tr>
                 <th>Colaborador</th>
+                <th>Setor</th>
                 <th>Data</th>
                 <th>Itens</th>
                 <th>Status</th>
@@ -859,7 +860,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               </tr>
             </thead>
             <tbody id="assBody">
-              <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
+              <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
             </tbody>
           </table>
         </div>
@@ -2411,6 +2412,9 @@ async function carregarAssinaturas() {
   filtrarAssinaturas();
 }
 
+let _assPagina = 1;
+const _assPorPagina = 20;
+
 function filtrarAssinaturas(busca) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
@@ -2420,6 +2424,7 @@ function filtrarAssinaturas(busca) {
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
+  _assPagina = 1;
   renderAssinaturas(lista);
 }
 
@@ -2428,11 +2433,17 @@ function renderAssinaturas(lista) {
   if (!tbody) return;
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Nenhum registro encontrado</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">✍️</div><div class="es-title">Nenhum registro encontrado</div></div></td></tr>`;
+    renderPaginacaoAss(0, 0);
     return;
   }
 
-  tbody.innerHTML = lista.map(a => {
+  const total    = lista.length;
+  const inicio   = (_assPagina - 1) * _assPorPagina;
+  const fim      = Math.min(inicio + _assPorPagina, total);
+  const pagina   = lista.slice(inicio, fim);
+
+  tbody.innerHTML = pagina.map(a => {
     const tag = a.statusCalc === 'ASSINADO'
       ? '<span class="tag tag-green">Assinado</span>'
       : a.statusCalc === 'EXPIRADO'
@@ -2440,11 +2451,14 @@ function renderAssinaturas(lista) {
         : '<span class="tag tag-yellow">Pendente</span>';
 
     const expiraEm = a.expiracaoDate && a.statusCalc === 'PENDENTE'
-      ? formatarTempoRestante(a.expiracaoDate)
-      : '—';
+      ? formatarTempoRestante(a.expiracaoDate) : '—';
 
     let itens = []; try { itens = JSON.parse(a.itens_json || a.itens || '[]'); } catch {}
     const qtdItens = itens.length || a.qtdItens || 0;
+
+    // Busca setor do colaborador
+    const colab  = (_colaboradores||[]).find(c => c.nome === a.nomeColaborador);
+    const setor  = colab?.setor || a.funcao_colaborador || '—';
 
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
@@ -2459,6 +2473,7 @@ function renderAssinaturas(lista) {
 
     return `<tr>
       <td class="td-main">${a.nomeColaborador||'—'}</td>
+      <td style="font-size:11px;color:var(--text-2)">${setor}</td>
       <td>${formatarData(a.data)}</td>
       <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
       <td>${tag}</td>
@@ -2466,6 +2481,30 @@ function renderAssinaturas(lista) {
       <td>${acoes}</td>
     </tr>`;
   }).join('');
+
+  renderPaginacaoAss(total, lista);
+}
+
+function renderPaginacaoAss(total, lista) {
+  // Remove paginação anterior
+  const old = document.getElementById('assPaginacao');
+  if (old) old.remove();
+
+  if (total <= _assPorPagina) return;
+
+  const totalPaginas = Math.ceil(total / _assPorPagina);
+  const div = document.createElement('div');
+  div.id = 'assPaginacao';
+  div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)';
+  div.innerHTML = `
+    <span>Exibindo ${(_assPagina-1)*_assPorPagina+1}–${Math.min(_assPagina*_assPorPagina,total)} de ${total}</span>
+    <div style="display:flex;gap:6px">
+      <button class="row-action" ${_assPagina===1?'disabled':''} onclick="_assPagina--;filtrarAssinaturas()">← Anterior</button>
+      <span style="padding:4px 10px;font-weight:600">${_assPagina} / ${totalPaginas}</span>
+      <button class="row-action" ${_assPagina===totalPaginas?'disabled':''} onclick="_assPagina++;filtrarAssinaturas()">Próxima →</button>
+    </div>`;
+
+  document.getElementById('assBody').closest('table').parentElement.appendChild(div);
 }
 
 function formatarData(data) {
