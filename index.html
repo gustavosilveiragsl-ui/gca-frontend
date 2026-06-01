@@ -1371,15 +1371,9 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
               <input type="hidden" id="armEditId">
               <div><label class="form-label">Nome *</label><input id="armNome" class="form-input" placeholder="Ex: Armazém Central Maricá"></div>
-              <div><label class="form-label">Tipo</label>
-                <select id="armTipo" class="form-input">
-                  <option value="almoxarifado">Almoxarifado</option>
-                  <option value="guardado">Guardado</option>
-                  <option value="externo">Externo</option>
-                </select>
-              </div>
               <div><label class="form-label">Localização</label><input id="armLocalizacao" class="form-input" placeholder="Ex: Rua das Flores, 100"></div>
               <div><label class="form-label">Responsável</label><input id="armResponsavel" class="form-input" placeholder="Nome do responsável"></div>
+              <div><label class="form-label">Descrição</label><input id="armDescricao" class="form-input" placeholder="Descrição do armazém"></div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarArmazem()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormArmazem()">Limpar</button>
@@ -1388,7 +1382,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title">Armazéns Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('armBody',this.value,[0,1])"></div>
-            <table><thead><tr><th>Nome</th><th>Tipo</th><th>Localização</th><th>Responsável</th><th></th></tr></thead>
+            <table><thead><tr><th>Nome</th><th>Localização</th><th>Responsável</th><th>Descrição</th><th></th></tr></thead>
             <tbody id="armBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
@@ -1400,17 +1394,16 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="card-header"><div><div class="card-title">Cadastrar Equipe</div><div class="card-sub">Cadastre as equipes de campo</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
               <input type="hidden" id="eqEditId">
+              <div><label class="form-label">Prefixo *</label><input id="eqPrefixo" class="form-input" placeholder="Ex: SOC-01"></div>
               <div><label class="form-label">Nome da Equipe *</label><input id="eqNome" class="form-input" placeholder="Ex: Equipe SOC 01"></div>
-              <div><label class="form-label">Tipo</label>
-                <select id="eqTipo" class="form-input">
-                  <option value="SOC">SOC</option>
-                  <option value="ENEL">ENEL</option>
-                  <option value="Manutenção">Manutenção</option>
-                  <option value="Outro">Outro</option>
+              <div><label class="form-label">Atividades</label><input id="eqAtividades" class="form-input" placeholder="Ex: Manutenção elétrica"></div>
+              <div><label class="form-label">Status</label>
+                <select id="eqStatus" class="form-input">
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
                 </select>
               </div>
-              <div><label class="form-label">Veículo / Placa</label><input id="eqVeiculo" class="form-input" placeholder="Ex: ABC-1234"></div>
-              <div><label class="form-label">Líder</label><input id="eqLider" class="form-input" placeholder="Nome do líder da equipe"></div>
+              <div><label class="form-label">Observações</label><input id="eqObs" class="form-input" placeholder="Observações adicionais"></div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarEquipe()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormEquipe()">Limpar</button>
@@ -1419,7 +1412,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title">Equipes Cadastradas</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('eqBody',this.value,[0,1])"></div>
-            <table><thead><tr><th>Nome</th><th>Tipo</th><th>Veículo</th><th>Líder</th><th></th></tr></thead>
+            <table><thead><tr><th>Prefixo</th><th>Nome</th><th>Atividades</th><th>Status</th><th></th></tr></thead>
             <tbody id="eqBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
@@ -1485,7 +1478,13 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <option value="visualizador">Visualizador</option>
                 </select>
               </div>
-              <div><label class="form-label">Unidades</label>
+              <div><label class="form-label">Unidade principal</label>
+                <select id="usrBase" class="form-input">
+                  <option value="marica">Maricá</option>
+                  <option value="rio_das_ostras">Rio das Ostras</option>
+                </select>
+              </div>
+              <div><label class="form-label">Acesso múltiplo</label>
                 <div style="display:flex;gap:12px;margin-top:4px">
                   <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniMarica" value="marica"> Maricá</label>
                   <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniRdo" value="rio_das_ostras"> Rio das Ostras</label>
@@ -2033,29 +2032,110 @@ async function carregarColaboradores() {
 function renderColaboradores(lista) {
   const tbody = document.getElementById('colaboradoresBody');
   if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">👥</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
-  tbody.innerHTML = lista.slice(0,100).map(c=>`<tr><td class="td-main">${c.nome||'—'}</td><td class="td-mono">${c.matricula||'—'}</td><td>${c.funcao||'—'}</td><td>${c.status==='ativo'?'<span class="tag tag-green">Ativo</span>':'<span class="tag tag-gray">Inativo</span>'}</td><td><button class="row-action">Ver</button></td></tr>`).join('');
+  tbody.innerHTML = lista.slice(0,100).map(c => {
+    const statusTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
+      : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px">🏖 Férias</span>'
+      : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+    return `<tr>
+      <td class="td-main">${c.nome||'—'}</td>
+      <td class="td-mono">${c.matricula||'—'}</td>
+      <td>${c.funcao||'—'}</td>
+      <td>${statusTag}</td>
+      <td><button class="row-action" onclick="abrirModalColab('${c.id}')">Ver</button></td>
+    </tr>`;
+  }).join('');
 }
+
+function abrirModalColab(id) {
+  const c = _colaboradores.find(x => x.id === id);
+  if (!c) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:560px">
+      <div class="modal-header">
+        <div><div class="modal-title">${c.nome}</div><div style="font-size:11px;color:var(--text-3)">${c.matricula||'—'} • ${c.funcao||'—'}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[['Status', c.status||'—'],['Setor',c.setor||'—'],['Telefone',c.telefone||'—'],['E-mail',c.email||'—'],['Admissão',formatarData(c.data_admissao)||'—'],['Nível',c.nivel||'—']].map(([l,v])=>`
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+            <div style="font-size:10px;color:var(--text-3)">${l.toUpperCase()}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="editarColab('${c.id}')">✏️ Editar</button>
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function editarColab(id) {
+  document.querySelector('.modal-overlay')?.remove();
+  // TODO: abrir formulário de edição
+  toast('Edição de colaborador em breve', 'info');
+}
+
+function renderItens(lista) {
+  const tbody = document.getElementById('itensBody');
+  if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
+  tbody.innerHTML = lista.slice(0,100).map(i=>`<tr>
+    <td class="td-main">${i.descricao||'—'}</td>
+    <td class="td-mono">${i.codigo||'—'}</td>
+    <td>${i.categoria||'—'}</td>
+    <td>${i.un_med||i.unidade||'—'}</td>
+    <td><button class="row-action" onclick="abrirModalItem('${i.id}')">Ver</button></td>
+  </tr>`).join('');
+}
+
+function abrirModalItem(id) {
+  const item = _itens.find(x => x.id === id);
+  if (!item) return;
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const pos = [item.corredor, item.prateleira, item.box].filter(Boolean).join(' / ') || '—';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-header">
+        <div><div class="modal-title">${item.descricao}</div><div style="font-size:11px;color:var(--text-3)">${item.codigo||'—'} • ${item.categoria||'—'}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;gap:16px">
+        ${item.img ? `<img src="${item.img}" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);flex-shrink:0">` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1">
+          ${[['Unidade',item.un_med||'—'],['Valor Un.',Number(item.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})],['Estoque Mín.',item.estoque_min||'—'],['Durabilidade',(item.durabilidade_med||'—')+' dias'],['CA',item.ca||'—'],['Posição',pos],['Requer Ensaio',item.requer_ensaio?'Sim':'Não'],['Possui Série',item.possui_serie?'Sim':'Não']].map(([l,v])=>`
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
+            <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
 function filtrarColaboradores(q) { renderColaboradores(_colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())||(c.matricula||'').toLowerCase().includes(q.toLowerCase()))); }
 
 // ── ITENS ──
 let _itens=[];
 async function carregarItens() {
   const tbody = document.getElementById('itensBody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const data = await api('/itens?por_pagina=500');
   if (!data) return;
   _itens = data.data||data.itens||[];
-  document.getElementById('subItens').textContent = `${_itens.length} itens cadastrados`;
+  const sub = document.getElementById('subItens');
+  if (sub) sub.textContent = `${_itens.length} itens cadastrados`;
   renderItens(_itens);
 }
-function renderItens(lista) {
-  const tbody = document.getElementById('itensBody');
-  if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
-  tbody.innerHTML = lista.slice(0,100).map(i=>`<tr><td class="td-main">${i.descricao||'—'}</td><td class="td-mono">${i.codigo||'—'}</td><td>${i.categoria||'—'}</td><td>${i.un_med||i.unidade||'—'}</td><td><button class="row-action">Ver</button></td></tr>`).join('');
-}
 function filtrarItens(q) { renderItens(_itens.filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase()))); }
-
-// ── TOAST ──
 function toast(msg, tipo='info', dur=3500) {
   const icons={success:'✓',error:'✕',info:'ℹ',warn:'⚠'};
   const el = document.createElement('div');
@@ -2250,11 +2330,11 @@ function confirmarColabAtend(colab) {
   const statusEl = document.getElementById('atendColabStatus');
   if (statusEl) {
     if (colab.status === 'ativo') {
-      statusEl.className = 'tag tag-green'; statusEl.textContent = 'Ativo';
+      statusEl.style.cssText='color:#22c55e;font-weight:600;font-size:11px'; statusEl.textContent = '✓ Ativo';
     } else if (colab.status === 'ferias') {
-      statusEl.className = 'tag tag-yellow'; statusEl.textContent = 'Férias';
+      statusEl.style.cssText='color:#f59e0b;font-weight:600;font-size:11px'; statusEl.textContent = '🏖 Férias';
     } else {
-      statusEl.className = 'tag tag-gray'; statusEl.textContent = 'Inativo';
+      statusEl.style.cssText='color:var(--text-3);font-weight:600;font-size:11px'; statusEl.textContent = '✕ Inativo';
     }
   }
 
@@ -2448,7 +2528,7 @@ async function confirmarItensModal() {
       if (resNivel && !resNivel.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Item bloqueado', resNivel.erro); return; }
 
       // PASSO 2: Validar dotação da função
-      const resDot = await api('/validacoes/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
+      const resDot = await api('/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
       if (resDot && !resDot.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Fora da dotação', resDot.erro); return; }
 
       // PASSO 3: Verificar saldo
@@ -4444,10 +4524,10 @@ async function carregarArmazensView() {
 async function salvarArmazem() {
   const id   = document.getElementById('armEditId').value;
   const body = {
-    nome:         document.getElementById('armNome').value.trim(),
-    tipo:         document.getElementById('armTipo').value,
-    localizacao:  document.getElementById('armLocalizacao').value.trim(),
-    responsavel:  document.getElementById('armResponsavel').value.trim(),
+    nome:        document.getElementById('armNome').value.trim(),
+    localizacao: document.getElementById('armLocalizacao').value.trim(),
+    responsavel: document.getElementById('armResponsavel').value.trim(),
+    descricao:   document.getElementById('armDescricao').value.trim(),
   };
   if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
   const res = await api(id ? `/armazens/${id}` : '/armazens', {
@@ -4458,21 +4538,34 @@ async function salvarArmazem() {
 }
 
 function editarArmazem(id) {
-  // busca dados locais dos armazéns
   api(`/armazens`).then(data => {
     const a = (data?.data||data?.armazens||[]).find(x => x.id === id);
     if (!a) return;
-    document.getElementById('armEditId').value = id;
-    document.getElementById('armNome').value = a.nome||'';
-    document.getElementById('armTipo').value = a.tipo||'almoxarifado';
+    document.getElementById('armEditId').value      = id;
+    document.getElementById('armNome').value        = a.nome||'';
     document.getElementById('armLocalizacao').value = a.localizacao||'';
     document.getElementById('armResponsavel').value = a.responsavel||'';
+    document.getElementById('armDescricao').value   = a.descricao||'';
   });
 }
 
 function limparFormArmazem() {
-  ['armEditId','armNome','armLocalizacao','armResponsavel'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  const t = document.getElementById('armTipo'); if(t) t.selectedIndex = 0;
+  ['armEditId','armNome','armLocalizacao','armResponsavel','armDescricao'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+}
+
+async function carregarArmazensView() {
+  const tbody = document.getElementById('armBody');
+  if (!tbody) return;
+  const data = await api('/armazens');
+  if (!data) return;
+  const lista = data.data || data.armazens || [];
+  tbody.innerHTML = lista.length ? lista.map(a => `<tr>
+    <td class="td-main">${a.nome}</td>
+    <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${a.descricao||'—'}</td>
+    <td><button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button></td>
+  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
 }
 
 // ════════════ EQUIPES ════════════
@@ -4483,10 +4576,10 @@ async function carregarEquipesView() {
   if (!data) return;
   const lista = data.data || data.equipes || [];
   tbody.innerHTML = lista.length ? lista.map(e => `<tr>
-    <td class="td-main">${e.nome}</td>
-    <td style="font-size:11px">${e.tipo||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${e.veiculo||e.placa||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${e.lider||'—'}</td>
+    <td class="td-main">${e.prefixo||'—'}</td>
+    <td style="font-size:11px">${e.nome_equipe||e.nome||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${e.atividades||'—'}</td>
+    <td>${e.status==='ativo'?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
     <td><button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button></td>
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
 }
@@ -4494,12 +4587,13 @@ async function carregarEquipesView() {
 async function salvarEquipe() {
   const id   = document.getElementById('eqEditId').value;
   const body = {
-    nome:    document.getElementById('eqNome').value.trim(),
-    tipo:    document.getElementById('eqTipo').value,
-    veiculo: document.getElementById('eqVeiculo').value.trim(),
-    lider:   document.getElementById('eqLider').value.trim(),
+    prefixo:     document.getElementById('eqPrefixo').value.trim(),
+    nome_equipe: document.getElementById('eqNome').value.trim(),
+    atividades:  document.getElementById('eqAtividades').value.trim(),
+    status:      document.getElementById('eqStatus').value,
+    observacoes: document.getElementById('eqObs').value.trim(),
   };
-  if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
+  if (!body.nome_equipe) { toast('Nome obrigatório', 'warn'); return; }
   const res = await api(id ? `/equipes/${id}` : '/equipes', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
@@ -4511,17 +4605,18 @@ function editarEquipe(id) {
   api('/equipes').then(data => {
     const e = (data?.data||data?.equipes||[]).find(x => x.id === id);
     if (!e) return;
-    document.getElementById('eqEditId').value = id;
-    document.getElementById('eqNome').value = e.nome||'';
-    document.getElementById('eqTipo').value = e.tipo||'SOC';
-    document.getElementById('eqVeiculo').value = e.veiculo||e.placa||'';
-    document.getElementById('eqLider').value = e.lider||'';
+    document.getElementById('eqEditId').value     = id;
+    document.getElementById('eqPrefixo').value    = e.prefixo||'';
+    document.getElementById('eqNome').value       = e.nome_equipe||e.nome||'';
+    document.getElementById('eqAtividades').value = e.atividades||'';
+    document.getElementById('eqStatus').value     = e.status||'ativo';
+    document.getElementById('eqObs').value        = e.observacoes||'';
   });
 }
 
 function limparFormEquipe() {
-  ['eqEditId','eqNome','eqVeiculo','eqLider'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
-  const t = document.getElementById('eqTipo'); if(t) t.selectedIndex = 0;
+  ['eqEditId','eqPrefixo','eqNome','eqAtividades','eqObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const s = document.getElementById('eqStatus'); if(s) s.value='ativo';
 }
 
 // ════════════ DOTAÇÃO ════════════
@@ -4547,7 +4642,7 @@ function selecionarItemDot(id) {
 async function carregarDotacao() {
   const tbody = document.getElementById('dotBody');
   if (!tbody) return;
-  const data = await api('/validacoes/dotacao-lista');
+  const data = await api('/dotacao');
   if (!data) return;
   _dotData = data.data || data.dotacao || [];
   renderDotacao();
@@ -4604,7 +4699,7 @@ function editarDotacao(id) {
 
 async function excluirDotacao(id) {
   if (!confirm('Excluir esta dotação?')) return;
-  const res = await api(`/validacoes/dotacao/${id}`, { method: 'DELETE' });
+  const res = await api(`/dotacao/${id}`, { method: 'DELETE' });
   if (res?.ok) { toast('Dotação excluída!', 'success'); carregarDotacao(); }
   else toast(res?.erro || 'Erro ao excluir', 'error');
 }
@@ -4623,7 +4718,7 @@ async function carregarUsuariosView() {
   if (!data) return;
   const lista = data.data || data.usuarios || [];
   tbody.innerHTML = lista.length ? lista.map(u => {
-    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades) : (u.unidades||[]); } catch {}
+    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
     const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
     return `<tr>
       <td class="td-main">${u.nome||'—'}</td>
@@ -4641,10 +4736,12 @@ async function salvarUsuario() {
   const unis  = [];
   if (document.getElementById('usrUniMarica')?.checked)  unis.push('marica');
   if (document.getElementById('usrUniRdo')?.checked)     unis.push('rio_das_ostras');
+  const base  = document.getElementById('usrBase')?.value || '';
   const body  = {
     nome:     document.getElementById('usrNome').value.trim(),
     username: document.getElementById('usrUsername').value.trim(),
     role:     document.getElementById('usrRole').value,
+    base,
     unidades: unis,
   };
   const senha = document.getElementById('usrSenha').value;
@@ -4667,7 +4764,7 @@ function editarUsuario(id) {
     document.getElementById('usrUsername').value = u.username||'';
     document.getElementById('usrSenha').value    = '';
     document.getElementById('usrRole').value     = u.role||'almoxarife';
-    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades) : (u.unidades||[]); } catch {}
+    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
     document.getElementById('usrUniMarica').checked = unis.includes('marica');
     document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
   });
