@@ -2448,6 +2448,19 @@ async function carregarItensAtendimento() {
 let _assinaturas = [];
 let _assQuery    = '';
 
+async function carregarAssinaturasSilencioso() {
+  if (_assinaturas.length) return; // já carregado
+  const data = await api('/atendimentos/pendentes');
+  if (!data) return;
+  const agora = new Date();
+  _assinaturas = (data.data || []).map(a => {
+    const exp = a.expiracao ? new Date(a.expiracao) : null;
+    const expirado = exp && agora > exp;
+    const statusCalc = a.status === 'ASSINADO' ? 'ASSINADO' : (expirado ? 'EXPIRADO' : 'PENDENTE');
+    return { ...a, statusCalc, expiracaoDate: exp };
+  });
+}
+
 async function carregarAssinaturas() {
   const tbody = document.getElementById('assBody');
   if (!tbody) return;
@@ -2718,7 +2731,11 @@ async function carregarSolicitacoes() {
   if (!tbody) return;
   tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
 
-  const data = await api('/solicitacoes?por_pagina=500&order=desc');
+  // Carrega assinaturas em paralelo para ter dados de pendência
+  const [data] = await Promise.all([
+    api('/solicitacoes?por_pagina=500&order=desc'),
+    carregarAssinaturasSilencioso(),
+  ]);
   if (!data) return;
 
   _solicitacoes = data.solicitacoes || data.data || [];
@@ -3018,12 +3035,12 @@ function renderItemSolicitacao(i) {
     </div>
     <div style="font-size:11px;color:var(--text-3)">Motivo: <span style="color:var(--text-2)">${motivoTexto}</span></div>
     ${justificativa ? `<div style="font-size:11px;color:var(--yellow);margin-top:4px">💬 Justificativa: ${justificativa}</div>` : ''}
-    ${foraPrazo ? `<div style="margin-top:8px;background:var(--yellow-soft);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius-sm);padding:8px;font-size:11px">
-      <div style="color:var(--yellow);font-weight:600;margin-bottom:4px">⚠️ Item fora do prazo de durabilidade</div>
-      <div style="display:flex;gap:16px;color:var(--text-2)">
-        <span>Durou: <strong style="color:var(--red)">${i.diasDecorridos} dias</strong></span>
+    ${foraPrazo ? `<div style="margin-top:8px;border:2px solid #f59e0b;border-radius:var(--radius-sm);padding:8px;font-size:11px">
+      <div style="color:#f59e0b;font-weight:600;margin-bottom:4px">⚠️ Item fora do prazo de durabilidade</div>
+      <div style="display:flex;gap:16px">
+        <span style="color:#ef4444;font-weight:600">Durou: ${i.diasDecorridos} dias</span>
         <span>→</span>
-        <span>Estimado: <strong style="color:var(--green)">${i.prazoMinDias} dias</strong></span>
+        <span style="color:#22c55e;font-weight:600">Estimado: ${i.prazoMinDias} dias</span>
       </div>
     </div>` : ''}
   </div>`;
