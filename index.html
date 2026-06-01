@@ -1339,14 +1339,12 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <th>Item</th>
                 <th>Armazém</th>
                 <th style="text-align:center">Qtd</th>
-                <th>Motivo</th>
-                <th>Colaborador</th>
+                <th>Motivo / Colaborador</th>
                 <th>Data</th>
-                <th>Usuário</th>
               </tr>
             </thead>
             <tbody id="movBody">
-              <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+              <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
             </tbody>
           </table>
           <div id="movPaginacao"></div>
@@ -4077,33 +4075,21 @@ async function carregarMovimentacoes() {
 
 function filtrarMovimentacoes() {
   _movPagina = 1;
-  renderMovimentacoes();
+  buscarMovimentacoes();
 }
 
-function renderMovimentacoes() {
+function renderMovimentacoes(total, totalPags) {
   const tbody  = document.getElementById('movBody');
-  const busca  = (document.getElementById('movBusca')?.value || '').toLowerCase();
-  const tipo   = document.getElementById('movFiltroTipo')?.value || '';
-  const arm    = document.getElementById('movFiltroArmazem')?.value || '';
-  const inicio = document.getElementById('movFiltroInicio')?.value || '';
-  const fim    = document.getElementById('movFiltroFim')?.value || '';
-
-  let lista = _movData;
-  if (tipo)  lista = lista.filter(m => m.tipo === tipo.toUpperCase());
-  if (arm)   lista = lista.filter(m => (m.armazemId||m.armazem_id) === arm);
-  if (busca) lista = lista.filter(m => (m.descricao||m.item_descricao||m.nome_item||'').toLowerCase().includes(busca));
-  if (inicio) lista = lista.filter(m => (m.data||m.criadoEm?.split('T')[0]) >= inicio);
-  if (fim)    lista = lista.filter(m => (m.data||m.criadoEm?.split('T')[0]) <= fim);
+  const lista  = _movData;
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
     document.getElementById('movPaginacao').innerHTML = '';
     return;
   }
 
-  const total  = lista.length;
+  const pagina = lista;
   const ini    = (_movPagina - 1) * _movPorPag;
-  const pagina = lista.slice(ini, ini + _movPorPag);
 
   tbody.innerHTML = pagina.map(m => {
     const tipoNorm = (m.tipo||'').toUpperCase();
@@ -4120,26 +4106,29 @@ function renderMovimentacoes() {
     const data      = m.data || m.criadoEm?.split('T')[0] || m.criado_em?.split('T')[0];
     return `<tr>
       <td>${tipoTag}</td>
-      <td class="td-main">${nomeItem}</td>
+      <td class="td-main">
+        ${nomeItem}
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${m.codigo||''}</div>
+      </td>
       <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
       <td style="text-align:center;font-weight:600">${m.quantidade} ${m.unMed||m.un_med||'UN'}</td>
-      <td><span class="tag tag-gray">${motivo}</span></td>
-      <td style="font-size:11px;color:var(--text-3)">${colab}</td>
-      <td>${formatarData(data)}</td>
-      <td style="font-size:11px;color:var(--text-3)">${usuario}</td>
+      <td>
+        <div style="font-size:11px;color:var(--text-2)">${motivo}</div>
+        ${colab !== '—' ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${colab}</div>` : ''}
+      </td>
+      <td style="font-size:11px;color:var(--text-2)">${formatarData(data)}</td>
     </tr>`;
   }).join('');
 
-  // Paginação
-  const totalPag = Math.ceil(total / _movPorPag);
+  // Paginação server-side
   const pag = document.getElementById('movPaginacao');
   pag.innerHTML = total > _movPorPag ? `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
       <span>Exibindo ${ini+1}–${Math.min(ini+_movPorPag,total)} de ${total}</span>
       <div style="display:flex;gap:6px">
-        <button class="row-action" ${_movPagina===1?'disabled':''} onclick="_movPagina--;renderMovimentacoes()">← Anterior</button>
-        <span style="padding:4px 10px;font-weight:600">${_movPagina} / ${totalPag}</span>
-        <button class="row-action" ${_movPagina===totalPag?'disabled':''} onclick="_movPagina++;renderMovimentacoes()">Próxima →</button>
+        <button class="row-action" ${_movPagina===1?'disabled':''} onclick="_movPagina--;buscarMovimentacoes()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_movPagina} / ${totalPags}</span>
+        <button class="row-action" ${_movPagina===totalPags?'disabled':''} onclick="_movPagina++;buscarMovimentacoes()">Próxima →</button>
       </div>
     </div>` : '';
 }
