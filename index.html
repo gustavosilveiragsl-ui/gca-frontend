@@ -1251,6 +1251,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
+              <button class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()">🔔 Previsão de Compra</button>
             <div class="card-actions">
               <div id="estAbasArmazem" style="display:flex;gap:6px"></div>
               <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
@@ -1484,6 +1485,19 @@ tbody tr:hover td{background:var(--bg-hover);}
     </div>
   </div>
 </div>
+<!-- MODAL PREVISÃO DE COMPRA -->
+<div class="modal-overlay hidden" id="modalPrevisaoCompra">
+  <div class="modal-box" style="max-width:800px;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <div><div class="modal-title">🔔 Previsão de Compra</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">Baseado nas saídas dos últimos 90 dias e estoque mínimo</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalPrevisaoCompra').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" id="previsaoBody">
+      <div style="text-align:center;padding:32px"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:var(--text-3)">Analisando saídas dos últimos 90 dias...</div></div>
+    </div>
+  </div>
+</div>
+
 <div id="toastContainer"></div>
 
 <script>
@@ -3919,7 +3933,7 @@ async function carregarEstoque() {
 
   const data = await api('/saldos');
   if (!data) return;
-  _estoqueData = data.data || [];
+  _estoqueData = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
 
   // Monta abas de armazém
   const armazens = [...new Map(_estoqueData.map(s => [s.armazem_id, s])).values()];
@@ -4034,7 +4048,7 @@ async function carregarMovimentacoes() {
 
   const data = await api('/movimentacoes?limit=500');
   if (!data) return;
-  _movData = data.movimentacoes || data.data || [];
+  _movData = data.registros || data.movimentacoes || data.data || [];
 
   // KPIs
   document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo === 'entrada').length;
@@ -4043,11 +4057,11 @@ async function carregarMovimentacoes() {
   document.getElementById('movKpiTotal').textContent    = _movData.length;
 
   // Popula filtro armazém
-  const armazens = [...new Map(_movData.map(m => [m.armazem_id, m])).values()];
+  const armazens = [...new Map(_movData.map(m => [m.armazemId||m.armazem_id, m])).values()];
   const selArm = document.getElementById('movFiltroArmazem');
   if (selArm) {
     selArm.innerHTML = '<option value="">Todos os armazéns</option>' +
-      armazens.map(m => `<option value="${m.armazem_id}">${m.nome_armazem||m.armazem_id}</option>`).join('');
+      armazens.filter(m => m.armazemId||m.armazem_id).map(m => `<option value="${m.armazemId||m.armazem_id}">${m.nomeArmazem||m.nome_armazem||m.armazemId}</option>`).join('');
   }
 
   filtrarMovimentacoes();
@@ -4068,10 +4082,10 @@ function renderMovimentacoes() {
 
   let lista = _movData;
   if (tipo)  lista = lista.filter(m => m.tipo === tipo);
-  if (arm)   lista = lista.filter(m => m.armazem_id === arm);
-  if (busca) lista = lista.filter(m => (m.item_descricao||m.nome_item||'').toLowerCase().includes(busca));
-  if (inicio) lista = lista.filter(m => (m.data||m.criado_em?.split('T')[0]) >= inicio);
-  if (fim)    lista = lista.filter(m => (m.data||m.criado_em?.split('T')[0]) <= fim);
+  if (arm)   lista = lista.filter(m => (m.armazemId||m.armazem_id) === arm);
+  if (busca) lista = lista.filter(m => (m.descricao||m.item_descricao||m.nome_item||'').toLowerCase().includes(busca));
+  if (inicio) lista = lista.filter(m => (m.data||m.criadoEm?.split('T')[0]) >= inicio);
+  if (fim)    lista = lista.filter(m => (m.data||m.criadoEm?.split('T')[0]) <= fim);
 
   if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
@@ -4087,18 +4101,23 @@ function renderMovimentacoes() {
     const tipoTag = m.tipo === 'entrada'      ? '<span style="color:#22c55e;font-weight:600;font-size:11px">📥 Entrada</span>'
                   : m.tipo === 'saida'        ? '<span style="color:#ef4444;font-weight:600;font-size:11px">📤 Saída</span>'
                   : '<span style="color:#60a5fa;font-weight:600;font-size:11px">🔄 Transferência</span>';
-    const armazem = m.tipo === 'transferencia'
-      ? `${m.nome_armazem||'—'} → ${m.nome_armazem_destino||'—'}`
-      : (m.nome_armazem||'—');
+    const nomeItem  = m.descricao  || m.item_descricao || m.nome_item || '—';
+    const armazem   = m.tipo === 'transferencia'
+      ? `${m.nomeArmazem||m.nome_armazem||'—'} → ${m.nomeArmazemDestino||m.nome_armazem_destino||'—'}`
+      : (m.nomeArmazem||m.nome_armazem||'—');
+    const colab     = m.nomeColaborador || m.colaborador_nome || '—';
+    const usuario   = m.usuario || m.usuario_nome || '—';
+    const motivo    = m.motivo || m.observacao || '—';
+    const data      = m.data || m.criadoEm?.split('T')[0] || m.criado_em?.split('T')[0];
     return `<tr>
       <td>${tipoTag}</td>
-      <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
+      <td class="td-main">${nomeItem}</td>
       <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
-      <td style="text-align:center;font-weight:600">${m.quantidade} ${m.un_med||'UN'}</td>
-      <td><span class="tag tag-gray">${m.motivo||'—'}</span></td>
-      <td style="font-size:11px;color:var(--text-3)">${m.colaborador_nome||'—'}</td>
-      <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
-      <td style="font-size:11px;color:var(--text-3)">${m.usuario_nome||'—'}</td>
+      <td style="text-align:center;font-weight:600">${m.quantidade} ${m.unMed||m.un_med||'UN'}</td>
+      <td><span class="tag tag-gray">${motivo}</span></td>
+      <td style="font-size:11px;color:var(--text-3)">${colab}</td>
+      <td>${formatarData(data)}</td>
+      <td style="font-size:11px;color:var(--text-3)">${usuario}</td>
     </tr>`;
   }).join('');
 
@@ -4114,6 +4133,129 @@ function renderMovimentacoes() {
         <button class="row-action" ${_movPagina===totalPag?'disabled':''} onclick="_movPagina++;renderMovimentacoes()">Próxima →</button>
       </div>
     </div>` : '';
+}
+
+async function abrirPrevisaoCompra() {
+  document.getElementById('modalPrevisaoCompra').classList.remove('hidden');
+  document.getElementById('previsaoBody').innerHTML = '<div style="text-align:center;padding:32px"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:var(--text-3)">Analisando saídas dos últimos 90 dias...</div></div>';
+
+  // Busca saídas dos últimos 90 dias
+  const novDias = new Date(); novDias.setDate(novDias.getDate() - 90);
+  const dataInicio = novDias.toISOString().split('T')[0];
+  const data = await api(`/movimentacoes?tipo=saida&data_inicio=${dataInicio}&limit=2000`);
+  const saidas = data?.registros || [];
+
+  // Agrupa saídas por item
+  const saidasPorItem = {};
+  saidas.forEach(m => {
+    const id = m.itemId || m.item_id;
+    if (!id) return;
+    saidasPorItem[id] = (saidasPorItem[id] || 0) + Number(m.quantidade || 0);
+  });
+
+  // Filtra estoque com itens abaixo do mínimo
+  const alertas = _estoqueData
+    .filter(s => s.nome_item)
+    .map(s => {
+      const item     = (_itens||[]).find(i => i.id === s.item_id);
+      const min      = Number(item?.estoque_min || 0);
+      if (s.saldo > min && min > 0) return null; // está ok
+
+      const saidUlt90  = saidasPorItem[s.item_id] || 0;
+      const mediaMensal = Math.ceil(saidUlt90 / 3);
+      const mediaDiaria = saidUlt90 / 90;
+      const diasAteZerar = mediaDiaria > 0 ? Math.floor(s.saldo / mediaDiaria) : null;
+
+      let sugestao;
+      if (mediaMensal > 0) {
+        sugestao = Math.ceil((min + mediaMensal) - s.saldo);
+      } else {
+        sugestao = Math.max(min - s.saldo, 0);
+      }
+      sugestao = Math.max(sugestao, 0);
+      if (sugestao === 0 && s.saldo >= min) return null;
+
+      const valorUn    = Number(item?.valor_un || 0);
+      const valorTotal = valorUn * sugestao;
+
+      return {
+        item_id:      s.item_id,
+        nome:         s.nome_item,
+        codigo:       s.codigo_item,
+        armazem:      s.nome_armazem,
+        saldo:        s.saldo,
+        min,
+        mediaMensal,
+        saidUlt90,
+        diasAteZerar,
+        sugestao,
+        valorUn,
+        valorTotal,
+        status: s.saldo <= 0 ? 'critico' : 'baixo',
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.saldo - b.saldo);
+
+  if (!alertas.length) {
+    document.getElementById('previsaoBody').innerHTML = `
+      <div style="text-align:center;padding:40px">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <div style="color:#22c55e;font-size:15px;font-weight:600">Todos os itens estão dentro do estoque mínimo!</div>
+      </div>`;
+    return;
+  }
+
+  const totalCompra = alertas.reduce((acc, a) => acc + a.valorTotal, 0);
+
+  document.getElementById('previsaoBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-3)">ITENS PARA COMPRAR</div>
+        <div style="font-size:22px;font-weight:700;color:var(--yellow)">${alertas.length}</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-3)">CRÍTICOS</div>
+        <div style="font-size:22px;font-weight:700;color:#ef4444">${alertas.filter(a=>a.status==='critico').length}</div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center">
+        <div style="font-size:10px;color:var(--text-3)">VALOR ESTIMADO</div>
+        <div style="font-size:18px;font-weight:700;color:var(--accent-text)">${totalCompra.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Saldo</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Mín.</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Saídas 90d</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Dias p/ Zerar</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Sugestão</th>
+        <th style="padding:8px;text-align:right;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Valor</th>
+      </tr></thead>
+      <tbody>
+        ${alertas.map(a => {
+          const statusTag = a.status === 'critico'
+            ? '<span style="color:#ef4444;font-weight:700;font-size:10px">🔴 Crítico</span>'
+            : '<span style="color:#f59e0b;font-weight:700;font-size:10px">🟡 Baixo</span>';
+          const diasHtml = a.diasAteZerar !== null
+            ? `<span style="color:${a.diasAteZerar < 15 ? '#ef4444' : '#f59e0b'};font-weight:600">~${a.diasAteZerar}d</span>`
+            : '<span style="color:var(--text-3)">—</span>';
+          return `<tr>
+            <td style="padding:8px;border-bottom:1px solid var(--border)">
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${a.nome}</div>
+              <div style="font-size:10px;color:var(--text-3)">${a.codigo||'—'} • ${statusTag}</div>
+            </td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:#ef4444;border-bottom:1px solid var(--border)">${a.saldo}</td>
+            <td style="padding:8px;text-align:center;color:var(--text-3);font-size:11px;border-bottom:1px solid var(--border)">${a.min}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${a.saidUlt90}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">${diasHtml}</td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:#22c55e;border-bottom:1px solid var(--border)">${a.sugestao}</td>
+            <td style="padding:8px;text-align:right;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${a.valorTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
 }
 
 // ── ENTER no login ──
