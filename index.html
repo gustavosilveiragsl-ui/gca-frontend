@@ -2858,24 +2858,24 @@ async function abrirModalSolicitacao(id) {
 
   document.getElementById('solModalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SOLICITANTE</div>
         <div style="font-size:12px;font-weight:600;color:var(--text-1)">${sol}</div>
       </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">COLABORADOR</div>
         <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nome}</div>
       </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ARMAZÉM</div>
         <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.nome_armazem||'—'}</div>
       </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">STATUS</div>
         <div>${solStatusTag(s.status)}</div>
       </div>
     </div>
-    ${obs ? `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:16px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
+    ${obs ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:16px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
 
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Itens solicitados</div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
@@ -2886,7 +2886,7 @@ async function abrirModalSolicitacao(id) {
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Histórico</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       ${historico.map(h => `
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--border)">
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:var(--radius-sm);border-left:3px solid var(--border);border:1px solid var(--border)">
           <div style="flex:1">
             <div style="font-size:11px;font-weight:600;color:var(--text-1)">${solStatusTag(h.status)}</div>
             <div style="font-size:11px;color:var(--text-3);margin-top:2px">${h.usuario||'—'} • ${h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR') : '—'}</div>
@@ -2895,25 +2895,33 @@ async function abrirModalSolicitacao(id) {
         </div>`).join('')}
     </div>` : ''}`;
 
-  // Botões de ação conforme status
-  const podeAtender   = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
-  const podeEditar    = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
-  const podeCancelar  = !['FINALIZADO','CANCELADO'].includes(s.status);
+  // Botões por status:
+  // PENDENTE/VISUALIZADO: Atender + Editar + status(Visualizado/AguardTransporte) + Cancelar
+  // ATENDIDO/AGUARDANDO TRANSPORTE/EM TRANSITO: só AguardTransporte + Cancelar
+  // FINALIZADO/CANCELADO: só Fechar
+  const podeAtender  = ['PENDENTE','VISUALIZADO'].includes(s.status);
+  const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status);
+  const podeStatus   = !['FINALIZADO','CANCELADO'].includes(s.status);
+  const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status);
+
+  // Opções de status disponíveis por estágio
+  const statusOpts = podeAtender
+    ? `<option value="">Alterar status...</option>
+       <option value="VISUALIZADO">👁️ Visualizado</option>
+       <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>`
+    : `<option value="">Alterar status...</option>
+       <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>
+       <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
 
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
       ${podeAtender ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}');fecharModalSolicitacao()">🤝 Iniciar Atendimento</button>` : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')">✏️ Editar</button>` : ''}
-      ${podeAtender ? `
-        <select class="form-input" id="solNovoStatus" style="width:180px;font-size:11px">
-          <option value="">Alterar status...</option>
-          <option value="VISUALIZADO">👁️ Visualizado</option>
-          <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>
-          <option value="EM TRANSITO">🚚 Em Trânsito</option>
-        </select>
+      ${podeStatus  ? `
+        <select class="form-input" id="solNovoStatus" style="width:190px;font-size:11px">${statusOpts}</select>
         <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Atualizar</button>
       ` : ''}
-      ${podeCancelar ? `<button class="btn" style="background:var(--red-soft);color:var(--red);border:1px solid rgba(248,113,113,.2)" onclick="cancelarSolicitacao('${id}')">✕ Cancelar</button>` : ''}
+      ${podeCancelar ? `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red)" onclick="cancelarSolicitacao('${id}')">✕ Cancelar</button>` : ''}
       <button class="btn btn-ghost" style="margin-left:auto" onclick="fecharModalSolicitacao()">Fechar</button>
     </div>`;
 
@@ -2989,7 +2997,7 @@ function renderItemSolicitacao(i) {
   const motivoTexto    = partes[0] || '—';
   const justificativa  = partes[1] || '';
   const foraPrazo      = i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias;
-  return `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+  return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <div style="font-size:12px;font-weight:600;color:var(--text-1)">${i.nome||i.descricao||'—'}</div>
       <div style="display:flex;gap:6px;align-items:center">
