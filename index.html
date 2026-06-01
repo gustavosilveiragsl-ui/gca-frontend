@@ -2795,10 +2795,21 @@ function renderSolicitacoes() {
     const nome = s.colaborador_nome || s.colaboradorNome || '—';
     const sol  = s.solicitante_nome || s.solicitanteNome || '—';
 
+    // Tags de alerta
+    const temTroca     = itens.some(i => i.trocaTamanho);
+    const temForaPrazo = itens.some(i => i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
+    const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && a.statusCalc === 'PENDENTE');
+    const tags = [
+      temTroca     ? '<span style="color:#a855f7;font-size:10px;font-weight:600">👕 Troca tamanho</span>' : '',
+      temForaPrazo ? '<span style="color:#f59e0b;font-size:10px;font-weight:600">⚠️ Fora do prazo</span>' : '',
+      temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600">✍️ Ass. pendente</span>' : '',
+    ].filter(Boolean).join(' ');
+
     return `<tr style="cursor:pointer" onclick="abrirModalSolicitacao('${s.id}')">
       <td>
         <div class="td-main">${nome}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${s.id}</div>
+        ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
       <td style="font-size:11px;color:var(--text-2)">${sol}</td>
       <td>${formatarData(s.data_hora?.split(' ')[0]||s.criado_em?.split('T')[0])}</td>
@@ -2997,7 +3008,7 @@ function renderItemSolicitacao(i) {
   const motivoTexto    = partes[0] || '—';
   const justificativa  = partes[1] || '';
   const foraPrazo      = i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias;
-  return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+  return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--bg-card)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <div style="font-size:12px;font-weight:600;color:var(--text-1)">${i.nome||i.descricao||'—'}</div>
       <div style="display:flex;gap:6px;align-items:center">
