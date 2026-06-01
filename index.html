@@ -1215,8 +1215,142 @@ tbody tr:hover td{background:var(--bg-hover);}
 
         </div>
       </div>
-      <div class="view" id="view-estoque"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Consulta de Estoque</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-movimentacoes"><div class="empty-state"><div class="es-icon">📊</div><div class="es-title">Movimentações</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── CONSULTA DE ESTOQUE ── -->
+      <div class="view" id="view-estoque">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Críticos</span></div>
+            <div class="kpi-value" id="estKpiCritico" style="color:#ef4444">—</div>
+            <div class="kpi-delta down">abaixo do mínimo</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Baixos</span></div>
+            <div class="kpi-value" id="estKpiBaixo" style="color:#f59e0b">—</div>
+            <div class="kpi-delta warn">atenção necessária</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">OK</span></div>
+            <div class="kpi-value" id="estKpiOk" style="color:#22c55e">—</div>
+            <div class="kpi-delta up">nível adequado</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Total itens</span></div>
+            <div class="kpi-value" id="estKpiTotal">—</div>
+            <div class="kpi-delta">em estoque</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Valor total</span></div>
+            <div class="kpi-value" id="estKpiValor" style="font-size:18px">—</div>
+            <div class="kpi-delta up">estoque valorizado</div>
+          </div>
+        </div>
+
+        <!-- TABELA -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
+            <div class="card-actions">
+              <div id="estAbasArmazem" style="display:flex;gap:6px"></div>
+              <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
+              <select class="form-input" id="estFiltroStatus" style="width:140px;font-size:11px" onchange="renderEstoque()">
+                <option value="">Todos os status</option>
+                <option value="critico">🔴 Crítico</option>
+                <option value="baixo">🟡 Baixo</option>
+                <option value="ok">🟢 OK</option>
+                <option value="zerado">⬜ Zerado</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Item</th>
+                <th>Código</th>
+                <th>Categoria</th>
+                <th style="text-align:center">Saldo</th>
+                <th style="text-align:center">Mínimo</th>
+                <th style="text-align:right">Valor Un.</th>
+                <th style="text-align:right">Valor Total</th>
+              </tr>
+            </thead>
+            <tbody id="estBody">
+              <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+          <div id="estPaginacao"></div>
+        </div>
+      </div>
+      <!-- ── MOVIMENTAÇÕES ── -->
+      <div class="view" id="view-movimentacoes">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Entradas</span></div>
+            <div class="kpi-value" id="movKpiEntradas" style="color:#22c55e">—</div>
+            <div class="kpi-delta up">registradas</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Saídas</span></div>
+            <div class="kpi-value" id="movKpiSaidas" style="color:#ef4444">—</div>
+            <div class="kpi-delta down">registradas</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Transferências</span></div>
+            <div class="kpi-value" id="movKpiTransf">—</div>
+            <div class="kpi-delta">realizadas</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Total</span></div>
+            <div class="kpi-value" id="movKpiTotal">—</div>
+            <div class="kpi-delta">movimentações</div>
+          </div>
+        </div>
+
+        <!-- FILTROS + TABELA -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Histórico de Movimentações</div><div class="card-sub">Todas as entradas, saídas e transferências</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="movBusca" placeholder="Buscar item..." oninput="filtrarMovimentacoes()">
+              <select class="form-input" id="movFiltroTipo" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
+                <option value="">Todos os tipos</option>
+                <option value="entrada">📥 Entrada</option>
+                <option value="saida">📤 Saída</option>
+                <option value="transferencia">🔄 Transferência</option>
+              </select>
+              <select class="form-input" id="movFiltroArmazem" style="width:160px;font-size:11px" onchange="filtrarMovimentacoes()">
+                <option value="">Todos os armazéns</option>
+              </select>
+              <input class="form-input" type="date" id="movFiltroInicio" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
+              <input class="form-input" type="date" id="movFiltroFim" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
+              <button class="btn btn-ghost" onclick="carregarMovimentacoes()">↻ Atualizar</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Tipo</th>
+                <th>Item</th>
+                <th>Armazém</th>
+                <th style="text-align:center">Qtd</th>
+                <th>Motivo</th>
+                <th>Colaborador</th>
+                <th>Data</th>
+                <th>Usuário</th>
+              </tr>
+            </thead>
+            <tbody id="movBody">
+              <tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+          <div id="movPaginacao"></div>
+        </div>
+      </div>
       <div class="view" id="view-descontos"><div class="empty-state"><div class="es-icon">💰</div><div class="es-title">Descontos</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-solicitacoes-compra"><div class="empty-state"><div class="es-icon">🛒</div><div class="es-title">Solicitações de Compra</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-protheus"><div class="empty-state"><div class="es-icon">🗂️</div><div class="es-title">Lançamentos Protheus</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -1453,6 +1587,8 @@ function onViewLoad(nome) {
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
+  if (nome === 'estoque')            { if (!_itens.length) carregarItensAtendimento().then(carregarEstoque); else carregarEstoque(); }
+  if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -3766,6 +3902,218 @@ function renderHistoricoMov(tbody, lista) {
     <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
     <td style="font-size:11px;color:var(--text-3)">${m.usuario_nome||'—'}</td>
   </tr>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// CONSULTA DE ESTOQUE
+// ═══════════════════════════════════════════
+let _estoqueData  = [];
+let _estArmazem   = '';
+let _estPagina    = 1;
+const _estPorPag  = 50;
+
+async function carregarEstoque() {
+  const tbody = document.getElementById('estBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/saldos');
+  if (!data) return;
+  _estoqueData = data.data || [];
+
+  // Monta abas de armazém
+  const armazens = [...new Map(_estoqueData.map(s => [s.armazem_id, s])).values()];
+  const abasEl = document.getElementById('estAbasArmazem');
+  if (abasEl) {
+    abasEl.innerHTML = `<button class="atend-tab ${!_estArmazem ? 'active' : ''}" onclick="selecionarArmazemEst('')">Todos</button>` +
+      armazens.map(a => `<button class="atend-tab ${_estArmazem === a.armazem_id ? 'active' : ''}" onclick="selecionarArmazemEst('${a.armazem_id}')">${a.nome_armazem}</button>`).join('');
+  }
+
+  renderEstoque();
+}
+
+function selecionarArmazemEst(id) {
+  _estArmazem = id;
+  _estPagina  = 1;
+  document.querySelectorAll('#estAbasArmazem .atend-tab').forEach(b => b.classList.remove('active'));
+  event?.target?.classList.add('active');
+  renderEstoque();
+}
+
+function renderEstoque() {
+  const tbody    = document.getElementById('estBody');
+  const busca    = (document.getElementById('estBusca')?.value || '').toLowerCase();
+  const filtro   = document.getElementById('estFiltroStatus')?.value || '';
+
+  let lista = _estoqueData;
+  if (_estArmazem) lista = lista.filter(s => s.armazem_id === _estArmazem);
+  if (busca)       lista = lista.filter(s => (s.nome_item||'').toLowerCase().includes(busca) || (s.codigo_item||'').toLowerCase().includes(busca));
+
+  // Status
+  const getStatus = s => {
+    const item  = (_itens||[]).find(i => i.id === s.item_id);
+    const min   = Number(item?.estoque_min || 0);
+    if (s.saldo === 0)         return 'zerado';
+    if (min > 0 && s.saldo < min)  return 'critico';
+    if (min > 0 && s.saldo < min * 1.3) return 'baixo';
+    return 'ok';
+  };
+
+  if (filtro) lista = lista.filter(s => getStatus(s) === filtro);
+
+  // KPIs
+  const all = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
+  document.getElementById('estKpiCritico').textContent = all.filter(s => getStatus(s) === 'critico').length;
+  document.getElementById('estKpiBaixo').textContent   = all.filter(s => getStatus(s) === 'baixo').length;
+  document.getElementById('estKpiOk').textContent      = all.filter(s => getStatus(s) === 'ok').length;
+  document.getElementById('estKpiTotal').textContent   = all.filter(s => s.saldo > 0).length;
+  const valorTotal = all.reduce((acc, s) => {
+    const item = (_itens||[]).find(i => i.id === s.item_id);
+    return acc + (s.saldo * Number(item?.valor_un || 0));
+  }, 0);
+  document.getElementById('estKpiValor').textContent = valorTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:20px"><div class="es-icon">📦</div><div class="es-title">Nenhum item encontrado</div></div></td></tr>`;
+    document.getElementById('estPaginacao').innerHTML = '';
+    return;
+  }
+
+  const total  = lista.length;
+  const inicio = (_estPagina - 1) * _estPorPag;
+  const pagina = lista.slice(inicio, inicio + _estPorPag);
+
+  tbody.innerHTML = pagina.map(s => {
+    const item   = (_itens||[]).find(i => i.id === s.item_id);
+    const min    = Number(item?.estoque_min || 0);
+    const status = getStatus(s);
+    const statusTag = status === 'critico' ? '<span style="color:#ef4444;font-size:11px;font-weight:700">🔴 Crítico</span>'
+                    : status === 'baixo'   ? '<span style="color:#f59e0b;font-size:11px;font-weight:700">🟡 Baixo</span>'
+                    : status === 'zerado'  ? '<span style="color:var(--text-3);font-size:11px;font-weight:700">⬜ Zerado</span>'
+                    :                        '<span style="color:#22c55e;font-size:11px;font-weight:700">🟢 OK</span>';
+    const valorUn  = Number(item?.valor_un || 0);
+    const valorTot = (s.saldo * valorUn).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    const vUn      = valorUn.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return `<tr>
+      <td>${statusTag}</td>
+      <td class="td-main">${s.nome_item||'—'}</td>
+      <td class="td-mono">${s.codigo_item||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${item?.categoria||'—'}</td>
+      <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
+      <td style="text-align:center;color:var(--text-3);font-size:11px">${min||'—'}</td>
+      <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
+      <td style="text-align:right;font-size:11px;font-weight:600;color:var(--text-1)">${valorTot}</td>
+    </tr>`;
+  }).join('');
+
+  // Paginação
+  const totalPag = Math.ceil(total / _estPorPag);
+  const pag = document.getElementById('estPaginacao');
+  pag.innerHTML = total > _estPorPag ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
+      <span>Exibindo ${inicio+1}–${Math.min(inicio+_estPorPag,total)} de ${total}</span>
+      <div style="display:flex;gap:6px">
+        <button class="row-action" ${_estPagina===1?'disabled':''} onclick="_estPagina--;renderEstoque()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_estPagina} / ${totalPag}</span>
+        <button class="row-action" ${_estPagina===totalPag?'disabled':''} onclick="_estPagina++;renderEstoque()">Próxima →</button>
+      </div>
+    </div>` : '';
+}
+
+// ═══════════════════════════════════════════
+// MOVIMENTAÇÕES
+// ═══════════════════════════════════════════
+let _movData   = [];
+let _movPagina = 1;
+const _movPorPag = 30;
+
+async function carregarMovimentacoes() {
+  const tbody = document.getElementById('movBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/movimentacoes?limit=500');
+  if (!data) return;
+  _movData = data.movimentacoes || data.data || [];
+
+  // KPIs
+  document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo === 'entrada').length;
+  document.getElementById('movKpiSaidas').textContent   = _movData.filter(m => m.tipo === 'saida').length;
+  document.getElementById('movKpiTransf').textContent   = _movData.filter(m => m.tipo === 'transferencia').length;
+  document.getElementById('movKpiTotal').textContent    = _movData.length;
+
+  // Popula filtro armazém
+  const armazens = [...new Map(_movData.map(m => [m.armazem_id, m])).values()];
+  const selArm = document.getElementById('movFiltroArmazem');
+  if (selArm) {
+    selArm.innerHTML = '<option value="">Todos os armazéns</option>' +
+      armazens.map(m => `<option value="${m.armazem_id}">${m.nome_armazem||m.armazem_id}</option>`).join('');
+  }
+
+  filtrarMovimentacoes();
+}
+
+function filtrarMovimentacoes() {
+  _movPagina = 1;
+  renderMovimentacoes();
+}
+
+function renderMovimentacoes() {
+  const tbody  = document.getElementById('movBody');
+  const busca  = (document.getElementById('movBusca')?.value || '').toLowerCase();
+  const tipo   = document.getElementById('movFiltroTipo')?.value || '';
+  const arm    = document.getElementById('movFiltroArmazem')?.value || '';
+  const inicio = document.getElementById('movFiltroInicio')?.value || '';
+  const fim    = document.getElementById('movFiltroFim')?.value || '';
+
+  let lista = _movData;
+  if (tipo)  lista = lista.filter(m => m.tipo === tipo);
+  if (arm)   lista = lista.filter(m => m.armazem_id === arm);
+  if (busca) lista = lista.filter(m => (m.item_descricao||m.nome_item||'').toLowerCase().includes(busca));
+  if (inicio) lista = lista.filter(m => (m.data||m.criado_em?.split('T')[0]) >= inicio);
+  if (fim)    lista = lista.filter(m => (m.data||m.criado_em?.split('T')[0]) <= fim);
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
+    document.getElementById('movPaginacao').innerHTML = '';
+    return;
+  }
+
+  const total  = lista.length;
+  const ini    = (_movPagina - 1) * _movPorPag;
+  const pagina = lista.slice(ini, ini + _movPorPag);
+
+  tbody.innerHTML = pagina.map(m => {
+    const tipoTag = m.tipo === 'entrada'      ? '<span style="color:#22c55e;font-weight:600;font-size:11px">📥 Entrada</span>'
+                  : m.tipo === 'saida'        ? '<span style="color:#ef4444;font-weight:600;font-size:11px">📤 Saída</span>'
+                  : '<span style="color:#60a5fa;font-weight:600;font-size:11px">🔄 Transferência</span>';
+    const armazem = m.tipo === 'transferencia'
+      ? `${m.nome_armazem||'—'} → ${m.nome_armazem_destino||'—'}`
+      : (m.nome_armazem||'—');
+    return `<tr>
+      <td>${tipoTag}</td>
+      <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
+      <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
+      <td style="text-align:center;font-weight:600">${m.quantidade} ${m.un_med||'UN'}</td>
+      <td><span class="tag tag-gray">${m.motivo||'—'}</span></td>
+      <td style="font-size:11px;color:var(--text-3)">${m.colaborador_nome||'—'}</td>
+      <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
+      <td style="font-size:11px;color:var(--text-3)">${m.usuario_nome||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Paginação
+  const totalPag = Math.ceil(total / _movPorPag);
+  const pag = document.getElementById('movPaginacao');
+  pag.innerHTML = total > _movPorPag ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
+      <span>Exibindo ${ini+1}–${Math.min(ini+_movPorPag,total)} de ${total}</span>
+      <div style="display:flex;gap:6px">
+        <button class="row-action" ${_movPagina===1?'disabled':''} onclick="_movPagina--;renderMovimentacoes()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_movPagina} / ${totalPag}</span>
+        <button class="row-action" ${_movPagina===totalPag?'disabled':''} onclick="_movPagina++;renderMovimentacoes()">Próxima →</button>
+      </div>
+    </div>` : '';
 }
 
 // ── ENTER no login ──
