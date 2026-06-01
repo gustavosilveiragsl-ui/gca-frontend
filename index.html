@@ -82,7 +82,8 @@ input,select,textarea{font-family:var(--font-main);}
 .sidebar{width:224px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
 .sidebar-logo{padding:16px 14px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
 .sidebar-logo img{height:28px;object-fit:contain;}
-.sidebar-unit-badge{margin-left:auto;font-size:9px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);padding:3px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:background var(--transition);}
+.sidebar-unit-badge{font-size:9px;font-weight:600;background:var(--accent-soft);color:var(--accent-text);padding:3px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;cursor:pointer;transition:background var(--transition);}
+.sidebar-empresa{font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:1px;text-transform:uppercase;margin-left:auto;}
 .sidebar-unit-badge:hover{background:var(--accent);color:white;}
 .sidebar-nav{flex:1;overflow-y:auto;padding:6px 8px;}
 .sidebar-nav::-webkit-scrollbar{width:3px;}
@@ -139,7 +140,7 @@ input,select,textarea{font-family:var(--font-main);}
 .kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;}
 .kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .kpi-label{font-size:11px;font-weight:500;color:var(--text-3);}
-.kpi-icon{width:30px;height:30px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;font-size:14px;}
+.kpi-icon{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:22px;}
 .kpi-value{font-size:26px;font-weight:700;color:var(--text-1);line-height:1;}
 .kpi-delta{font-size:10px;color:var(--text-3);margin-top:6px;}
 .kpi-delta.up{color:var(--green);}
@@ -321,7 +322,7 @@ tbody tr:hover td{background:var(--bg-hover);}
   <nav class="sidebar">
     <div class="sidebar-logo">
       <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA">
-      <span class="sidebar-unit-badge" id="sidebarUnit" onclick="trocarUnidade()" title="Clique para trocar de unidade">—</span>
+      <span class="sidebar-empresa">CENEGED</span>
     </div>
     <div class="sidebar-nav">
 
@@ -447,8 +448,8 @@ tbody tr:hover td{background:var(--bg-hover);}
         <span class="topbar-crumb" id="topbarCrumb"></span>
       </div>
       <div class="topbar-right">
+        <span class="sidebar-unit-badge" id="sidebarUnit" onclick="trocarUnidade()" title="Clique para trocar de unidade" style="margin-right:4px">—</span>
         <button class="theme-btn" onclick="toggleTheme()"><span id="themeIconApp">☀️</span></button>
-        <button class="btn btn-primary" onclick="showView('atendimento')">+ Novo Atendimento</button>
       </div>
     </div>
 
@@ -458,22 +459,22 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view active" id="view-home">
         <div class="kpi-grid">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Colaboradores</span><div class="kpi-icon" style="background:var(--accent-soft)">👥</div></div>
+            <div class="kpi-top"><span class="kpi-label">Colaboradores</span><div class="kpi-icon">👥</div></div>
             <div class="kpi-value" id="kpiColaboradores">—</div>
             <div class="kpi-delta" id="kpiColaboradoresDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Atendimentos hoje</span><div class="kpi-icon" style="background:var(--green-soft)">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Atendimentos hoje</span><div class="kpi-icon">✓</div></div>
             <div class="kpi-value" id="kpiAtendimentos">—</div>
             <div class="kpi-delta up" id="kpiAtendimentosDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Itens no estoque</span><div class="kpi-icon" style="background:var(--yellow-soft)">📦</div></div>
+            <div class="kpi-top"><span class="kpi-label">Itens no estoque</span><div class="kpi-icon">📦</div></div>
             <div class="kpi-value" id="kpiItens">—</div>
             <div class="kpi-delta warn" id="kpiItensDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Solicitações abertas</span><div class="kpi-icon" style="background:var(--red-soft)">📋</div></div>
+            <div class="kpi-top"><span class="kpi-label">Solicitações abertas</span><div class="kpi-icon">📋</div></div>
             <div class="kpi-value" id="kpiSolicitacoes">—</div>
             <div class="kpi-delta down" id="kpiSolicitacoesDelta">carregando...</div>
           </div>
@@ -816,17 +817,17 @@ tbody tr:hover td{background:var(--bg-hover);}
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon" style="background:var(--yellow-soft)">✍️</div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon">✍️</div></div>
             <div class="kpi-value" id="assKpiPendentes">—</div>
             <div class="kpi-delta warn">aguardando assinatura</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Expirados</span><div class="kpi-icon" style="background:var(--red-soft)">⏰</div></div>
+            <div class="kpi-top"><span class="kpi-label">Expirados</span><div class="kpi-icon">⏰</div></div>
             <div class="kpi-value" id="assKpiExpirados">—</div>
             <div class="kpi-delta down">link vencido</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon" style="background:var(--green-soft)">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon">✓</div></div>
             <div class="kpi-value" id="assKpiAssinados">—</div>
             <div class="kpi-delta up">confirmados</div>
           </div>
@@ -872,22 +873,22 @@ tbody tr:hover td{background:var(--bg-hover);}
         <!-- KPIs clicáveis -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','PENDENTE')">
-            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon" style="background:var(--yellow-soft)">⏳</div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon">⏳</div></div>
             <div class="kpi-value" id="solKpiPendente">—</div>
             <div class="kpi-delta warn">aguardando atendimento</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','VISUALIZADO')">
-            <div class="kpi-top"><span class="kpi-label">Visualizados</span><div class="kpi-icon" style="background:var(--blue-soft)">👁️</div></div>
+            <div class="kpi-top"><span class="kpi-label">Visualizados</span><div class="kpi-icon">👁️</div></div>
             <div class="kpi-value" id="solKpiVisualizado">—</div>
             <div class="kpi-delta" style="color:var(--blue)">em análise</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','ATENDIDO')">
-            <div class="kpi-top"><span class="kpi-label">Atendidos</span><div class="kpi-icon" style="background:var(--accent-soft)">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Atendidos</span><div class="kpi-icon">✓</div></div>
             <div class="kpi-value" id="solKpiAtendido">—</div>
             <div class="kpi-delta up">concluídos</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('prioridade','Urgente')">
-            <div class="kpi-top"><span class="kpi-label">Urgentes</span><div class="kpi-icon" style="background:var(--red-soft)">🚨</div></div>
+            <div class="kpi-top"><span class="kpi-label">Urgentes</span><div class="kpi-icon">🚨</div></div>
             <div class="kpi-value" id="solKpiUrgente">—</div>
             <div class="kpi-delta down">alta prioridade</div>
           </div>
@@ -1635,11 +1636,26 @@ async function selecionarColabAtend(id) {
   document.getElementById('atendColabSugestoes').classList.add('hidden');
   document.getElementById('atendColabBusca').value = colab.nome;
 
-  // Verifica pendência de assinatura
+  // Garante assinaturas carregadas
+  await carregarAssinaturasSilencioso();
+
+  // Verifica pendência de assinatura no cache local primeiro
+  const pendLocal = (_assinaturas || []).find(a =>
+    a.colaboradorId === id && a.statusCalc === 'PENDENTE'
+  );
+
+  if (pendLocal) {
+    ATEND.pendenciaToken = pendLocal.token;
+    document.getElementById('pendenciaNome').textContent = colab.nome;
+    document.getElementById('modalPendencia').classList.remove('hidden');
+    return;
+  }
+
+  // Fallback: busca na API caso assinaturas locais não estejam atualizadas
   const data = await api(`/atendimentos?colaborador_id=${id}`);
   if (data) {
-    const pendente = (data.atendimentos || []).find(a => a.status === 'PENDENTE' || a.status === 'EXPIRADO');
-    if (pendente && pendente.status === 'PENDENTE') {
+    const pendente = (data.atendimentos || []).find(a => a.status === 'PENDENTE');
+    if (pendente) {
       ATEND.pendenciaToken = pendente.token;
       document.getElementById('pendenciaNome').textContent = colab.nome;
       document.getElementById('modalPendencia').classList.remove('hidden');
