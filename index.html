@@ -501,36 +501,128 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
       <!-- COLABORADORES -->
+      <!-- ── COLABORADORES ── -->
       <div class="view" id="view-colaboradores">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">Colaboradores</div><div class="card-sub" id="subColaboradores">carregando...</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" placeholder="Buscar por nome ou matrícula..." oninput="filtrarColaboradores(this.value)">
-              <button class="btn btn-primary" onclick="toast('Em desenvolvimento','info')">+ Novo</button>
+        <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title" id="colabFormTitulo">Novo Colaborador</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+              <input type="hidden" id="colabEditId">
+              <div><label class="form-label">Nome *</label><input id="colabNome" class="form-input" placeholder="Nome completo"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Matrícula *</label><input id="colabMatricula" class="form-input" placeholder="Ex: 12345"></div>
+                <div><label class="form-label">Status *</label>
+                  <select id="colabStatus" class="form-input">
+                    <option value="ativo">Ativo</option>
+                    <option value="ferias">Férias</option>
+                    <option value="desligado">Desligado</option>
+                  </select>
+                </div>
+              </div>
+              <div><label class="form-label">Função *</label><input id="colabFuncao" class="form-input" placeholder="Ex: ELETRICISTA"></div>
+              <div><label class="form-label">Setor</label><input id="colabSetor" class="form-input" placeholder="Ex: Operacional SOC"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Telefone</label><input id="colabTelefone" class="form-input" placeholder="(00) 00000-0000"></div>
+                <div><label class="form-label">Admissão</label><input id="colabAdmissao" class="form-input" type="date"></div>
+              </div>
+              <div><label class="form-label">Nível</label>
+                <select id="colabNivel" class="form-input">
+                  <option value="Pleno">Pleno</option>
+                  <option value="Junior">Junior</option>
+                </select>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarColaborador()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormColab()">Limpar</button>
+              </div>
             </div>
           </div>
-          <table>
-            <thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Status</th><th></th></tr></thead>
-            <tbody id="colaboradoresBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-          </table>
+
+          <!-- LISTA -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Colaboradores</div><div class="card-sub" id="subColaboradores">carregando...</div></div>
+              <input class="search-box" type="text" placeholder="Buscar por nome ou matrícula..." oninput="filtrarColaboradores(this.value)">
+            </div>
+            <table>
+              <thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Status</th><th></th></tr></thead>
+              <tbody id="colaboradoresBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ITENS -->
+      <!-- ── ITENS ── -->
       <div class="view" id="view-itens">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">Itens</div><div class="card-sub" id="subItens">carregando...</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarItens(this.value)">
-              <button class="btn btn-primary" onclick="toast('Em desenvolvimento','info')">+ Novo</button>
+        <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title" id="itemFormTitulo">Novo Item</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+              <input type="hidden" id="itemEditId">
+              <div><label class="form-label">Descrição *</label><input id="itemDescricao" class="form-input" placeholder="Ex: Luva Isolante Classe 2"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Código *</label><input id="itemCodigo" class="form-input" placeholder="Ex: EP01000001"></div>
+                <div><label class="form-label">Categoria *</label><input id="itemCategoria" class="form-input" placeholder="Ex: EPI"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Un. Medida</label>
+                  <select id="itemUnMed" class="form-input">
+                    <option value="UN">UN - Unidade</option>
+                    <option value="PAR">PAR - Par</option>
+                    <option value="CX">CX - Caixa</option>
+                    <option value="PC">PC - Peça</option>
+                    <option value="KG">KG - Quilograma</option>
+                    <option value="LT">LT - Litro</option>
+                    <option value="MT">MT - Metro</option>
+                  </select>
+                </div>
+                <div><label class="form-label">Valor Un. (R$)</label><input id="itemValor" class="form-input" type="number" min="0" step="0.01" placeholder="0,00"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Estoque Mínimo</label><input id="itemEstMin" class="form-input" type="number" min="0" value="1"></div>
+                <div><label class="form-label">Durabilidade (dias)</label><input id="itemDurabilidade" class="form-input" type="number" min="1" placeholder="180"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">CA</label><input id="itemCA" class="form-input" placeholder="Ex: 12345"></div>
+                <div><label class="form-label">Posição (Corredor/Prat./Box)</label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+                    <input id="itemCorredor" class="form-input" placeholder="C1" style="font-size:11px">
+                    <input id="itemPrateleira" class="form-input" placeholder="P1" style="font-size:11px">
+                    <input id="itemBox" class="form-input" placeholder="B1" style="font-size:11px">
+                  </div>
+                </div>
+              </div>
+              <div><label class="form-label">Link da Imagem</label><input id="itemImg" class="form-input" placeholder="https://..."></div>
+              <div style="display:flex;gap:16px;flex-wrap:wrap">
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+                  <input type="checkbox" id="itemRequerEnsaio"> Requer Ensaio (NR10)
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+                  <input type="checkbox" id="itemPossuiSerie"> Possui Nº de Série
+                </label>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarItem()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormItem()">Limpar</button>
+              </div>
             </div>
           </div>
-          <table>
-            <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th>Un.</th><th></th></tr></thead>
-            <tbody id="itensBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-          </table>
+
+          <!-- LISTA -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Itens</div><div class="card-sub" id="subItens">carregando...</div></div>
+              <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarItens(this.value)">
+            </div>
+            <table>
+              <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th>Un.</th><th></th></tr></thead>
+              <tbody id="itensBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -2056,7 +2148,10 @@ function renderColaboradores(lista) {
       <td class="td-mono">${c.matricula||'—'}</td>
       <td>${c.funcao||'—'}</td>
       <td>${statusTag}</td>
-      <td><button class="row-action" onclick="abrirModalColab('${c.id}')">Ver</button></td>
+      <td style="display:flex;gap:4px">
+        <button class="row-action" onclick="abrirModalColab('${c.id}')">Ver</button>
+        <button class="row-action" onclick="editarColabForm('${c.id}')">Editar</button>
+      </td>
     </tr>`;
   }).join('');
 }
@@ -2082,7 +2177,7 @@ function abrirModalColab(id) {
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="editarColab('${c.id}')">✏️ Editar</button>
+        <button class="btn btn-ghost" onclick="editarColabForm('${c.id}')">✏️ Editar</button>
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
     </div>`;
@@ -2098,12 +2193,16 @@ function editarColab(id) {
 function renderItens(lista) {
   const tbody = document.getElementById('itensBody');
   if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Nenhum encontrado</div></div></td></tr>`; return; }
-  tbody.innerHTML = lista.slice(0,100).map(i=>`<tr>
-    <td class="td-main">${i.descricao||'—'}</td>
+  tbody.innerHTML = lista.slice(0,200).map(i=>`<tr>
+    <td class="td-main">${i.descricao||'—'}${i.requer_ensaio?'<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>':''}</td>
     <td class="td-mono">${i.codigo||'—'}</td>
-    <td>${i.categoria||'—'}</td>
-    <td>${i.un_med||i.unidade||'—'}</td>
-    <td><button class="row-action" onclick="abrirModalItem('${i.id}')">Ver</button></td>
+    <td style="font-size:11px;color:var(--text-3)">${i.categoria||'—'}</td>
+    <td style="font-size:11px">${i.un_med||'—'}</td>
+    <td style="display:flex;gap:4px">
+      <button class="row-action" onclick="abrirModalItem('${i.id}')">Ver</button>
+      <button class="row-action" onclick="editarItem('${i.id}')">Editar</button>
+      <button class="row-action" style="color:var(--red)" onclick="excluirItem('${i.id}','${(i.descricao||'').replace(/'/g,'')}')">✕</button>
+    </td>
   </tr>`).join('');
 }
 
@@ -4998,6 +5097,128 @@ async function excluirUsuario(id, nome) {
   const res = await api(`/usuarios/${id}`, { method:'DELETE' });
   if (res?.ok) { toast('Usuário excluído!', 'success'); carregarUsuariosView(); }
   else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+// ════════════ ITENS CRUD ════════════
+async function salvarItem() {
+  const id   = document.getElementById('itemEditId').value;
+  const body = {
+    descricao:       document.getElementById('itemDescricao').value.trim().toUpperCase(),
+    codigo:          document.getElementById('itemCodigo').value.trim().toUpperCase(),
+    categoria:       document.getElementById('itemCategoria').value.trim().toUpperCase(),
+    un_med:          document.getElementById('itemUnMed').value,
+    valor_un:        parseFloat(document.getElementById('itemValor').value) || 0,
+    estoque_min:     parseInt(document.getElementById('itemEstMin').value) || 0,
+    durabilidade_med:parseInt(document.getElementById('itemDurabilidade').value) || null,
+    ca:              document.getElementById('itemCA').value.trim(),
+    corredor:        document.getElementById('itemCorredor').value.trim(),
+    prateleira:      document.getElementById('itemPrateleira').value.trim(),
+    box:             document.getElementById('itemBox').value.trim(),
+    img:             document.getElementById('itemImg').value.trim(),
+    requer_ensaio:   document.getElementById('itemRequerEnsaio').checked,
+    possui_serie:    document.getElementById('itemPossuiSerie').checked,
+  };
+  if (!body.descricao || !body.codigo) { toast('Descrição e código obrigatórios', 'warn'); return; }
+  const res = await api(id ? `/itens/${id}` : '/itens', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) {
+    toast(id ? 'Item atualizado!' : 'Item cadastrado!', 'success');
+    limparFormItem();
+    carregarItens();
+  } else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarItem(id) {
+  const item = _itens.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('itemEditId').value       = id;
+  document.getElementById('itemDescricao').value    = item.descricao||'';
+  document.getElementById('itemCodigo').value       = item.codigo||'';
+  document.getElementById('itemCategoria').value    = item.categoria||'';
+  document.getElementById('itemUnMed').value        = item.un_med||'UN';
+  document.getElementById('itemValor').value        = item.valor_un||0;
+  document.getElementById('itemEstMin').value       = item.estoque_min||0;
+  document.getElementById('itemDurabilidade').value = item.durabilidade_med||'';
+  document.getElementById('itemCA').value           = item.ca||'';
+  document.getElementById('itemCorredor').value     = item.corredor||'';
+  document.getElementById('itemPrateleira').value   = item.prateleira||'';
+  document.getElementById('itemBox').value          = item.box||'';
+  document.getElementById('itemImg').value          = item.img||'';
+  document.getElementById('itemRequerEnsaio').checked = !!(item.requer_ensaio);
+  document.getElementById('itemPossuiSerie').checked  = !!(item.possui_serie);
+  document.getElementById('itemFormTitulo').textContent = 'Editar Item';
+  document.getElementById('itemFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
+}
+
+async function excluirItem(id, nome) {
+  if (!confirm(`Excluir o item "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  const res = await api(`/itens/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Item excluído!', 'success'); carregarItens(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+function limparFormItem() {
+  ['itemEditId','itemDescricao','itemCodigo','itemCategoria','itemValor','itemCA',
+   'itemCorredor','itemPrateleira','itemBox','itemImg','itemDurabilidade'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('itemUnMed').value  = 'UN';
+  document.getElementById('itemEstMin').value = '1';
+  document.getElementById('itemRequerEnsaio').checked = false;
+  document.getElementById('itemPossuiSerie').checked  = false;
+  document.getElementById('itemFormTitulo').textContent = 'Novo Item';
+}
+
+// ════════════ COLABORADORES CRUD ════════════
+async function salvarColaborador() {
+  const id   = document.getElementById('colabEditId').value;
+  const body = {
+    nome:          document.getElementById('colabNome').value.trim().toUpperCase(),
+    matricula:     document.getElementById('colabMatricula').value.trim(),
+    status:        document.getElementById('colabStatus').value,
+    funcao:        document.getElementById('colabFuncao').value.trim().toUpperCase(),
+    setor:         document.getElementById('colabSetor').value.trim(),
+    telefone:      document.getElementById('colabTelefone').value.trim(),
+    data_admissao: document.getElementById('colabAdmissao').value,
+    nivel:         document.getElementById('colabNivel').value,
+  };
+  if (!body.nome || !body.matricula) { toast('Nome e matrícula obrigatórios', 'warn'); return; }
+  const res = await api(id ? `/colaboradores/${id}` : '/colaboradores', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) {
+    toast(id ? 'Colaborador atualizado!' : 'Colaborador cadastrado!', 'success');
+    limparFormColab();
+    carregarColaboradores();
+  } else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function editarColabForm(id) {
+  const c = _colaboradores.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('colabEditId').value   = id;
+  document.getElementById('colabNome').value     = c.nome||'';
+  document.getElementById('colabMatricula').value= c.matricula||'';
+  document.getElementById('colabStatus').value   = c.status||'ativo';
+  document.getElementById('colabFuncao').value   = c.funcao||'';
+  document.getElementById('colabSetor').value    = c.setor||'';
+  document.getElementById('colabTelefone').value = c.telefone||'';
+  document.getElementById('colabAdmissao').value = c.data_admissao||'';
+  document.getElementById('colabNivel').value    = c.nivel||'Pleno';
+  document.getElementById('colabFormTitulo').textContent = 'Editar Colaborador';
+  document.getElementById('colabFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
+  // fecha modal se aberto
+  document.querySelector('.modal-overlay')?.remove();
+}
+
+function limparFormColab() {
+  ['colabEditId','colabNome','colabMatricula','colabSetor','colabTelefone','colabAdmissao'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('colabStatus').value = 'ativo';
+  document.getElementById('colabNivel').value  = 'Pleno';
+  document.getElementById('colabFormTitulo').textContent = 'Novo Colaborador';
 }
 
 // ── ENTER no login ──
