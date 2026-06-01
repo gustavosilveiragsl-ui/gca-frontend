@@ -1382,7 +1382,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title">Armazéns Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('armBody',this.value,[0,1])"></div>
-            <table><thead><tr><th>Nome</th><th>Localização</th><th>Responsável</th><th>Descrição</th><th></th></tr></thead>
+            <div style="overflow-x:auto"><table style="min-width:400px"><thead><tr><th>Nome</th><th>Localização</th><th>Responsável</th><th></th></tr></thead>
             <tbody id="armBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
@@ -1513,7 +1513,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 
           <div class="card">
             <div class="card-header"><div class="card-title">Usuários Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('usrBody',this.value,[0,1])"></div>
-            <table><thead><tr><th>Nome</th><th>Username</th><th>Perfil</th><th>Unidades</th><th>Status</th><th></th></tr></thead>
+            <div style="overflow-x:auto"><table style="min-width:500px"><thead><tr><th>Nome</th><th>Username</th><th>Perfil</th><th>Status</th><th></th></tr></thead>
             <tbody id="usrBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
@@ -4575,10 +4575,9 @@ async function carregarArmazensView() {
   if (!data) return;
   const lista = data.data || data.armazens || [];
   tbody.innerHTML = lista.length ? lista.map(a => `<tr>
-    <td class="td-main">${a.nome}</td>
+    <td class="td-main">${a.nome}<div style="font-size:10px;color:var(--text-3)">${a.descricao||''}</div></td>
     <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${a.descricao||'—'}</td>
     <td><button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button></td>
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
 }
@@ -4783,10 +4782,9 @@ async function carregarUsuariosView() {
     let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
     const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
     return `<tr>
-      <td class="td-main">${u.nome||'—'}</td>
+      <td class="td-main">${u.nome||'—'}<div style="font-size:10px;color:var(--text-3)">${uniStr}</div></td>
       <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}</td>
       <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
-      <td style="font-size:11px">${uniStr}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
