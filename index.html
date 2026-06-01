@@ -926,7 +926,6 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <th>Itens</th>
                 <th>Prioridade</th>
                 <th>Status</th>
-                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="solBody">
@@ -2572,10 +2571,10 @@ function renderAssinaturas(lista) {
 
   tbody.innerHTML = pagina.map(a => {
     const tag = a.statusCalc === 'ASSINADO'
-      ? '<span class="tag tag-green">Assinado</span>'
+      ? '<span style="color:var(--green);font-weight:600;font-size:11px">✅ Assinado</span>'
       : a.statusCalc === 'EXPIRADO'
-        ? '<span class="tag tag-gray">Expirado</span>'
-        : '<span class="tag tag-yellow">Pendente</span>';
+        ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">⏰ Expirado</span>'
+        : '<span style="color:var(--yellow);font-weight:600;font-size:11px">⏳ Pendente</span>';
 
     const expiraEm = a.expiracaoDate && a.statusCalc === 'PENDENTE'
       ? formatarTempoRestante(a.expiracaoDate) : '—';
@@ -2849,16 +2848,16 @@ function renderSolicitacoes() {
     const nome = s.colaborador_nome || s.colaboradorNome || '—';
     const sol  = s.solicitante_nome || s.solicitanteNome || '—';
 
-    return `<tr>
-      <td class="td-main">${nome}</td>
+    return `<tr style="cursor:pointer" onclick="abrirModalSolicitacao('${s.id}')">
+      <td>
+        <div class="td-main">${nome}</div>
+        <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${s.id}</div>
+      </td>
       <td style="font-size:11px;color:var(--text-2)">${sol}</td>
-      <td>${formatarData(s.data||s.criado_em?.split('T')[0])}</td>
+      <td>${formatarData(s.data_hora?.split(' ')[0]||s.criado_em?.split('T')[0])}</td>
       <td>${qtd} ${qtd===1?'item':'itens'}</td>
       <td>${priorTag}</td>
       <td>${statusTag}</td>
-      <td>
-        <button class="row-action" onclick="abrirModalSolicitacao('${s.id}')">Ver / Atender</button>
-      </td>
     </tr>`;
   }).join('');
 
@@ -2878,15 +2877,15 @@ function renderSolicitacoes() {
 
 function solStatusTag(status) {
   const map = {
-    'PENDENTE':              '<span class="tag tag-yellow">Pendente</span>',
-    'VISUALIZADO':           '<span class="tag tag-blue">Visualizado</span>',
-    'ATENDIDO':              '<span class="tag tag-accent">Atendido</span>',
-    'AGUARDANDO TRANSPORTE': '<span class="tag tag-yellow">Aguard. Transporte</span>',
-    'EM TRANSITO':           '<span class="tag tag-blue">Em Trânsito</span>',
-    'FINALIZADO':            '<span class="tag tag-green">Finalizado</span>',
-    'CANCELADO':             '<span class="tag tag-gray">Cancelado</span>',
+    'PENDENTE':              '<span style="color:var(--yellow);font-weight:600;font-size:11px">⏳ Pendente</span>',
+    'VISUALIZADO':           '<span style="color:var(--blue);font-weight:600;font-size:11px">👁️ Visualizado</span>',
+    'ATENDIDO':              '<span style="color:var(--accent-text);font-weight:600;font-size:11px">✅ Atendido</span>',
+    'AGUARDANDO TRANSPORTE': '<span style="color:var(--yellow);font-weight:600;font-size:11px">🚛 Aguard. Transporte</span>',
+    'EM TRANSITO':           '<span style="color:var(--blue);font-weight:600;font-size:11px">🚚 Em Trânsito</span>',
+    'FINALIZADO':            '<span style="color:var(--green);font-weight:600;font-size:11px">🏁 Finalizado</span>',
+    'CANCELADO':             '<span style="color:var(--text-3);font-weight:600;font-size:11px">❌ Cancelado</span>',
   };
-  return map[status] || `<span class="tag tag-gray">${status||'—'}</span>`;
+  return map[status] || `<span style="color:var(--text-3);font-size:11px">${status||'—'}</span>`;
 }
 
 // ── Modal detalhe ──
@@ -2902,36 +2901,63 @@ async function abrirModalSolicitacao(id) {
   }
 
   let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
-  const nome = s.colaborador_nome || s.colaboradorNome || '—';
-  const sol  = s.solicitante_nome || s.solicitanteNome || '—';
+  let historico = []; try { historico = JSON.parse(s.historico_status || '[]'); } catch {}
+  const nome = s.colaborador_nome || '—';
+  const sol  = s.solicitante_nome || '—';
+  const obs  = s.obs_geral || s.observacao || '';
 
-  document.getElementById('solModalTitulo').textContent = `Solicitação — ${nome}`;
-  document.getElementById('solModalSub').textContent    = `Solicitado por: ${sol} • ${formatarData(s.data||s.criado_em?.split('T')[0])} • ${s.prioridade||'Normal'}`;
+  document.getElementById('solModalTitulo').textContent = s.id;
+  document.getElementById('solModalSub').textContent    = `${nome} • Solicitado por: ${sol} • ${formatarData(s.data_hora?.split(' ')[0]||s.criado_em?.split('T')[0])}`;
 
   document.getElementById('solModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SOLICITANTE</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${sol}</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">COLABORADOR</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nome}</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ARMAZÉM</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.nome_armazem||'—'}</div>
+      </div>
       <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">STATUS</div>
         <div>${solStatusTag(s.status)}</div>
       </div>
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">OBSERVAÇÃO</div>
-        <div style="font-size:12px;color:var(--text-1)">${s.observacao||'—'}</div>
-      </div>
     </div>
+    ${obs ? `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:16px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
+
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Itens solicitados</div>
-    <table style="width:100%;border-collapse:collapse">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
       <thead><tr>
         <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+        <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
         <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center">Qtd</th>
       </tr></thead>
       <tbody>
         ${itens.map(i => `<tr>
-          <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||i.item_descricao||'—'}</td>
+          <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.nome||i.descricao||i.item_descricao||'—'}</td>
+          <td style="padding:8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${i.motivo||'—'}</td>
           <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade||1}</td>
         </tr>`).join('')}
       </tbody>
-    </table>`;
+    </table>
+
+    ${historico.length ? `
+    <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Histórico</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${historico.map(h => `
+        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--border)">
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:600;color:var(--text-1)">${solStatusTag(h.status)}</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">${h.usuario||'—'} • ${h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR') : '—'}</div>
+            ${h.obs ? `<div style="font-size:11px;color:var(--text-2);margin-top:2px">${h.obs}</div>` : ''}
+          </div>
+        </div>`).join('')}
+    </div>` : ''}`;
 
   // Botões de ação conforme status
   const podeAtender = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
