@@ -1496,6 +1496,20 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
             </div>
           </div>
+
+          <!-- PAINEL DE PERMISSÕES -->
+          <div class="card" id="permissoesPanel" style="display:none">
+            <div class="card-header">
+              <div><div class="card-title">Permissões</div><div class="card-sub" id="permissoesSubtitulo">Defina o acesso do usuário</div></div>
+              <div class="card-actions">
+                <button class="btn btn-ghost" style="font-size:11px" onclick="marcarTodasPermissoes(true)">Marcar todas</button>
+                <button class="btn btn-ghost" style="font-size:11px" onclick="marcarTodasPermissoes(false)">Desmarcar todas</button>
+                <button class="btn btn-primary" onclick="salvarPermissoes()">💾 Salvar permissões</button>
+              </div>
+            </div>
+            <div id="permissoesGrid" style="padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px"></div>
+          </div>
+
           <div class="card">
             <div class="card-header"><div class="card-title">Usuários Cadastrados</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('usrBody',this.value,[0,1])"></div>
             <table><thead><tr><th>Nome</th><th>Username</th><th>Perfil</th><th>Unidades</th><th>Status</th><th></th></tr></thead>
@@ -4711,13 +4725,16 @@ function limparFormDotacao() {
 }
 
 // ════════════ USUÁRIOS ════════════
+let _usrEditandoId = null;
+let _usrPermissoes = {};
+
 async function carregarUsuariosView() {
   const tbody = document.getElementById('usrBody');
   if (!tbody) return;
   const data = await api('/usuarios');
   if (!data) return;
-  const lista = data.data || data.usuarios || [];
-  tbody.innerHTML = lista.length ? lista.map(u => {
+  window._usuariosList = data.data || data.usuarios || [];
+  tbody.innerHTML = window._usuariosList.length ? window._usuariosList.map(u => {
     let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
     const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
     return `<tr>
@@ -4726,23 +4743,89 @@ async function carregarUsuariosView() {
       <td><span class="tag tag-accent">${u.role||'—'}</span></td>
       <td style="font-size:11px">${uniStr}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
-      <td><button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button></td>
+      <td style="display:flex;gap:4px">
+        <button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
+        <button class="row-action" style="color:var(--accent-text);border-color:var(--accent)" onclick="abrirPermissoes('${u.id}')">🔐 Permissões</button>
+      </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum usuário</div></div></td></tr>`;
 }
 
+function abrirPermissoes(id) {
+  _usrEditandoId = id;
+  const u = (window._usuariosList||[]).find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('permissoesPanel').style.display = '';
+  document.getElementById('permissoesSubtitulo').textContent = `Usuário: ${u.nome} (${u.role})`;
+  try { _usrPermissoes = typeof u.permissoes==='string' ? JSON.parse(u.permissoes||'{}') : (u.permissoes||{}); }
+  catch { _usrPermissoes = {}; }
+  if (u.role === 'admin') {
+    document.getElementById('permissoesGrid').innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-3);padding:20px">Administradores têm acesso total ao sistema.</div>';
+    return;
+  }
+  if (!Object.keys(_usrPermissoes).length && PERMISSOES_SCHEMA && PERFIS_PERMISSOES[u.role]) {
+    _usrPermissoes = { ...PERFIS_PERMISSOES[u.role] };
+  }
+  renderPermissoesGrid();
+  document.getElementById('permissoesPanel').scrollIntoView({ behavior:'smooth' });
+}
+
+function renderPermissoesGrid() {
+  const grid = document.getElementById('permissoesGrid');
+  if (!grid || !PERMISSOES_SCHEMA) return;
+  grid.innerHTML = Object.entries(PERMISSOES_SCHEMA).map(([modKey, mod]) => `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-1)">${mod.label}</div>
+        <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-3);cursor:pointer">
+          <input type="checkbox" onchange="toggleModulo('${modKey}',this.checked)"
+            ${Object.keys(mod.itens).every(k => _usrPermissoes[k]) ? 'checked' : ''}> Tudo
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${Object.entries(mod.itens).map(([key, label]) => `
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer">
+          <input type="checkbox" id="perm_${key}" ${_usrPermissoes[key] ? 'checked' : ''}
+            onchange="_usrPermissoes['${key}']=this.checked"> ${label}
+        </label>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+function toggleModulo(modKey, checked) {
+  const mod = PERMISSOES_SCHEMA[modKey];
+  Object.keys(mod.itens).forEach(key => {
+    _usrPermissoes[key] = checked;
+    const el = document.getElementById(`perm_${key}`);
+    if (el) el.checked = checked;
+  });
+}
+
+function marcarTodasPermissoes(checked) {
+  Object.values(PERMISSOES_SCHEMA).forEach(mod => Object.keys(mod.itens).forEach(key => { _usrPermissoes[key] = checked; }));
+  renderPermissoesGrid();
+}
+
+async function salvarPermissoes() {
+  if (!_usrEditandoId) return;
+  const res = await api(`/usuarios/${_usrEditandoId}`, {
+    method:'PUT', body: JSON.stringify({ permissoes: JSON.stringify(_usrPermissoes) })
+  });
+  if (res?.ok) { toast('Permissões salvas!', 'success'); carregarUsuariosView(); }
+  else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
 async function salvarUsuario() {
-  const id    = document.getElementById('usrEditId').value;
-  const unis  = [];
-  if (document.getElementById('usrUniMarica')?.checked)  unis.push('marica');
-  if (document.getElementById('usrUniRdo')?.checked)     unis.push('rio_das_ostras');
-  const base  = document.getElementById('usrBase')?.value || '';
-  const body  = {
+  const id   = document.getElementById('usrEditId').value;
+  const unis = [];
+  if (document.getElementById('usrUniMarica')?.checked) unis.push('marica');
+  if (document.getElementById('usrUniRdo')?.checked)    unis.push('rio_das_ostras');
+  const base = document.getElementById('usrBase')?.value || '';
+  const body = {
     nome:     document.getElementById('usrNome').value.trim(),
     username: document.getElementById('usrUsername').value.trim(),
     role:     document.getElementById('usrRole').value,
-    base,
-    unidades: unis,
+    base, unidades: unis,
   };
   const senha = document.getElementById('usrSenha').value;
   if (senha) body.password = senha;
@@ -4751,31 +4834,113 @@ async function salvarUsuario() {
   const res = await api(id ? `/usuarios/${id}` : '/usuarios', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
-  if (res?.ok) { toast('Usuário salvo!', 'success'); limparFormUsuario(); carregarUsuariosView(); }
-  else toast(res?.erro || 'Erro ao salvar', 'error');
+  if (res?.ok) {
+    toast('Usuário salvo!', 'success');
+    limparFormUsuario();
+    await carregarUsuariosView();
+    if (!id && res.data?.id && PERFIS_PERMISSOES[body.role]) {
+      _usrEditandoId = res.data.id;
+      _usrPermissoes = { ...PERFIS_PERMISSOES[body.role] };
+      await salvarPermissoes();
+    }
+  } else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
 function editarUsuario(id) {
-  api('/usuarios').then(data => {
-    const u = (data?.data||data?.usuarios||[]).find(x => x.id === id);
-    if (!u) return;
-    document.getElementById('usrEditId').value   = id;
-    document.getElementById('usrNome').value     = u.nome||'';
-    document.getElementById('usrUsername').value = u.username||'';
-    document.getElementById('usrSenha').value    = '';
-    document.getElementById('usrRole').value     = u.role||'almoxarife';
-    let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
-    document.getElementById('usrUniMarica').checked = unis.includes('marica');
-    document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
-  });
+  const u = (window._usuariosList||[]).find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('usrEditId').value   = id;
+  document.getElementById('usrNome').value     = u.nome||'';
+  document.getElementById('usrUsername').value = u.username||'';
+  document.getElementById('usrSenha').value    = '';
+  document.getElementById('usrRole').value     = u.role||'almoxarife';
+  if (document.getElementById('usrBase')) document.getElementById('usrBase').value = u.base||'marica';
+  let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = []; }
+  document.getElementById('usrUniMarica').checked = unis.includes('marica');
+  document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
 }
 
 function limparFormUsuario() {
   ['usrEditId','usrNome','usrUsername','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('usrRole').value = 'almoxarife';
+  if (document.getElementById('usrBase')) document.getElementById('usrBase').value = 'marica';
   document.getElementById('usrUniMarica').checked = false;
   document.getElementById('usrUniRdo').checked    = false;
+  document.getElementById('permissoesPanel').style.display = 'none';
+  _usrEditandoId = null;
 }
+
+
+
+// ═══════════════════════════════════════════
+// PERMISSÕES
+// ═══════════════════════════════════════════
+const PERMISSOES_SCHEMA = {
+  atendimento: { label:'Atendimento', icon:'🤝', itens:{
+    iniciar_atendimento:'Iniciar atendimento', mobilizar_colaborador:'Mobilizar colaborador',
+    consulta_dia:'Consulta do dia', cancelar_atendimento:'Cancelar atendimento'
+  }},
+  assinaturas: { label:'Assinaturas', icon:'✍️', itens:{
+    ver_assinaturas:'Ver assinaturas', reenviar_link:'Reenviar link',
+    cancelar_assinado:'Cancelar atendimento assinado'
+  }},
+  solicitacoes: { label:'Solicitações', icon:'📋', itens:{
+    ver_solicitacoes:'Ver solicitações', atender_solicitacao:'Atender solicitação',
+    editar_solicitacao:'Editar solicitação', cancelar_solicitacao:'Cancelar solicitação',
+    alterar_status_sol:'Alterar status'
+  }},
+  estoque: { label:'Estoque', icon:'📦', itens:{
+    ver_estoque:'Consulta de estoque', entrada_material:'Registrar entrada',
+    saida_material:'Registrar saída', transferencia:'Transferência',
+    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra'
+  }},
+  financeiro: { label:'Financeiro', icon:'💰', itens:{
+    ver_financeiro:'Ver financeiro', descontos:'Gerenciar descontos', protheus:'Protheus / Compras'
+  }},
+  laudos: { label:'Laudos / NR10', icon:'🔬', itens:{
+    ver_laudos:'Ver laudos', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais'
+  }},
+  enel: { label:'ENEL', icon:'⚡', itens:{
+    ver_enel:'Ver módulo ENEL', marcar_instalado:'Marcar como instalado',
+    desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento ENEL'
+  }},
+  gestao: { label:'Gestão', icon:'📊', itens:{
+    ver_indicadores:'Ver indicadores', relatorios:'Relatórios'
+  }},
+  cadastros: { label:'Cadastros', icon:'🗂️', itens:{
+    cadastrar_itens:'Cadastrar/editar itens', cadastrar_colaboradores:'Cadastrar/editar colaboradores',
+    cadastrar_armazens:'Cadastrar armazéns', cadastrar_equipes:'Cadastrar equipes',
+    cadastrar_dotacao:'Cadastrar dotação', gerenciar_usuarios:'Gerenciar usuários',
+    aprovar_recuperacao:'Aprovar recuperação de senha'
+  }}
+};
+
+// Verifica se usuário tem permissão (admin tem tudo)
+function temPermissao(perm) {
+  if (GCA.usuario?.role === 'admin') return true;
+  const perms = GCA.usuario?.permissoes || {};
+  return perms[perm] === true;
+}
+
+// Perfis padrão de permissões
+const PERFIS_PERMISSOES = {
+  admin: null, // admin tem tudo
+  almoxarife: {
+    iniciar_atendimento:true, mobilizar_colaborador:true, consulta_dia:true,
+    ver_assinaturas:true, reenviar_link:true,
+    ver_solicitacoes:true, atender_solicitacao:true,
+    ver_estoque:true, entrada_material:true, saida_material:true, transferencia:true, ver_movimentacoes:true,
+  },
+  supervisor: {
+    ver_assinaturas:true, ver_solicitacoes:true, atender_solicitacao:true,
+    editar_solicitacao:true, cancelar_solicitacao:true, alterar_status_sol:true,
+    ver_estoque:true, ver_movimentacoes:true,
+  },
+  visualizador: {
+    consulta_dia:true, ver_assinaturas:true, ver_solicitacoes:true,
+    ver_estoque:true, ver_movimentacoes:true,
+  }
+};
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
