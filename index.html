@@ -1320,9 +1320,9 @@ tbody tr:hover td{background:var(--bg-hover);}
               <input class="search-box" type="text" id="movBusca" placeholder="Buscar item..." oninput="filtrarMovimentacoes()">
               <select class="form-input" id="movFiltroTipo" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
                 <option value="">Todos os tipos</option>
-                <option value="entrada">📥 Entrada</option>
-                <option value="saida">📤 Saída</option>
-                <option value="transferencia">🔄 Transferência</option>
+                <option value="ENTRADA">📥 Entrada</option>
+                <option value="SAIDA">📤 Saída</option>
+                <option value="TRANSFERENCIA">🔄 Transferência</option>
               </select>
               <select class="form-input" id="movFiltroArmazem" style="width:160px;font-size:11px" onchange="filtrarMovimentacoes()">
                 <option value="">Todos os armazéns</option>
@@ -4059,9 +4059,9 @@ async function carregarMovimentacoes() {
   _movData = data.registros || data.movimentacoes || data.data || [];
 
   // KPIs
-  document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo === 'entrada').length;
-  document.getElementById('movKpiSaidas').textContent   = _movData.filter(m => m.tipo === 'saida').length;
-  document.getElementById('movKpiTransf').textContent   = _movData.filter(m => m.tipo === 'transferencia').length;
+  document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo?.toUpperCase() === 'ENTRADA').length;
+  document.getElementById('movKpiSaidas').textContent   = _movData.filter(m => m.tipo?.toUpperCase() === 'SAIDA').length;
+  document.getElementById('movKpiTransf').textContent   = _movData.filter(m => m.tipo?.toUpperCase() === 'TRANSFERENCIA').length;
   document.getElementById('movKpiTotal').textContent    = _movData.length;
 
   // Popula filtro armazém
@@ -4089,7 +4089,7 @@ function renderMovimentacoes() {
   const fim    = document.getElementById('movFiltroFim')?.value || '';
 
   let lista = _movData;
-  if (tipo)  lista = lista.filter(m => m.tipo === tipo);
+  if (tipo)  lista = lista.filter(m => m.tipo === tipo.toUpperCase());
   if (arm)   lista = lista.filter(m => (m.armazemId||m.armazem_id) === arm);
   if (busca) lista = lista.filter(m => (m.descricao||m.item_descricao||m.nome_item||'').toLowerCase().includes(busca));
   if (inicio) lista = lista.filter(m => (m.data||m.criadoEm?.split('T')[0]) >= inicio);
@@ -4106,8 +4106,9 @@ function renderMovimentacoes() {
   const pagina = lista.slice(ini, ini + _movPorPag);
 
   tbody.innerHTML = pagina.map(m => {
-    const tipoTag = m.tipo === 'entrada'      ? '<span style="color:#22c55e;font-weight:600;font-size:11px">📥 Entrada</span>'
-                  : m.tipo === 'saida'        ? '<span style="color:#ef4444;font-weight:600;font-size:11px">📤 Saída</span>'
+    const tipoNorm = (m.tipo||'').toUpperCase();
+    const tipoTag = tipoNorm === 'ENTRADA'      ? '<span style="color:#22c55e;font-weight:600;font-size:11px">📥 Entrada</span>'
+                  : tipoNorm === 'SAIDA'        ? '<span style="color:#ef4444;font-weight:600;font-size:11px">📤 Saída</span>'
                   : '<span style="color:#60a5fa;font-weight:600;font-size:11px">🔄 Transferência</span>';
     const nomeItem  = m.descricao  || m.item_descricao || m.nome_item || '—';
     const armazem   = m.tipo === 'transferencia'
