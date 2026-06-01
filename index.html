@@ -866,7 +866,77 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
 
       </div>
-      <div class="view" id="view-solicitacoes"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Solicitações</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── SOLICITAÇÕES ── -->
+      <div class="view" id="view-solicitacoes">
+
+        <!-- KPIs clicáveis -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','PENDENTE')">
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon" style="background:var(--yellow-soft)">⏳</div></div>
+            <div class="kpi-value" id="solKpiPendente">—</div>
+            <div class="kpi-delta warn">aguardando atendimento</div>
+          </div>
+          <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','VISUALIZADO')">
+            <div class="kpi-top"><span class="kpi-label">Visualizados</span><div class="kpi-icon" style="background:var(--blue-soft)">👁️</div></div>
+            <div class="kpi-value" id="solKpiVisualizado">—</div>
+            <div class="kpi-delta" style="color:var(--blue)">em análise</div>
+          </div>
+          <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','ATENDIDO')">
+            <div class="kpi-top"><span class="kpi-label">Atendidos</span><div class="kpi-icon" style="background:var(--accent-soft)">✓</div></div>
+            <div class="kpi-value" id="solKpiAtendido">—</div>
+            <div class="kpi-delta up">concluídos</div>
+          </div>
+          <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('prioridade','Urgente')">
+            <div class="kpi-top"><span class="kpi-label">Urgentes</span><div class="kpi-icon" style="background:var(--red-soft)">🚨</div></div>
+            <div class="kpi-value" id="solKpiUrgente">—</div>
+            <div class="kpi-delta down">alta prioridade</div>
+          </div>
+        </div>
+
+        <!-- FILTROS + TABELA -->
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Solicitações de Material</div><div class="card-sub">Gerencie e atenda as solicitações feitas pelos supervisores</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
+              <select class="form-input" id="solFiltroStatus" style="width:140px;font-size:11px" onchange="filtrarSolicitacoes()">
+                <option value="">Todos os status</option>
+                <option value="PENDENTE">Pendente</option>
+                <option value="VISUALIZADO">Visualizado</option>
+                <option value="ATENDIDO">Atendido</option>
+                <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
+                <option value="EM TRANSITO">Em Trânsito</option>
+                <option value="FINALIZADO">Finalizado</option>
+                <option value="CANCELADO">Cancelado</option>
+              </select>
+              <select class="form-input" id="solFiltroPrioridade" style="width:120px;font-size:11px" onchange="filtrarSolicitacoes()">
+                <option value="">Todas prioridades</option>
+                <option value="Urgente">Urgente</option>
+                <option value="Normal">Normal</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Colaborador</th>
+                <th>Solicitante</th>
+                <th>Data</th>
+                <th>Itens</th>
+                <th>Prioridade</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="solBody">
+              <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+          <div id="solPaginacao"></div>
+        </div>
+
+      </div>
       <div class="view" id="view-entrada"><div class="empty-state"><div class="es-icon">📥</div><div class="es-title">Entrada de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-saida"><div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Saída de Material</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-transferencia"><div class="empty-state"><div class="es-icon">🔄</div><div class="es-title">Transferência</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -965,6 +1035,21 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+
+<!-- MODAL DETALHE SOLICITACAO -->
+<div class="modal-overlay hidden" id="modalSolicitacao">
+  <div class="modal-box" style="max-width:640px;max-height:90vh;overflow-y:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="solModalTitulo">Solicitação</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="solModalSub"></div>
+      </div>
+      <button class="modal-close" onclick="fecharModalSolicitacao()">×</button>
+    </div>
+    <div class="modal-body" id="solModalBody"></div>
+    <div class="modal-footer" id="solModalFooter"></div>
+  </div>
+</div>
 <!-- MODAL CANCELAR ATENDIMENTO -->
 <div class="modal-overlay hidden" id="modalCancelarAtendimento">
   <div class="modal-box" style="max-width:420px">
@@ -1089,6 +1174,7 @@ function onViewLoad(nome) {
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        carregarAssinaturas();
+  if (nome === 'solicitacoes')       carregarSolicitacoes();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -1897,11 +1983,17 @@ function adicionarItensAoAtendimento(selecionados) {
 }
 
 async function carregarSeriaisDisponiveis(itemId, idx) {
-  const data = await api(`/ensaios/seriais-disponiveis/${itemId}`);
-  if (data?.seriais) {
-    ATEND.itens[idx].seriaisDisponiveis = data.seriais.map(s => s.serial);
-    renderItensAtendimento();
+  const [dataEst, dataColab] = await Promise.all([
+    api(`/ensaios/seriais-disponiveis/${itemId}`),
+    ATEND.colab ? api(`/ensaios/seriais-colab/${ATEND.colab.id}/${itemId}`) : Promise.resolve(null),
+  ]);
+  if (dataEst?.seriais) {
+    ATEND.itens[idx].seriaisDisponiveis = dataEst.seriais.map(s => s.serial);
   }
+  if (dataColab?.seriais) {
+    ATEND.itens[idx].seriaisComColab = dataColab.seriais.map(s => s.serial);
+  }
+  renderItensAtendimento();
 }
 
 // ═══════════════════════════════════════════
@@ -1926,7 +2018,13 @@ function renderItensAtendimento() {
     <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th></th></tr></thead>
     <tbody>
       ${ATEND.itens.map((it, i) => {
-        const serialBlock = it.requerEnsaio ? it.seriais.map((s, si) => `
+        const motivoLower = (it.motivo||'').toLowerCase();
+        const ehTroca = motivoLower.includes('troca') || motivoLower.includes('desgaste') || motivoLower.includes('recupera') || motivoLower.includes('dano');
+
+        // Serial novo (saindo do estoque)
+        const serialNovoBlock = it.requerEnsaio ? `
+          <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
+          ${it.seriais.map((s, si) => `
           <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
             <input
               list="seriais-${i}-${si}"
@@ -1940,14 +2038,32 @@ function renderItensAtendimento() {
               ${(it.seriaisDisponiveis||[]).map(sv => `<option value="${sv}">`).join('')}
             </datalist>
             <span id="serial-status-${i}-${si}" style="font-size:10px;font-weight:600;min-width:60px"></span>
-          </div>`).join('') : '';
+          </div>`).join('')}` : '';
+
+        // Serial retorno (devolvido pelo colaborador) — só em motivos de troca
+        const serialRetornoBlock = (it.requerEnsaio && ehTroca) ? `
+          <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
+          ${it.seriais.map((s, si) => `
+          <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+            <input
+              list="retorno-${i}-${si}"
+              class="form-input" style="width:160px;font-size:11px;font-family:var(--font-mono);border-color:var(--yellow)"
+              placeholder="Retorno ${si+1}"
+              value="${(it.serialRetorno||[])[si]||''}"
+              oninput="if(!ATEND.itens[${i}].serialRetorno)ATEND.itens[${i}].serialRetorno=[];ATEND.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()"
+            >
+            <datalist id="retorno-${i}-${si}">
+              ${(it.seriaisComColab||[]).map(sv => `<option value="${sv}">`).join('')}
+            </datalist>
+          </div>`).join('')}` : '';
 
         return `
         <tr>
           <td class="td-main">
             ${it.descricao}
             ${it.requerEnsaio ? `<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>` : ''}
-            ${serialBlock}
+            ${serialNovoBlock}
+            ${serialRetornoBlock}
           </td>
           <td>${it.nomeArmazem||'—'}</td>
           <td>${it.quantidade} ${it.un_med||'UN'}</td>
@@ -2221,10 +2337,18 @@ async function executarMobilizacao() {
   setTimeout(async () => {
     await selecionarColabAtend(_mobColab.id);
     setTimeout(() => {
-      // Adiciona itens direto ao atendimento
-      ATEND.itens = itensAtendimento;
-      renderItensAtendimento();
-      document.getElementById('btnConcluirAtendimento').disabled = false;
+      // Monta selecionados no formato esperado por adicionarItensAoAtendimento
+      const selecionados = itensAtendimento.map(it => {
+        const itemLocal = (_itens||[]).find(i => i.id === it.itemId);
+        return {
+          item:   itemLocal || { id: it.itemId, descricao: it.descricao, codigo: it.codigo, un_med: it.un_med, requer_ensaio: false },
+          qtd:    it.quantidade,
+          motivo: it.motivo,
+          armazem: it.armazemId,
+        };
+      });
+
+      adicionarItensAoAtendimento(selecionados);
 
       // Avisa sobre itens com tamanho
       if (comTamanho.length) {
@@ -2632,6 +2756,256 @@ async function confirmarCancelarAtendimento() {
     carregarAssinaturas();
   } else {
     toast(res?.erro || 'Erro ao cancelar', 'error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// SOLICITAÇÕES
+// ═══════════════════════════════════════════
+let _solicitacoes   = [];
+let _solPagina      = 1;
+const _solPorPagina = 10;
+let _solFiltros     = { status: '', prioridade: '', busca: '' };
+
+async function carregarSolicitacoes() {
+  const tbody = document.getElementById('solBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/solicitacoes?por_pagina=500&order=desc');
+  if (!data) return;
+
+  _solicitacoes = data.solicitacoes || data.data || [];
+  _solPagina = 1;
+  atualizarKpisSolicitacoes();
+  renderSolicitacoes();
+
+  // Badge na sidebar
+  const pendentes = _solicitacoes.filter(s => s.status === 'PENDENTE' || s.status === 'VISUALIZADO').length;
+  const badge = document.getElementById('badgeSolicitacoes');
+  if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
+}
+
+function atualizarKpisSolicitacoes() {
+  const todos = _solicitacoes;
+  document.getElementById('solKpiPendente').textContent    = todos.filter(s => s.status === 'PENDENTE').length;
+  document.getElementById('solKpiVisualizado').textContent = todos.filter(s => s.status === 'VISUALIZADO').length;
+  document.getElementById('solKpiAtendido').textContent    = todos.filter(s => s.status === 'ATENDIDO').length;
+  document.getElementById('solKpiUrgente').textContent     = todos.filter(s => s.prioridade === 'Urgente' && !['FINALIZADO','CANCELADO'].includes(s.status)).length;
+}
+
+function filtrarSolicitacoes(campo, valor) {
+  if (campo === 'status') {
+    document.getElementById('solFiltroStatus').value = valor;
+    _solFiltros.status = valor;
+  } else if (campo === 'prioridade') {
+    document.getElementById('solFiltroPrioridade').value = valor;
+    _solFiltros.prioridade = valor;
+  } else {
+    _solFiltros.status     = document.getElementById('solFiltroStatus')?.value || '';
+    _solFiltros.prioridade = document.getElementById('solFiltroPrioridade')?.value || '';
+    _solFiltros.busca      = document.getElementById('solBusca')?.value || '';
+  }
+  _solPagina = 1;
+  renderSolicitacoes();
+}
+
+function renderSolicitacoes() {
+  const tbody = document.getElementById('solBody');
+  if (!tbody) return;
+
+  let lista = _solicitacoes;
+  const { status, prioridade, busca } = _solFiltros;
+  if (status)     lista = lista.filter(s => s.status === status);
+  if (prioridade) lista = lista.filter(s => s.prioridade === prioridade);
+  if (busca) {
+    const q = busca.toLowerCase();
+    lista = lista.filter(s =>
+      (s.colaborador_nome||s.colaboradorNome||'').toLowerCase().includes(q) ||
+      (s.solicitante_nome||s.solicitanteNome||'').toLowerCase().includes(q) ||
+      (s.id||'').toLowerCase().includes(q)
+    );
+  }
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhuma solicitação encontrada</div></div></td></tr>`;
+    document.getElementById('solPaginacao').innerHTML = '';
+    return;
+  }
+
+  const total  = lista.length;
+  const inicio = (_solPagina - 1) * _solPorPagina;
+  const fim    = Math.min(inicio + _solPorPagina, total);
+  const pagina = lista.slice(inicio, fim);
+
+  tbody.innerHTML = pagina.map(s => {
+    const statusTag = solStatusTag(s.status);
+    const priorTag  = s.prioridade === 'Urgente'
+      ? '<span class="tag tag-red">🚨 Urgente</span>'
+      : '<span class="tag tag-gray">Normal</span>';
+
+    let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+    const qtd = itens.length || s.qtd_itens || 0;
+    const nome = s.colaborador_nome || s.colaboradorNome || '—';
+    const sol  = s.solicitante_nome || s.solicitanteNome || '—';
+
+    return `<tr>
+      <td class="td-main">${nome}</td>
+      <td style="font-size:11px;color:var(--text-2)">${sol}</td>
+      <td>${formatarData(s.data||s.criado_em?.split('T')[0])}</td>
+      <td>${qtd} ${qtd===1?'item':'itens'}</td>
+      <td>${priorTag}</td>
+      <td>${statusTag}</td>
+      <td>
+        <button class="row-action" onclick="abrirModalSolicitacao('${s.id}')">Ver / Atender</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Paginação
+  const totalPag = Math.ceil(total / _solPorPagina);
+  const pag = document.getElementById('solPaginacao');
+  pag.innerHTML = total > _solPorPagina ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
+      <span>Exibindo ${inicio+1}–${fim} de ${total}</span>
+      <div style="display:flex;gap:6px">
+        <button class="row-action" ${_solPagina===1?'disabled':''} onclick="_solPagina--;renderSolicitacoes()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_solPagina} / ${totalPag}</span>
+        <button class="row-action" ${_solPagina===totalPag?'disabled':''} onclick="_solPagina++;renderSolicitacoes()">Próxima →</button>
+      </div>
+    </div>` : '';
+}
+
+function solStatusTag(status) {
+  const map = {
+    'PENDENTE':              '<span class="tag tag-yellow">Pendente</span>',
+    'VISUALIZADO':           '<span class="tag tag-blue">Visualizado</span>',
+    'ATENDIDO':              '<span class="tag tag-accent">Atendido</span>',
+    'AGUARDANDO TRANSPORTE': '<span class="tag tag-yellow">Aguard. Transporte</span>',
+    'EM TRANSITO':           '<span class="tag tag-blue">Em Trânsito</span>',
+    'FINALIZADO':            '<span class="tag tag-green">Finalizado</span>',
+    'CANCELADO':             '<span class="tag tag-gray">Cancelado</span>',
+  };
+  return map[status] || `<span class="tag tag-gray">${status||'—'}</span>`;
+}
+
+// ── Modal detalhe ──
+async function abrirModalSolicitacao(id) {
+  const s = _solicitacoes.find(x => x.id === id);
+  if (!s) return;
+
+  // Marca como visualizado se pendente
+  if (s.status === 'PENDENTE') {
+    await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'VISUALIZADO' }) });
+    s.status = 'VISUALIZADO';
+    renderSolicitacoes();
+  }
+
+  let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+  const nome = s.colaborador_nome || s.colaboradorNome || '—';
+  const sol  = s.solicitante_nome || s.solicitanteNome || '—';
+
+  document.getElementById('solModalTitulo').textContent = `Solicitação — ${nome}`;
+  document.getElementById('solModalSub').textContent    = `Solicitado por: ${sol} • ${formatarData(s.data||s.criado_em?.split('T')[0])} • ${s.prioridade||'Normal'}`;
+
+  document.getElementById('solModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px">
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">STATUS</div>
+        <div>${solStatusTag(s.status)}</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">OBSERVAÇÃO</div>
+        <div style="font-size:12px;color:var(--text-1)">${s.observacao||'—'}</div>
+      </div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Itens solicitados</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+        <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center">Qtd</th>
+      </tr></thead>
+      <tbody>
+        ${itens.map(i => `<tr>
+          <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||i.item_descricao||'—'}</td>
+          <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade||1}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+
+  // Botões de ação conforme status
+  const podeAtender = !['FINALIZADO','CANCELADO','ATENDIDO'].includes(s.status);
+  document.getElementById('solModalFooter').innerHTML = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
+      ${podeAtender ? `
+        <button class="btn btn-primary" onclick="atenderSolicitacao('${id}');fecharModalSolicitacao()">🤝 Iniciar Atendimento</button>
+        <select class="form-input" id="solNovoStatus" style="width:180px;font-size:11px">
+          <option value="">Alterar status...</option>
+          <option value="VISUALIZADO">Visualizado</option>
+          <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
+          <option value="EM TRANSITO">Em Trânsito</option>
+          <option value="CANCELADO">Cancelado</option>
+        </select>
+        <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Atualizar</button>
+      ` : ''}
+      <button class="btn btn-ghost" style="margin-left:auto" onclick="fecharModalSolicitacao()">Fechar</button>
+    </div>`;
+
+  document.getElementById('modalSolicitacao').classList.remove('hidden');
+}
+
+function fecharModalSolicitacao() {
+  document.getElementById('modalSolicitacao').classList.add('hidden');
+}
+
+async function alterarStatusSolicitacao(id) {
+  const status = document.getElementById('solNovoStatus')?.value;
+  if (!status) { toast('Selecione um status', 'warn'); return; }
+  const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status }) });
+  if (res?.ok) {
+    const s = _solicitacoes.find(x => x.id === id);
+    if (s) s.status = status;
+    toast('Status atualizado!', 'success');
+    fecharModalSolicitacao();
+    atualizarKpisSolicitacoes();
+    renderSolicitacoes();
+  } else {
+    toast(res?.erro || 'Erro ao atualizar', 'error');
+  }
+}
+
+function atenderSolicitacao(id) {
+  const s = _solicitacoes.find(x => x.id === id);
+  if (!s) return;
+  window._solicitacaoAtendimento = s;
+  showView('atendimento');
+
+  // Se já tem colaborador na solicitação, pré-seleciona
+  if (s.colaborador_id || s.colaboradorId) {
+    setTimeout(async () => {
+      iniciarAtendimento();
+      setTimeout(async () => {
+        await selecionarColabAtend(s.colaborador_id || s.colaboradorId);
+        // Pré-carrega itens da solicitação usando adicionarItensAoAtendimento
+        let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+        if (itens.length && _armazens.length) {
+          const selecionados = itens.map(it => {
+            const itemLocal = (_itens||[]).find(i => i.id === (it.item_id||it.itemId));
+            return {
+              item:    itemLocal || { id: it.item_id||it.itemId, descricao: it.descricao||it.item_descricao, codigo: '', un_med: 'UN', requer_ensaio: false },
+              qtd:     it.quantidade || 1,
+              motivo:  'Entrega inicial',
+              armazem: _armazens[0]?.id || '',
+            };
+          }).filter(s => s.item?.id);
+          if (selecionados.length) {
+            setTimeout(() => adicionarItensAoAtendimento(selecionados), 600);
+          }
+        }
+      }, 500);
+    }, 300);
+  } else {
+    toast(`Solicitação vinculada! Selecione o colaborador e inicie o atendimento.`, 'info', 5000);
   }
 }
 
