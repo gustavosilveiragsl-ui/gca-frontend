@@ -6481,24 +6481,29 @@ function abrirVerSC(id) {
   if (sc.observacao) { obs.textContent = `Obs: ${sc.observacao}`; obs.style.display=''; }
   else obs.style.display = 'none';
 
+
   const tbody = document.getElementById('verSCItensBody');
-  tbody.innerHTML = itens.map((it,idx) => `<tr>
+  tbody.innerHTML = itens.map((it,idx) => {
+    const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
+    const valorAtual = Number(itemLocal?.valor_un || 0);
+    return `<tr>
     <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">
       <div style="font-weight:600">${it.nome||it.descricao||'—'}</div>
       <div style="font-size:10px;color:var(--text-3)">${it.codigo||''}</div>
     </td>
     <td style="padding:8px;text-align:center;font-size:12px;border-bottom:1px solid var(--border)">${it.qtd||1}</td>
     <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
-      <input type="number" min="0" max="${it.qtd||1}" value="${it.qtd||1}" class="form-input rec-qtd" style="width:60px;font-size:11px;text-align:center"
-        data-idx="${idx}" oninput="atualizarTotalSC()">
-    const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
-    const valorAtual = itemLocal?.valor_un || 0;
-      <input type="number" min="0" step="0.01" value="${valorAtual}" 
-        class="form-input rec-valor" style="width:80px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
-        oninput="atualizarTotalSC()">
+      <input type="number" min="0" max="${it.qtd||1}" value="${it.qtd||1}" class="form-input rec-qtd"
+        style="width:60px;font-size:11px;text-align:center" data-idx="${idx}" oninput="atualizarTotalSC()">
+    </td>
+    <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+      <input type="number" min="0" step="0.01" value="${valorAtual}"
+        class="form-input rec-valor" style="width:80px;font-size:11px;text-align:center"
+        data-item-id="${it.itemId}" oninput="atualizarTotalSC()">
     </td>
     <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)" id="recTotal_${idx}">—</td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 
   atualizarTotalSC();
   document.getElementById('modalVerSC').classList.remove('hidden');
