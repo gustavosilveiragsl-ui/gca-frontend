@@ -1632,6 +1632,23 @@ tbody tr:hover td{background:var(--bg-hover);}
             <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
+
+        <!-- HISTÓRICO DE RECEBIMENTOS -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <div><div class="card-title">📋 Histórico de Recebimentos</div><div class="card-sub">Itens recebidos com data e documentos</div></div>
+            <button class="btn btn-ghost" onclick="carregarHistoricoRecebimentos()">↻ Carregar</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>SC</th><th>Item</th><th style="text-align:center">Qtd</th>
+              <th>Fornecedor</th><th>NF</th><th>Data Receb.</th><th></th>
+            </tr></thead>
+            <tbody id="recHistBody">
+              <tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Carregar para ver o histórico</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
       <!-- ── PROTHEUS ── -->
       <div class="view" id="view-protheus">
@@ -2300,15 +2317,15 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
       <!-- Itens pendentes -->
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens Pendentes</div>
+      <!-- Itens - selecione os que vai receber -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Selecione os itens a receber</div>
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:8px">Marque o checkbox do item para informar quantidade e confirmar recebimento</div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr>
           <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd Receber</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un. (R$)</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
-        </tr></thead>
-        <tbody id="recItensBody"></tbody>
       </table>
       <div id="recSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e"></div>
     </div>
@@ -6422,7 +6439,7 @@ function renderSCItens() {
       <div style="width:36px;height:36px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
         ${it.img?`<img src="${it.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:16px">📦</span>'}
       </div>
-      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nome}<div style="font-size:10px;color:var(--text-3)">${it.codigo}</div></div>
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nomeItem||it.nome||'—'}<div style="font-size:10px;color:var(--text-3)">${it.codigo||it.codigo||''}</div></div>
       <input type="number" min="1" value="${it.qtd}" class="form-input" style="width:60px;font-size:12px;text-align:center"
         oninput="_scItens[${idx}].qtd=parseInt(this.value)||1;renderSCItens()">
       <button class="row-action" style="color:var(--red)" onclick="_scItens.splice(${idx},1);renderSCItens()">✕</button>
@@ -6452,7 +6469,19 @@ function abrirModalSC(id) {
       document.getElementById('scComprador').value = sc.comprador||'';
       document.getElementById('scObs').value       = sc.observacao||'';
       document.getElementById('scStatus').value    = sc.status||'Pendente';
-      try { _scItens = JSON.parse(sc.itens_json||'[]'); } catch { _scItens = []; }
+      try { 
+        const raw = JSON.parse(sc.itens_json||'[]');
+        // Normaliza campos antigos (nomeItem/qtdSolicitada) para novo formato (nome/qtd)
+        _scItens = raw.map(it => ({
+          itemId:  it.itemId || it.item_id || '',
+          nome:    it.nomeItem || it.nome || it.descricao || '—',
+          codigo:  it.codigo || '',
+          img:     it.img || (_itens||[]).find(i=>i.id===(it.itemId||it.item_id))?.img || '',
+          qtd:     Number(it.qtd || it.qtdSolicitada || 1),
+          qtdRecebida: Number(it.qtdRecebida || 0),
+          statusItem:  it.statusItem || 'Pendente',
+        }));
+      } catch { _scItens = []; }
       renderSCItens();
       document.getElementById('scModalTitulo').textContent = 'Editar SC';
     }
@@ -6519,7 +6548,7 @@ function abrirVerSC(id) {
     const qtdRec = Number(it.qtdRecebida||0);
     const pendente = qtdSol - qtdRec;
     const status = it.statusItem || (qtdRec >= qtdSol ? 'Recebido' : qtdRec > 0 ? 'Parcial' : 'Pendente');
-    const stColor = status==='Recebido'?'#22c55e':status==='Parcial'?'#a855f7':'#f59e0b';
+    const stColor = status==='Recebido'?'#22c55e':status==='Recebido Total'?'#22c55e':status==='Parcial'?'#a855f7':'#f59e0b';
     const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
     return `<tr>
       <td style="padding:8px;border-bottom:1px solid var(--border)">
@@ -6559,27 +6588,31 @@ function abrirRecebimentoSC() {
   const sc   = _scData.find(x=>x.id===scId);
   if (!sc) return;
 
-  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
-  // Filtra itens com pendência
-  const itensPendentes = itens.filter(it => {
-    const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
-    const qtdRec = Number(it.qtdRecebida||0);
-    return qtdRec < qtdSol;
-  });
+  let itens = []; 
+  try { 
+    const raw = JSON.parse(sc.itens_json||'[]');
+    itens = raw.map(it => ({
+      itemId: it.itemId||it.item_id||'',
+      nome: it.nomeItem||it.nome||it.descricao||'—',
+      codigo: it.codigo||'',
+      qtdSol: Number(it.qtdSolicitada||it.qtd||1),
+      qtdRec: Number(it.qtdRecebida||0),
+      statusItem: it.statusItem||'Pendente',
+    }));
+  } catch {}
 
-  if (!itensPendentes.length) { toast('Todos os itens já foram recebidos', 'info'); return; }
+  const pendentes = itens.filter(it => it.qtdRec < it.qtdSol);
+  if (!pendentes.length) { toast('Todos os itens já foram recebidos', 'info'); return; }
 
-  // Fecha modal ver e abre modal receber
-  document.getElementById('modalVerSC').classList.add('hidden');
-  document.getElementById('recSCId').value = scId;
+  document.getElementById('verSCId').value; // já tem
+  document.getElementById('recSCId').value  = scId;
   document.getElementById('recSCNumero').textContent = sc.numero_sc||'—';
 
-  // Limpa campos NF
-  ['recNF','recPedido','recFornecedor','recPdfLink'].forEach(f=>{const el=document.getElementById(f);if(el)el.value=sc[f.replace('rec','').toLowerCase()]||'';});
-  document.getElementById('recNF').value        = sc.num_nf||'';
-  document.getElementById('recPedido').value    = sc.pedido_compra||'';
-  document.getElementById('recFornecedor').value= sc.fornecedor||'';
-  document.getElementById('recPdfLink').value   = sc.pdf_nf_url||'';
+  // Preenche campos NF com dados existentes
+  document.getElementById('recNF').value         = sc.num_nf||'';
+  document.getElementById('recPedido').value     = sc.pedido_compra||'';
+  document.getElementById('recFornecedor').value = sc.fornecedor||'';
+  document.getElementById('recPdfLink').value    = sc.pdf_nf_url||'';
 
   // Armazéns do usuário
   const selArm = document.getElementById('recArmazem');
@@ -6590,58 +6623,108 @@ function abrirRecebimentoSC() {
   }
   selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}" data-nome="${a.nome}">${a.nome}</option>`).join('');
 
-  // Itens pendentes
+  // Monta itens com checkbox de seleção
   const recBody = document.getElementById('recItensBody');
-  recBody.innerHTML = itensPendentes.map((it,idx) => {
-    const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
-    const qtdRec = Number(it.qtdRecebida||0);
-    const pendente = qtdSol - qtdRec;
+  recBody.innerHTML = pendentes.map((it, idx) => {
+    const pendente  = it.qtdSol - it.qtdRec;
     const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
-    const valorAtual = Number(itemLocal?.valor_un||0);
-    return `<tr>
+    const valorAtual= Number(itemLocal?.valor_un||0);
+    return `<tr id="recRow_${idx}">
       <td style="padding:8px;border-bottom:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px">
-          <div style="width:32px;height:32px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
-            ${itemLocal?.img?`<img src="${itemLocal.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:12px">📦</span>'}
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" class="rec-check" data-idx="${idx}" onchange="toggleRecItem(${idx})"
+            style="width:16px;height:16px;cursor:pointer">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:32px;height:32px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+              ${itemLocal?.img?`<img src="${itemLocal.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:12px">📦</span>'}
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600">${it.nome}</div>
+              <div style="font-size:10px;color:var(--text-3)">${it.codigo} • Pendente: <strong>${pendente}</strong></div>
+            </div>
           </div>
-          <div>
-            <div style="font-size:12px;font-weight:600">${it.nomeItem||it.nome||'—'}</div>
-            <div style="font-size:10px;color:var(--text-3)">${it.codigo||''} • Pendente: ${pendente}</div>
-          </div>
+        </label>
+      </td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+        <input type="number" min="1" max="${pendente}" value="${pendente}" class="form-input rec-qtd"
+          style="width:65px;font-size:12px;text-align:center;display:none"
+          data-item-id="${it.itemId}" data-item-nome="${it.nome}"
+          data-qtd-sol="${it.qtdSol}" data-qtd-rec="${it.qtdRec}"
+          oninput="atualizarTotalSC()">
+        <span class="rec-qtd-placeholder" style="font-size:11px;color:var(--text-3)">—</span>
+      </td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+        <div style="display:none" class="rec-valor-group" style="display:flex;align-items:center;gap:4px">
+          <input type="number" min="0" step="0.01" value="${valorAtual}" class="form-input rec-valor"
+            style="width:75px;font-size:11px;text-align:center"
+            data-item-id="${it.itemId}" oninput="atualizarTotalSC()" disabled>
+          <button class="row-action" title="Editar valor" style="font-size:10px;padding:3px 6px"
+            onclick="toggleEditarValor(this)">✏️</button>
         </div>
-      </td>
-      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
-        <input type="number" min="0" max="${pendente}" value="${pendente}" class="form-input rec-qtd"
-          style="width:60px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
-          data-item-nome="${it.nomeItem||it.nome||''}" data-qtd-sol="${qtdSol}" data-qtd-rec="${qtdRec}"
-          oninput="atualizarTotalSC()">
-      </td>
-      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
-        <input type="number" min="0" step="0.01" value="${valorAtual}" class="form-input rec-valor"
-          style="width:80px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
-          oninput="atualizarTotalSC()">
+        <span class="rec-valor-placeholder" style="font-size:11px;color:var(--text-3)">—</span>
       </td>
       <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)" id="recTotalRow_${idx}">—</td>
     </tr>`;
   }).join('');
 
-  atualizarTotalSC();
+  document.getElementById('recSCTotal').textContent = '';
+  document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalRecSC').classList.remove('hidden');
+}
+
+function toggleRecItem(idx) {
+  const row    = document.getElementById(`recRow_${idx}`);
+  const check  = row.querySelector('.rec-check');
+  const qtdIn  = row.querySelector('.rec-qtd');
+  const qtdPh  = row.querySelector('.rec-qtd-placeholder');
+  const valGrp = row.querySelector('.rec-valor-group');
+  const valPh  = row.querySelector('.rec-valor-placeholder');
+
+  if (check.checked) {
+    qtdIn.style.display  = '';
+    qtdPh.style.display  = 'none';
+    valGrp.style.display = 'flex';
+    valPh.style.display  = 'none';
+  } else {
+    qtdIn.style.display  = 'none';
+    qtdPh.style.display  = '';
+    valGrp.style.display = 'none';
+    valPh.style.display  = '';
+    qtdIn.value = qtdIn.max;
+  }
+  atualizarTotalSC();
+}
+
+function toggleEditarValor(btn) {
+  const input = btn.previousElementSibling;
+  if (input.disabled) {
+    input.disabled = false;
+    input.focus();
+    btn.textContent = '✓';
+    btn.style.color = '#22c55e';
+  } else {
+    input.disabled = true;
+    btn.textContent = '✏️';
+    btn.style.color = '';
+    atualizarTotalSC();
+  }
 }
 
 function atualizarTotalSC() {
   let total = 0;
-  document.querySelectorAll('.rec-qtd').forEach((qtdEl, idx) => {
+  document.querySelectorAll('.rec-check').forEach((check, idx) => {
+    if (!check.checked) return;
+    const qtdEl   = document.querySelectorAll('.rec-qtd')[idx];
     const valorEl = document.querySelectorAll('.rec-valor')[idx];
-    const qtd   = parseFloat(qtdEl.value)||0;
+    const qtd   = parseFloat(qtdEl?.value)||0;
     const valor = parseFloat(valorEl?.value)||0;
-    const subtotal = qtd * valor;
-    total += subtotal;
+    const sub   = qtd * valor;
+    total += sub;
     const totalEl = document.getElementById(`recTotalRow_${idx}`);
-    if (totalEl) totalEl.textContent = subtotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    if (totalEl) totalEl.textContent = sub.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   });
   const totalEl = document.getElementById('recSCTotal');
-  if (totalEl) totalEl.textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+  if (totalEl) totalEl.textContent = total > 0 ? `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '';
 }
 
 async function confirmarRecebimentoSC() {
@@ -6656,25 +6739,38 @@ async function confirmarRecebimentoSC() {
 
   if (!armId) { toast('Selecione o armazém destino', 'warn'); return; }
 
-  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+  const checks = document.querySelectorAll('.rec-check');
+  const qtdEls = document.querySelectorAll('.rec-qtd');
+  const valEls = document.querySelectorAll('.rec-valor');
 
-  const qtdEls   = document.querySelectorAll('.rec-qtd');
-  const valorEls = document.querySelectorAll('.rec-valor');
+  let algumSelecionado = false;
 
-  let algumRecebido = false;
+  // Carrega itens da SC para atualizar
+  let itens = []; 
+  try { 
+    const raw = JSON.parse(sc.itens_json||'[]');
+    itens = raw.map(it => ({...it, 
+      itemId: it.itemId||it.item_id,
+      qtdSolicitada: Number(it.qtdSolicitada||it.qtd||1),
+      qtdRecebida: Number(it.qtdRecebida||0),
+    }));
+  } catch {}
 
-  for (let i = 0; i < qtdEls.length; i++) {
+  for (let i = 0; i < checks.length; i++) {
+    if (!checks[i].checked) continue;
+    algumSelecionado = true;
+
     const itemId   = qtdEls[i].dataset.itemId;
     const itemNome = qtdEls[i].dataset.itemNome;
     const qtdSol   = Number(qtdEls[i].dataset.qtdSol||1);
     const qtdRecAntes = Number(qtdEls[i].dataset.qtdRec||0);
     const qtdRec   = parseFloat(qtdEls[i].value)||0;
-    const valorUn  = parseFloat(valorEls[i]?.value)||0;
+    const valorUn  = parseFloat(valEls[i]?.value)||0;
+
     if (qtdRec <= 0) continue;
-    algumRecebido = true;
 
     // Lança entrada no estoque
-    await api('/movimentacoes/entrada', {
+    const res = await api('/movimentacoes/entrada', {
       method:'POST',
       body: JSON.stringify({
         item_id: itemId, armazem_id: armId,
@@ -6684,38 +6780,89 @@ async function confirmarRecebimentoSC() {
         observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'}`,
       })
     });
+    if (!res?.ok) { toast(`Erro ao lançar ${itemNome}`, 'error'); return; }
 
-    // Atualiza valor do item se informado
-    if (valorUn > 0) {
+    // Atualiza valor se foi editado
+    if (valorUn > 0 && !valEls[i]?.disabled) {
       await api(`/itens/${itemId}`, { method:'PUT', body: JSON.stringify({ valor_un: valorUn }) });
-      // Atualiza localmente
       const itemLocal = (_itens||[]).find(x=>x.id===itemId);
       if (itemLocal) itemLocal.valor_un = valorUn;
     }
 
-    // Atualiza qtdRecebida no itens_json
-    const idx = itens.findIndex(it=>it.itemId===itemId);
+    // Atualiza qtdRecebida no array local
+    const idx = itens.findIndex(it=>(it.itemId||it.item_id)===itemId);
     if (idx >= 0) {
       itens[idx].qtdRecebida = qtdRecAntes + qtdRec;
-      itens[idx].statusItem  = (itens[idx].qtdRecebida >= qtdSol) ? 'Recebido' : 'Parcial';
+      itens[idx].statusItem  = itens[idx].qtdRecebida >= itens[idx].qtdSolicitada ? 'Recebido' : 'Parcial';
     }
   }
 
-  if (!algumRecebido) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
+  if (!algumSelecionado) { toast('Selecione pelo menos um item', 'warn'); return; }
 
-  // Calcula novo status geral da SC
+  // Calcula status geral
   const totalSol = itens.reduce((s,it)=>s+Number(it.qtdSolicitada||it.qtd||1),0);
   const totalRec = itens.reduce((s,it)=>s+Number(it.qtdRecebida||0),0);
   const novoStatus = totalRec >= totalSol ? 'Recebido Total' : 'Recebido Parcial';
 
   await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
     status: novoStatus, itens_json: JSON.stringify(itens),
-    num_nf: nf, pedido_compra: pedido, fornecedor, pdf_nf_url: pdfLink,
+    num_nf: nf||null, pedido_compra: pedido||null,
+    fornecedor: fornecedor||null, pdf_nf_url: pdfLink||null,
   })});
 
   toast('Recebimento registrado!', 'success');
   document.getElementById('modalRecSC').classList.add('hidden');
   carregarSC();
+}
+
+async function carregarHistoricoRecebimentos() {
+  const tbody = document.getElementById('recHistBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+  // Pega todas as SCs com itens recebidos
+  const scComRec = _scData.filter(sc => {
+    let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+    return itens.some(it => Number(it.qtdRecebida||0) > 0);
+  });
+
+  if (!scComRec.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Nenhum recebimento registrado</td></tr>';
+    return;
+  }
+
+  const rows = [];
+  scComRec.forEach(sc => {
+    let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+    itens.filter(it => Number(it.qtdRecebida||0) > 0).forEach(it => {
+      rows.push({
+        sc_numero: sc.numero_sc,
+        sc_id:     sc.id,
+        item:      it.nomeItem || it.nome || '—',
+        qtd:       it.qtdRecebida,
+        fornecedor: sc.fornecedor || '—',
+        num_nf:    sc.num_nf || '—',
+        data:      sc.data_abertura,
+        pdf_url:   sc.pdf_nf_url || '',
+      });
+    });
+  });
+
+  // Ordena por data mais recente
+  rows.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td class="td-mono" style="font-size:11px">${r.sc_numero}</td>
+    <td class="td-main">${r.item}</td>
+    <td style="text-align:center;font-size:11px;font-weight:600;color:#22c55e">${r.qtd}</td>
+    <td style="font-size:11px;color:var(--text-2)">${r.fornecedor}</td>
+    <td style="font-size:11px;color:var(--text-2)">${r.num_nf}</td>
+    <td style="font-size:11px">${formatarData(r.data)}</td>
+    <td>${r.pdf_url
+      ? `<a href="${r.pdf_url}" target="_blank" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">📄 Ver NF</a>`
+      : '<span style="font-size:10px;color:var(--text-3)">—</span>'
+    }</td>
+  </tr>`).join('');
 }
 
 function filtrarSC() {
