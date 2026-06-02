@@ -1614,7 +1614,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div class="card-header">
             <div><div class="card-title">Solicitações de Compra</div></div>
             <div class="card-actions">
-              <input class="search-box" type="text" id="scBusca" placeholder="Buscar SC..." oninput="filtrarSC()">
+              <input class="search-box" type="text" id="scBusca" placeholder="Buscar por SC, comprador ou item..." oninput="filtrarSC()">
               <select class="form-input" id="scFiltroStatus" style="width:150px;font-size:11px" onchange="filtrarSC()">
                 <option value="">Todos os status</option>
                 <option value="Pendente">⏳ Pendente</option>
@@ -2180,9 +2180,9 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
-<!-- MODAL SOLICITAÇÃO DE COMPRA -->
-<div class="modal-overlay hidden" id="modalSC">
-  <div class="modal-box" style="max-width:640px">
+<!-- MODAL EDITAR SC -->
+<div class="modal-overlay hidden" id="modalSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
     <div class="modal-header">
       <div><div class="modal-title" id="scModalTitulo">Nova Solicitação de Compra</div></div>
       <button class="modal-close" onclick="fecharModalSC()">×</button>
@@ -2191,25 +2191,30 @@ tbody tr:hover td{background:var(--bg-hover);}
       <input type="hidden" id="scEditId">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div><label class="form-label">Nº da SC *</label><input id="scNumero" class="form-input" placeholder="Ex: SC-2024-001"></div>
-        <div><label class="form-label">Data *</label><input id="scData" class="form-input" type="date"></div>
+        <div><label class="form-label">Data abertura</label><input id="scData" class="form-input" type="date" readonly style="background:var(--bg);color:var(--text-3)"></div>
       </div>
       <div><label class="form-label">Comprador *</label><input id="scComprador" class="form-input" placeholder="Nome do comprador"></div>
       <div>
         <label class="form-label">Itens</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <div style="flex:1;position:relative">
-            <input id="scItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSC(this.value)" autocomplete="off" style="font-size:11px">
-            <div id="scItemSugestoes" class="autocomplete-list hidden"></div>
-            <input type="hidden" id="scItemId">
-          </div>
-          <input id="scItemQtd" class="form-input" type="number" min="1" value="1" style="width:60px;font-size:11px">
-          <button class="btn btn-ghost" onclick="adicionarItemSC()">+</button>
+        <!-- Igual ao atendimento: autocomplete com foto -->
+        <div style="position:relative;margin-bottom:8px">
+          <input id="scItemBusca" class="form-input" placeholder="Buscar item por descrição ou código..." oninput="filtrarItensSC(this.value)" onblur="setTimeout(()=>document.getElementById('scItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
+          <div id="scItemSugestoes" class="autocomplete-list hidden" style="max-height:220px;overflow-y:auto"></div>
+          <input type="hidden" id="scItemId">
         </div>
-        <div id="scItensLista" style="display:flex;flex-direction:column;gap:4px"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px" id="scItemPreviewRow" style="display:none">
+          <div id="scItemPreviewImg" style="width:48px;height:48px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg)"></div>
+          <div style="flex:1">
+            <div id="scItemPreviewNome" style="font-size:12px;font-weight:600;color:var(--text-1)"></div>
+            <div id="scItemPreviewCod" style="font-size:10px;color:var(--text-3)"></div>
+          </div>
+          <input id="scItemQtd" class="form-input" type="number" min="1" value="1" style="width:70px" placeholder="Qtd">
+          <button class="btn btn-primary" style="padding:8px 12px" onclick="adicionarItemSC()">+</button>
+        </div>
+        <div id="scItensLista" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
       <div><label class="form-label">Observação</label><textarea id="scObs" class="form-input" rows="2" style="resize:vertical"></textarea></div>
-      <div>
-        <label class="form-label">Status</label>
+      <div><label class="form-label">Status</label>
         <select id="scStatus" class="form-input">
           <option value="Pendente">⏳ Pendente</option>
           <option value="Aprovado">✅ Aprovado</option>
@@ -2222,6 +2227,64 @@ tbody tr:hover td{background:var(--bg-hover);}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModalSC()">Cancelar</button>
       <button class="btn btn-primary" onclick="salvarSC()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER SC / RECEBIMENTO -->
+<div class="modal-overlay hidden" id="modalVerSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:720px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="verSCNumero">SC-000</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="verSCSub"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="verSCStatus"></span>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalSC(document.getElementById('verSCId').value)">✏️ Editar</button>
+        <button class="modal-close" onclick="document.getElementById('modalVerSC').classList.add('hidden')">×</button>
+      </div>
+    </div>
+    <input type="hidden" id="verSCId">
+    <div class="modal-body">
+
+      <!-- DADOS NF (para recebimento) -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px">📄 Dados do Recebimento / NF</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
+          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
+          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
+          <div>
+            <label class="form-label">Armazém destino *</label>
+            <select id="recArmazem" class="form-input"></select>
+          </div>
+          <div style="grid-column:span 2">
+            <label class="form-label">Link PDF da NF (Google Drive)</label>
+            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/...">
+          </div>
+        </div>
+      </div>
+
+      <!-- ITENS DA SC -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📦 Itens da SC</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd SC</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd Receber</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un. (R$)</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
+        </tr></thead>
+        <tbody id="verSCItensBody"></tbody>
+      </table>
+      <div id="verSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e;padding:8px 0;margin-top:4px"></div>
+
+      <div id="verSCObs" style="font-size:11px;color:var(--text-3);margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalVerSC').classList.add('hidden')">Fechar</button>
+      <button class="btn btn-primary" onclick="confirmarRecebimentoSC()">✅ Confirmar Recebimento</button>
     </div>
   </div>
 </div>
@@ -6271,42 +6334,73 @@ function verDesconto(id) { toast('Detalhes do desconto em breve', 'info'); }
 // ════════════ SOLICITAÇÕES DE COMPRA ════════════
 let _scData = [];
 let _scItens = [];
+let _scItemSel = null;
 
 function filtrarItensSC(q) {
-  if (q.length < 2) { document.getElementById('scItemSugestoes').classList.add('hidden'); return; }
-  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  mostrarAutocompleteItens('scItemSugestoes','scItemBusca', lista, 'selecionarItemSC');
+  const sug = document.getElementById('scItemSugestoes');
+  if (q.length < 2) { sug.classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(i=>`
+    <div class="autocomplete-item" onclick="selecionarItemSC('${i.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 12px">
+      <div style="width:36px;height:36px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+        ${i.img?`<img src="${i.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:14px">📦</span>'}
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600">${i.descricao}</div>
+        <div style="font-size:10px;color:var(--text-3)">${i.codigo||'—'} • ${i.categoria||'—'}</div>
+      </div>
+    </div>`).join('');
+  sug.classList.remove('hidden');
 }
+
 function selecionarItemSC(id) {
-  const item = (_itens||[]).find(i=>i.id===id);
-  if (!item) return;
-  document.getElementById('scItemBusca').value = item.descricao;
+  _scItemSel = (_itens||[]).find(i=>i.id===id);
+  if (!_scItemSel) return;
+  document.getElementById('scItemBusca').value = _scItemSel.descricao;
   document.getElementById('scItemId').value = id;
   document.getElementById('scItemSugestoes').classList.add('hidden');
+  // Show preview
+  const row = document.getElementById('scItemPreviewRow');
+  const img = document.getElementById('scItemPreviewImg');
+  document.getElementById('scItemPreviewNome').textContent = _scItemSel.descricao;
+  document.getElementById('scItemPreviewCod').textContent  = `${_scItemSel.codigo||'—'} • ${_scItemSel.categoria||'—'}`;
+  img.innerHTML = _scItemSel.img ? `<img src="${_scItemSel.img}" style="width:100%;height:100%;object-fit:cover">` : '<span style="font-size:20px">📦</span>';
+  if (row) row.style.display = 'flex';
+  document.getElementById('scItemQtd').focus();
 }
+
 function adicionarItemSC() {
   const itemId = document.getElementById('scItemId').value;
   const qtd    = parseInt(document.getElementById('scItemQtd').value)||1;
-  const item   = (_itens||[]).find(i=>i.id===itemId);
-  if (!item) { toast('Selecione um item', 'warn'); return; }
+  if (!itemId || !_scItemSel) { toast('Selecione um item', 'warn'); return; }
   const existe = _scItens.findIndex(i=>i.itemId===itemId);
   if (existe >= 0) _scItens[existe].qtd += qtd;
-  else _scItens.push({ itemId, nome: item.descricao, qtd });
-  document.getElementById('scItemBusca').value='';
-  document.getElementById('scItemId').value='';
-  document.getElementById('scItemQtd').value='1';
+  else _scItens.push({ itemId, nome: _scItemSel.descricao, codigo: _scItemSel.codigo||'', img: _scItemSel.img||'', qtd });
+  document.getElementById('scItemBusca').value = '';
+  document.getElementById('scItemId').value = '';
+  document.getElementById('scItemQtd').value = '1';
+  _scItemSel = null;
+  const row = document.getElementById('scItemPreviewRow');
+  if (row) row.style.display = 'none';
   renderSCItens();
 }
+
 function renderSCItens() {
   document.getElementById('scItensLista').innerHTML = _scItens.map((it,idx)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px">
-      <span style="flex:1">${it.nome}</span>
-      <span style="color:var(--text-3)">${it.qtd}x</span>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="width:36px;height:36px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+        ${it.img?`<img src="${it.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:16px">📦</span>'}
+      </div>
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nome}<div style="font-size:10px;color:var(--text-3)">${it.codigo}</div></div>
+      <input type="number" min="1" value="${it.qtd}" class="form-input" style="width:60px;font-size:12px;text-align:center"
+        oninput="_scItens[${idx}].qtd=parseInt(this.value)||1;renderSCItens()">
       <button class="row-action" style="color:var(--red)" onclick="_scItens.splice(${idx},1);renderSCItens()">✕</button>
     </div>`).join('');
 }
+
 function abrirModalSC(id) {
-  _scItens = [];
+  _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
   document.getElementById('scData').value   = new Date().toISOString().split('T')[0];
@@ -6314,33 +6408,41 @@ function abrirModalSC(id) {
   document.getElementById('scObs').value = '';
   document.getElementById('scStatus').value = 'Pendente';
   document.getElementById('scItensLista').innerHTML = '';
+  document.getElementById('scItemBusca').value = '';
+  const row = document.getElementById('scItemPreviewRow');
+  if (row) row.style.display = 'none';
   document.getElementById('scModalTitulo').textContent = 'Nova Solicitação de Compra';
+
   if (id) {
     const sc = _scData.find(x=>x.id===id);
     if (sc) {
-      document.getElementById('scEditId').value = id;
-      document.getElementById('scNumero').value = sc.numero_sc||'';
-      document.getElementById('scData').value   = sc.data_abertura||'';
+      document.getElementById('scEditId').value    = id;
+      document.getElementById('scNumero').value    = sc.numero_sc||'';
+      document.getElementById('scData').value      = sc.data_abertura||'';
       document.getElementById('scComprador').value = sc.comprador||'';
-      document.getElementById('scObs').value = sc.observacao||'';
-      document.getElementById('scStatus').value = sc.status||'Pendente';
-      try { _scItens = JSON.parse(sc.itens_json||'[]'); } catch {}
+      document.getElementById('scObs').value       = sc.observacao||'';
+      document.getElementById('scStatus').value    = sc.status||'Pendente';
+      try { _scItens = JSON.parse(sc.itens_json||'[]'); } catch { _scItens = []; }
       renderSCItens();
       document.getElementById('scModalTitulo').textContent = 'Editar SC';
     }
   }
+  // Fecha o modal de visualização se estiver aberto
+  document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalSC').classList.remove('hidden');
 }
+
 function fecharModalSC() { document.getElementById('modalSC').classList.add('hidden'); }
+
 async function salvarSC() {
   const id = document.getElementById('scEditId').value;
   const body = {
-    numero_sc: document.getElementById('scNumero').value.trim(),
+    numero_sc:    document.getElementById('scNumero').value.trim(),
     data_abertura: document.getElementById('scData').value,
-    comprador: document.getElementById('scComprador').value.trim(),
-    observacao: document.getElementById('scObs').value.trim(),
-    status: document.getElementById('scStatus').value,
-    itens_json: JSON.stringify(_scItens),
+    comprador:    document.getElementById('scComprador').value.trim(),
+    observacao:   document.getElementById('scObs').value.trim(),
+    status:       document.getElementById('scStatus').value,
+    itens_json:   JSON.stringify(_scItens),
   };
   if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
   const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
@@ -6349,14 +6451,152 @@ async function salvarSC() {
   if (res?.ok) { toast('SC salva!', 'success'); fecharModalSC(); carregarSC(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
+
+function abrirVerSC(id) {
+  const sc = _scData.find(x=>x.id===id);
+  if (!sc) return;
+
+  document.getElementById('verSCId').value       = id;
+  document.getElementById('verSCNumero').textContent = sc.numero_sc||'—';
+  document.getElementById('verSCSub').textContent    = `${formatarData(sc.data_abertura)} • ${sc.comprador||'—'}`;
+
+  const stMap = {'Pendente':'color:#f59e0b','Aprovado':'color:#3b82f6','Recebido Parcial':'color:#a855f7','Recebido Total':'color:#22c55e','Cancelado':'color:var(--text-3)'};
+  document.getElementById('verSCStatus').innerHTML = `<span style="font-size:11px;font-weight:700;${stMap[sc.status]||''}">${sc.status||'—'}</span>`;
+
+  // Limpa campos de recebimento
+  ['recNF','recPedido','recFornecedor','recPdfLink'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+
+  // Armazéns do usuário
+  const selArm = document.getElementById('recArmazem');
+  let armazensUser = _armazens;
+  if (GCA.usuario?.role !== 'admin') {
+    let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens||'[]'); } catch {}
+    if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
+  }
+  selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}" data-nome="${a.nome}">${a.nome}</option>`).join('');
+
+  // Itens
+  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+  const obs = document.getElementById('verSCObs');
+  if (sc.observacao) { obs.textContent = `Obs: ${sc.observacao}`; obs.style.display=''; }
+  else obs.style.display = 'none';
+
+  const tbody = document.getElementById('verSCItensBody');
+  tbody.innerHTML = itens.map((it,idx) => `<tr>
+    <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">
+      <div style="font-weight:600">${it.nome||it.descricao||'—'}</div>
+      <div style="font-size:10px;color:var(--text-3)">${it.codigo||''}</div>
+    </td>
+    <td style="padding:8px;text-align:center;font-size:12px;border-bottom:1px solid var(--border)">${it.qtd||1}</td>
+    <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+      <input type="number" min="0" max="${it.qtd||1}" value="${it.qtd||1}" class="form-input rec-qtd" style="width:60px;font-size:11px;text-align:center"
+        data-idx="${idx}" oninput="atualizarTotalSC()">
+    const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
+    const valorAtual = itemLocal?.valor_un || 0;
+      <input type="number" min="0" step="0.01" value="${valorAtual}" 
+        class="form-input rec-valor" style="width:80px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
+        oninput="atualizarTotalSC()">
+    </td>
+    <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)" id="recTotal_${idx}">—</td>
+  </tr>`).join('');
+
+  atualizarTotalSC();
+  document.getElementById('modalVerSC').classList.remove('hidden');
+}
+
+function atualizarTotalSC() {
+  let total = 0;
+  document.querySelectorAll('.rec-qtd').forEach((qtdEl, idx) => {
+    const valorEl = document.querySelectorAll('.rec-valor')[idx];
+    const qtd   = parseFloat(qtdEl.value)||0;
+    const valor = parseFloat(valorEl?.value)||0;
+    const subtotal = qtd * valor;
+    total += subtotal;
+    const totalEl = document.getElementById(`recTotal_${idx}`);
+    if (totalEl) totalEl.textContent = subtotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  });
+  document.getElementById('verSCTotal').textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+}
+
+async function confirmarRecebimentoSC() {
+  const scId      = document.getElementById('verSCId').value;
+  const sc        = _scData.find(x=>x.id===scId);
+  const nf        = document.getElementById('recNF').value.trim();
+  const pedido    = document.getElementById('recPedido').value.trim();
+  const fornecedor= document.getElementById('recFornecedor').value.trim();
+  const pdfLink   = document.getElementById('recPdfLink').value.trim();
+  const armId     = document.getElementById('recArmazem').value;
+  const armNome   = document.getElementById('recArmazem').selectedOptions[0]?.dataset.nome || '';
+
+  if (!armId) { toast('Selecione o armazém destino', 'warn'); return; }
+
+  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+  const qtdEls   = document.querySelectorAll('.rec-qtd');
+  const valorEls = document.querySelectorAll('.rec-valor');
+
+  let totalRecebido = 0; let totalSC = 0;
+
+  for (let i = 0; i < itens.length; i++) {
+    const qtdRec = parseFloat(qtdEls[i]?.value)||0;
+    const valorUn = parseFloat(valorEls[i]?.value)||0;
+    totalRecebido += qtdRec;
+    totalSC += itens[i].qtd||0;
+    if (qtdRec <= 0) continue;
+
+    // Lança entrada no estoque
+    const res = await api('/movimentacoes/entrada', {
+      method: 'POST',
+      body: JSON.stringify({
+        item_id: itens[i].itemId,
+        armazem_id: armId, data: new Date().toISOString().split('T')[0],
+        quantidade: qtdRec,
+        motivo: `Recebimento SC ${sc.numero_sc}${nf?` — NF ${nf}`:''}`,
+        observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'} | NF: ${nf||'—'}`,
+      })
+    });
+    if (!res?.ok) { toast(`Erro ao lançar ${itens[i].nome}`, 'error'); return; }
+
+    // Atualiza valor do item se informado
+    if (valorUn > 0) {
+      await api(`/itens/${itens[i].itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ valor_un: valorUn })
+      });
+    }
+  }
+
+  // Atualiza status da SC
+  const novoStatus = totalRecebido >= totalSC ? 'Recebido Total' : 'Recebido Parcial';
+  const scUpdate = { status: novoStatus };
+  if (nf)        scUpdate.num_nf       = nf;
+  if (pedido)    scUpdate.pedido_compra = pedido;
+  if (fornecedor) scUpdate.fornecedor  = fornecedor;
+  if (pdfLink)   scUpdate.pdf_nf_url   = pdfLink;
+
+  await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify(scUpdate) });
+
+  toast('Recebimento registrado!', 'success');
+  document.getElementById('modalVerSC').classList.add('hidden');
+  carregarSC();
+}
+
 function filtrarSC() {
   const q = (document.getElementById('scBusca')?.value||'').toLowerCase();
   const s = document.getElementById('scFiltroStatus')?.value||'';
   let lista = _scData;
-  if (q) lista = lista.filter(x=>(x.numero_sc||'').toLowerCase().includes(q)||(x.comprador||'').toLowerCase().includes(q));
   if (s) lista = lista.filter(x=>x.status===s);
+  if (q) lista = lista.filter(x=>{
+    if ((x.numero_sc||'').toLowerCase().includes(q)) return true;
+    if ((x.comprador||'').toLowerCase().includes(q)) return true;
+    // Busca nos itens
+    try {
+      const itens = JSON.parse(x.itens_json||'[]');
+      return itens.some(i=>(i.nome||i.descricao||'').toLowerCase().includes(q));
+    } catch { return false; }
+  });
   renderSC(lista);
 }
+
 async function carregarSC() {
   const tbody = document.getElementById('scBody');
   if (!tbody) return;
@@ -6368,21 +6608,26 @@ async function carregarSC() {
   document.getElementById('scKpiTotal').textContent    = _scData.filter(x=>x.status==='Recebido Total').length;
   renderSC(_scData);
 }
+
 function renderSC(lista) {
   const tbody = document.getElementById('scBody');
-  const scStatusTag = s => {
+  const stTag = s => {
     const map = {'Pendente':'color:#f59e0b','Aprovado':'color:#3b82f6','Recebido Parcial':'color:#a855f7','Recebido Total':'color:#22c55e','Cancelado':'color:var(--text-3)'};
     return `<span style="font-size:11px;font-weight:600;${map[s]||''}">${s||'—'}</span>`;
   };
   tbody.innerHTML = lista.length ? lista.map(sc=>{
     let itens=[]; try{itens=JSON.parse(sc.itens_json||'[]');}catch{}
+    const itensStr = itens.slice(0,2).map(i=>i.nome||i.descricao||'').join(', ') + (itens.length>2?`… +${itens.length-2}`:'');
     return `<tr>
       <td class="td-main td-mono">${sc.numero_sc||'—'}</td>
       <td>${formatarData(sc.data_abertura)}</td>
       <td style="font-size:11px">${sc.comprador||'—'}</td>
-      <td style="text-align:center;font-size:11px">${itens.length}</td>
-      <td>${scStatusTag(sc.status)}</td>
-      <td><button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button></td>
+      <td style="font-size:10px;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itens.map(i=>i.nome||i.descricao||'').join(', ')}">${itensStr||'—'}</td>
+      <td>${stTag(sc.status)}</td>
+      <td style="display:flex;gap:4px">
+        <button class="row-action" onclick="abrirVerSC('${sc.id}')">Ver</button>
+        <button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button>
+      </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
 }
