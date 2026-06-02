@@ -1877,9 +1877,11 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- AÇÕES -->
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
-        <button class="btn btn-ghost" style="font-size:11px" onclick="toggleHistoricoColab()">📋 Ver Histórico</button>
-        <button class="btn btn-ghost" style="font-size:11px;color:#a855f7;border-color:#a855f7" onclick="devolverAoEstoque()">↩️ Devolver ao Estoque</button>
-        <button class="btn btn-ghost" style="font-size:11px" id="ccBtnDotacao" onclick="toggleDotacaoColab()">📋 Ver Dotação</button>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="toggleHistoricoColab()">📋 Histórico</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoColab()">↩️ Devolver ao Estoque</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:#f59e0b;border-color:#f59e0b" onclick="abrirAjusteInicial()">⚙️ Ajuste Inicial</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:#0ea5e9;border-color:#0ea5e9" onclick="abrirTransfColab()">🔄 Transferir</button>
+        <button class="btn btn-ghost" style="font-size:11px" id="ccBtnDotacao" onclick="toggleDotacaoColab()">📋 Dotação</button>
       </div>
 
       <!-- SALDO EM MÃOS -->
@@ -1920,6 +1922,96 @@ tbody tr:hover td{background:var(--bg-hover);}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharConsultaColab()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEVOLUÇÃO COLABORADOR -->
+<div class="modal-overlay hidden" id="modalDevolucaoColab">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <div><div class="modal-title">↩️ Devolução ao Estoque</div><div style="font-size:11px;color:var(--text-3)" id="devColabNome"></div></div>
+      <button class="modal-close" onclick="fecharModalDevolucao()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Armazém destino *</label><select id="devArmazem" class="form-input"><option value="">Selecione...</option></select></div>
+        <div><label class="form-label">Data *</label><input id="devData" class="form-input" type="date"></div>
+      </div>
+      <div><label class="form-label">Motivo *</label>
+        <select id="devMotivo" class="form-input">
+          <option value="">Selecione...</option>
+          <option value="Demissão">Demissão</option>
+          <option value="Férias">Férias</option>
+          <option value="Substituição">Substituição</option>
+          <option value="Devolução voluntária">Devolução voluntária</option>
+          <option value="Outro">Outro</option>
+        </select>
+      </div>
+      <div><label class="form-label">Observação</label><input id="devObs" class="form-input" placeholder="Observações adicionais..."></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens para devolver</div>
+      <div id="devItensLista" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalDevolucao()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarDevolucao()">✓ Confirmar Devolução</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AJUSTE INICIAL -->
+<div class="modal-overlay hidden" id="modalAjusteInicial">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div><div class="modal-title">⚙️ Ajuste de Saldo Inicial</div><div style="font-size:11px;color:var(--text-3)" id="ajusteColabNome"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalAjusteInicial').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="background:var(--yellow-soft);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius-sm);padding:10px;font-size:11px;color:#f59e0b">
+        ⚠️ Use para corrigir o saldo de implantação. Sobrescreve o saldo calculado pelos atendimentos.
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
+        <div>
+          <label class="form-label">Item *</label>
+          <input id="ajusteItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensAjuste(this.value)" autocomplete="off">
+          <div id="ajusteItemSugestoes" class="autocomplete-list hidden"></div>
+          <input type="hidden" id="ajusteItemId">
+        </div>
+        <div>
+          <label class="form-label">Saldo *</label>
+          <input id="ajusteSaldo" class="form-input" type="number" min="0" style="width:80px" placeholder="0">
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="align-self:flex-start" onclick="adicionarAjuste()">+ Adicionar</button>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Ajustes cadastrados</div>
+      <div id="ajusteItensLista" style="display:flex;flex-direction:column;gap:6px;max-height:250px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalAjusteInicial').classList.add('hidden')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TRANSFERÊNCIA ENTRE COLABORADORES -->
+<div class="modal-overlay hidden" id="modalTransfColab">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div><div class="modal-title">🔄 Transferir Materiais</div><div style="font-size:11px;color:var(--text-3)" id="transfOrigemNome"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalTransfColab').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label class="form-label">Colaborador destino *</label>
+        <input id="transfDestinoBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabTransf(this.value)" autocomplete="off">
+        <div id="transfDestinoSugestoes" class="autocomplete-list hidden"></div>
+        <input type="hidden" id="transfDestinoId">
+      </div>
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens para transferir</div>
+      <div id="transfItensLista" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalTransfColab').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarTransfColab()">🔄 Transferir</button>
     </div>
   </div>
 </div>
@@ -5527,6 +5619,8 @@ async function abrirConsultaColab(id) {
   const data = await api(`/consulta/colaborador/${id}`);
   if (!data?.ok) { toast('Erro ao carregar ficha', 'error'); return; }
 
+  _dadosColabAtual = data; // Salva para uso pelos modais
+
   const c = data.colaborador;
   document.getElementById('ccNome').textContent    = c.nome||'—';
   document.getElementById('ccSub').textContent     = `${c.matricula||'—'} • ${c.funcao||'—'}`;
@@ -5608,8 +5702,201 @@ function toggleDotacaoColab() {
   sec.style.display = sec.style.display === 'none' ? '' : 'none';
 }
 
-function devolverAoEstoque() {
-  toast('Devolução ao estoque em breve', 'info');
+// ── DEVOLUÇÃO ──
+let _dadosColabAtual = null;
+
+function abrirDevolucaoColab() {
+  if (!_dadosColabAtual) return;
+  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
+  if (!itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
+
+  document.getElementById('devColabNome').textContent = _dadosColabAtual.colaborador.nome;
+  document.getElementById('devData').value = new Date().toISOString().split('T')[0];
+
+  // Popula armazéns
+  const sel = document.getElementById('devArmazem');
+  sel.innerHTML = '<option value="">Selecione...</option>' + (_armazens||[]).map(a=>`<option value="${a.id}" data-nome="${a.nome}">${a.nome}</option>`).join('');
+
+  // Monta lista de itens
+  document.getElementById('devItensLista').innerHTML = itensComSaldo.map(it=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}</div>
+      <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
+      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd" style="width:60px;font-size:12px;text-align:center" data-item-id="${it.item_id}" data-item-desc="${it.descricao}">
+      <select class="form-input dev-destino" style="width:120px;font-size:11px">
+        <option value="ESTOQUE">↩️ Estoque</option>
+        <option value="INUTILIZADO">🗑️ Inutilizado</option>
+      </select>
+    </div>`).join('');
+
+  document.getElementById('modalDevolucaoColab').classList.remove('hidden');
+}
+
+function fecharModalDevolucao() {
+  document.getElementById('modalDevolucaoColab').classList.add('hidden');
+}
+
+async function confirmarDevolucao() {
+  const armazem_id = document.getElementById('devArmazem').value;
+  const nome_armazem = document.getElementById('devArmazem').selectedOptions[0]?.dataset.nome || '';
+  const data    = document.getElementById('devData').value;
+  const motivo  = document.getElementById('devMotivo').value;
+  const obs     = document.getElementById('devObs').value;
+
+  if (!armazem_id || !motivo || !data) { toast('Preencha armazém, motivo e data', 'warn'); return; }
+
+  const itens = [];
+  document.querySelectorAll('.dev-qtd').forEach((input, idx) => {
+    const qtd = parseInt(input.value) || 0;
+    if (qtd > 0) {
+      const destino = document.querySelectorAll('.dev-destino')[idx]?.value || 'ESTOQUE';
+      itens.push({ item_id: input.dataset.itemId, item_descricao: input.dataset.itemDesc, quantidade: qtd, destino });
+    }
+  });
+
+  if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
+
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/devolucao`, {
+    method: 'POST', body: JSON.stringify({ itens, armazem_id, nome_armazem, data, motivo, obs })
+  });
+
+  if (res?.ok) {
+    toast('Devolução registrada!', 'success');
+    fecharModalDevolucao();
+    abrirConsultaColab(_consultaColabAtual); // Recarrega ficha
+  } else toast(res?.erro || 'Erro ao registrar', 'error');
+}
+
+// ── AJUSTE INICIAL ──
+let _ajusteItens = [];
+
+async function abrirAjusteInicial() {
+  if (!_dadosColabAtual) return;
+  _ajusteItens = [...(_dadosColabAtual.saldoInicial || [])];
+
+  document.getElementById('ajusteColabNome').textContent = _dadosColabAtual.colaborador.nome;
+  document.getElementById('ajusteItemBusca').value = '';
+  document.getElementById('ajusteItemId').value = '';
+  renderAjusteItens();
+  document.getElementById('modalAjusteInicial').classList.remove('hidden');
+  if (!_itens.length) await carregarItensAtendimento();
+}
+
+function filtrarItensAjuste(q) {
+  if (q.length < 2) { document.getElementById('ajusteItemSugestoes').classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i => (i.descricao||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  mostrarAutocompleteItens('ajusteItemSugestoes','ajusteItemBusca', lista, 'selecionarItemAjuste');
+}
+
+function selecionarItemAjuste(id) {
+  const item = (_itens||[]).find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('ajusteItemBusca').value = item.descricao;
+  document.getElementById('ajusteItemId').value = id;
+  document.getElementById('ajusteItemSugestoes').classList.add('hidden');
+}
+
+async function adicionarAjuste() {
+  const itemId = document.getElementById('ajusteItemId').value;
+  const saldo  = parseInt(document.getElementById('ajusteSaldo').value);
+  const item   = (_itens||[]).find(i => i.id === itemId);
+
+  if (!itemId || !item) { toast('Selecione um item', 'warn'); return; }
+  if (isNaN(saldo) || saldo < 0) { toast('Informe um saldo válido', 'warn'); return; }
+
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/saldo-inicial`, {
+    method: 'POST',
+    body: JSON.stringify({ item_id: itemId, nome_item: item.descricao, codigo_item: item.codigo, saldo_inicial: saldo })
+  });
+
+  if (res?.ok) {
+    const idx = _ajusteItens.findIndex(a => a.item_id === itemId);
+    if (idx >= 0) _ajusteItens[idx].saldo_inicial = saldo;
+    else _ajusteItens.push({ item_id: itemId, nome_item: item.descricao, saldo_inicial: saldo });
+    renderAjusteItens();
+    document.getElementById('ajusteItemBusca').value = '';
+    document.getElementById('ajusteItemId').value = '';
+    document.getElementById('ajusteSaldo').value = '';
+    toast('Ajuste salvo!', 'success');
+    // Atualiza saldo na ficha
+    if (_dadosColabAtual) _dadosColabAtual.saldoInicial = _ajusteItens;
+  } else toast(res?.erro || 'Erro ao salvar', 'error');
+}
+
+function renderAjusteItens() {
+  const lista = document.getElementById('ajusteItensLista');
+  lista.innerHTML = _ajusteItens.length ? _ajusteItens.map(a=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${a.nome_item||'—'}</div>
+      <div style="font-size:12px;font-weight:600;color:#f59e0b">Saldo: ${a.saldo_inicial}</div>
+      <button class="row-action" style="color:var(--red)" onclick="excluirAjuste('${a.item_id}')">✕</button>
+    </div>`).join('') : '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum ajuste cadastrado</div>';
+}
+
+async function excluirAjuste(itemId) {
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/saldo-inicial/${itemId}`, { method:'DELETE' });
+  if (res?.ok) {
+    _ajusteItens = _ajusteItens.filter(a => a.item_id !== itemId);
+    renderAjusteItens();
+    toast('Ajuste removido!', 'success');
+  } else toast(res?.erro || 'Erro ao remover', 'error');
+}
+
+// ── TRANSFERÊNCIA ENTRE COLABORADORES ──
+function abrirTransfColab() {
+  if (!_dadosColabAtual) return;
+  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
+  if (!itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
+
+  document.getElementById('transfOrigemNome').textContent = `De: ${_dadosColabAtual.colaborador.nome}`;
+  document.getElementById('transfDestinoBusca').value = '';
+  document.getElementById('transfDestinoId').value = '';
+
+  document.getElementById('transfItensLista').innerHTML = itensComSaldo.map(it=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}</div>
+      <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#0ea5e9">${it.saldoEmMaos}</strong></div>
+      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input transf-qtd" style="width:60px;font-size:12px;text-align:center" data-item-id="${it.item_id}" data-item-nome="${it.descricao}">
+    </div>`).join('');
+
+  document.getElementById('modalTransfColab').classList.remove('hidden');
+}
+
+function filtrarColabTransf(q) {
+  const lista = (_colaboradores||[]).filter(c => c.id !== _consultaColabAtual && (c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  mostrarAutocomplete('transfDestinoSugestoes','transfDestinoBusca', lista, 'selecionarColabTransf');
+}
+
+function selecionarColabTransf(id) {
+  const c = (_colaboradores||[]).find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('transfDestinoBusca').value = c.nome;
+  document.getElementById('transfDestinoId').value = id;
+  document.getElementById('transfDestinoSugestoes').classList.add('hidden');
+}
+
+async function confirmarTransfColab() {
+  const destId   = document.getElementById('transfDestinoId').value;
+  const destNome = document.getElementById('transfDestinoBusca').value;
+  if (!destId) { toast('Selecione o colaborador destino', 'warn'); return; }
+
+  const itens = [];
+  document.querySelectorAll('.transf-qtd').forEach(input => {
+    const qtd = parseInt(input.value) || 0;
+    if (qtd > 0) itens.push({ item_id: input.dataset.itemId, item_nome: input.dataset.itemNome, quantidade: qtd });
+  });
+
+  if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
+
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/transferencia`, {
+    method: 'POST', body: JSON.stringify({ colab_destino_id: destId, colab_destino_nome: destNome, itens })
+  });
+
+  if (res?.ok) {
+    toast('Transferência registrada!', 'success');
+    document.getElementById('modalTransfColab').classList.add('hidden');
+    abrirConsultaColab(_consultaColabAtual);
+  } else toast(res?.erro || 'Erro ao transferir', 'error');
 }
 
 // ── CONSULTA DOTAÇÃO ──
