@@ -1610,44 +1610,55 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Rec. Total</span></div><div class="kpi-value" id="scKpiTotal" style="color:#22c55e">—</div></div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">Solicitações de Compra</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" id="scBusca" placeholder="Buscar por SC, comprador ou item..." oninput="filtrarSC()">
-              <select class="form-input" id="scFiltroStatus" style="width:150px;font-size:11px" onchange="filtrarSC()">
-                <option value="">Todos os status</option>
-                <option value="Pendente">⏳ Pendente</option>
-                <option value="Aprovado">✅ Aprovado</option>
-                <option value="Recebido Parcial">📦 Rec. Parcial</option>
-                <option value="Recebido Total">✅ Rec. Total</option>
-                <option value="Cancelado">❌ Cancelado</option>
-              </select>
-              <button class="btn btn-primary" onclick="abrirModalSC()">+ Nova SC</button>
-              <button class="btn btn-ghost" onclick="carregarSC()">↻</button>
-            </div>
-          </div>
-          <table>
-            <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Status</th><th></th></tr></thead>
-            <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
-          </table>
+        <!-- ABAS -->
+        <div style="display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:0">
+          <button class="atend-tab active" id="scTab1" onclick="showSCTab('sc')">🛒 Solicitações</button>
+          <button class="atend-tab" id="scTab2" onclick="showSCTab('hist')">📋 Histórico de Recebimentos</button>
         </div>
 
-        <!-- HISTÓRICO DE RECEBIMENTOS -->
-        <div class="card" style="margin-top:16px">
-          <div class="card-header">
-            <div><div class="card-title">📋 Histórico de Recebimentos</div><div class="card-sub">Itens recebidos com data e documentos</div></div>
-            <button class="btn btn-ghost" onclick="carregarHistoricoRecebimentos()">↻ Carregar</button>
+        <!-- ABA SC -->
+        <div id="scTabSC">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Solicitações de Compra</div></div>
+              <div class="card-actions">
+                <input class="search-box" type="text" id="scBusca" placeholder="Buscar por SC, comprador ou item..." oninput="filtrarSC()">
+                <select class="form-input" id="scFiltroStatus" style="width:150px;font-size:11px" onchange="filtrarSC()">
+                  <option value="">Todos os status</option>
+                  <option value="Pendente">⏳ Pendente</option>
+                  <option value="Aprovado">✅ Aprovado</option>
+                  <option value="Recebido Parcial">📦 Rec. Parcial</option>
+                  <option value="Recebido Total">✅ Rec. Total</option>
+                  <option value="Cancelado">❌ Cancelado</option>
+                </select>
+                <button class="btn btn-primary" onclick="abrirModalSC()">+ Nova SC</button>
+                <button class="btn btn-ghost" onclick="carregarSC()">↻</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Status</th><th></th></tr></thead>
+              <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            </table>
           </div>
-          <table>
-            <thead><tr>
-              <th>SC</th><th>Item</th><th style="text-align:center">Qtd</th>
-              <th>Fornecedor</th><th>NF</th><th>Data Receb.</th><th></th>
-            </tr></thead>
-            <tbody id="recHistBody">
-              <tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Carregar para ver o histórico</td></tr>
-            </tbody>
-          </table>
+        </div>
+
+        <!-- ABA HISTÓRICO -->
+        <div id="scTabHist" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Recebimentos</div><div class="card-sub">Itens recebidos com data e documentos</div></div>
+              <button class="btn btn-ghost" onclick="carregarHistoricoRecebimentos()">↻ Atualizar</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>SC</th><th>Item</th><th style="text-align:center">Qtd</th>
+                <th>Fornecedor</th><th>NF</th><th>Data Receb.</th><th></th>
+              </tr></thead>
+              <tbody id="recHistBody">
+                <tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Atualizar para ver o histórico</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       <!-- ── PROTHEUS ── -->
@@ -2326,6 +2337,8 @@ tbody tr:hover td{background:var(--bg-hover);}
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
+        </tr></thead>
+        <tbody id="recItensBody"></tbody>
       </table>
       <div id="recSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e"></div>
     </div>
@@ -6548,7 +6561,7 @@ function abrirVerSC(id) {
     const qtdRec = Number(it.qtdRecebida||0);
     const pendente = qtdSol - qtdRec;
     const status = it.statusItem || (qtdRec >= qtdSol ? 'Recebido' : qtdRec > 0 ? 'Parcial' : 'Pendente');
-    const stColor = status==='Recebido'?'#22c55e':status==='Recebido Total'?'#22c55e':status==='Parcial'?'#a855f7':'#f59e0b';
+    const stColor = (status==='Recebido'||status==='Recebido Total')?'#22c55e':(status==='Parcial'||status==='Recebido Parcial')?'#a855f7':'#f59e0b';
     const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
     return `<tr>
       <td style="padding:8px;border-bottom:1px solid var(--border)">
@@ -6813,6 +6826,14 @@ async function confirmarRecebimentoSC() {
   toast('Recebimento registrado!', 'success');
   document.getElementById('modalRecSC').classList.add('hidden');
   carregarSC();
+}
+
+function showSCTab(tab) {
+  document.getElementById('scTabSC').style.display   = tab === 'sc'   ? '' : 'none';
+  document.getElementById('scTabHist').style.display = tab === 'hist' ? '' : 'none';
+  document.getElementById('scTab1').classList.toggle('active', tab === 'sc');
+  document.getElementById('scTab2').classList.toggle('active', tab === 'hist');
+  if (tab === 'hist') carregarHistoricoRecebimentos();
 }
 
 async function carregarHistoricoRecebimentos() {
