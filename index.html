@@ -6938,7 +6938,7 @@ function filtrarSC() {
     // Busca nos itens
     try {
       const itens = JSON.parse(x.itens_json||'[]');
-      return itens.some(i=>(i.nome||i.descricao||'').toLowerCase().includes(q));
+      return itens.some(i=>(i.nomeItem||i.nome||i.descricao||'').toLowerCase().includes(q));
     } catch { return false; }
   });
   renderSC(lista);
