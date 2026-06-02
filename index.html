@@ -2458,7 +2458,7 @@ function onViewLoad(nome) {
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
-  if (nome === 'estoque')            { if (!_itens.length) carregarItensAtendimento().then(carregarEstoque); else carregarEstoque(); }
+  if (nome === 'estoque')            { if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
@@ -4963,9 +4963,18 @@ function renderEstoque() {
     const valorUn  = Number(item?.valor_un || 0);
     const valorTot = (s.saldo * valorUn).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const vUn      = valorUn.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+    // SC tag - verifica se tem SC aberta com esse item
+    const scInfo = getSCDoItem(s.item_id);
+    const scTag  = scInfo ? `<span onclick="irParaSCDoItem('${s.item_id}')"
+      style="cursor:pointer;background:rgba(59,130,246,.12);color:#3b82f6;border:1px solid rgba(59,130,246,.3);border-radius:4px;padding:2px 6px;font-size:9px;font-weight:700;margin-left:4px;white-space:nowrap"
+      title="${scInfo.scs} SC(s) abertas — ${scInfo.qtd} unidades pendentes">
+      🛒 ${scInfo.scs} SC${scInfo.scs>1?'s':''} • ${scInfo.qtd} un.
+    </span>` : '';
+
     return `<tr>
       <td>${statusTag}</td>
-      <td class="td-main">${s.nome_item||'—'}</td>
+      <td class="td-main">${s.nome_item||'—'}${scTag}</td>
       <td class="td-mono">${s.codigo_item||'—'}</td>
       <td style="font-size:11px;color:var(--text-3)">${item?.categoria||'—'}</td>
       <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
@@ -7064,6 +7073,36 @@ async function marcarSelecionadosProtheus(lancado) {
     _prSelecionados.clear();
     carregarProtheus();
   } else toast(res?.erro || 'Erro ao atualizar', 'error');
+}
+
+// Verifica SC abertas para um item
+function getSCDoItem(itemId) {
+  if (!_scData?.length) return null;
+  const statusAbertos = ['Pendente','Aprovado','Recebido Parcial'];
+  let totalQtd = 0; let totalSCs = 0;
+  _scData.forEach(sc => {
+    if (!statusAbertos.includes(sc.status)) return;
+    let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+    itens.forEach(it => {
+      if ((it.itemId||it.item_id) !== itemId) return;
+      const qtdSol = Number(it.qtdSolicitada||it.qtd||0);
+      const qtdRec = Number(it.qtdRecebida||0);
+      const pendente = qtdSol - qtdRec;
+      if (pendente > 0) { totalQtd += pendente; totalSCs++; }
+    });
+  });
+  return totalSCs > 0 ? { scs: totalSCs, qtd: totalQtd } : null;
+}
+
+// Navega para SC filtrando pelo item
+function irParaSCDoItem(itemId) {
+  const item = (_itens||[]).find(i => i.id === itemId);
+  if (!item) return;
+  showView('solicitacoes-compra', document.querySelector('[data-view="solicitacoes-compra"]'));
+  setTimeout(() => {
+    const busca = document.getElementById('scBusca');
+    if (busca) { busca.value = item.descricao; filtrarSC(); }
+  }, 300);
 }
 
 // ── ENTER no login ──
