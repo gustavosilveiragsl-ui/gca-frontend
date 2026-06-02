@@ -2231,9 +2231,9 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
-<!-- MODAL VER SC / RECEBIMENTO -->
+<!-- MODAL VER SC -->
 <div class="modal-overlay hidden" id="modalVerSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:720px;width:100%;margin:auto">
+  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
     <div class="modal-header">
       <div>
         <div class="modal-title" id="verSCNumero">SC-000</div>
@@ -2248,42 +2248,72 @@ tbody tr:hover td{background:var(--bg-hover);}
     <input type="hidden" id="verSCId">
     <div class="modal-body">
 
-      <!-- DADOS NF (para recebimento) -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px">📄 Dados do Recebimento / NF</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
-          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
-          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
-          <div>
-            <label class="form-label">Armazém destino *</label>
-            <select id="recArmazem" class="form-input"></select>
-          </div>
-          <div style="grid-column:span 2">
-            <label class="form-label">Link PDF da NF (Google Drive)</label>
-            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/...">
-          </div>
-        </div>
-      </div>
+      <!-- Info NF se já recebeu -->
+      <div id="verSCNfInfo" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;background:var(--bg)"></div>
 
-      <!-- ITENS DA SC -->
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📦 Itens da SC</div>
+      <!-- Itens (somente visualização) -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens</div>
       <table style="width:100%;border-collapse:collapse">
         <thead><tr>
           <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd SC</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd Receber</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un. (R$)</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Solicitado</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Recebido</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Pendente</th>
+          <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
         </tr></thead>
         <tbody id="verSCItensBody"></tbody>
       </table>
-      <div id="verSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e;padding:8px 0;margin-top:4px"></div>
-
       <div id="verSCObs" style="font-size:11px;color:var(--text-3);margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);display:none"></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalVerSC').classList.add('hidden')">Fechar</button>
+      <button class="btn btn-primary" id="btnAbrirRecebimento" onclick="abrirRecebimentoSC()">📦 Registrar Recebimento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL RECEBIMENTO SC -->
+<div class="modal-overlay hidden" id="modalRecSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📦 Registrar Recebimento</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="recSCNumero"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modalRecSC').classList.add('hidden')">×</button>
+    </div>
+    <input type="hidden" id="recSCId">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+
+      <!-- Dados NF -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px">📄 Dados da NF</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
+          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
+          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
+          <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input"></select></div>
+          <div style="grid-column:span 2"><label class="form-label">Link PDF da NF (Google Drive)</label>
+            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/..."></div>
+        </div>
+      </div>
+
+      <!-- Itens pendentes -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens Pendentes</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd Receber</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un. (R$)</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
+        </tr></thead>
+        <tbody id="recItensBody"></tbody>
+      </table>
+      <div id="recSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalRecSC').classList.add('hidden')">Cancelar</button>
       <button class="btn btn-primary" onclick="confirmarRecebimentoSC()">✅ Confirmar Recebimento</button>
     </div>
   </div>
@@ -6456,57 +6486,147 @@ function abrirVerSC(id) {
   const sc = _scData.find(x=>x.id===id);
   if (!sc) return;
 
-  document.getElementById('verSCId').value       = id;
+  document.getElementById('verSCId').value = id;
   document.getElementById('verSCNumero').textContent = sc.numero_sc||'—';
-  document.getElementById('verSCSub').textContent    = `${formatarData(sc.data_abertura)} • ${sc.comprador||'—'}`;
+  document.getElementById('verSCSub').textContent = `${formatarData(sc.data_abertura)} • ${sc.comprador||'—'}`;
 
-  const stMap = {'Pendente':'color:#f59e0b','Aprovado':'color:#3b82f6','Recebido Parcial':'color:#a855f7','Recebido Total':'color:#22c55e','Cancelado':'color:var(--text-3)'};
-  document.getElementById('verSCStatus').innerHTML = `<span style="font-size:11px;font-weight:700;${stMap[sc.status]||''}">${sc.status||'—'}</span>`;
+  const stMap = {'Pendente':'#f59e0b','Aprovado':'#3b82f6','Recebido Parcial':'#a855f7','Recebido Total':'#22c55e','Cancelado':'var(--text-3)'};
+  document.getElementById('verSCStatus').innerHTML = `<span style="font-size:11px;font-weight:700;color:${stMap[sc.status]||'var(--text-1)'}">${sc.status||'—'}</span>`;
 
-  // Limpa campos de recebimento
-  ['recNF','recPedido','recFornecedor','recPdfLink'].forEach(f=>{const el=document.getElementById(f);if(el)el.value='';});
+  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+
+  const obs = document.getElementById('verSCObs');
+  if (sc.observacao) { obs.textContent = `Obs: ${sc.observacao}`; obs.style.display=''; }
+  else obs.style.display = 'none';
+
+  // Mostra dados NF se já recebeu
+  const nfInfo = document.getElementById('verSCNfInfo');
+  if (sc.num_nf || sc.fornecedor) {
+    nfInfo.style.display = '';
+    nfInfo.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
+        ${sc.num_nf?`<div><span style="color:var(--text-3)">NF:</span> <strong>${sc.num_nf}</strong></div>`:''}
+        ${sc.pedido_compra?`<div><span style="color:var(--text-3)">Pedido:</span> <strong>${sc.pedido_compra}</strong></div>`:''}
+        ${sc.fornecedor?`<div><span style="color:var(--text-3)">Fornecedor:</span> <strong>${sc.fornecedor}</strong></div>`:''}
+        ${sc.pdf_nf_url?`<div><a href="${sc.pdf_nf_url}" target="_blank" style="color:var(--accent-text)">📄 Ver NF</a></div>`:''}
+      </div>`;
+  } else nfInfo.style.display = 'none';
+
+  // Tabela de itens (somente visualização)
+  const tbody = document.getElementById('verSCItensBody');
+  tbody.innerHTML = itens.map(it => {
+    const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
+    const qtdRec = Number(it.qtdRecebida||0);
+    const pendente = qtdSol - qtdRec;
+    const status = it.statusItem || (qtdRec >= qtdSol ? 'Recebido' : qtdRec > 0 ? 'Parcial' : 'Pendente');
+    const stColor = status==='Recebido'?'#22c55e':status==='Parcial'?'#a855f7':'#f59e0b';
+    const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
+    return `<tr>
+      <td style="padding:8px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+            ${itemLocal?.img?`<img src="${itemLocal.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:12px">📦</span>'}
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${it.nomeItem||it.nome||'—'}</div>
+            <div style="font-size:10px;color:var(--text-3)">${it.codigo||''}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:8px;text-align:center;font-size:12px;border-bottom:1px solid var(--border)">${qtdSol}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)">${qtdRec}</td>
+      <td style="padding:8px;text-align:center;font-size:12px;color:${pendente>0?'#f59e0b':'var(--text-3)'};font-weight:600;border-bottom:1px solid var(--border)">${pendente}</td>
+      <td style="padding:8px;text-align:right;font-size:11px;border-bottom:1px solid var(--border)">
+        ${Number(itemLocal?.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+      </td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+        <span style="font-size:10px;font-weight:700;color:${stColor}">${status}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Botão receber: só mostra se não estiver "Recebido Total"
+  const btnReceber = document.getElementById('btnAbrirRecebimento');
+  if (btnReceber) {
+    btnReceber.style.display = sc.status === 'Recebido Total' ? 'none' : '';
+  }
+
+  document.getElementById('modalVerSC').classList.remove('hidden');
+}
+
+function abrirRecebimentoSC() {
+  const scId = document.getElementById('verSCId').value;
+  const sc   = _scData.find(x=>x.id===scId);
+  if (!sc) return;
+
+  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+  // Filtra itens com pendência
+  const itensPendentes = itens.filter(it => {
+    const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
+    const qtdRec = Number(it.qtdRecebida||0);
+    return qtdRec < qtdSol;
+  });
+
+  if (!itensPendentes.length) { toast('Todos os itens já foram recebidos', 'info'); return; }
+
+  // Fecha modal ver e abre modal receber
+  document.getElementById('modalVerSC').classList.add('hidden');
+  document.getElementById('recSCId').value = scId;
+  document.getElementById('recSCNumero').textContent = sc.numero_sc||'—';
+
+  // Limpa campos NF
+  ['recNF','recPedido','recFornecedor','recPdfLink'].forEach(f=>{const el=document.getElementById(f);if(el)el.value=sc[f.replace('rec','').toLowerCase()]||'';});
+  document.getElementById('recNF').value        = sc.num_nf||'';
+  document.getElementById('recPedido').value    = sc.pedido_compra||'';
+  document.getElementById('recFornecedor').value= sc.fornecedor||'';
+  document.getElementById('recPdfLink').value   = sc.pdf_nf_url||'';
 
   // Armazéns do usuário
   const selArm = document.getElementById('recArmazem');
   let armazensUser = _armazens;
   if (GCA.usuario?.role !== 'admin') {
     let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens||'[]'); } catch {}
-    if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
+    if (userArms.length) armazensUser = _armazens.filter(a=>userArms.includes(a.id));
   }
   selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}" data-nome="${a.nome}">${a.nome}</option>`).join('');
 
-  // Itens
-  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
-  const obs = document.getElementById('verSCObs');
-  if (sc.observacao) { obs.textContent = `Obs: ${sc.observacao}`; obs.style.display=''; }
-  else obs.style.display = 'none';
-
-
-  const tbody = document.getElementById('verSCItensBody');
-  tbody.innerHTML = itens.map((it,idx) => {
+  // Itens pendentes
+  const recBody = document.getElementById('recItensBody');
+  recBody.innerHTML = itensPendentes.map((it,idx) => {
+    const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
+    const qtdRec = Number(it.qtdRecebida||0);
+    const pendente = qtdSol - qtdRec;
     const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
-    const valorAtual = Number(itemLocal?.valor_un || 0);
+    const valorAtual = Number(itemLocal?.valor_un||0);
     return `<tr>
-    <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">
-      <div style="font-weight:600">${it.nome||it.descricao||'—'}</div>
-      <div style="font-size:10px;color:var(--text-3)">${it.codigo||''}</div>
-    </td>
-    <td style="padding:8px;text-align:center;font-size:12px;border-bottom:1px solid var(--border)">${it.qtd||1}</td>
-    <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
-      <input type="number" min="0" max="${it.qtd||1}" value="${it.qtd||1}" class="form-input rec-qtd"
-        style="width:60px;font-size:11px;text-align:center" data-idx="${idx}" oninput="atualizarTotalSC()">
-    </td>
-    <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
-      <input type="number" min="0" step="0.01" value="${valorAtual}"
-        class="form-input rec-valor" style="width:80px;font-size:11px;text-align:center"
-        data-item-id="${it.itemId}" oninput="atualizarTotalSC()">
-    </td>
-    <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)" id="recTotal_${idx}">—</td>
-  </tr>`;
+      <td style="padding:8px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:32px;height:32px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+            ${itemLocal?.img?`<img src="${itemLocal.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:12px">📦</span>'}
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600">${it.nomeItem||it.nome||'—'}</div>
+            <div style="font-size:10px;color:var(--text-3)">${it.codigo||''} • Pendente: ${pendente}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+        <input type="number" min="0" max="${pendente}" value="${pendente}" class="form-input rec-qtd"
+          style="width:60px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
+          data-item-nome="${it.nomeItem||it.nome||''}" data-qtd-sol="${qtdSol}" data-qtd-rec="${qtdRec}"
+          oninput="atualizarTotalSC()">
+      </td>
+      <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
+        <input type="number" min="0" step="0.01" value="${valorAtual}" class="form-input rec-valor"
+          style="width:80px;font-size:11px;text-align:center" data-item-id="${it.itemId}"
+          oninput="atualizarTotalSC()">
+      </td>
+      <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e;border-bottom:1px solid var(--border)" id="recTotalRow_${idx}">—</td>
+    </tr>`;
   }).join('');
 
   atualizarTotalSC();
-  document.getElementById('modalVerSC').classList.remove('hidden');
+  document.getElementById('modalRecSC').classList.remove('hidden');
 }
 
 function atualizarTotalSC() {
@@ -6517,71 +6637,84 @@ function atualizarTotalSC() {
     const valor = parseFloat(valorEl?.value)||0;
     const subtotal = qtd * valor;
     total += subtotal;
-    const totalEl = document.getElementById(`recTotal_${idx}`);
+    const totalEl = document.getElementById(`recTotalRow_${idx}`);
     if (totalEl) totalEl.textContent = subtotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   });
-  document.getElementById('verSCTotal').textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+  const totalEl = document.getElementById('recSCTotal');
+  if (totalEl) totalEl.textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
 }
 
 async function confirmarRecebimentoSC() {
-  const scId      = document.getElementById('verSCId').value;
+  const scId      = document.getElementById('recSCId').value;
   const sc        = _scData.find(x=>x.id===scId);
   const nf        = document.getElementById('recNF').value.trim();
   const pedido    = document.getElementById('recPedido').value.trim();
   const fornecedor= document.getElementById('recFornecedor').value.trim();
   const pdfLink   = document.getElementById('recPdfLink').value.trim();
   const armId     = document.getElementById('recArmazem').value;
-  const armNome   = document.getElementById('recArmazem').selectedOptions[0]?.dataset.nome || '';
+  const armNome   = document.getElementById('recArmazem').selectedOptions[0]?.dataset.nome||'';
 
   if (!armId) { toast('Selecione o armazém destino', 'warn'); return; }
 
   let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+
   const qtdEls   = document.querySelectorAll('.rec-qtd');
   const valorEls = document.querySelectorAll('.rec-valor');
 
-  let totalRecebido = 0; let totalSC = 0;
+  let algumRecebido = false;
 
-  for (let i = 0; i < itens.length; i++) {
-    const qtdRec = parseFloat(qtdEls[i]?.value)||0;
-    const valorUn = parseFloat(valorEls[i]?.value)||0;
-    totalRecebido += qtdRec;
-    totalSC += itens[i].qtd||0;
+  for (let i = 0; i < qtdEls.length; i++) {
+    const itemId   = qtdEls[i].dataset.itemId;
+    const itemNome = qtdEls[i].dataset.itemNome;
+    const qtdSol   = Number(qtdEls[i].dataset.qtdSol||1);
+    const qtdRecAntes = Number(qtdEls[i].dataset.qtdRec||0);
+    const qtdRec   = parseFloat(qtdEls[i].value)||0;
+    const valorUn  = parseFloat(valorEls[i]?.value)||0;
     if (qtdRec <= 0) continue;
+    algumRecebido = true;
 
     // Lança entrada no estoque
-    const res = await api('/movimentacoes/entrada', {
-      method: 'POST',
+    await api('/movimentacoes/entrada', {
+      method:'POST',
       body: JSON.stringify({
-        item_id: itens[i].itemId,
-        armazem_id: armId, data: new Date().toISOString().split('T')[0],
+        item_id: itemId, armazem_id: armId,
+        data: new Date().toISOString().split('T')[0],
         quantidade: qtdRec,
         motivo: `Recebimento SC ${sc.numero_sc}${nf?` — NF ${nf}`:''}`,
-        observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'} | NF: ${nf||'—'}`,
+        observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'}`,
       })
     });
-    if (!res?.ok) { toast(`Erro ao lançar ${itens[i].nome}`, 'error'); return; }
 
     // Atualiza valor do item se informado
     if (valorUn > 0) {
-      await api(`/itens/${itens[i].itemId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ valor_un: valorUn })
-      });
+      await api(`/itens/${itemId}`, { method:'PUT', body: JSON.stringify({ valor_un: valorUn }) });
+      // Atualiza localmente
+      const itemLocal = (_itens||[]).find(x=>x.id===itemId);
+      if (itemLocal) itemLocal.valor_un = valorUn;
+    }
+
+    // Atualiza qtdRecebida no itens_json
+    const idx = itens.findIndex(it=>it.itemId===itemId);
+    if (idx >= 0) {
+      itens[idx].qtdRecebida = qtdRecAntes + qtdRec;
+      itens[idx].statusItem  = (itens[idx].qtdRecebida >= qtdSol) ? 'Recebido' : 'Parcial';
     }
   }
 
-  // Atualiza status da SC
-  const novoStatus = totalRecebido >= totalSC ? 'Recebido Total' : 'Recebido Parcial';
-  const scUpdate = { status: novoStatus };
-  if (nf)        scUpdate.num_nf       = nf;
-  if (pedido)    scUpdate.pedido_compra = pedido;
-  if (fornecedor) scUpdate.fornecedor  = fornecedor;
-  if (pdfLink)   scUpdate.pdf_nf_url   = pdfLink;
+  if (!algumRecebido) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
 
-  await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify(scUpdate) });
+  // Calcula novo status geral da SC
+  const totalSol = itens.reduce((s,it)=>s+Number(it.qtdSolicitada||it.qtd||1),0);
+  const totalRec = itens.reduce((s,it)=>s+Number(it.qtdRecebida||0),0);
+  const novoStatus = totalRec >= totalSol ? 'Recebido Total' : 'Recebido Parcial';
+
+  await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
+    status: novoStatus, itens_json: JSON.stringify(itens),
+    num_nf: nf, pedido_compra: pedido, fornecedor, pdf_nf_url: pdfLink,
+  })});
 
   toast('Recebimento registrado!', 'success');
-  document.getElementById('modalVerSC').classList.add('hidden');
+  document.getElementById('modalRecSC').classList.add('hidden');
   carregarSC();
 }
 
