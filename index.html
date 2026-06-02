@@ -2293,6 +2293,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Pendente</th>
           <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
+          <th style="padding:8px;text-align:left;font-size:10px;color:#3b82f6;border-bottom:1px solid var(--border)">Pedido Compra</th>
         </tr></thead>
         <tbody id="verSCItensBody"></tbody>
       </table></div>
@@ -6576,6 +6577,7 @@ function abrirVerSC(id) {
     const status = it.statusItem || (qtdRec >= qtdSol ? 'Recebido' : qtdRec > 0 ? 'Parcial' : 'Pendente');
     const stColor = (status==='Recebido'||status==='Recebido Total')?'#22c55e':(status==='Parcial'||status==='Recebido Parcial')?'#a855f7':'#f59e0b';
     const itemLocal = (_itens||[]).find(i=>i.id===it.itemId);
+    const pc = it.pedido_compra || '';
     return `<tr>
       <td style="padding:8px;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:8px">
@@ -6596,6 +6598,15 @@ function abrirVerSC(id) {
       </td>
       <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
         <span style="font-size:10px;font-weight:700;color:${stColor}">${status}</span>
+      </td>
+      <td style="padding:8px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:4px" id="pcCell_${idx}">
+          ${pc
+            ? `<span style="font-size:11px;font-weight:600;color:#3b82f6">${pc}</span>
+               <button class="row-action" style="font-size:10px;padding:2px 5px" onclick="editarPCItem(${idx},'${it.itemId}')">✏️</button>`
+            : `<button class="row-action" style="font-size:10px;color:#3b82f6;border-color:#3b82f6" onclick="editarPCItem(${idx},'${it.itemId}')">+ PC</button>`
+          }
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -7103,6 +7114,45 @@ function irParaSCDoItem(itemId) {
     const busca = document.getElementById('scBusca');
     if (busca) { busca.value = item.descricao; filtrarSC(); }
   }, 300);
+}
+
+// Edita PC por item da SC
+async function editarPCItem(idx, itemId) {
+  const scId = document.getElementById('verSCId').value;
+  const sc   = _scData.find(x=>x.id===scId);
+  if (!sc) return;
+
+  let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+  const it = itens.find(x=>(x.itemId||x.item_id)===itemId);
+  const pcAtual = it?.pedido_compra || '';
+
+  const novoPC = prompt(`Pedido de Compra — ${it?.nomeItem||it?.nome||'Item'}:`, pcAtual);
+  if (novoPC === null) return; // cancelou
+
+  // Atualiza no array
+  const iIdx = itens.findIndex(x=>(x.itemId||x.item_id)===itemId);
+  if (iIdx >= 0) itens[iIdx].pedido_compra = novoPC.trim();
+
+  const res = await api(`/solicitacoes-compra/${scId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ itens_json: JSON.stringify(itens) })
+  });
+
+  if (res?.ok) {
+    // Atualiza _scData local
+    const scIdx = _scData.findIndex(x=>x.id===scId);
+    if (scIdx >= 0) _scData[scIdx].itens_json = JSON.stringify(itens);
+
+    // Atualiza célula inline sem reabrir modal
+    const cell = document.getElementById(`pcCell_${idx}`);
+    if (cell) {
+      cell.innerHTML = novoPC.trim()
+        ? `<span style="font-size:11px;font-weight:600;color:#3b82f6">${novoPC.trim()}</span>
+           <button class="row-action" style="font-size:10px;padding:2px 5px" onclick="editarPCItem(${idx},'${itemId}')">✏️</button>`
+        : `<button class="row-action" style="font-size:10px;color:#3b82f6;border-color:#3b82f6" onclick="editarPCItem(${idx},'${itemId}')">+ PC</button>`;
+    }
+    toast('PC atualizado!', 'success');
+  } else toast(res?.erro||'Erro ao salvar','error');
 }
 
 // ── ENTER no login ──
