@@ -1464,53 +1464,90 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="card-header"><div><div class="card-title">Gerar Desconto</div><div class="card-sub">Desconto em folha por perda ou dano de material</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
               <input type="hidden" id="descEditId">
+
+              <!-- Colaborador -->
               <div>
                 <label class="form-label">Colaborador *</label>
-                <input id="descColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabDesc(this.value)" autocomplete="off">
+                <input id="descColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabDesc(this.value)" onblur="setTimeout(()=>document.getElementById('descColabSugestoes').classList.add('hidden'),200)" autocomplete="off">
                 <div id="descColabSugestoes" class="autocomplete-list hidden"></div>
                 <input type="hidden" id="descColabId">
               </div>
-              <div>
-                <label class="form-label">Motivo *</label>
-                <select id="descMotivo" class="form-input">
-                  <option value="">Selecione...</option>
-                  <option value="Perda de material">Perda de material</option>
-                  <option value="Dano intencional">Dano intencional</option>
-                  <option value="Não devolução">Não devolução</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Itens do desconto</label>
-                <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <div style="flex:1;position:relative">
-                    <input id="descItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensDesc(this.value)" autocomplete="off" style="font-size:11px">
-                    <div id="descItemSugestoes" class="autocomplete-list hidden"></div>
-                    <input type="hidden" id="descItemId">
-                  </div>
-                  <input id="descItemQtd" class="form-input" type="number" min="1" value="1" style="width:60px;font-size:11px">
-                  <button class="btn btn-ghost" onclick="adicionarItemDesc()">+</button>
-                </div>
-                <div id="descItensLista" style="display:flex;flex-direction:column;gap:4px"></div>
-                <div id="descTotal" style="font-size:13px;font-weight:700;color:var(--accent-text);text-align:right;margin-top:8px;display:none">Total: R$ 0,00</div>
-              </div>
+
+              <!-- Motivo + Cidade -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div>
-                  <label class="form-label">Parcelas</label>
-                  <select id="descParcelas" class="form-input">
-                    <option value="1">1x (à vista)</option>
-                    <option value="2">2x</option>
-                    <option value="3">3x</option>
-                    <option value="4">4x</option>
-                    <option value="5">5x</option>
-                    <option value="6">6x</option>
+                  <label class="form-label">Motivo *</label>
+                  <select id="descMotivo" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="Perda de material">Perda de material</option>
+                    <option value="Dano intencional">Dano intencional</option>
+                    <option value="Não devolução">Não devolução</option>
+                    <option value="Outro">Outro</option>
                   </select>
                 </div>
                 <div>
-                  <label class="form-label">Mês 1ª parcela</label>
-                  <input id="descMesParcela" class="form-input" type="month">
+                  <label class="form-label">Cidade *</label>
+                  <input id="descCidade" class="form-input" placeholder="Ex: Maricá">
                 </div>
               </div>
+
+              <!-- Itens -->
+              <div>
+                <label class="form-label">Itens do desconto</label>
+                <div style="position:relative;margin-bottom:8px">
+                  <input id="descItemBusca" class="form-input" placeholder="Buscar item por descrição ou código..." oninput="filtrarItensDesc(this.value)" onblur="setTimeout(()=>document.getElementById('descItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="descItemSugestoes" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="descItemId">
+                </div>
+                <div id="descItemPreviewRow" style="display:none;align-items:center;gap:8px;margin-bottom:8px">
+                  <div id="descItemPreviewImg" style="width:40px;height:40px;border-radius:4px;overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:var(--bg);flex-shrink:0"></div>
+                  <div style="flex:1">
+                    <div id="descItemPreviewNome" style="font-size:12px;font-weight:600"></div>
+                    <div id="descItemPreviewValor" style="font-size:11px;color:#22c55e"></div>
+                  </div>
+                  <input id="descItemQtd" class="form-input" type="number" min="1" value="1" style="width:65px" oninput="atualizarPreviewDesc()">
+                  <button class="btn btn-primary" style="padding:8px 12px" onclick="adicionarItemDesc()">+</button>
+                </div>
+                <div id="descItensLista" style="display:flex;flex-direction:column;gap:4px"></div>
+              </div>
+
+              <!-- Totais e desconto -->
+              <div id="descTotaisBox" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;justify-content:space-between;font-size:12px">
+                  <span style="color:var(--text-3)">Valor total dos itens:</span>
+                  <span id="descTotalItens" style="font-weight:600;color:var(--text-1)">R$ 0,00</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:12px;color:var(--text-3);white-space:nowrap">Desconto concedido:</span>
+                  <input id="descDesconto" class="form-input" type="number" min="0" step="0.01" value="0" style="width:100px;font-size:12px" oninput="atualizarTotaisDesc()">
+                  <input id="descDescontoMotivo" class="form-input" placeholder="Motivo do desconto..." style="flex:1;font-size:11px">
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:700;padding-top:4px;border-top:1px solid var(--border)">
+                  <span style="color:var(--text-2)">Valor a cobrar:</span>
+                  <span id="descTotalFinal" style="color:var(--accent-text)">R$ 0,00</span>
+                </div>
+              </div>
+
+              <!-- Parcelas + Mês -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label class="form-label">Parcelas</label>
+                  <select id="descParcelas" class="form-input" onchange="atualizarCronograma()">
+                    ${Array.from({length:24},(_,i)=>i+1).map(n=>`<option value="${n}">${n}x${n===1?' (à vista)':''}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Mês 1ª parcela *</label>
+                  <input id="descMesParcela" class="form-input" type="month" oninput="atualizarCronograma()">
+                </div>
+              </div>
+
+              <!-- Cronograma de parcelas -->
+              <div id="descCronograma" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+                <div style="font-size:10px;font-weight:600;color:#3b82f6;text-transform:uppercase;margin-bottom:8px">📅 Cronograma de Parcelas</div>
+                <div id="descCronogramaLista" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px"></div>
+              </div>
+
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarDesconto()">💰 Gerar Desconto</button>
                 <button class="btn btn-ghost" onclick="limparDesconto()">Limpar</button>
@@ -1523,14 +1560,16 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="card-header">
               <div><div class="card-title">Histórico de Descontos</div></div>
               <div class="card-actions">
-                <input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('descBody',this.value,[0,1])">
+                <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarTabela('descBody',this.value,[0])">
                 <button class="btn btn-ghost" onclick="carregarDescontos()">↻</button>
               </div>
             </div>
-            <table>
-              <thead><tr><th>Colaborador</th><th>Valor</th><th>Parcelas</th><th>Status</th><th>Data</th><th></th></tr></thead>
-              <tbody id="descBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            <div style="overflow-x:auto">
+            <table style="min-width:500px">
+              <thead><tr><th>Colaborador</th><th>Valor</th><th>Parcelas</th><th>Cidade</th><th>Status</th><th>Data</th><th></th></tr></thead>
+              <tbody id="descBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
@@ -6309,6 +6348,7 @@ function renderConsultaDotacao() {
 // ════════════ DESCONTOS ════════════
 let _descItens = [];
 let _descColabSel = null;
+let _descItemSel = null;
 
 function filtrarColabDesc(q) {
   const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
@@ -6320,75 +6360,163 @@ function selecionarColabDesc(id) {
   document.getElementById('descColabBusca').value = _descColabSel.nome;
   document.getElementById('descColabId').value = id;
   document.getElementById('descColabSugestoes').classList.add('hidden');
+  // Auto-preenche cidade pela unidade
+  if (!document.getElementById('descCidade').value) {
+    document.getElementById('descCidade').value = GCA.unidade === 'marica' ? 'Maricá' : 'Rio das Ostras';
+  }
 }
+
 function filtrarItensDesc(q) {
-  if (q.length < 2) { document.getElementById('descItemSugestoes').classList.add('hidden'); return; }
-  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  mostrarAutocompleteItens('descItemSugestoes','descItemBusca', lista, 'selecionarItemDesc');
+  const sug = document.getElementById('descItemSugestoes');
+  if (q.length < 2) { sug.classList.add('hidden'); _descItemSel=null; document.getElementById('descItemPreviewRow').style.display='none'; return; }
+  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(i=>`
+    <div class="autocomplete-item" onclick="selecionarItemDesc('${i.id}')" style="display:flex;align-items:center;gap:10px;padding:8px 12px">
+      <div style="width:36px;height:36px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+        ${i.img?`<img src="${i.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:14px">📦</span>'}
+      </div>
+      <div><div style="font-size:12px;font-weight:600">${i.descricao}</div>
+      <div style="font-size:10px;color:var(--text-3)">${i.codigo||'—'} • ${Number(i.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>
+    </div>`).join('');
+  sug.classList.remove('hidden');
 }
+
 function selecionarItemDesc(id) {
-  const item = (_itens||[]).find(i=>i.id===id);
-  if (!item) return;
-  document.getElementById('descItemBusca').value = item.descricao;
+  _descItemSel = (_itens||[]).find(i=>i.id===id);
+  if (!_descItemSel) return;
+  document.getElementById('descItemBusca').value = _descItemSel.descricao;
   document.getElementById('descItemId').value = id;
   document.getElementById('descItemSugestoes').classList.add('hidden');
+  const row = document.getElementById('descItemPreviewRow');
+  const img = document.getElementById('descItemPreviewImg');
+  document.getElementById('descItemPreviewNome').textContent = _descItemSel.descricao;
+  img.innerHTML = _descItemSel.img?`<img src="${_descItemSel.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:18px">📦</span>';
+  row.style.display = 'flex';
+  atualizarPreviewDesc();
 }
+
+function atualizarPreviewDesc() {
+  if (!_descItemSel) return;
+  const qtd = parseInt(document.getElementById('descItemQtd').value)||1;
+  const valor = Number(_descItemSel.valor_un||0) * qtd;
+  document.getElementById('descItemPreviewValor').textContent = valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+}
+
 function adicionarItemDesc() {
   const itemId = document.getElementById('descItemId').value;
   const qtd    = parseInt(document.getElementById('descItemQtd').value)||1;
-  const item   = (_itens||[]).find(i=>i.id===itemId);
-  if (!item) { toast('Selecione um item', 'warn'); return; }
+  if (!itemId || !_descItemSel) { toast('Selecione um item', 'warn'); return; }
   const existe = _descItens.findIndex(i=>i.itemId===itemId);
   if (existe >= 0) _descItens[existe].qtd += qtd;
-  else _descItens.push({ itemId, nome: item.descricao, valor: Number(item.valor_un||0), qtd });
+  else _descItens.push({ itemId, nome: _descItemSel.descricao, valor: Number(_descItemSel.valor_un||0), qtd, img: _descItemSel.img||'' });
   document.getElementById('descItemBusca').value = '';
   document.getElementById('descItemId').value = '';
   document.getElementById('descItemQtd').value = '1';
+  document.getElementById('descItemPreviewRow').style.display = 'none';
+  _descItemSel = null;
   renderDescItens();
+  atualizarTotaisDesc();
+  atualizarCronograma();
 }
+
 function renderDescItens() {
   const lista = document.getElementById('descItensLista');
-  const totalEl = document.getElementById('descTotal');
-  if (!_descItens.length) { lista.innerHTML=''; totalEl.style.display='none'; return; }
-  const total = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
   lista.innerHTML = _descItens.map((it,idx)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px">
-      <span style="flex:1;color:var(--text-1)">${it.nome}</span>
-      <span style="color:var(--text-3)">${it.qtd}x</span>
-      <span style="color:#22c55e;font-weight:600">${(it.valor*it.qtd).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
-      <button class="row-action" style="color:var(--red)" onclick="_descItens.splice(${idx},1);renderDescItens()">✕</button>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="width:36px;height:36px;flex-shrink:0;border-radius:4px;overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
+        ${it.img?`<img src="${it.img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:14px">📦</span>'}
+      </div>
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nome}</div>
+      <span style="font-size:11px;color:var(--text-3)">${it.qtd}x ${Number(it.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+      <span style="font-size:12px;font-weight:600;color:#22c55e">${(it.valor*it.qtd).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+      <button class="row-action" style="color:var(--red)" onclick="_descItens.splice(${idx},1);renderDescItens();atualizarTotaisDesc();atualizarCronograma()">✕</button>
     </div>`).join('');
-  totalEl.textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
-  totalEl.style.display = '';
 }
+
+function atualizarTotaisDesc() {
+  const totalItens = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
+  const desconto   = parseFloat(document.getElementById('descDesconto')?.value)||0;
+  const totalFinal = Math.max(totalItens - desconto, 0);
+  const box = document.getElementById('descTotaisBox');
+  if (_descItens.length) {
+    box.style.display = 'flex';
+    document.getElementById('descTotalItens').textContent = totalItens.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    document.getElementById('descTotalFinal').textContent = totalFinal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function atualizarCronograma() {
+  const mes   = document.getElementById('descMesParcela').value;
+  const parc  = parseInt(document.getElementById('descParcelas').value)||1;
+  const desconto = parseFloat(document.getElementById('descDesconto')?.value)||0;
+  const total = Math.max(_descItens.reduce((s,i)=>s+(i.valor*i.qtd),0) - desconto, 0);
+  const box   = document.getElementById('descCronograma');
+  const lista = document.getElementById('descCronogramaLista');
+
+  if (!mes || !total || !_descItens.length) { box.style.display='none'; return; }
+
+  const valorParcela = total / parc;
+  const [ano, mesNum] = mes.split('-').map(Number);
+  box.style.display = '';
+  lista.innerHTML = Array.from({length:parc},(_,i)=>{
+    const d = new Date(ano, mesNum-1+i, 1);
+    const label = `${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    return `<div style="padding:3px 0;color:var(--text-2)">
+      <strong style="color:#3b82f6">${i+1}–</strong>
+      <strong style="color:#22c55e">${valorParcela.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</strong>
+      <span style="color:var(--text-3)"> (${label})</span>
+    </div>`;
+  }).join('');
+}
+
 async function salvarDesconto() {
   const colabId = document.getElementById('descColabId').value;
   const motivo  = document.getElementById('descMotivo').value;
-  if (!colabId || !motivo || !_descItens.length) { toast('Preencha todos os campos e adicione itens', 'warn'); return; }
-  const valorTotal = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
+  const cidade  = document.getElementById('descCidade').value.trim();
+  if (!colabId || !motivo || !cidade || !_descItens.length) {
+    toast('Preencha colaborador, motivo, cidade e adicione itens', 'warn'); return;
+  }
+  const totalItens = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
+  const descConcedido = parseFloat(document.getElementById('descDesconto').value)||0;
+  const valorTotal = Math.max(totalItens - descConcedido, 0);
+  const descMotivo = document.getElementById('descDescontoMotivo')?.value.trim()||'';
+
   const body = {
     colaborador_id: colabId,
-    colaborador_nome: _descColabSel?.nome || '',
-    matricula: _descColabSel?.matricula || '',
-    motivo, itens: JSON.stringify(_descItens), valor_total: valorTotal,
+    colaborador_nome: _descColabSel?.nome||'',
+    matricula: _descColabSel?.matricula||'',
+    motivo, cidade,
+    itens: JSON.stringify(_descItens),
+    valor_total: valorTotal,
+    valor_bruto: totalItens,
+    desconto_concedido: descConcedido,
+    motivo_desconto: descMotivo,
     parcelas: parseInt(document.getElementById('descParcelas').value)||1,
     mes_primeira_parcela: document.getElementById('descMesParcela').value,
     status: 'Ativo', data: new Date().toISOString().split('T')[0],
-    gerado_por: GCA.usuario?.nome || GCA.usuario?.username,
+    gerado_por: GCA.usuario?.nome||GCA.usuario?.username,
   };
   const res = await api('/descontos', { method:'POST', body: JSON.stringify(body) });
   if (res?.ok) { toast('Desconto gerado!', 'success'); limparDesconto(); carregarDescontos(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
+
 function limparDesconto() {
-  _descItens = []; _descColabSel = null;
-  ['descColabBusca','descColabId','descItemBusca','descItemId'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  _descItens = []; _descColabSel = null; _descItemSel = null;
+  ['descColabBusca','descColabId','descItemBusca','descItemId','descCidade','descDescontoMotivo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('descMotivo').selectedIndex=0;
   document.getElementById('descParcelas').selectedIndex=0;
   document.getElementById('descMesParcela').value='';
+  document.getElementById('descDesconto').value='0';
   document.getElementById('descItensLista').innerHTML='';
-  document.getElementById('descTotal').style.display='none';
+  document.getElementById('descItemPreviewRow').style.display='none';
+  document.getElementById('descTotaisBox').style.display='none';
+  document.getElementById('descCronograma').style.display='none';
 }
+
 async function carregarDescontos() {
   const tbody = document.getElementById('descBody');
   if (!tbody) return;
@@ -6398,12 +6526,13 @@ async function carregarDescontos() {
     <td class="td-main">${d.colaborador_nome||'—'}</td>
     <td style="font-size:11px;font-weight:600;color:#22c55e">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
     <td style="font-size:11px;text-align:center">${d.parcelas||1}x</td>
+    <td style="font-size:11px;color:var(--text-3)">${d.cidade||'—'}</td>
     <td><span style="font-size:11px;font-weight:600;color:${d.status==='Ativo'?'#22c55e':'var(--text-3)'}">${d.status||'—'}</span></td>
     <td>${formatarData(d.data)}</td>
     <td><button class="row-action" onclick="verDesconto('${d.id}')">Ver</button></td>
-  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum desconto</div></div></td></tr>`;
+  </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum desconto</div></div></td></tr>`;
 }
-function verDesconto(id) { toast('Detalhes do desconto em breve', 'info'); }
+function verDesconto(id) { toast('PDF do desconto em breve', 'info'); }
 
 // ════════════ SOLICITAÇÕES DE COMPRA ════════════
 let _scData = [];
