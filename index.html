@@ -1455,7 +1455,85 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div id="movPaginacao"></div>
         </div>
       </div>
-      <div class="view" id="view-descontos"><div class="empty-state"><div class="es-icon">💰</div><div class="es-title">Descontos</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── DESCONTOS ── -->
+      <div class="view" id="view-descontos">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Gerar Desconto</div><div class="card-sub">Desconto em folha por perda ou dano de material</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="descEditId">
+              <div>
+                <label class="form-label">Colaborador *</label>
+                <input id="descColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabDesc(this.value)" autocomplete="off">
+                <div id="descColabSugestoes" class="autocomplete-list hidden"></div>
+                <input type="hidden" id="descColabId">
+              </div>
+              <div>
+                <label class="form-label">Motivo *</label>
+                <select id="descMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Perda de material">Perda de material</option>
+                  <option value="Dano intencional">Dano intencional</option>
+                  <option value="Não devolução">Não devolução</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Itens do desconto</label>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <div style="flex:1;position:relative">
+                    <input id="descItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensDesc(this.value)" autocomplete="off" style="font-size:11px">
+                    <div id="descItemSugestoes" class="autocomplete-list hidden"></div>
+                    <input type="hidden" id="descItemId">
+                  </div>
+                  <input id="descItemQtd" class="form-input" type="number" min="1" value="1" style="width:60px;font-size:11px">
+                  <button class="btn btn-ghost" onclick="adicionarItemDesc()">+</button>
+                </div>
+                <div id="descItensLista" style="display:flex;flex-direction:column;gap:4px"></div>
+                <div id="descTotal" style="font-size:13px;font-weight:700;color:var(--accent-text);text-align:right;margin-top:8px;display:none">Total: R$ 0,00</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div>
+                  <label class="form-label">Parcelas</label>
+                  <select id="descParcelas" class="form-input">
+                    <option value="1">1x (à vista)</option>
+                    <option value="2">2x</option>
+                    <option value="3">3x</option>
+                    <option value="4">4x</option>
+                    <option value="5">5x</option>
+                    <option value="6">6x</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="form-label">Mês 1ª parcela</label>
+                  <input id="descMesParcela" class="form-input" type="month">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarDesconto()">💰 Gerar Desconto</button>
+                <button class="btn btn-ghost" onclick="limparDesconto()">Limpar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- HISTÓRICO -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Descontos</div></div>
+              <div class="card-actions">
+                <input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('descBody',this.value,[0,1])">
+                <button class="btn btn-ghost" onclick="carregarDescontos()">↻</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Colaborador</th><th>Valor</th><th>Parcelas</th><th>Status</th><th>Data</th><th></th></tr></thead>
+              <tbody id="descBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
 
       <!-- ── CONSULTA DE ITENS ── -->
       <div class="view" id="view-consulta-itens">
@@ -1521,8 +1599,94 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div id="consultaDotGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
         </div>
       </div>
-      <div class="view" id="view-solicitacoes-compra"><div class="empty-state"><div class="es-icon">🛒</div><div class="es-title">Solicitações de Compra</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-protheus"><div class="empty-state"><div class="es-icon">🗂️</div><div class="es-title">Lançamentos Protheus</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── SOLICITAÇÕES DE COMPRA ── -->
+      <div class="view" id="view-solicitacoes-compra">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Pendentes</span></div><div class="kpi-value" id="scKpiPendente" style="color:#f59e0b">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Aprovadas</span></div><div class="kpi-value" id="scKpiAprovada" style="color:#3b82f6">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Rec. Parcial</span></div><div class="kpi-value" id="scKpiParcial" style="color:#a855f7">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Rec. Total</span></div><div class="kpi-value" id="scKpiTotal" style="color:#22c55e">—</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Solicitações de Compra</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="scBusca" placeholder="Buscar SC..." oninput="filtrarSC()">
+              <select class="form-input" id="scFiltroStatus" style="width:150px;font-size:11px" onchange="filtrarSC()">
+                <option value="">Todos os status</option>
+                <option value="Pendente">⏳ Pendente</option>
+                <option value="Aprovado">✅ Aprovado</option>
+                <option value="Recebido Parcial">📦 Rec. Parcial</option>
+                <option value="Recebido Total">✅ Rec. Total</option>
+                <option value="Cancelado">❌ Cancelado</option>
+              </select>
+              <button class="btn btn-primary" onclick="abrirModalSC()">+ Nova SC</button>
+              <button class="btn btn-ghost" onclick="carregarSC()">↻</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Status</th><th></th></tr></thead>
+            <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ── PROTHEUS ── -->
+      <div class="view" id="view-protheus">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Pendentes</span></div><div class="kpi-value" id="prKpiPend" style="color:#f59e0b">—</div><div class="kpi-delta warn">não lançados</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Lançados</span></div><div class="kpi-value" id="prKpiLanc" style="color:#22c55e">—</div><div class="kpi-delta up">no Protheus</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Entradas</span></div><div class="kpi-value" id="prKpiEnt">—</div><div class="kpi-delta">registradas</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Saídas</span></div><div class="kpi-value" id="prKpiSai">—</div><div class="kpi-delta">registradas</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Lançamentos Protheus</div><div class="card-sub">Marque as movimentações já lançadas no Protheus</div></div>
+            <div class="card-actions">
+              <button class="btn btn-primary" onclick="marcarSelecionadosProtheus(true)" id="btnMarcarLancado">✅ Marcar Lançados</button>
+              <button class="btn btn-ghost" onclick="marcarSelecionadosProtheus(false)">↩️ Desmarcar</button>
+              <select class="form-input" id="prFiltroTipo" style="width:120px;font-size:11px" onchange="carregarProtheus()">
+                <option value="">Todos</option>
+                <option value="ENTRADA">📥 Entrada</option>
+                <option value="SAIDA">📤 Saída</option>
+                <option value="TRANSFERENCIA">🔄 Transferência</option>
+              </select>
+              <select class="form-input" id="prFiltroStatus" style="width:130px;font-size:11px" onchange="carregarProtheus()">
+                <option value="">Todos status</option>
+                <option value="PENDENTE">⏳ Pendentes</option>
+                <option value="LANÇADO">✅ Lançados</option>
+              </select>
+              <select class="form-input" id="prFiltroArmazem" style="width:160px;font-size:11px" onchange="carregarProtheus()">
+                <option value="">Todos armazéns</option>
+              </select>
+              <input class="form-input" type="date" id="prFiltroInicio" style="width:130px;font-size:11px" onchange="carregarProtheus()">
+              <input class="form-input" type="date" id="prFiltroFim" style="width:130px;font-size:11px" onchange="carregarProtheus()">
+              <button class="btn btn-ghost" onclick="carregarProtheus()">↻</button>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:32px"><input type="checkbox" id="prSelectAll" onchange="toggleSelectAllProtheus(this.checked)"></th>
+                <th>Tipo</th>
+                <th>Item</th>
+                <th>Armazém</th>
+                <th style="text-align:center">Qtd</th>
+                <th>Colaborador</th>
+                <th>Data</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="prBody"><tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr></tbody>
+          </table>
+          <div id="prPaginacao"></div>
+        </div>
+      </div>
       <div class="view" id="view-atendimento-enel"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Atendimento ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-devolucao-enel"><div class="empty-state"><div class="es-icon">↩️</div><div class="es-title">Devolução ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Medidores</div><div class="es-sub">Em desenvolvimento</div></div></div>
@@ -2016,6 +2180,52 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL SOLICITAÇÃO DE COMPRA -->
+<div class="modal-overlay hidden" id="modalSC">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-header">
+      <div><div class="modal-title" id="scModalTitulo">Nova Solicitação de Compra</div></div>
+      <button class="modal-close" onclick="fecharModalSC()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="scEditId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Nº da SC *</label><input id="scNumero" class="form-input" placeholder="Ex: SC-2024-001"></div>
+        <div><label class="form-label">Data *</label><input id="scData" class="form-input" type="date"></div>
+      </div>
+      <div><label class="form-label">Comprador *</label><input id="scComprador" class="form-input" placeholder="Nome do comprador"></div>
+      <div>
+        <label class="form-label">Itens</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <div style="flex:1;position:relative">
+            <input id="scItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensSC(this.value)" autocomplete="off" style="font-size:11px">
+            <div id="scItemSugestoes" class="autocomplete-list hidden"></div>
+            <input type="hidden" id="scItemId">
+          </div>
+          <input id="scItemQtd" class="form-input" type="number" min="1" value="1" style="width:60px;font-size:11px">
+          <button class="btn btn-ghost" onclick="adicionarItemSC()">+</button>
+        </div>
+        <div id="scItensLista" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+      <div><label class="form-label">Observação</label><textarea id="scObs" class="form-input" rows="2" style="resize:vertical"></textarea></div>
+      <div>
+        <label class="form-label">Status</label>
+        <select id="scStatus" class="form-input">
+          <option value="Pendente">⏳ Pendente</option>
+          <option value="Aprovado">✅ Aprovado</option>
+          <option value="Recebido Parcial">📦 Recebido Parcial</option>
+          <option value="Recebido Total">✅ Recebido Total</option>
+          <option value="Cancelado">❌ Cancelado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalSC()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarSC()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toastContainer"></div>
 
 <script>
@@ -2127,6 +2337,9 @@ function onViewLoad(nome) {
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           carregarUsuariosView();
+  if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
+  if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
+  if (nome === 'protheus')           carregarProtheus();
   if (nome === 'consulta-itens')     carregarConsultaItens();
   if (nome === 'consulta-colaboradores') carregarConsultaColabs();
   if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
@@ -5950,6 +6163,335 @@ function renderConsultaDotacao() {
         }).join('')}
       </div>
     </div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// FINANCEIRO — DESCONTOS / SC / PROTHEUS
+// ═══════════════════════════════════════════
+
+// ════════════ DESCONTOS ════════════
+let _descItens = [];
+let _descColabSel = null;
+
+function filtrarColabDesc(q) {
+  const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  mostrarAutocomplete('descColabSugestoes','descColabBusca', lista, 'selecionarColabDesc');
+}
+function selecionarColabDesc(id) {
+  _descColabSel = (_colaboradores||[]).find(c=>c.id===id);
+  if (!_descColabSel) return;
+  document.getElementById('descColabBusca').value = _descColabSel.nome;
+  document.getElementById('descColabId').value = id;
+  document.getElementById('descColabSugestoes').classList.add('hidden');
+}
+function filtrarItensDesc(q) {
+  if (q.length < 2) { document.getElementById('descItemSugestoes').classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  mostrarAutocompleteItens('descItemSugestoes','descItemBusca', lista, 'selecionarItemDesc');
+}
+function selecionarItemDesc(id) {
+  const item = (_itens||[]).find(i=>i.id===id);
+  if (!item) return;
+  document.getElementById('descItemBusca').value = item.descricao;
+  document.getElementById('descItemId').value = id;
+  document.getElementById('descItemSugestoes').classList.add('hidden');
+}
+function adicionarItemDesc() {
+  const itemId = document.getElementById('descItemId').value;
+  const qtd    = parseInt(document.getElementById('descItemQtd').value)||1;
+  const item   = (_itens||[]).find(i=>i.id===itemId);
+  if (!item) { toast('Selecione um item', 'warn'); return; }
+  const existe = _descItens.findIndex(i=>i.itemId===itemId);
+  if (existe >= 0) _descItens[existe].qtd += qtd;
+  else _descItens.push({ itemId, nome: item.descricao, valor: Number(item.valor_un||0), qtd });
+  document.getElementById('descItemBusca').value = '';
+  document.getElementById('descItemId').value = '';
+  document.getElementById('descItemQtd').value = '1';
+  renderDescItens();
+}
+function renderDescItens() {
+  const lista = document.getElementById('descItensLista');
+  const totalEl = document.getElementById('descTotal');
+  if (!_descItens.length) { lista.innerHTML=''; totalEl.style.display='none'; return; }
+  const total = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
+  lista.innerHTML = _descItens.map((it,idx)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px">
+      <span style="flex:1;color:var(--text-1)">${it.nome}</span>
+      <span style="color:var(--text-3)">${it.qtd}x</span>
+      <span style="color:#22c55e;font-weight:600">${(it.valor*it.qtd).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>
+      <button class="row-action" style="color:var(--red)" onclick="_descItens.splice(${idx},1);renderDescItens()">✕</button>
+    </div>`).join('');
+  totalEl.textContent = `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}`;
+  totalEl.style.display = '';
+}
+async function salvarDesconto() {
+  const colabId = document.getElementById('descColabId').value;
+  const motivo  = document.getElementById('descMotivo').value;
+  if (!colabId || !motivo || !_descItens.length) { toast('Preencha todos os campos e adicione itens', 'warn'); return; }
+  const valorTotal = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
+  const body = {
+    colaborador_id: colabId,
+    colaborador_nome: _descColabSel?.nome || '',
+    matricula: _descColabSel?.matricula || '',
+    motivo, itens: JSON.stringify(_descItens), valor_total: valorTotal,
+    parcelas: parseInt(document.getElementById('descParcelas').value)||1,
+    mes_primeira_parcela: document.getElementById('descMesParcela').value,
+    status: 'Ativo', data: new Date().toISOString().split('T')[0],
+    gerado_por: GCA.usuario?.nome || GCA.usuario?.username,
+  };
+  const res = await api('/descontos', { method:'POST', body: JSON.stringify(body) });
+  if (res?.ok) { toast('Desconto gerado!', 'success'); limparDesconto(); carregarDescontos(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+function limparDesconto() {
+  _descItens = []; _descColabSel = null;
+  ['descColabBusca','descColabId','descItemBusca','descItemId'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('descMotivo').selectedIndex=0;
+  document.getElementById('descParcelas').selectedIndex=0;
+  document.getElementById('descMesParcela').value='';
+  document.getElementById('descItensLista').innerHTML='';
+  document.getElementById('descTotal').style.display='none';
+}
+async function carregarDescontos() {
+  const tbody = document.getElementById('descBody');
+  if (!tbody) return;
+  const data = await api('/descontos');
+  const lista = data?.data || [];
+  tbody.innerHTML = lista.length ? lista.map(d=>`<tr>
+    <td class="td-main">${d.colaborador_nome||'—'}</td>
+    <td style="font-size:11px;font-weight:600;color:#22c55e">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+    <td style="font-size:11px;text-align:center">${d.parcelas||1}x</td>
+    <td><span style="font-size:11px;font-weight:600;color:${d.status==='Ativo'?'#22c55e':'var(--text-3)'}">${d.status||'—'}</span></td>
+    <td>${formatarData(d.data)}</td>
+    <td><button class="row-action" onclick="verDesconto('${d.id}')">Ver</button></td>
+  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum desconto</div></div></td></tr>`;
+}
+function verDesconto(id) { toast('Detalhes do desconto em breve', 'info'); }
+
+// ════════════ SOLICITAÇÕES DE COMPRA ════════════
+let _scData = [];
+let _scItens = [];
+
+function filtrarItensSC(q) {
+  if (q.length < 2) { document.getElementById('scItemSugestoes').classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i=>(i.descricao||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  mostrarAutocompleteItens('scItemSugestoes','scItemBusca', lista, 'selecionarItemSC');
+}
+function selecionarItemSC(id) {
+  const item = (_itens||[]).find(i=>i.id===id);
+  if (!item) return;
+  document.getElementById('scItemBusca').value = item.descricao;
+  document.getElementById('scItemId').value = id;
+  document.getElementById('scItemSugestoes').classList.add('hidden');
+}
+function adicionarItemSC() {
+  const itemId = document.getElementById('scItemId').value;
+  const qtd    = parseInt(document.getElementById('scItemQtd').value)||1;
+  const item   = (_itens||[]).find(i=>i.id===itemId);
+  if (!item) { toast('Selecione um item', 'warn'); return; }
+  const existe = _scItens.findIndex(i=>i.itemId===itemId);
+  if (existe >= 0) _scItens[existe].qtd += qtd;
+  else _scItens.push({ itemId, nome: item.descricao, qtd });
+  document.getElementById('scItemBusca').value='';
+  document.getElementById('scItemId').value='';
+  document.getElementById('scItemQtd').value='1';
+  renderSCItens();
+}
+function renderSCItens() {
+  document.getElementById('scItensLista').innerHTML = _scItens.map((it,idx)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px">
+      <span style="flex:1">${it.nome}</span>
+      <span style="color:var(--text-3)">${it.qtd}x</span>
+      <button class="row-action" style="color:var(--red)" onclick="_scItens.splice(${idx},1);renderSCItens()">✕</button>
+    </div>`).join('');
+}
+function abrirModalSC(id) {
+  _scItens = [];
+  document.getElementById('scEditId').value = '';
+  document.getElementById('scNumero').value = '';
+  document.getElementById('scData').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('scComprador').value = GCA.usuario?.nome || '';
+  document.getElementById('scObs').value = '';
+  document.getElementById('scStatus').value = 'Pendente';
+  document.getElementById('scItensLista').innerHTML = '';
+  document.getElementById('scModalTitulo').textContent = 'Nova Solicitação de Compra';
+  if (id) {
+    const sc = _scData.find(x=>x.id===id);
+    if (sc) {
+      document.getElementById('scEditId').value = id;
+      document.getElementById('scNumero').value = sc.numero_sc||'';
+      document.getElementById('scData').value   = sc.data_abertura||'';
+      document.getElementById('scComprador').value = sc.comprador||'';
+      document.getElementById('scObs').value = sc.observacao||'';
+      document.getElementById('scStatus').value = sc.status||'Pendente';
+      try { _scItens = JSON.parse(sc.itens_json||'[]'); } catch {}
+      renderSCItens();
+      document.getElementById('scModalTitulo').textContent = 'Editar SC';
+    }
+  }
+  document.getElementById('modalSC').classList.remove('hidden');
+}
+function fecharModalSC() { document.getElementById('modalSC').classList.add('hidden'); }
+async function salvarSC() {
+  const id = document.getElementById('scEditId').value;
+  const body = {
+    numero_sc: document.getElementById('scNumero').value.trim(),
+    data_abertura: document.getElementById('scData').value,
+    comprador: document.getElementById('scComprador').value.trim(),
+    observacao: document.getElementById('scObs').value.trim(),
+    status: document.getElementById('scStatus').value,
+    itens_json: JSON.stringify(_scItens),
+  };
+  if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
+  const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
+    method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
+  });
+  if (res?.ok) { toast('SC salva!', 'success'); fecharModalSC(); carregarSC(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+function filtrarSC() {
+  const q = (document.getElementById('scBusca')?.value||'').toLowerCase();
+  const s = document.getElementById('scFiltroStatus')?.value||'';
+  let lista = _scData;
+  if (q) lista = lista.filter(x=>(x.numero_sc||'').toLowerCase().includes(q)||(x.comprador||'').toLowerCase().includes(q));
+  if (s) lista = lista.filter(x=>x.status===s);
+  renderSC(lista);
+}
+async function carregarSC() {
+  const tbody = document.getElementById('scBody');
+  if (!tbody) return;
+  const data = await api('/solicitacoes-compra');
+  _scData = data?.data || [];
+  document.getElementById('scKpiPendente').textContent = _scData.filter(x=>x.status==='Pendente').length;
+  document.getElementById('scKpiAprovada').textContent = _scData.filter(x=>x.status==='Aprovado').length;
+  document.getElementById('scKpiParcial').textContent  = _scData.filter(x=>x.status==='Recebido Parcial').length;
+  document.getElementById('scKpiTotal').textContent    = _scData.filter(x=>x.status==='Recebido Total').length;
+  renderSC(_scData);
+}
+function renderSC(lista) {
+  const tbody = document.getElementById('scBody');
+  const scStatusTag = s => {
+    const map = {'Pendente':'color:#f59e0b','Aprovado':'color:#3b82f6','Recebido Parcial':'color:#a855f7','Recebido Total':'color:#22c55e','Cancelado':'color:var(--text-3)'};
+    return `<span style="font-size:11px;font-weight:600;${map[s]||''}">${s||'—'}</span>`;
+  };
+  tbody.innerHTML = lista.length ? lista.map(sc=>{
+    let itens=[]; try{itens=JSON.parse(sc.itens_json||'[]');}catch{}
+    return `<tr>
+      <td class="td-main td-mono">${sc.numero_sc||'—'}</td>
+      <td>${formatarData(sc.data_abertura)}</td>
+      <td style="font-size:11px">${sc.comprador||'—'}</td>
+      <td style="text-align:center;font-size:11px">${itens.length}</td>
+      <td>${scStatusTag(sc.status)}</td>
+      <td><button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button></td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
+}
+
+// ════════════ PROTHEUS ════════════
+let _prData = [];
+let _prPagina = 1; const _prPorPag = 50;
+let _prSelecionados = new Set();
+
+async function carregarProtheus() {
+  const tbody = document.getElementById('prBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
+  _prSelecionados.clear();
+
+  const tipo    = document.getElementById('prFiltroTipo')?.value||'';
+  const status  = document.getElementById('prFiltroStatus')?.value||'';
+  const armazem = document.getElementById('prFiltroArmazem')?.value||'';
+  const inicio  = document.getElementById('prFiltroInicio')?.value||'';
+  const fim     = document.getElementById('prFiltroFim')?.value||'';
+
+  let url = `/movimentacoes?pagina=${_prPagina}&por_pagina=${_prPorPag}`;
+  if (tipo)   url += `&tipo=${tipo}`;
+  if (armazem) url += `&armazem=${armazem}`;
+  if (inicio) url += `&data_inicio=${inicio}`;
+  if (fim)    url += `&data_fim=${fim}`;
+
+  const data = await api(url);
+  if (!data) return;
+
+  _prData = data.registros || [];
+  const total = data.total || 0;
+  const totalPags = data.totalPaginas || 1;
+
+  // Filtra status localmente (campo não estava no backend originalmente)
+  let lista = _prData;
+  if (status) lista = lista.filter(m => (m.status_protheus||'PENDENTE') === status);
+
+  // KPIs
+  document.getElementById('prKpiPend').textContent = _prData.filter(m=>(m.status_protheus||'PENDENTE')==='PENDENTE').length;
+  document.getElementById('prKpiLanc').textContent = _prData.filter(m=>m.status_protheus==='LANÇADO').length;
+  document.getElementById('prKpiEnt').textContent  = _prData.filter(m=>m.tipo?.toUpperCase()==='ENTRADA').length;
+  document.getElementById('prKpiSai').textContent  = _prData.filter(m=>m.tipo?.toUpperCase()==='SAIDA').length;
+
+  // Popula armazéns
+  const selArm = document.getElementById('prFiltroArmazem');
+  if (selArm && selArm.options.length <= 1 && _armazens.length) {
+    selArm.innerHTML = '<option value="">Todos armazéns</option>' + _armazens.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+  }
+
+  tbody.innerHTML = lista.map(m => {
+    const tipoNorm = (m.tipo||'').toUpperCase();
+    const tipoTag  = tipoNorm==='ENTRADA' ? '<span style="color:#22c55e;font-size:10px;font-weight:700">📥 Entrada</span>'
+                   : tipoNorm==='SAIDA'   ? '<span style="color:#ef4444;font-size:10px;font-weight:700">📤 Saída</span>'
+                   : '<span style="color:#60a5fa;font-size:10px;font-weight:700">🔄 Transf.</span>';
+    const lancado  = m.status_protheus === 'LANÇADO';
+    const stTag    = lancado ? '<span style="color:#22c55e;font-size:10px;font-weight:700">✅ Lançado</span>'
+                             : '<span style="color:#f59e0b;font-size:10px;font-weight:700">⏳ Pendente</span>';
+    const nomeItem = m.descricao || m.item_descricao || m.nome_item || '—';
+    const armazem  = m.nomeArmazem || m.nome_armazem || '—';
+    const colab    = m.nomeColaborador || m.colaborador_nome || '—';
+    const data     = m.data || m.criadoEm?.split('T')[0];
+    return `<tr>
+      <td><input type="checkbox" class="pr-check" data-id="${m.id}" ${_prSelecionados.has(m.id)?'checked':''}
+        onchange="if(this.checked)_prSelecionados.add('${m.id}');else _prSelecionados.delete('${m.id}')"></td>
+      <td>${tipoTag}</td>
+      <td class="td-main" style="max-width:200px">${nomeItem}<div style="font-size:9px;color:var(--text-3);font-family:var(--font-mono)">${m.codigo||m.codigo_item||''}</div></td>
+      <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
+      <td style="text-align:center;font-weight:600">${m.quantidade}</td>
+      <td style="font-size:11px;color:var(--text-3)">${colab}</td>
+      <td style="font-size:11px">${formatarData(data)}</td>
+      <td>${stTag}</td>
+    </tr>`;
+  }).join('');
+
+  // Paginação
+  const pag = document.getElementById('prPaginacao');
+  pag.innerHTML = total > _prPorPag ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
+      <span>Total: ${total} registros</span>
+      <div style="display:flex;gap:6px">
+        <button class="row-action" ${_prPagina===1?'disabled':''} onclick="_prPagina--;carregarProtheus()">← Anterior</button>
+        <span style="padding:4px 10px;font-weight:600">${_prPagina}/${totalPags}</span>
+        <button class="row-action" ${_prPagina===totalPags?'disabled':''} onclick="_prPagina++;carregarProtheus()">Próxima →</button>
+      </div>
+    </div>` : '';
+}
+
+function toggleSelectAllProtheus(checked) {
+  document.querySelectorAll('.pr-check').forEach(cb => {
+    cb.checked = checked;
+    if (checked) _prSelecionados.add(cb.dataset.id);
+    else _prSelecionados.delete(cb.dataset.id);
+  });
+}
+
+async function marcarSelecionadosProtheus(lancado) {
+  if (!_prSelecionados.size) { toast('Selecione ao menos uma movimentação', 'warn'); return; }
+  const ids = [..._prSelecionados];
+  const status = lancado ? 'LANÇADO' : 'PENDENTE';
+  const res = await api('/movimentacoes/protheus', {
+    method: 'POST',
+    body: JSON.stringify({ ids, status, lancado_por: GCA.usuario?.nome || GCA.usuario?.username })
+  });
+  if (res?.ok) {
+    toast(`${ids.length} registro(s) marcado(s) como ${status}!`, 'success');
+    _prSelecionados.clear();
+    carregarProtheus();
+  } else toast(res?.erro || 'Erro ao atualizar', 'error');
 }
 
 // ── ENTER no login ──
