@@ -6570,7 +6570,7 @@ function abrirVerSC(id) {
 
   // Tabela de itens (somente visualização)
   const tbody = document.getElementById('verSCItensBody');
-  tbody.innerHTML = itens.map(it => {
+  tbody.innerHTML = itens.map((it, idx) => {
     const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
     const qtdRec = Number(it.qtdRecebida||0);
     const pendente = qtdSol - qtdRec;
