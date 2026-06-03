@@ -2643,12 +2643,16 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <div>
           <label class="form-label">Buscar por Colaborador</label>
-          <div style="position:relative">
-            <input id="devNR10ColabBusca" class="form-input" placeholder="Nome do colaborador..."
-              oninput="filtrarColabDevNR10(this.value)"
-              onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)"
-              autocomplete="off">
-            <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;position:relative">
+              <input id="devNR10ColabBusca" class="form-input" placeholder="Nome ou matrícula..."
+                oninput="filtrarColabDevNR10(this.value)"
+                onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)"
+                onkeydown="if(event.key==='Enter')buscarColabDev()"
+                autocomplete="off">
+              <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+            </div>
+            <button class="btn btn-ghost" onclick="buscarColabDev()">🔍</button>
           </div>
         </div>
         <div>
@@ -7921,9 +7925,12 @@ let _devNR10SerialsSelecionados = [];
 
 function abrirDevolucaoNR10() {
   document.getElementById('devNR10ColabBusca').value = '';
-  document.getElementById('devNR10Lista').innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque um colaborador para ver os seriais</div>';
+  document.getElementById('devNR10SerialBusca').value = '';
+  document.getElementById('devNR10Lista').innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>';
   document.getElementById('btnConfirmarDevNR10').style.display = 'none';
   _devNR10SerialsSelecionados = [];
+  // Garante colaboradores carregados
+  if (!_colaboradores.length) carregarColaboradoresAtendimento();
   document.getElementById('modalDevolucaoNR10').classList.remove('hidden');
 }
 
@@ -7938,6 +7945,12 @@ function filtrarColabDevNR10(q) {
       <span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''} • ${c.funcao||''}</span>
     </div>`).join('');
   sug.classList.remove('hidden');
+}
+
+async function buscarColabDev() {
+  const q = document.getElementById('devNR10ColabBusca').value.trim();
+  if (!q) { toast('Digite um nome ou matrícula','warn'); return; }
+  await carregarSeriaisColab(q.toUpperCase(), '');
 }
 
 async function buscarSerialDev() {
