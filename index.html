@@ -1940,21 +1940,73 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── DESCARTE ── -->
       <div class="view" id="view-descarte">
+
+        <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Total Itens</span></div><div class="kpi-value" id="descKpiTotal">—</div></div>
-          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Qtd Total</span></div><div class="kpi-value" id="descKpiQtd" style="color:#ef4444">—</div></div>
-          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Valor Estimado</span></div><div class="kpi-value" id="descKpiValor" style="font-size:18px">—</div></div>
-        </div>
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">🗑️ Gestão de Descartes</div><div class="card-sub">Materiais inutilizados e descartados</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarTabela('descartBody',this.value,[0,1])">
-              <button class="btn btn-ghost" onclick="carregarDescarte()">↻</button>
-            </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">📦 Itens Aguardando</span></div>
+            <div class="kpi-value" id="descKpiTotal" style="color:#f59e0b">—</div>
+            <div class="kpi-delta">tipos de item</div>
           </div>
-          <table><thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Saldo</th><th style="text-align:right">Valor Unit.</th><th style="text-align:right">Valor Total</th></tr></thead>
-          <tbody id="descartBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">🗑️ Total para Descartar</span></div>
+            <div class="kpi-value" id="descKpiQtd" style="color:#ef4444">—</div>
+            <div class="kpi-delta">unidades no total</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">✅ Despachos Realizados</span></div>
+            <div class="kpi-value" id="descKpiDespachos" style="color:#22c55e">—</div>
+            <div class="kpi-delta">no histórico</div>
+          </div>
+        </div>
+
+        <!-- Abas -->
+        <div style="display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)">
+          <button class="atend-tab active" id="descTab1" onclick="showDescTab('saldo')">♻️ Saldo Atual</button>
+          <button class="atend-tab" id="descTab2" onclick="showDescTab('historico')">📋 Histórico de Despachos</button>
+        </div>
+
+        <!-- ABA SALDO -->
+        <div id="descTabSaldo">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Materiais para Descarte</div><div class="card-sub">Saldo acumulado aguardando despacho</div></div>
+              <div class="card-actions">
+                <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarTabela('descartBody',this.value,[0,1])">
+                <button class="btn btn-primary" style="background:#22c55e;border-color:#22c55e" onclick="abrirModalDespacho()">🚛 Registrar Despacho</button>
+                <button class="btn btn-ghost" onclick="carregarDescarte()">↻</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr>
+                <th><input type="checkbox" id="descSelectAll" onchange="toggleSelectAllDesc(this.checked)" style="cursor:pointer"></th>
+                <th>Item</th><th>Código</th>
+                <th style="text-align:center">Un.</th>
+                <th style="text-align:center">Saldo p/ Descartar</th>
+                <th style="text-align:center">Qtd Despacho</th>
+              </tr></thead>
+              <tbody id="descartBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ABA HISTÓRICO -->
+        <div id="descTabHistorico" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Despachos</div></div>
+              <button class="btn btn-ghost" onclick="carregarHistoricoDespachos()">↻ Atualizar</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Data</th><th>Empresa Coletora</th><th>Manifesto/NF</th>
+                <th style="text-align:center">Itens</th><th>Responsável</th><th></th>
+              </tr></thead>
+              <tbody id="descHistBody">
+                <tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Atualizar</td></tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       <!-- ── RECUPERADOS ── -->
@@ -2689,6 +2741,33 @@ tbody tr:hover td{background:var(--bg-hover);}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">Fechar</button>
       <button class="btn btn-primary" id="btnConfirmarDevNR10" style="display:none" onclick="confirmarDevolucaoNR10()">📮 Devolver Selecionados</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DESPACHO RESÍDUOS -->
+<div class="modal-overlay hidden" id="modalDespacho">
+  <div class="modal-box" style="max-width:580px">
+    <div class="modal-header">
+      <div><div class="modal-title">🚛 Registrar Despacho de Resíduos</div><div style="font-size:11px;color:var(--text-3)">Preencha os dados da coleta</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalDespacho').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Data do Despacho *</label><input id="despData" class="form-input" type="date"></div>
+        <div><label class="form-label">Empresa Coletora *</label><input id="despEmpresa" class="form-input" placeholder="Ex: EcoResíduos Ltda"></div>
+      </div>
+      <div><label class="form-label">Nº Manifesto / NF</label><input id="despManifesto" class="form-input" placeholder="Ex: MTR-12345 ou NF-678"></div>
+      <div><label class="form-label">Observação</label><input id="despObs" class="form-input" placeholder="Observações adicionais..."></div>
+      <div><label class="form-label">Link PDF (Drive)</label><input id="despPdf" class="form-input" placeholder="https://drive.google.com/..."></div>
+
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens Selecionados para Despacho</div>
+      <div id="despItensLista" style="display:flex;flex-direction:column;gap:6px;max-height:250px;overflow-y:auto"></div>
+      <div id="despSemItens" style="text-align:center;color:#ef4444;font-size:12px;display:none">⚠️ Nenhum item selecionado. Volte e selecione os itens.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalDespacho').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" style="background:#22c55e;border-color:#22c55e" onclick="confirmarDespacho()">✅ Confirmar Despacho</button>
     </div>
   </div>
 </div>
@@ -8289,27 +8368,143 @@ async function testarEmailViaturas() {
 // ═══════════════════════════════════════════
 // DESCARTE
 // ═══════════════════════════════════════════
+let _descartData = [];
+
+function showDescTab(tab) {
+  const isSaldo = tab === 'saldo';
+  document.getElementById('descTabSaldo').style.display    = isSaldo ? '' : 'none';
+  document.getElementById('descTabHistorico').style.display = isSaldo ? 'none' : '';
+  document.getElementById('descTab1').classList.toggle('active', isSaldo);
+  document.getElementById('descTab2').classList.toggle('active', !isSaldo);
+  if (!isSaldo) carregarHistoricoDespachos();
+}
+
+function toggleSelectAllDesc(checked) {
+  document.querySelectorAll('.desc-check').forEach(cb => { cb.checked = checked; });
+}
+
 async function carregarDescarte() {
   const tbody = document.getElementById('descartBody');
   if (!tbody) return;
-  const data = await api('/laudos/descarte');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const [dataDesc, dataDesp] = await Promise.all([
+    api('/laudos/descarte'),
+    api('/laudos/despachos'),
+  ]);
+
+  _descartData = dataDesc?.data || [];
+  const totalDespachos = dataDesp?.data?.length || 0;
+
+  // KPIs
+  const totalQtd = _descartData.reduce((s,i) => s + Number(i.saldo_residuo||0), 0);
+  document.getElementById('descKpiTotal').textContent    = _descartData.filter(i => Number(i.saldo_residuo||0) > 0).length;
+  document.getElementById('descKpiQtd').textContent      = totalQtd;
+  document.getElementById('descKpiDespachos').textContent = totalDespachos;
+
+  const lista = _descartData.filter(i => Number(i.saldo_residuo||0) > 0);
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum material aguardando descarte</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(i => `<tr>
+    <td><input type="checkbox" class="desc-check" data-id="${i.item_id}" data-nome="${i.nome_item||'—'}" data-cod="${i.codigo_item||''}" data-max="${i.saldo_residuo||0}" style="cursor:pointer"></td>
+    <td class="td-main">${i.nome_item||'—'}</td>
+    <td class="td-mono">${i.codigo_item||'—'}</td>
+    <td style="text-align:center;font-size:11px">${i.unidade_med||'UN'}</td>
+    <td style="text-align:center;font-weight:600;color:#ef4444">${i.saldo_residuo||0}</td>
+    <td style="text-align:center">
+      <input type="number" min="1" max="${i.saldo_residuo||0}" value="${i.saldo_residuo||0}"
+        class="form-input desc-qtd" style="width:70px;font-size:12px;text-align:center" data-id="${i.item_id}">
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalDespacho() {
+  // Pega itens selecionados
+  const checks = document.querySelectorAll('.desc-check:checked');
+  if (!checks.length) { toast('Selecione pelo menos um item','warn'); return; }
+
+  document.getElementById('despData').value     = new Date().toISOString().split('T')[0];
+  document.getElementById('despEmpresa').value  = '';
+  document.getElementById('despManifesto').value= '';
+  document.getElementById('despObs').value      = '';
+  document.getElementById('despPdf').value      = '';
+
+  const lista = document.getElementById('despItensLista');
+  const semItens = document.getElementById('despSemItens');
+
+  const itens = [...checks].map(cb => {
+    const qtdEl = document.querySelector(`.desc-qtd[data-id="${cb.dataset.id}"]`);
+    const qtd = parseInt(qtdEl?.value)||0;
+    return { item_id: cb.dataset.id, nome: cb.dataset.nome, codigo: cb.dataset.cod, quantidade: qtd };
+  }).filter(it => it.quantidade > 0);
+
+  if (!itens.length) { toast('Quantidade deve ser maior que zero','warn'); return; }
+
+  semItens.style.display = 'none';
+  lista.innerHTML = itens.map(it=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nome}<div style="font-size:10px;color:var(--text-3)">${it.codigo}</div></div>
+      <span style="font-size:13px;font-weight:700;color:#ef4444">${it.quantidade} un</span>
+    </div>`).join('');
+
+  // Salva itens no modal para usar no confirmar
+  document.getElementById('modalDespacho').dataset.itens = JSON.stringify(itens);
+  document.getElementById('modalDespacho').classList.remove('hidden');
+}
+
+async function confirmarDespacho() {
+  const data     = document.getElementById('despData').value;
+  const empresa  = document.getElementById('despEmpresa').value.trim();
+  const manifesto= document.getElementById('despManifesto').value.trim();
+  const obs      = document.getElementById('despObs').value.trim();
+  const pdfUrl   = document.getElementById('despPdf').value.trim();
+
+  if (!data || !empresa) { toast('Data e empresa coletora obrigatórios','warn'); return; }
+
+  const itens = JSON.parse(document.getElementById('modalDespacho').dataset.itens||'[]');
+  if (!itens.length) { toast('Nenhum item selecionado','warn'); return; }
+
+  const res = await api('/laudos/despachos', {
+    method: 'POST',
+    body: JSON.stringify({ data_despacho: data, empresa, manifesto, observacao: obs, pdf_url: pdfUrl, itens })
+  });
+
+  if (res?.ok) {
+    toast('Despacho registrado com sucesso!','success');
+    document.getElementById('modalDespacho').classList.add('hidden');
+    carregarDescarte();
+  } else toast(res?.erro||'Erro ao registrar despacho','error');
+}
+
+async function carregarHistoricoDespachos() {
+  const tbody = document.getElementById('descHistBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/laudos/despachos');
   const lista = data?.data || [];
-  document.getElementById('descKpiTotal').textContent = lista.length;
-  document.getElementById('descKpiQtd').textContent   = lista.reduce((s,i)=>s+Number(i.saldo_residuo||0),0);
-  const valor = lista.reduce((s,i)=>{ const it=(_itens||[]).find(x=>x.id===i.item_id); return s+(Number(i.saldo_residuo||0)*Number(it?.valor_un||0)); },0);
-  document.getElementById('descKpiValor').textContent = valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-  tbody.innerHTML = lista.length ? lista.map(i=>{
-    const it = (_itens||[]).find(x=>x.id===i.item_id);
-    const vUn = Number(it?.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    const vTot = (Number(i.saldo_residuo||0)*Number(it?.valor_un||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Nenhum despacho registrado</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(d => {
+    let itens = []; try { itens = JSON.parse(d.itens_json||'[]'); } catch {}
+    const resumo = itens.slice(0,2).map(i=>i.nome||'—').join(', ') + (itens.length>2?` +${itens.length-2}`:'');
     return `<tr>
-      <td class="td-main">${i.nome_item||'—'}</td>
-      <td class="td-mono">${i.codigo_item||'—'}</td>
-      <td style="text-align:center;font-weight:600;color:#ef4444">${i.saldo_residuo||0} ${i.unidade_med||'UN'}</td>
-      <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
-      <td style="text-align:right;font-size:11px;font-weight:600">${vTot}</td>
+      <td>${formatarData(d.data_despacho)}</td>
+      <td class="td-main">${d.empresa||'—'}</td>
+      <td style="font-size:11px;font-family:var(--font-mono)">${d.manifesto||'—'}</td>
+      <td style="text-align:center;font-size:11px;color:var(--text-3)" title="${itens.map(i=>i.nome+': '+i.quantidade).join('\n')}">${itens.length} item(ns)</td>
+      <td style="font-size:11px;color:var(--text-3)">${d.usuario||'—'}</td>
+      <td>${d.pdf_url?`<a href="${d.pdf_url}" target="_blank" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">📄 PDF</a>`:'<span style="color:var(--text-3);font-size:11px">—</span>'}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum descarte</div></div></td></tr>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════
