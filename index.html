@@ -1784,7 +1784,41 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-devolucao-enel"><div class="empty-state"><div class="es-icon">↩️</div><div class="es-title">Devolução ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Medidores</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-estoque-enel"><div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Estoque ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-ficha-epi"><div class="empty-state"><div class="es-icon">🔖</div><div class="es-title">Ficha EPI</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── FICHA EPI ── -->
+      <div class="view" id="view-ficha-epi">
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Ficha de EPI 🔖</div>
+            <div style="font-size:12px;color:var(--text-3)">Histórico de entrega por colaborador</div>
+          </div>
+          <div id="fichaEpiKpi" style="font-size:13px;color:var(--text-3)"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Colaboradores com Ficha</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="fichaEpiBusca" placeholder="Buscar por nome ou matrícula..." oninput="filtrarFichaEPI()">
+              <button class="btn btn-ghost" onclick="carregarFichaEPI()">↻</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Colaborador</th>
+              <th style="text-align:center">Matrícula</th>
+              <th>Função</th>
+              <th style="text-align:center">Registros</th>
+              <th style="text-align:center">Última Entrega</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="fichaEpiBody">
+              <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <!-- ── LAUDOS NR10 ── -->
       <div class="view" id="view-laudos">
 
@@ -2747,6 +2781,65 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL FICHA EPI -->
+<div class="modal-overlay hidden" id="modalFichaEPI" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:860px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📋 Ficha de EPI</div>
+        <div style="font-size:11px;color:var(--text-3)">Histórico individual de entrega</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modalFichaEPI').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Dados da empresa -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;background:var(--bg)">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div><div style="font-size:10px;color:var(--text-3)">EMPRESA</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1)" id="fichaEmpresa">CENEGED</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">CNPJ</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1)" id="fichaCNPJ">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">FILIAL</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text-1)" id="fichaFilial">—</div></div>
+        </div>
+      </div>
+
+      <!-- Dados do colaborador -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:var(--accent-text);text-transform:uppercase;margin-bottom:8px">👤 Dados do Colaborador</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+          <div><div style="font-size:10px;color:var(--text-3)">NOME</div><div id="fichaModalNome" style="font-size:13px;font-weight:600;color:var(--text-1)">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">MATRÍCULA</div><div id="fichaModalMatricula" style="font-size:13px;font-weight:600;color:var(--text-1)">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">FUNÇÃO</div><div id="fichaModalFuncao" style="font-size:13px;font-weight:600;color:var(--text-1)">—</div></div>
+          <div><div style="font-size:10px;color:var(--text-3)">ADMISSÃO</div><div id="fichaModalAdmissao" style="font-size:13px;font-weight:600;color:var(--text-1)">—</div></div>
+        </div>
+      </div>
+
+      <!-- Tabela de histórico -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Histórico de Entrega de EPI</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:600px">
+          <thead><tr>
+            <th style="padding:10px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Equipamento</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data Entrega</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">CA</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data Devolução</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Situação</th>
+            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Assinatura</th>
+          </tr></thead>
+          <tbody id="fichaModalBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="gerarPdfFicha()">📄 Gerar PDF</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalFichaEPI').classList.add('hidden')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL RECUPERAR ITEM NR10 -->
 <div class="modal-overlay hidden" id="modalRecuperar">
   <div class="modal-box" style="max-width:480px">
@@ -2986,9 +3079,10 @@ function onViewLoad(nome) {
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
-  if (nome === 'laudos')             { 
+  if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
+  if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
-    if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo(); 
+    if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo();
   }
   if (nome === 'viaturas')           carregarViaturas();
   if (nome === 'descarte')           { if (!_itens.length) carregarItensAtendimento().then(carregarDescarte); else carregarDescarte(); }
@@ -8633,6 +8727,87 @@ async function confirmarRecuperacao() {
     // Atualiza laudos NR10 se estiver carregado
     if (__LAUDOS_NR10__?.lista?.length) laudosCarregar_();
   } else toast(res?.erro||'Erro ao recuperar','error');
+}
+
+// ═══════════════════════════════════════════
+// FICHA EPI
+// ═══════════════════════════════════════════
+let _fichaEpiData = [];
+
+async function carregarFichaEPI() {
+  const tbody = document.getElementById('fichaEpiBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const data = await api('/ficha-epi');
+  _fichaEpiData = data?.data || [];
+  const kpi = document.getElementById('fichaEpiKpi');
+  if (kpi) kpi.textContent = `${_fichaEpiData.length} colaborador(es) com ficha`;
+  filtrarFichaEPI();
+}
+
+function filtrarFichaEPI() {
+  const q = (document.getElementById('fichaEpiBusca')?.value||'').toLowerCase();
+  const lista = q ? _fichaEpiData.filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.matricula||'').toLowerCase().includes(q)) : _fichaEpiData;
+  const tbody = document.getElementById('fichaEpiBody');
+  tbody.innerHTML = lista.length ? lista.map(c=>`<tr>
+    <td class="td-main">${c.nome||'—'}</td>
+    <td style="text-align:center;font-family:var(--font-mono)">${c.matricula||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${c.funcao||'—'}</td>
+    <td style="text-align:center;font-size:12px;font-weight:600;color:var(--accent-text)">${c.total||0}</td>
+    <td style="text-align:center;font-size:11px">${formatarData(c.ultima_entrega)}</td>
+    <td><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" onclick="abrirFichaEPI('${c.colaborador_id}','${(c.nome||'').replace(/'/g,"\\'")}','${c.matricula||''}','${(c.funcao||'').replace(/'/g,"\\'")}')">📋 Ver Ficha</button></td>
+  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">🔖</div><div class="es-title">Nenhuma ficha encontrada</div></div></td></tr>`;
+}
+
+async function abrirFichaEPI(colabId, nome, matricula, funcao) {
+  // Preenche header
+  const unidadeNome = GCA.unidade === 'marica' ? 'FILIAL MARICÁ' : 'FILIAL RIO DAS OSTRAS';
+  const cnpj = GCA.unidade === 'marica' ? '07.698.801/0006-26' : '07.698.801/0007-07';
+  document.getElementById('fichaEmpresa').textContent = 'CENEGED ENERGIA POSITIVA';
+  document.getElementById('fichaCNPJ').textContent    = cnpj;
+  document.getElementById('fichaFilial').textContent  = unidadeNome;
+  document.getElementById('fichaModalNome').textContent      = nome;
+  document.getElementById('fichaModalMatricula').textContent = matricula;
+  document.getElementById('fichaModalFuncao').textContent    = funcao;
+
+  // Admissão do colaborador
+  const colab = _colaboradores.find(c=>c.id===colabId);
+  document.getElementById('fichaModalAdmissao').textContent = colab?.data_admissao ? formatarData(colab.data_admissao) : '—';
+
+  // Loading
+  document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
+  document.getElementById('modalFichaEPI').classList.remove('hidden');
+
+  // Busca registros
+  const data = await api(`/ficha-epi/${colabId}`);
+  const lista = data?.data || [];
+
+  if (!lista.length) {
+    document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum registro encontrado</td></tr>';
+    return;
+  }
+
+  document.getElementById('fichaModalBody').innerHTML = lista.map((r,i) => {
+    const situacao = r.data_devolucao
+      ? `<span style="color:var(--text-3);font-size:10px">Devolvido</span>`
+      : `<span style="color:#22c55e;font-size:10px;font-weight:600">Em uso</span>`;
+    const assinaturaTag = r.assinatura
+      ? `<span style="color:#22c55e;font-size:10px">✅ Assinado</span>`
+      : `<span style="color:#f59e0b;font-size:10px">⏳ Pendente</span>`;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px;font-size:12px;color:var(--text-1)">${r.nome_item||'—'}</td>
+      <td style="padding:10px;text-align:center;font-size:12px;font-weight:600">${r.quantidade||1}</td>
+      <td style="padding:10px;text-align:center;font-size:11px">${formatarData(r.data_entrega)}</td>
+      <td style="padding:10px;text-align:center;font-size:11px;font-family:var(--font-mono)">${r.ca||'—'}</td>
+      <td style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">${r.data_devolucao?formatarData(r.data_devolucao):'—'}</td>
+      <td style="padding:10px;text-align:center">${situacao}</td>
+      <td style="padding:10px;text-align:center">${assinaturaTag}</td>
+    </tr>`;
+  }).join('');
+}
+
+function gerarPdfFicha() {
+  toast('PDF da ficha EPI em desenvolvimento','info');
 }
 
 // ── ENTER no login ──
