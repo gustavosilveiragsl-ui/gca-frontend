@@ -1785,10 +1785,182 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Medidores</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-estoque-enel"><div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Estoque ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <div class="view" id="view-ficha-epi"><div class="empty-state"><div class="es-icon">🔖</div><div class="es-title">Ficha EPI</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-laudos"><div class="empty-state"><div class="es-icon">📝</div><div class="es-title">Laudos NR10</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-viaturas"><div class="empty-state"><div class="es-icon">🚗</div><div class="es-title">Laudos Viaturas</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-descarte"><div class="empty-state"><div class="es-icon">🗑️</div><div class="es-title">Descarte</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-recuperados"><div class="empty-state"><div class="es-icon">♻️</div><div class="es-title">Recuperados</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ── LAUDOS NR10 ── -->
+      <div class="view" id="view-laudos">
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Gestão de Laudos NR-10 ⚡</div>
+            <div style="font-size:12px;color:var(--text-3)">Controle por item + número de série, com vencimento e status</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="abrirFormNovoSerial()">+ Novo Serial</button>
+            <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
+            <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
+          </div>
+        </div>
+
+        <!-- Formulário novo serial (colapsável) -->
+        <div id="formNovoSerial" class="card hidden" style="margin-bottom:16px;border:1px solid rgba(34,197,94,.3)">
+          <div class="card-header"><div class="card-title" style="color:#22c55e">+ Cadastrar Novo Serial</div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+            <div style="position:relative">
+              <input id="nsItemBusca" class="form-input" placeholder="Buscar item NR10..." oninput="filtrarItensNS(this.value)" onblur="setTimeout(()=>document.getElementById('nsItemSug').classList.add('hidden'),200)" autocomplete="off">
+              <div id="nsItemSug" class="autocomplete-list hidden"></div>
+              <input type="hidden" id="nsItemId">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase">
+              <select id="nsStatus" class="form-input">
+                <option value="ESTOQUE">📦 Estoque</option>
+              </select>
+            </div>
+            <div id="nsMsgConsistencia" style="font-size:11px;min-height:16px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" style="flex:1;justify-content:center;background:#22c55e;border-color:#22c55e" onclick="salvarNovoSerial()">Salvar Serial</button>
+              <button class="btn btn-ghost" onclick="fecharFormNovoSerial()">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div id="laudosContadores" class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px"></div>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:12px">
+          <div style="padding:12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+            <div><label class="form-label">Buscar item / serial</label><input id="laudoFiltro" class="form-input" placeholder="Nome ou serial..." oninput="laudosRender_()"></div>
+            <div><label class="form-label">Status</label>
+              <select id="laudoFiltroStatus" class="form-input" onchange="laudosRender_()">
+                <option value="">Todos</option>
+                <option value="OK">✅ OK</option>
+                <option value="ALERTA_30">⚠️ Alerta 30d</option>
+                <option value="VENCIDO">❌ Vencido</option>
+                <option value="SEM_LAUDO">📋 Sem Laudo</option>
+              </select>
+            </div>
+            <div><label class="form-label">Local</label>
+              <select id="laudoFiltroLocal" class="form-input" onchange="laudosRender_()">
+                <option value="">Todos</option>
+                <option value="ESTOQUE">📦 Estoque</option>
+                <option value="COM_COLAB">👤 Com Colaborador</option>
+                <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
+              </select>
+            </div>
+            <div><label class="form-label">Venc. de</label><input id="laudoFiltroVencDe" class="form-input" type="date" onchange="laudosRender_()"></div>
+            <div><label class="form-label">Venc. até</label><input id="laudoFiltroVencAte" class="form-input" type="date" onchange="laudosRender_()"></div>
+            <div style="display:flex;gap:6px;padding-bottom:2px">
+              <button class="btn btn-ghost" style="font-size:11px" onclick="laudosLimparFiltros_()">Limpar</button>
+              <button class="btn btn-ghost" onclick="laudosCarregar_()">↻</button>
+            </div>
+          </div>
+          <div id="laudoInfo" style="padding:0 12px 8px;font-size:11px;color:var(--text-3)"></div>
+        </div>
+
+        <!-- Tabela agrupada -->
+        <div class="card" style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse" id="tbLaudos">
+            <thead><tr style="border-bottom:1px solid var(--border)">
+              <th style="padding:10px;text-align:left;font-size:10px;color:var(--text-3)">Item</th>
+              <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3)">Seriais</th>
+              <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3)">Localização</th>
+              <th style="padding:10px;font-size:10px;color:var(--text-3)" colspan="2">Status</th>
+              <th style="padding:10px;font-size:10px;color:var(--text-3)" colspan="2">Estoque</th>
+            </tr></thead>
+            <tbody id="tbLaudosTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- ── LAUDOS VIATURAS ── -->
+      <div class="view" id="view-viaturas">
+        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Laudo</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+              <input type="hidden" id="viatEditId">
+              <div><label class="form-label">Placa *</label><input id="viatPlaca" class="form-input" placeholder="Ex: ABC-1234" style="text-transform:uppercase"></div>
+              <div><label class="form-label">Tipo de Laudo *</label>
+                <select id="viatTipo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Tacógrafo">Tacógrafo</option>
+                  <option value="Extintor">Extintor</option>
+                  <option value="Suspensão">Suspensão</option>
+                  <option value="Elétrica">Elétrica</option>
+                  <option value="Inspeção Veicular">Inspeção Veicular</option>
+                  <option value="CRLV">CRLV</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div><label class="form-label">Data de Vencimento *</label><input id="viatVenc" class="form-input" type="date"></div>
+              <div><label class="form-label">Dias de Alerta</label><input id="viatAlerta" class="form-input" type="number" value="30" placeholder="30"></div>
+              <div><label class="form-label">Link PDF (Drive)</label><input id="viatPdf" class="form-input" placeholder="https://drive.google.com/..."></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLaudoViatura()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparFormViatura()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Laudos de Viaturas</div></div>
+              <div class="card-actions">
+                <input class="search-box" type="text" placeholder="Buscar placa..." oninput="filtrarTabela('viatBody',this.value,[0,1])">
+                <select class="form-input" id="viatFiltroStatus" style="width:140px;font-size:11px" onchange="renderViaturas()">
+                  <option value="">Todos</option>
+                  <option value="vencido">❌ Vencidos</option>
+                  <option value="alerta">⚠️ Alerta</option>
+                  <option value="ok">✅ OK</option>
+                </select>
+                <button class="btn btn-ghost" onclick="carregarViaturas()">↻</button>
+              </div>
+            </div>
+            <table><thead><tr><th>Placa</th><th>Tipo</th><th>Vencimento</th><th>Dias</th><th>Status</th><th></th></tr></thead>
+            <tbody id="viatBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+      <!-- ── DESCARTE ── -->
+      <div class="view" id="view-descarte">
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Total Itens</span></div><div class="kpi-value" id="descKpiTotal">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Qtd Total</span></div><div class="kpi-value" id="descKpiQtd" style="color:#ef4444">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Valor Estimado</span></div><div class="kpi-value" id="descKpiValor" style="font-size:18px">—</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">🗑️ Gestão de Descartes</div><div class="card-sub">Materiais inutilizados e descartados</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarTabela('descartBody',this.value,[0,1])">
+              <button class="btn btn-ghost" onclick="carregarDescarte()">↻</button>
+            </div>
+          </div>
+          <table><thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Saldo</th><th style="text-align:right">Valor Unit.</th><th style="text-align:right">Valor Total</th></tr></thead>
+          <tbody id="descartBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
+      <!-- ── RECUPERADOS ── -->
+      <div class="view" id="view-recuperados">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">♻️ Materiais para Recuperação</div><div class="card-sub">Itens aguardando manutenção ou laudo</div></div>
+            <div class="card-actions">
+              <input class="search-box" type="text" id="recupBusca" placeholder="Buscar item ou colaborador..." oninput="renderRecuperados()">
+              <select class="form-input" id="recupFiltroMotivo" style="width:180px;font-size:11px" onchange="renderRecuperados()">
+                <option value="">Todos os motivos</option>
+                <option value="Troca recuperação">Troca recuperação</option>
+                <option value="Troca por manutenção">Troca por manutenção</option>
+                <option value="Laudar">Aguardando laudo</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarRecuperados()">↻</button>
+            </div>
+          </div>
+          <table><thead><tr>
+            <th>Item</th><th>Serial</th><th>Colaborador</th><th>Motivo</th><th>Data</th><th>Status</th><th></th>
+          </tr></thead>
+          <tbody id="recupBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody></table>
+        </div>
+      </div>
       <div class="view" id="view-indicadores"><div class="empty-state"><div class="es-icon">📈</div><div class="es-title">Indicadores</div><div class="es-sub">Em desenvolvimento</div></div></div>
       <!-- ── ARMAZÉNS ── -->
       <div class="view" id="view-armazens">
@@ -2416,6 +2588,29 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL EDITAR LAUDO NR10 -->
+<div class="modal-overlay hidden" id="modalEditarLaudo">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div><div class="modal-title">✏️ Editar Laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="laudoIdAtivo">
+      <div><label class="form-label">Lote / Nº Laudo</label><input id="laudoLote" class="form-input" placeholder="Ex: LOT-2024-001"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Data do Ensaio *</label><input id="laudoDataEnsaio" class="form-input" type="date"></div>
+        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" placeholder="Ex: 365"></div>
+      </div>
+      <div><label class="form-label">Link PDF do Laudo (Drive)</label><input id="laudoAnexoUrl" class="form-input" placeholder="https://drive.google.com/..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLaudo()">Salvar Laudo</button>
+    </div>
+  </div>
+</div>
+
 <div id="toastContainer"></div>
 
 <script>
@@ -2530,6 +2725,10 @@ function onViewLoad(nome) {
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
+  if (nome === 'laudos')             { if (!_itens.length) carregarItensAtendimento().then(laudosCarregar_); else laudosCarregar_(); }
+  if (nome === 'viaturas')           carregarViaturas();
+  if (nome === 'descarte')           { if (!_itens.length) carregarItensAtendimento().then(carregarDescarte); else carregarDescarte(); }
+  if (nome === 'recuperados')        carregarRecuperados();
   if (nome === 'consulta-itens')     carregarConsultaItens();
   if (nome === 'consulta-colaboradores') carregarConsultaColabs();
   if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
@@ -7306,6 +7505,368 @@ async function editarPCItem(idx, itemId) {
     toast('PC atualizado!', 'success');
   } else toast(res?.erro||'Erro ao salvar','error');
 }
+
+// ═══════════════════════════════════════════
+// LAUDOS NR10
+// ═══════════════════════════════════════════
+let __LAUDOS_NR10__ = { lista: [], selecionado: null };
+
+function abrirFormNovoSerial() { document.getElementById('formNovoSerial').classList.remove('hidden'); }
+function fecharFormNovoSerial() {
+  document.getElementById('formNovoSerial').classList.add('hidden');
+  ['nsItemBusca','nsItemId','nsSerial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nsMsgConsistencia').textContent='';
+}
+
+function filtrarItensNS(q) {
+  const sug = document.getElementById('nsItemSug');
+  if (q.length < 2) { sug.classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i=>i.requer_ensaio && ((i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase()))).slice(0,10);
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(i=>`<div class="autocomplete-item" onclick="selecionarItemNS('${i.id}','${(i.descricao+' ('+i.codigo+')').replace(/'/g,"\\'")}')"><strong>${i.descricao}</strong> <span style="color:var(--text-3);font-size:11px">${i.codigo}</span></div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function selecionarItemNS(id, texto) {
+  document.getElementById('nsItemBusca').value = texto;
+  document.getElementById('nsItemId').value = id;
+  document.getElementById('nsItemSug').classList.add('hidden');
+  // Verifica consistência
+  const msg = document.getElementById('nsMsgConsistencia');
+  msg.style.color = 'var(--text-3)';
+  msg.textContent = '⏳ Verificando estoque...';
+  const seriais = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
+  const saldo = _estoqueData.find(s=>s.item_id===id)?.saldo||0;
+  if (seriais > saldo) { msg.style.color='#ef4444'; msg.textContent=`⚠️ ${seriais} seriais no estoque mas saldo é ${saldo}`; }
+  else if (seriais < saldo) { msg.style.color='#f59e0b'; msg.textContent=`⚠️ Faltam ${saldo-seriais} serial(is) para o saldo de ${saldo}`; }
+  else { msg.style.color='#22c55e'; msg.textContent=`✅ Consistente: ${seriais} serial(is) para ${saldo} em estoque`; setTimeout(()=>msg.textContent='',3000); }
+}
+
+async function salvarNovoSerial() {
+  const itemId = document.getElementById('nsItemId').value;
+  const serial  = document.getElementById('nsSerial').value.trim().toUpperCase().replace(/\s+/g,'');
+  const status  = document.getElementById('nsStatus').value;
+  const item    = (_itens||[]).find(i=>i.id===itemId);
+  if (!itemId || !serial) { toast('Item e serial obrigatórios','warn'); return; }
+  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status }) });
+  if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+function laudosAtualizarContadores_(lista) {
+  const el = document.getElementById('laudosContadores');
+  if (!el) return;
+  const total=lista.length, ok=lista.filter(x=>x.status==='OK').length,
+    alerta=lista.filter(x=>x.status==='ALERTA_30').length,
+    vencido=lista.filter(x=>x.status==='VENCIDO').length,
+    semLaudo=lista.filter(x=>x.status==='SEM_LAUDO').length;
+  el.innerHTML = [
+    ['Total Ativos',total,'var(--accent-text)'],
+    ['OK',ok,'#22c55e'],['Alerta 30d',alerta,'#f59e0b'],
+    ['Vencidos',vencido,'#ef4444'],['Sem Laudo',semLaudo,'var(--text-3)'],
+  ].map(([l,v,c])=>`<div class="kpi-card"><div class="kpi-value" style="color:${c}">${v}</div><div class="kpi-label">${l}</div></div>`).join('');
+}
+
+function laudosLimparFiltros_() {
+  ['laudoFiltro','laudoFiltroStatus','laudoFiltroLocal','laudoFiltroVencDe','laudoFiltroVencAte'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  laudosRender_();
+}
+
+function laudosRender_() {
+  const texto  = (document.getElementById('laudoFiltro')?.value||'').toLowerCase();
+  const status = document.getElementById('laudoFiltroStatus')?.value||'';
+  const local  = document.getElementById('laudoFiltroLocal')?.value||'';
+  const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
+  const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
+  const tbody  = document.getElementById('tbLaudosTbody');
+  const info   = document.getElementById('laudoInfo');
+  if (!tbody) return;
+
+  let lista = __LAUDOS_NR10__.lista || [];
+  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
+  if (status) lista = lista.filter(x=>x.status===status);
+  if (local)  lista = lista.filter(x=>x.statusLocal===local);
+  if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
+  if (vencAte)lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)<=vencAte);
+
+  // Agrupa por item
+  const grupos = {};
+  lista.forEach(x=>{ const k=x.itemId||x.itemNome; if(!grupos[k]) grupos[k]={itemId:x.itemId,itemNome:x.itemNome,seriais:[]}; grupos[k].seriais.push(x); });
+  const arr = Object.values(grupos).sort((a,b)=>a.itemNome.localeCompare(b.itemNome));
+
+  if (info) info.textContent = `${arr.length} item(ns) · ${lista.length} serial(is)`;
+  tbody.innerHTML = '';
+
+  if (!arr.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum ativo encontrado</td></tr>`;
+    return;
+  }
+
+  arr.forEach(grupo => {
+    const s = grupo.seriais;
+    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length;
+    const venc=s.filter(x=>x.status==='VENCIDO').length, alrt=s.filter(x=>x.status==='ALERTA_30').length, sem=s.filter(x=>x.status==='SEM_LAUDO').length;
+
+    let badge='';
+    if(venc>0) badge+=`<span style="color:#ef4444;font-size:10px;font-weight:700;margin-right:4px">🔴 ${venc} vencido(s)</span>`;
+    if(alrt>0) badge+=`<span style="color:#f59e0b;font-size:10px;font-weight:700;margin-right:4px">🟡 ${alrt} alerta(s)</span>`;
+    if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
+    if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
+
+    const saldoEst = _estoqueData.find(x=>x.item_id===grupo.itemId)?.saldo||0;
+    const consist = emEst>saldoEst ? `<span style="color:#ef4444;font-size:10px;font-weight:700">⚠️ ${emEst} seriais / ${saldoEst} em estoque</span>`
+      : emEst<saldoEst ? `<span style="color:#f59e0b;font-size:10px">📋 Faltam ${saldoEst-emEst} serial(is)</span>`
+      : `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
+
+    const gid = 'grp_'+grupo.itemId.replace(/[^a-z0-9]/gi,'_');
+    const trGrupo = document.createElement('tr');
+    trGrupo.style.cssText='cursor:pointer;border-bottom:1px solid var(--border);background:var(--accent-soft)';
+    trGrupo.onclick = () => laudosToggleGrupo_(gid);
+    trGrupo.innerHTML = `
+      <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${grupo.itemNome}</td>
+      <td style="padding:12px;text-align:center"><span style="color:var(--accent-text);font-size:11px;font-weight:700">${s.length} serial(is)</span></td>
+      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}</td>
+      <td style="padding:12px" colspan="2">${badge}</td>
+      <td style="padding:12px" colspan="2">${consist}</td>`;
+    tbody.appendChild(trGrupo);
+
+    const trContent = document.createElement('tr');
+    trContent.id = gid;
+    trContent.style.display = 'none';
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.cssText = 'padding:0;background:var(--bg)';
+    td.innerHTML = `<div style="padding:8px 16px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Serial</th>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Local</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Status</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Vencimento</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Dias</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
+        </tr></thead>
+        <tbody>${s.map(x=>{
+          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : '📦 Estoque';
+          const diasCor = x.status==='VENCIDO'?'#ef4444':x.status==='ALERTA_30'?'#f59e0b':'#22c55e';
+          const stBadge = x.status==='OK'?'<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>'
+            :x.status==='VENCIDO'?'<span style="color:#ef4444;font-size:10px;font-weight:700">❌ Vencido</span>'
+            :x.status==='ALERTA_30'?'<span style="color:#f59e0b;font-size:10px;font-weight:700">⚠️ Alerta</span>'
+            :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
+          return `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${x.serial}</td>
+            <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}</td>
+            <td style="padding:8px;text-align:center">${stBadge}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}</td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
+            <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
+              ${x.anexoUrl?`<a href="${x.anexoUrl}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
+              <button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+    trContent.appendChild(td);
+    tbody.appendChild(trContent);
+  });
+}
+
+function laudosToggleGrupo_(gid) {
+  const tr = document.getElementById(gid);
+  const icon = document.getElementById('icon_'+gid);
+  if (!tr) return;
+  const aberto = tr.style.display!=='none';
+  tr.style.display = aberto?'none':'table-row';
+  if (icon) icon.textContent = aberto?'▶':'▼';
+}
+
+async function laudosCarregar_() {
+  const info = document.getElementById('laudoInfo');
+  if (info) info.textContent = '⏳ Carregando laudos...';
+  const data = await api('/laudos/nr10');
+  if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
+  __LAUDOS_NR10__.lista = data.lista || [];
+  laudosAtualizarContadores__(__LAUDOS_NR10__.lista);
+  laudosRender_();
+}
+
+function laudosAtualizarContadores__(lista) { laudosAtualizarContadores_(lista); }
+
+function abrirEditarLaudo(idAtivo) {
+  const x = __LAUDOS_NR10__.lista.find(a=>a.idAtivo===idAtivo);
+  if (!x) return;
+  __LAUDOS_NR10__.selecionado = x;
+  document.getElementById('laudoIdAtivo').value     = idAtivo;
+  document.getElementById('laudoLote').value        = x.loteLaudo||'';
+  document.getElementById('laudoDataEnsaio').value  = x.dataEnsaio?x.dataEnsaio.slice(0,10):'';
+  document.getElementById('laudoValDias').value     = x.validadeDias||'';
+  document.getElementById('laudoAnexoUrl').value    = x.anexoUrl||'';
+  document.getElementById('laudoItemSerial').textContent = `${x.itemNome} · Serial: ${x.serial}`;
+  document.getElementById('modalEditarLaudo').classList.remove('hidden');
+}
+
+async function salvarLaudo() {
+  const id = document.getElementById('laudoIdAtivo').value;
+  const body = {
+    lote_laudo: document.getElementById('laudoLote').value.trim(),
+    dt_ensaio:  document.getElementById('laudoDataEnsaio').value,
+    validade_dias: document.getElementById('laudoValDias').value,
+    anexo_url:  document.getElementById('laudoAnexoUrl').value.trim(),
+  };
+  if (!body.dt_ensaio || !body.validade_dias) { toast('Data de ensaio e validade obrigatórios','warn'); return; }
+  const res = await api(`/laudos/nr10/laudo/${encodeURIComponent(id)}`, { method:'PUT', body: JSON.stringify(body) });
+  if (res?.ok) { toast('Laudo salvo!','success'); document.getElementById('modalEditarLaudo').classList.add('hidden'); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+function abrirLocalizadorNR10() { toast('Localizador NR10 em breve','info'); }
+function abrirDevolucaoNR10()   { toast('Devolução NR10 em breve','info'); }
+
+// ═══════════════════════════════════════════
+// LAUDOS VIATURAS
+// ═══════════════════════════════════════════
+let _viatData = [];
+
+async function carregarViaturas() {
+  const tbody = document.getElementById('viatBody');
+  if (!tbody) return;
+  const data = await api('/laudos/viaturas');
+  _viatData = data?.data || [];
+  renderViaturas();
+}
+
+function renderViaturas() {
+  const tbody = document.getElementById('viatBody');
+  const filtro = document.getElementById('viatFiltroStatus')?.value||'';
+  const hoje = new Date();
+  let lista = _viatData.map(v => {
+    const venc = new Date(v.data_vencimento);
+    const dias = Math.ceil((venc-hoje)/86400000);
+    const alerta = v.dias_alerta||30;
+    const st = dias<0?'vencido':dias<=alerta?'alerta':'ok';
+    return {...v, dias, st};
+  });
+  if (filtro) lista = lista.filter(v=>v.st===filtro);
+  lista.sort((a,b)=>a.dias-b.dias);
+  tbody.innerHTML = lista.length ? lista.map(v=>{
+    const stTag = v.st==='vencido'?'<span style="color:#ef4444;font-weight:700;font-size:10px">❌ Vencido</span>'
+      :v.st==='alerta'?'<span style="color:#f59e0b;font-weight:700;font-size:10px">⚠️ Alerta</span>'
+      :'<span style="color:#22c55e;font-weight:700;font-size:10px">✅ OK</span>';
+    const diasCor = v.st==='vencido'?'#ef4444':v.st==='alerta'?'#f59e0b':'#22c55e';
+    return `<tr>
+      <td class="td-main td-mono">${v.placa}</td>
+      <td style="font-size:11px">${v.tipo_laudo}</td>
+      <td style="font-size:11px">${formatarData(v.data_vencimento)}</td>
+      <td style="text-align:center;font-weight:700;color:${diasCor}">${v.dias}</td>
+      <td>${stTag}</td>
+      <td style="display:flex;gap:4px">
+        ${v.link_pdf?`<a href="${v.link_pdf}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
+        <button class="row-action" onclick="editarViatura('${v.id}')">Editar</button>
+        <button class="row-action" style="color:var(--red)" onclick="excluirViatura('${v.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum laudo</div></div></td></tr>`;
+}
+
+async function salvarLaudoViatura() {
+  const id = document.getElementById('viatEditId').value;
+  const body = {
+    placa:           document.getElementById('viatPlaca').value.trim().toUpperCase(),
+    tipo_laudo:      document.getElementById('viatTipo').value,
+    data_vencimento: document.getElementById('viatVenc').value,
+    dias_alerta:     parseInt(document.getElementById('viatAlerta').value)||30,
+    link_pdf:        document.getElementById('viatPdf').value.trim(),
+  };
+  if (!body.placa||!body.tipo_laudo||!body.data_vencimento) { toast('Placa, tipo e vencimento obrigatórios','warn'); return; }
+  const res = await api(id?`/laudos/viaturas/${id}`:'/laudos/viaturas', { method:id?'PUT':'POST', body:JSON.stringify(body) });
+  if (res?.ok) { toast('Laudo salvo!','success'); limparFormViatura(); carregarViaturas(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+function editarViatura(id) {
+  const v = _viatData.find(x=>x.id===id);
+  if (!v) return;
+  document.getElementById('viatEditId').value  = id;
+  document.getElementById('viatPlaca').value   = v.placa||'';
+  document.getElementById('viatTipo').value    = v.tipo_laudo||'';
+  document.getElementById('viatVenc').value    = v.data_vencimento||'';
+  document.getElementById('viatAlerta').value  = v.dias_alerta||30;
+  document.getElementById('viatPdf').value     = v.link_pdf||'';
+}
+
+async function excluirViatura(id) {
+  if (!confirm('Excluir este laudo?')) return;
+  const res = await api(`/laudos/viaturas/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Laudo excluído!','success'); carregarViaturas(); }
+  else toast(res?.erro||'Erro','error');
+}
+
+function limparFormViatura() {
+  ['viatEditId','viatPlaca','viatVenc','viatPdf'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('viatTipo').selectedIndex=0;
+  document.getElementById('viatAlerta').value='30';
+}
+
+// ═══════════════════════════════════════════
+// DESCARTE
+// ═══════════════════════════════════════════
+async function carregarDescarte() {
+  const tbody = document.getElementById('descartBody');
+  if (!tbody) return;
+  const data = await api('/laudos/descarte');
+  const lista = data?.data || [];
+  document.getElementById('descKpiTotal').textContent = lista.length;
+  document.getElementById('descKpiQtd').textContent   = lista.reduce((s,i)=>s+Number(i.saldo_residuo||0),0);
+  const valor = lista.reduce((s,i)=>{ const it=(_itens||[]).find(x=>x.id===i.item_id); return s+(Number(i.saldo_residuo||0)*Number(it?.valor_un||0)); },0);
+  document.getElementById('descKpiValor').textContent = valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+  tbody.innerHTML = lista.length ? lista.map(i=>{
+    const it = (_itens||[]).find(x=>x.id===i.item_id);
+    const vUn = Number(it?.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    const vTot = (Number(i.saldo_residuo||0)*Number(it?.valor_un||0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return `<tr>
+      <td class="td-main">${i.nome_item||'—'}</td>
+      <td class="td-mono">${i.codigo_item||'—'}</td>
+      <td style="text-align:center;font-weight:600;color:#ef4444">${i.saldo_residuo||0} ${i.unidade_med||'UN'}</td>
+      <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
+      <td style="text-align:right;font-size:11px;font-weight:600">${vTot}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum descarte</div></div></td></tr>`;
+}
+
+// ═══════════════════════════════════════════
+// RECUPERADOS
+// ═══════════════════════════════════════════
+let _recupData = [];
+
+async function carregarRecuperados() {
+  const tbody = document.getElementById('recupBody');
+  if (!tbody) return;
+  const data = await api('/laudos/recuperados');
+  _recupData = data?.data || [];
+  renderRecuperados();
+}
+
+function renderRecuperados() {
+  const tbody  = document.getElementById('recupBody');
+  const q      = (document.getElementById('recupBusca')?.value||'').toLowerCase();
+  const motivo = document.getElementById('recupFiltroMotivo')?.value||'';
+  let lista = _recupData;
+  if (q) lista = lista.filter(r=>(r.item||'').toLowerCase().includes(q)||(r.colaborador||'').toLowerCase().includes(q));
+  if (motivo) lista = lista.filter(r=>(r.motivo||'').includes(motivo));
+  const stColor = s => s==='RECUPERADO'?'#22c55e':s==='DESCARTADO'?'#ef4444':'#f59e0b';
+  tbody.innerHTML = lista.length ? lista.map(r=>`<tr>
+    <td class="td-main">${r.item}</td>
+    <td class="td-mono" style="font-size:11px">${r.serial!=='—'?r.serial:'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${r.colaborador}</td>
+    <td style="font-size:11px"><span style="color:var(--text-2)">${r.motivo}</span></td>
+    <td>${formatarData(r.data)}</td>
+    <td><span style="font-size:10px;font-weight:700;color:${stColor(r.status)}">${r.status}</span></td>
+    <td><button class="row-action" onclick="marcarRecuperado('${r.id}')">✅ Recuperado</button></td>
+  </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum item pendente</div></div></td></tr>`;
+}
+
+async function marcarRecuperado(id) { toast('Em breve: devolução ao estoque','info'); }
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
