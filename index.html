@@ -2639,14 +2639,30 @@ tbody tr:hover td{background:var(--bg-hover);}
       <button class="modal-close" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <!-- Busca colaborador -->
-      <div style="position:relative">
-        <input id="devNR10ColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabDevNR10(this.value)"
-          onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)" autocomplete="off">
-        <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+      <!-- Busca colaborador ou serial -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="form-label">Buscar por Colaborador</label>
+          <div style="position:relative">
+            <input id="devNR10ColabBusca" class="form-input" placeholder="Nome do colaborador..."
+              oninput="filtrarColabDevNR10(this.value)"
+              onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)"
+              autocomplete="off">
+            <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Ou buscar por Serial</label>
+          <div style="display:flex;gap:6px">
+            <input id="devNR10SerialBusca" class="form-input" placeholder="Nº do serial..."
+              style="font-family:var(--font-mono);text-transform:uppercase"
+              onkeydown="if(event.key==='Enter')buscarSerialDev()">
+            <button class="btn btn-ghost" onclick="buscarSerialDev()">🔍</button>
+          </div>
+        </div>
       </div>
       <div id="devNR10Lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
-        <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque um colaborador para ver os seriais</div>
+        <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -7887,9 +7903,9 @@ async function buscarLocalizador() {
   if (hist.length) {
     semHist.style.display = 'none';
     histBody.innerHTML = hist.map(h=>`<tr>
-      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${h.dt||'—'}</td>
-      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${h.tipo||'—'}</td>
-      <td style="padding:6px 8px;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${h.colab||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${(h.dt||'—').replace('T',' ').slice(0,16)}</td>
+      <td style="padding:6px 8px;font-size:11px;font-weight:600;border-bottom:1px solid var(--border)">${h.tipo||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${h.resp||'—'}</td>
       <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${h.obs||'—'}</td>
     </tr>`).join('');
   } else {
@@ -7912,11 +7928,56 @@ function abrirDevolucaoNR10() {
 }
 
 function filtrarColabDevNR10(q) {
-  const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if (q.length < 2) { document.getElementById('devNR10ColabSug').classList.add('hidden'); return; }
+  const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())||(c.matricula||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
   const sug = document.getElementById('devNR10ColabSug');
   if (!lista.length) { sug.classList.add('hidden'); return; }
-  sug.innerHTML = lista.map(c=>`<div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.replace(/'/g,"\\'")}','${c.id}')">${c.nome}<span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''}</span></div>`).join('');
+  sug.innerHTML = lista.map(c=>`
+    <div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.replace(/'/g,"\\'")}','${c.id}')">
+      <strong>${c.nome}</strong>
+      <span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''} • ${c.funcao||''}</span>
+    </div>`).join('');
   sug.classList.remove('hidden');
+}
+
+async function buscarSerialDev() {
+  const serial = document.getElementById('devNR10SerialBusca').value.trim().toUpperCase();
+  if (!serial) { toast('Digite um serial','warn'); return; }
+
+  const lista = document.getElementById('devNR10Lista');
+  lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+
+  // Busca direto nos ativos pelo serial
+  const all = await api('/laudos/nr10/seriais-colab');
+  const seriais = (all?.data||[]).filter(s=>(s.serial||'').toUpperCase().includes(serial));
+
+  if (!seriais.length) {
+    lista.innerHTML = `<div style="text-align:center;color:#ef4444;font-size:12px;padding:20px">Serial "${serial}" não encontrado ou não está com nenhum colaborador</div>`;
+    document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+    return;
+  }
+  renderListaDevNR10(seriais);
+}
+
+function renderListaDevNR10(seriais) {
+  const lista = document.getElementById('devNR10Lista');
+  _devNR10SerialsSelecionados = [];
+  lista.innerHTML = seriais.map(s=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+      <input type="checkbox" class="devnr10-check" data-id="${s.id_ativo}" onchange="atualizarSelecaoDevNR10()" style="width:16px;height:16px;cursor:pointer">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.item||'—'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <span style="font-size:10px;color:var(--accent-text);font-family:var(--font-mono)">🔢 ${s.serial}</span>
+          <span style="font-size:10px;color:var(--text-3)">👤 ${s.nome_colab_atual||'—'}</span>
+          <span style="font-size:10px;color:var(--text-3)">${formatarData(s.dt_ult_mov_raw?.split('T')[0])||'—'}</span>
+        </div>
+      </div>
+      <span style="font-size:10px;color:#a855f7;font-weight:600">COM COLAB</span>
+    </label>`).join('');
+  document.getElementById('btnConfirmarDevNR10').style.display = '';
+  document.getElementById('btnConfirmarDevNR10').textContent = '📮 Devolver Selecionados';
+  document.getElementById('btnConfirmarDevNR10').disabled = true;
 }
 
 async function carregarSeriaisColab(nome, colabId) {
@@ -7927,26 +7988,15 @@ async function carregarSeriaisColab(nome, colabId) {
   const lista = document.getElementById('devNR10Lista');
   lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
 
-  const data = await api(`/laudos/nr10/seriais-colab`);
+  const data = await api('/laudos/nr10/seriais-colab');
   const seriais = (data?.data||[]).filter(s=>(s.nome_colab_atual||'').toLowerCase().includes(nome.toLowerCase()));
 
   if (!seriais.length) {
-    lista.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Nenhum serial encontrado para este colaborador</div>';
+    lista.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Nenhum serial NR10 encontrado para "${nome}"</div>`;
     document.getElementById('btnConfirmarDevNR10').style.display = 'none';
     return;
   }
-
-  lista.innerHTML = seriais.map(s=>`
-    <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
-      <input type="checkbox" class="devnr10-check" data-id="${s.id_ativo}" onchange="atualizarSelecaoDevNR10()" style="width:16px;height:16px;cursor:pointer">
-      <div style="flex:1">
-        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.item||'—'}</div>
-        <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${s.serial} · ${formatarData(s.dt_ult_mov_raw?.split('T')[0])||'—'}</div>
-      </div>
-      <span style="font-size:10px;color:#a855f7;font-weight:600">COM COLAB</span>
-    </label>`).join('');
-
-  document.getElementById('btnConfirmarDevNR10').style.display = '';
+  renderListaDevNR10(seriais);
 }
 
 function atualizarSelecaoDevNR10() {
