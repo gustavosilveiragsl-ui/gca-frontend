@@ -1875,49 +1875,66 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
       <!-- ── LAUDOS VIATURAS ── -->
       <div class="view" id="view-viaturas">
-        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
-          <div class="card">
-            <div class="card-header"><div><div class="card-title">Cadastrar Laudo</div></div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-              <input type="hidden" id="viatEditId">
-              <div><label class="form-label">Placa *</label><input id="viatPlaca" class="form-input" placeholder="Ex: ABC-1234" style="text-transform:uppercase"></div>
-              <div><label class="form-label">Tipo de Laudo *</label>
-                <select id="viatTipo" class="form-input">
-                  <option value="">Selecione...</option>
-                  <option value="Tacógrafo">Tacógrafo</option>
-                  <option value="Extintor">Extintor</option>
-                  <option value="Suspensão">Suspensão</option>
-                  <option value="Elétrica">Elétrica</option>
-                  <option value="Inspeção Veicular">Inspeção Veicular</option>
-                  <option value="CRLV">CRLV</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div><label class="form-label">Data de Vencimento *</label><input id="viatVenc" class="form-input" type="date"></div>
-              <div><label class="form-label">Dias de Alerta</label><input id="viatAlerta" class="form-input" type="number" value="30" placeholder="30"></div>
-              <div><label class="form-label">Link PDF (Drive)</label><input id="viatPdf" class="form-input" placeholder="https://drive.google.com/..."></div>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLaudoViatura()">Salvar</button>
-                <button class="btn btn-ghost" onclick="limparFormViatura()">Limpar</button>
-              </div>
+
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Laudos de Viaturas 🚗</div>
+            <div style="font-size:12px;color:var(--text-3)">Controle de vencimento por placa</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" id="btnViatConfig" onclick="showViatTab('config')">⚙️ Configurações</button>
+            <button class="btn btn-ghost" id="btnViatLista" style="display:none" onclick="showViatTab('lista')">🚗 Laudos</button>
+            <button class="btn btn-primary" onclick="abrirModalViatura(null)">+ Novo Laudo</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Total Placas</span></div><div class="kpi-value" id="viatKpiPlacas" style="color:var(--accent-text)">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">OK</span></div><div class="kpi-value" id="viatKpiOk" style="color:#22c55e">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Alerta</span></div><div class="kpi-value" id="viatKpiAlerta" style="color:#f59e0b">—</div></div>
+          <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Vencidos</span></div><div class="kpi-value" id="viatKpiVenc" style="color:#ef4444">—</div></div>
+        </div>
+
+        <!-- PAINEL LISTA -->
+        <div id="viatPainelLista">
+          <div class="card" style="margin-bottom:12px">
+            <div style="padding:12px;display:flex;gap:8px;align-items:center">
+              <input class="search-box" type="text" id="viatBusca" placeholder="Buscar placa..." oninput="renderViaturasAgrupado()" style="flex:1">
+              <select class="form-input" id="viatFiltroStatus" style="width:150px;font-size:11px" onchange="renderViaturasAgrupado()">
+                <option value="">Todos os status</option>
+                <option value="vencido">❌ Vencidos</option>
+                <option value="alerta">⚠️ Alerta</option>
+                <option value="ok">✅ OK</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarViaturas()">↻</button>
             </div>
           </div>
+          <div id="viatListaEl">
+            <div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- PAINEL CONFIG -->
+        <div id="viatPainelConfig" style="display:none">
           <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Laudos de Viaturas</div></div>
-              <div class="card-actions">
-                <input class="search-box" type="text" placeholder="Buscar placa..." oninput="filtrarTabela('viatBody',this.value,[0,1])">
-                <select class="form-input" id="viatFiltroStatus" style="width:140px;font-size:11px" onchange="renderViaturas()">
-                  <option value="">Todos</option>
-                  <option value="vencido">❌ Vencidos</option>
-                  <option value="alerta">⚠️ Alerta</option>
-                  <option value="ok">✅ OK</option>
-                </select>
-                <button class="btn btn-ghost" onclick="carregarViaturas()">↻</button>
+            <div class="card-header"><div><div class="card-title">📧 Configuração de Alertas por Email</div><div class="card-sub">Emails enviados automaticamente quando laudos vencem ou estão próximos do vencimento</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+              <div>
+                <label class="form-label">Emails para receber alertas <span style="color:var(--text-3);font-weight:400;text-transform:none">(separados por vírgula)</span></label>
+                <textarea id="viatConfigEmails" class="form-input" rows="3" placeholder="email1@ceneged.com, email2@ceneged.com..." style="resize:vertical"></textarea>
               </div>
+              <div>
+                <label class="form-label">Alertar quantos dias antes do vencimento?</label>
+                <input id="viatConfigDias" class="form-input" type="number" min="1" max="180" value="30" style="width:160px">
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" onclick="salvarConfigViaturas()">💾 Salvar Configurações</button>
+                <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="testarEmailViaturas()">📧 Testar Envio</button>
+              </div>
+              <div id="viatConfigMsg" style="font-size:12px;min-height:16px"></div>
             </div>
-            <table><thead><tr><th>Placa</th><th>Tipo</th><th>Vencimento</th><th>Dias</th><th>Status</th><th></th></tr></thead>
-            <tbody id="viatBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -2672,6 +2689,43 @@ tbody tr:hover td{background:var(--bg-hover);}
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">Fechar</button>
       <button class="btn btn-primary" id="btnConfirmarDevNR10" style="display:none" onclick="confirmarDevolucaoNR10()">📮 Devolver Selecionados</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LAUDO VIATURA -->
+<div class="modal-overlay hidden" id="modalViatura">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <div><div class="modal-title" id="viatModalTitulo">Novo Laudo</div></div>
+      <button class="modal-close" onclick="fecharModalViatura()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="viatEditId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Placa *</label><input id="viatPlaca" class="form-input" placeholder="Ex: ABC-1234" style="text-transform:uppercase"></div>
+        <div><label class="form-label">Tipo de Laudo *</label>
+          <select id="viatTipo" class="form-input">
+            <option value="">Selecione...</option>
+            <option value="Tacógrafo">Tacógrafo</option>
+            <option value="Extintor">Extintor</option>
+            <option value="Suspensão">Suspensão</option>
+            <option value="Elétrica">Elétrica</option>
+            <option value="Inspeção Veicular">Inspeção Veicular</option>
+            <option value="CRLV">CRLV</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Data de Vencimento *</label><input id="viatVenc" class="form-input" type="date"></div>
+        <div><label class="form-label">Dias de Alerta</label><input id="viatAlerta" class="form-input" type="number" value="30"></div>
+      </div>
+      <div><label class="form-label">Link PDF (Drive)</label><input id="viatPdf" class="form-input" placeholder="https://drive.google.com/..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalViatura()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLaudoViatura()">Salvar</button>
     </div>
   </div>
 </div>
@@ -8062,49 +8116,120 @@ async function limparDescartes() {
 // ═══════════════════════════════════════════
 let _viatData = [];
 
+function showViatTab(tab) {
+  const isLista = tab === 'lista';
+  document.getElementById('viatPainelLista').style.display  = isLista ? '' : 'none';
+  document.getElementById('viatPainelConfig').style.display = isLista ? 'none' : '';
+  document.getElementById('btnViatConfig').style.display    = isLista ? '' : 'none';
+  document.getElementById('btnViatLista').style.display     = isLista ? 'none' : '';
+  if (!isLista) carregarConfigViaturas();
+}
+
 async function carregarViaturas() {
-  const tbody = document.getElementById('viatBody');
-  if (!tbody) return;
+  document.getElementById('viatListaEl').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 12px"></div><div style="font-size:13px">Carregando viaturas...</div></div>';
   const data = await api('/laudos/viaturas');
   _viatData = data?.data || [];
-  renderViaturas();
+  renderViaturasAgrupado();
 }
 
-function renderViaturas() {
-  const tbody = document.getElementById('viatBody');
+function renderViaturasAgrupado() {
+  const q      = (document.getElementById('viatBusca')?.value||'').toLowerCase();
   const filtro = document.getElementById('viatFiltroStatus')?.value||'';
-  const hoje = new Date();
-  let lista = _viatData.map(v => {
-    const venc = new Date(v.data_vencimento);
-    const dias = Math.ceil((venc-hoje)/86400000);
-    const alerta = v.dias_alerta||30;
-    const st = dias<0?'vencido':dias<=alerta?'alerta':'ok';
+  const el     = document.getElementById('viatListaEl');
+  const hoje   = new Date();
+
+  const todos = _viatData.map(v => {
+    const venc  = new Date(v.data_vencimento);
+    const dias  = Math.ceil((venc - hoje) / 86400000);
+    const alerta = Number(v.dias_alerta||30);
+    const st    = dias < 0 ? 'vencido' : dias <= alerta ? 'alerta' : 'ok';
     return {...v, dias, st};
   });
-  if (filtro) lista = lista.filter(v=>v.st===filtro);
-  lista.sort((a,b)=>a.dias-b.dias);
-  tbody.innerHTML = lista.length ? lista.map(v=>{
-    const stTag = v.st==='vencido'?'<span style="color:#ef4444;font-weight:700;font-size:10px">❌ Vencido</span>'
-      :v.st==='alerta'?'<span style="color:#f59e0b;font-weight:700;font-size:10px">⚠️ Alerta</span>'
-      :'<span style="color:#22c55e;font-weight:700;font-size:10px">✅ OK</span>';
-    const diasCor = v.st==='vencido'?'#ef4444':v.st==='alerta'?'#f59e0b':'#22c55e';
-    return `<tr>
-      <td class="td-main td-mono">${v.placa}</td>
-      <td style="font-size:11px">${v.tipo_laudo}</td>
-      <td style="font-size:11px">${formatarData(v.data_vencimento)}</td>
-      <td style="text-align:center;font-weight:700;color:${diasCor}">${v.dias}</td>
-      <td>${stTag}</td>
-      <td style="display:flex;gap:4px">
-        ${v.link_pdf?`<a href="${v.link_pdf}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
-        <button class="row-action" onclick="editarViatura('${v.id}')">Editar</button>
-        <button class="row-action" style="color:var(--red)" onclick="excluirViatura('${v.id}')">✕</button>
-      </td>
-    </tr>`;
-  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum laudo</div></div></td></tr>`;
+
+  const placas = {};
+  todos.forEach(v => { if (!placas[v.placa]) placas[v.placa] = []; placas[v.placa].push(v); });
+
+  let placasArr = Object.entries(placas).map(([placa, laudos]) => {
+    const st = laudos.some(l=>l.st==='vencido')?'vencido':laudos.some(l=>l.st==='alerta')?'alerta':'ok';
+    const proxVenc = [...laudos].sort((a,b)=>a.dias-b.dias)[0];
+    return { placa, laudos, st, proxVenc };
+  }).sort((a,b) => ({vencido:0,alerta:1,ok:2})[a.st]-({vencido:0,alerta:1,ok:2})[b.st] || a.placa.localeCompare(b.placa));
+
+  if (q) placasArr = placasArr.filter(p=>p.placa.toLowerCase().includes(q));
+  if (filtro) placasArr = placasArr.filter(p=>p.st===filtro);
+
+  document.getElementById('viatKpiPlacas').textContent = Object.keys(placas).length;
+  document.getElementById('viatKpiOk').textContent     = Object.values(placas).filter(l=>!l.some(x=>x.st!=='ok')).length;
+  document.getElementById('viatKpiAlerta').textContent = Object.values(placas).filter(l=>l.some(x=>x.st==='alerta')&&!l.some(x=>x.st==='vencido')).length;
+  document.getElementById('viatKpiVenc').textContent   = Object.values(placas).filter(l=>l.some(x=>x.st==='vencido')).length;
+
+  if (!placasArr.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3);font-size:13px">Nenhuma viatura encontrada</div>'; return; }
+
+  el.innerHTML = placasArr.map(p => {
+    const gid = 'vgp_'+p.placa.replace(/[^a-z0-9]/gi,'_');
+    const nVenc  = p.laudos.filter(l=>l.st==='vencido').length;
+    const nAlerta= p.laudos.filter(l=>l.st==='alerta').length;
+    const vencLabel = p.proxVenc.dias < 0 ? `venceu há ${Math.abs(p.proxVenc.dias)}d` : `vence em ${p.proxVenc.dias}d`;
+    return `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleViatPlaca('${gid}')">
+        <span id="icon_${gid}" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${p.placa}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${p.laudos.length} laudo(s) · ${vencLabel}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${nVenc?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:4px">❌ ${nVenc} vencido(s)</span>`:''}
+          ${nAlerta?`<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:4px">⚠️ ${nAlerta} alerta(s)</span>`:''}
+          ${!nVenc&&!nAlerta?`<span style="font-size:10px;font-weight:700;color:#22c55e">✅ OK</span>`:''}
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirModalViatura('${p.placa}')">+ Laudo</button>
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+        ${p.laudos.map(l=>{
+          const lCor = l.st==='vencido'?'#ef4444':l.st==='alerta'?'#f59e0b':'#22c55e';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${l.tipo_laudo}</div>
+              <div style="font-size:10px;color:var(--text-3)">Vence: ${formatarData(l.data_vencimento)}</div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${lCor};min-width:70px;text-align:center">${l.dias<0?`${Math.abs(l.dias)}d atrás`:`${l.dias}d`}</span>
+            <div style="display:flex;gap:4px">
+              ${l.link_pdf?`<a href="${l.link_pdf}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
+              <button class="row-action" onclick="editarViatura('${l.id}')">✏️</button>
+              <button class="row-action" style="color:var(--red)" onclick="excluirViatura('${l.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
 }
 
+function toggleViatPlaca(gid) {
+  const el = document.getElementById(gid);
+  const icon = document.getElementById('icon_'+gid);
+  if (!el) return;
+  const aberto = el.style.display !== 'none';
+  el.style.display = aberto ? 'none' : '';
+  if (icon) icon.textContent = aberto ? '▶' : '▼';
+}
+
+function abrirModalViatura(placa) {
+  document.getElementById('viatEditId').value = '';
+  document.getElementById('viatPlaca').value  = placa||'';
+  document.getElementById('viatPlaca').readOnly = !!placa;
+  document.getElementById('viatTipo').selectedIndex = 0;
+  document.getElementById('viatVenc').value   = '';
+  document.getElementById('viatAlerta').value = '30';
+  document.getElementById('viatPdf').value    = '';
+  document.getElementById('viatModalTitulo').textContent = placa ? `Novo Laudo — ${placa}` : 'Novo Laudo';
+  document.getElementById('modalViatura').classList.remove('hidden');
+}
+function fecharModalViatura() { document.getElementById('modalViatura').classList.add('hidden'); }
+
 async function salvarLaudoViatura() {
-  const id = document.getElementById('viatEditId').value;
+  const id   = document.getElementById('viatEditId').value;
   const body = {
     placa:           document.getElementById('viatPlaca').value.trim().toUpperCase(),
     tipo_laudo:      document.getElementById('viatTipo').value,
@@ -8114,7 +8239,7 @@ async function salvarLaudoViatura() {
   };
   if (!body.placa||!body.tipo_laudo||!body.data_vencimento) { toast('Placa, tipo e vencimento obrigatórios','warn'); return; }
   const res = await api(id?`/laudos/viaturas/${id}`:'/laudos/viaturas', { method:id?'PUT':'POST', body:JSON.stringify(body) });
-  if (res?.ok) { toast('Laudo salvo!','success'); limparFormViatura(); carregarViaturas(); }
+  if (res?.ok) { toast('Laudo salvo!','success'); fecharModalViatura(); carregarViaturas(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
 
@@ -8123,10 +8248,13 @@ function editarViatura(id) {
   if (!v) return;
   document.getElementById('viatEditId').value  = id;
   document.getElementById('viatPlaca').value   = v.placa||'';
+  document.getElementById('viatPlaca').readOnly = false;
   document.getElementById('viatTipo').value    = v.tipo_laudo||'';
   document.getElementById('viatVenc').value    = v.data_vencimento||'';
   document.getElementById('viatAlerta').value  = v.dias_alerta||30;
   document.getElementById('viatPdf').value     = v.link_pdf||'';
+  document.getElementById('viatModalTitulo').textContent = `Editar — ${v.placa}`;
+  document.getElementById('modalViatura').classList.remove('hidden');
 }
 
 async function excluirViatura(id) {
@@ -8136,10 +8264,26 @@ async function excluirViatura(id) {
   else toast(res?.erro||'Erro','error');
 }
 
-function limparFormViatura() {
-  ['viatEditId','viatPlaca','viatVenc','viatPdf'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('viatTipo').selectedIndex=0;
-  document.getElementById('viatAlerta').value='30';
+function carregarConfigViaturas() {
+  const emails = localStorage.getItem('viat_config_emails')||'';
+  const dias   = localStorage.getItem('viat_config_dias')||'30';
+  const e = document.getElementById('viatConfigEmails'); if(e) e.value = emails;
+  const d = document.getElementById('viatConfigDias');   if(d) d.value = dias;
+}
+
+async function salvarConfigViaturas() {
+  const emails = document.getElementById('viatConfigEmails').value.trim();
+  const dias   = document.getElementById('viatConfigDias').value;
+  const msg    = document.getElementById('viatConfigMsg');
+  localStorage.setItem('viat_config_emails', emails);
+  localStorage.setItem('viat_config_dias', dias);
+  if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Configurações salvas!'; setTimeout(()=>msg.textContent='',3000); }
+}
+
+async function testarEmailViaturas() {
+  const msg = document.getElementById('viatConfigMsg');
+  if (msg) { msg.style.color='#f59e0b'; msg.textContent='⏳ Envio de emails em desenvolvimento...'; }
+  toast('Funcionalidade de email em breve','info');
 }
 
 // ═══════════════════════════════════════════
