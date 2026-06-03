@@ -7933,7 +7933,7 @@ function filtrarColabDevNR10(q) {
   const sug = document.getElementById('devNR10ColabSug');
   if (!lista.length) { sug.classList.add('hidden'); return; }
   sug.innerHTML = lista.map(c=>`
-    <div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.replace(/'/g,"\\'")}','${c.id}')">
+    <div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.toUpperCase().replace(/'/g,"\\'")}','${c.id}')">
       <strong>${c.nome}</strong>
       <span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''} • ${c.funcao||''}</span>
     </div>`).join('');
@@ -7989,7 +7989,12 @@ async function carregarSeriaisColab(nome, colabId) {
   lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
 
   const data = await api('/laudos/nr10/seriais-colab');
-  const seriais = (data?.data||[]).filter(s=>(s.nome_colab_atual||'').toLowerCase().includes(nome.toLowerCase()));
+  // Busca flexível: qualquer parte do nome bate
+  const q = nome.toLowerCase();
+  const seriais = (data?.data||[]).filter(s =>
+    (s.nome_colab_atual||'').toLowerCase().includes(q) ||
+    q.split(' ').every(p => (s.nome_colab_atual||'').toLowerCase().includes(p))
+  );
 
   if (!seriais.length) {
     lista.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Nenhum serial NR10 encontrado para "${nome}"</div>`;
