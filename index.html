@@ -1798,6 +1798,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="abrirFormNovoSerial()">+ Novo Serial</button>
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
+            <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
           </div>
         </div>
 
@@ -7531,15 +7532,35 @@ async function selecionarItemNS(id, texto) {
   document.getElementById('nsItemBusca').value = texto;
   document.getElementById('nsItemId').value = id;
   document.getElementById('nsItemSug').classList.add('hidden');
-  // Verifica consistência
+
   const msg = document.getElementById('nsMsgConsistencia');
-  msg.style.color = 'var(--text-3)';
-  msg.textContent = '⏳ Verificando estoque...';
-  const seriais = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
-  const saldo = _estoqueData.find(s=>s.item_id===id)?.saldo||0;
-  if (seriais > saldo) { msg.style.color='#ef4444'; msg.textContent=`⚠️ ${seriais} seriais no estoque mas saldo é ${saldo}`; }
-  else if (seriais < saldo) { msg.style.color='#f59e0b'; msg.textContent=`⚠️ Faltam ${saldo-seriais} serial(is) para o saldo de ${saldo}`; }
-  else { msg.style.color='#22c55e'; msg.textContent=`✅ Consistente: ${seriais} serial(is) para ${saldo} em estoque`; setTimeout(()=>msg.textContent='',3000); }
+  msg.textContent = '';
+
+  // Calcula consistência
+  const itemLocal = (_itens||[]).find(i=>i.id===id);
+  const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
+  const saldoEst  = Number(_estoqueData.find(s=>s.item_id===id)?.saldo||0);
+  const serialsNecessarios = saldoEst * fatorPar;
+  const serialsEstoque = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
+
+  if (serialsEstoque >= serialsNecessarios && serialsNecessarios > 0) {
+    msg.style.color = '#ef4444';
+    msg.textContent = `🚫 Bloqueado: já tem ${serialsEstoque} serial(is) em estoque para saldo de ${saldoEst}${fatorPar===2?' (PAR×2='+serialsNecessarios+')':''}. Verifique antes de continuar.`;
+    document.getElementById('nsSerial').disabled = true;
+    document.getElementById('nsSerial').style.opacity = '0.4';
+  } else if (serialsEstoque < serialsNecessarios) {
+    const faltam = serialsNecessarios - serialsEstoque;
+    msg.style.color = '#f59e0b';
+    msg.textContent = `⚠️ Faltam ${faltam} serial(is) para consistência (saldo: ${saldoEst}${fatorPar===2?`, PAR×2=${serialsNecessarios}`:''})`;
+    document.getElementById('nsSerial').disabled = false;
+    document.getElementById('nsSerial').style.opacity = '';
+  } else {
+    msg.style.color = '#22c55e';
+    msg.textContent = `✅ Consistente: ${serialsEstoque} serial(is) para ${saldoEst} em estoque`;
+    document.getElementById('nsSerial').disabled = false;
+    document.getElementById('nsSerial').style.opacity = '';
+    setTimeout(()=>msg.textContent='',3000);
+  }
 }
 
 async function salvarNovoSerial() {
@@ -7613,13 +7634,21 @@ function laudosRender_() {
     if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
-    const saldoEst = _estoqueData.find(x=>x.item_id===grupo.itemId)?.saldo||0;
+    const saldoEstObj = _estoqueData.find(x=>x.item_id===grupo.itemId);
+    const saldoEst = Number(saldoEstObj?.saldo||0);
     const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
     const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
     const serialsNecessarios = saldoEst * fatorPar;
-    const consist = emEst>serialsNecessarios ? `<span style="color:#ef4444;font-size:10px;font-weight:700">⚠️ ${emEst} seriais / ${serialsNecessarios} necessários</span>`
-      : emEst<serialsNecessarios ? `<span style="color:#f59e0b;font-size:10px;font-weight:700">📋 Faltam ${serialsNecessarios-emEst} serial(is)${fatorPar===2?' (PAR)':''}</span>`
-      : `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
+    // emEst = seriais com statusLocal === ESTOQUE (já calculado acima)
+    let consist;
+    if (emEst > serialsNecessarios) {
+      consist = `<span style="color:#ef4444;font-size:10px;font-weight:700" title="${emEst} seriais em estoque mas saldo é ${saldoEst}${fatorPar===2?' (PAR×2)':''}">⚠️ ${emEst} seriais / ${saldoEst} em estoque</span>`;
+    } else if (emEst < serialsNecessarios) {
+      const faltam = serialsNecessarios - emEst;
+      consist = `<span style="color:#f59e0b;font-size:10px;font-weight:700" title="Faltam ${faltam} serial(is) para bater com o saldo de ${saldoEst}${fatorPar===2?' (PAR×2)':''}">📋 Faltam ${faltam} serial(is)${fatorPar===2?' (PAR)':''}</span>`;
+    } else {
+      consist = `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
+    }
 
     const gid = 'grp_'+grupo.itemId.replace(/[^a-z0-9]/gi,'_');
     const trGrupo = document.createElement('tr');
@@ -7725,6 +7754,15 @@ async function salvarLaudo() {
 
 function abrirLocalizadorNR10() { toast('Localizador NR10 em breve','info'); }
 function abrirDevolucaoNR10()   { toast('Devolução NR10 em breve','info'); }
+
+async function limparDescartes() {
+  const totalDesc = __LAUDOS_NR10__.lista.filter(x=>x.statusLocal==='DESCARTE').length;
+  if (!totalDesc) { toast('Nenhum serial com status DESCARTE','info'); return; }
+  if (!confirm(`Excluir ${totalDesc} serial(is) com status DESCARTE? Esta ação não pode ser desfeita.`)) return;
+  const res = await api('/laudos/nr10/descartes', { method:'DELETE' });
+  if (res?.ok) { toast(`${res.removidos} serial(is) excluído(s)!`, 'success'); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao excluir','error');
+}
 
 // ═══════════════════════════════════════════
 // LAUDOS VIATURAS
