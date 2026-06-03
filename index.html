@@ -2726,7 +2726,10 @@ function onViewLoad(nome) {
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
-  if (nome === 'laudos')             { if (!_itens.length) carregarItensAtendimento().then(laudosCarregar_); else laudosCarregar_(); }
+  if (nome === 'laudos')             { 
+    const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
+    if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo(); 
+  }
   if (nome === 'viaturas')           carregarViaturas();
   if (nome === 'descarte')           { if (!_itens.length) carregarItensAtendimento().then(carregarDescarte); else carregarDescarte(); }
   if (nome === 'recuperados')        carregarRecuperados();
