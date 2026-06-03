@@ -7614,13 +7614,16 @@ function laudosRender_() {
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
     const saldoEst = _estoqueData.find(x=>x.item_id===grupo.itemId)?.saldo||0;
-    const consist = emEst>saldoEst ? `<span style="color:#ef4444;font-size:10px;font-weight:700">⚠️ ${emEst} seriais / ${saldoEst} em estoque</span>`
-      : emEst<saldoEst ? `<span style="color:#f59e0b;font-size:10px">📋 Faltam ${saldoEst-emEst} serial(is)</span>`
+    const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
+    const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
+    const serialsNecessarios = saldoEst * fatorPar;
+    const consist = emEst>serialsNecessarios ? `<span style="color:#ef4444;font-size:10px;font-weight:700">⚠️ ${emEst} seriais / ${serialsNecessarios} necessários</span>`
+      : emEst<serialsNecessarios ? `<span style="color:#f59e0b;font-size:10px;font-weight:700">📋 Faltam ${serialsNecessarios-emEst} serial(is)${fatorPar===2?' (PAR)':''}</span>`
       : `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
 
     const gid = 'grp_'+grupo.itemId.replace(/[^a-z0-9]/gi,'_');
     const trGrupo = document.createElement('tr');
-    trGrupo.style.cssText='cursor:pointer;border-bottom:1px solid var(--border);background:var(--accent-soft)';
+    trGrupo.style.cssText='cursor:pointer;border-bottom:1px solid var(--border)';
     trGrupo.onclick = () => laudosToggleGrupo_(gid);
     trGrupo.innerHTML = `
       <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${grupo.itemNome}</td>
