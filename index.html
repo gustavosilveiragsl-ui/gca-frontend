@@ -2589,6 +2589,73 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL LOCALIZADOR NR10 -->
+<div class="modal-overlay hidden" id="modalLocalizadorNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div><div class="modal-title">📍 Localizador NR10</div><div style="font-size:11px;color:var(--text-3)">Histórico completo do serial</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalLocalizadorNR10').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px">
+        <input id="locSerial" class="form-input" placeholder="Digite o número de série..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase"
+          onkeydown="if(event.key==='Enter')buscarLocalizador()">
+        <button class="btn btn-primary" onclick="buscarLocalizador()">Buscar</button>
+      </div>
+      <div id="locResultado" style="display:none">
+        <!-- Situação atual -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📌 Situação Atual</div>
+          <div id="locSituacaoAtual" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <!-- Laudo atual -->
+        <div id="locLaudoBox" style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📋 Laudo Atual</div>
+          <div id="locLaudoInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <!-- Histórico -->
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📜 Histórico de Movimentações</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Tipo</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Colaborador</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Obs</th>
+          </tr></thead>
+          <tbody id="locHistoricoBody"></tbody>
+        </table>
+        <div id="locSemHistorico" style="display:none;text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum histórico de movimentação encontrado</div>
+      </div>
+      <div id="locNaoEncontrado" style="display:none;text-align:center;color:#ef4444;font-size:12px;padding:16px">Serial não encontrado</div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DEVOLUÇÃO NR10 -->
+<div class="modal-overlay hidden" id="modalDevolucaoNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:640px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div><div class="modal-title">📮 Devolver ao Estoque</div><div style="font-size:11px;color:var(--text-3)">Seriais com colaboradores</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <!-- Busca colaborador -->
+      <div style="position:relative">
+        <input id="devNR10ColabBusca" class="form-input" placeholder="Buscar colaborador..." oninput="filtrarColabDevNR10(this.value)"
+          onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)" autocomplete="off">
+        <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+      </div>
+      <div id="devNR10Lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
+        <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque um colaborador para ver os seriais</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">Fechar</button>
+      <button class="btn btn-primary" id="btnConfirmarDevNR10" style="display:none" onclick="confirmarDevolucaoNR10()">📮 Devolver Selecionados</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR LAUDO NR10 -->
 <div class="modal-overlay hidden" id="modalEditarLaudo">
   <div class="modal-box" style="max-width:480px">
@@ -7755,13 +7822,162 @@ async function salvarLaudo() {
   else toast(res?.erro||'Erro ao salvar','error');
 }
 
-function abrirLocalizadorNR10() { toast('Localizador NR10 em breve','info'); }
-function abrirDevolucaoNR10()   { toast('Devolução NR10 em breve','info'); }
+// ── LOCALIZADOR NR10 ──
+function abrirLocalizadorNR10() {
+  document.getElementById('locSerial').value = '';
+  document.getElementById('locResultado').style.display = 'none';
+  document.getElementById('locNaoEncontrado').style.display = 'none';
+  document.getElementById('modalLocalizadorNR10').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('locSerial').focus(), 100);
+}
 
+async function buscarLocalizador() {
+  const serial = document.getElementById('locSerial').value.trim().toUpperCase();
+  if (!serial) { toast('Digite um serial','warn'); return; }
+  document.getElementById('locResultado').style.display = 'none';
+  document.getElementById('locNaoEncontrado').style.display = 'none';
+
+  const data = await api(`/laudos/nr10/historico/${encodeURIComponent(serial)}`);
+  if (!data?.ok) { toast('Erro ao buscar','error'); return; }
+
+  if (!data.ativo && !data.historico?.length) {
+    document.getElementById('locNaoEncontrado').style.display = '';
+    return;
+  }
+
+  // Situação atual
+  const a = data.ativo;
+  const localCor = a?.status_local==='COM_COLAB'?'#a855f7':a?.status_local==='DESCARTE'?'#ef4444':a?.status_local==='AGUARDANDO_LAUDO'?'#f59e0b':'#22c55e';
+  document.getElementById('locSituacaoAtual').innerHTML = a ? [
+    ['Item', a.item||'—'],
+    ['Serial', a.serial||'—'],
+    ['Status', `<span style="color:${localCor};font-weight:700">${a.status_local||'—'}</span>`],
+    ['Localização', a.nome_colab_atual||a.local_atual||'—'],
+    ['Última mov.', formatarData(a.dt_ult_mov_raw?.split('T')[0])||'—'],
+    ['Motivo', a.motivo||'—'],
+  ].map(([l,v])=>`<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+    <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+  </div>`).join('') : '<div style="color:var(--text-3);font-size:12px">Ativo não encontrado no cadastro</div>';
+
+  // Laudo atual
+  const l = data.laudo;
+  const laudoBox = document.getElementById('locLaudoBox');
+  if (l) {
+    laudoBox.style.display = '';
+    const stCor = l.status==='OK'?'#22c55e':l.status==='VENCIDO'?'#ef4444':l.status==='ALERTA_30'?'#f59e0b':'var(--text-3)';
+    document.getElementById('locLaudoInfo').innerHTML = [
+      ['Lote', l.lote_laudo||'—'],
+      ['Data Ensaio', formatarData(l.dt_ensaio)||'—'],
+      ['Validade', l.validade_dias?`${l.validade_dias} dias`:'—'],
+      ['Vencimento', formatarData(l.dt_venc)||'—'],
+      ['Dias rest.', l.dias_rest!==null?`<span style="color:${stCor};font-weight:700">${l.dias_rest}</span>`:'—'],
+      ['Status', `<span style="color:${stCor};font-weight:700">${l.status||'—'}</span>`],
+    ].map(([lb,v])=>`<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+      <div style="font-size:9px;color:var(--text-3)">${lb.toUpperCase()}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+    </div>`).join('');
+    if (l.anexo_url) document.getElementById('locLaudoInfo').innerHTML += `<div style="grid-column:span 2"><a href="${l.anexo_url}" target="_blank" class="btn btn-ghost" style="font-size:11px">📄 Ver PDF do Laudo</a></div>`;
+  } else laudoBox.style.display = 'none';
+
+  // Histórico
+  const hist = data.historico || [];
+  const histBody = document.getElementById('locHistoricoBody');
+  const semHist  = document.getElementById('locSemHistorico');
+  if (hist.length) {
+    semHist.style.display = 'none';
+    histBody.innerHTML = hist.map(h=>`<tr>
+      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${h.dt||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${h.tipo||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${h.colab||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${h.obs||'—'}</td>
+    </tr>`).join('');
+  } else {
+    histBody.innerHTML = '';
+    semHist.style.display = '';
+  }
+
+  document.getElementById('locResultado').style.display = '';
+}
+
+// ── DEVOLUÇÃO NR10 ──
+let _devNR10SerialsSelecionados = [];
+
+function abrirDevolucaoNR10() {
+  document.getElementById('devNR10ColabBusca').value = '';
+  document.getElementById('devNR10Lista').innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque um colaborador para ver os seriais</div>';
+  document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+  _devNR10SerialsSelecionados = [];
+  document.getElementById('modalDevolucaoNR10').classList.remove('hidden');
+}
+
+function filtrarColabDevNR10(q) {
+  const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  const sug = document.getElementById('devNR10ColabSug');
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(c=>`<div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.replace(/'/g,"\\'")}','${c.id}')">${c.nome}<span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''}</span></div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function carregarSeriaisColab(nome, colabId) {
+  document.getElementById('devNR10ColabBusca').value = nome;
+  document.getElementById('devNR10ColabSug').classList.add('hidden');
+  _devNR10SerialsSelecionados = [];
+
+  const lista = document.getElementById('devNR10Lista');
+  lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+
+  const data = await api(`/laudos/nr10/seriais-colab`);
+  const seriais = (data?.data||[]).filter(s=>(s.nome_colab_atual||'').toLowerCase().includes(nome.toLowerCase()));
+
+  if (!seriais.length) {
+    lista.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Nenhum serial encontrado para este colaborador</div>';
+    document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+    return;
+  }
+
+  lista.innerHTML = seriais.map(s=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+      <input type="checkbox" class="devnr10-check" data-id="${s.id_ativo}" onchange="atualizarSelecaoDevNR10()" style="width:16px;height:16px;cursor:pointer">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.item||'—'}</div>
+        <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${s.serial} · ${formatarData(s.dt_ult_mov_raw?.split('T')[0])||'—'}</div>
+      </div>
+      <span style="font-size:10px;color:#a855f7;font-weight:600">COM COLAB</span>
+    </label>`).join('');
+
+  document.getElementById('btnConfirmarDevNR10').style.display = '';
+}
+
+function atualizarSelecaoDevNR10() {
+  _devNR10SerialsSelecionados = [...document.querySelectorAll('.devnr10-check:checked')].map(c=>c.dataset.id);
+  const btn = document.getElementById('btnConfirmarDevNR10');
+  btn.textContent = `📮 Devolver ${_devNR10SerialsSelecionados.length} Serial(is)`;
+  btn.disabled = _devNR10SerialsSelecionados.length === 0;
+}
+
+async function confirmarDevolucaoNR10() {
+  if (!_devNR10SerialsSelecionados.length) { toast('Selecione pelo menos um serial','warn'); return; }
+  const res = await api('/laudos/nr10/devolver', {
+    method: 'POST',
+    body: JSON.stringify({ ids_ativos: _devNR10SerialsSelecionados })
+  });
+  if (res?.ok) {
+    toast(`${res.devolvidos} serial(is) devolvido(s) ao estoque!`, 'success');
+    document.getElementById('modalDevolucaoNR10').classList.add('hidden');
+    laudosCarregar_();
+  } else toast(res?.erro||'Erro ao devolver','error');
+}
+
+// ── LIMPAR DESCARTES ──
 async function limparDescartes() {
   const totalDesc = __LAUDOS_NR10__.lista.filter(x=>x.statusLocal==='DESCARTE').length;
   if (!totalDesc) { toast('Nenhum serial com status DESCARTE','info'); return; }
-  if (!confirm(`Excluir ${totalDesc} serial(is) com status DESCARTE? Esta ação não pode ser desfeita.`)) return;
+
+  const senha = prompt(`Esta ação irá excluir ${totalDesc} serial(is) com status DESCARTE.\n\nDigite a senha para confirmar:`);
+  if (senha === null) return;
+  if (senha !== 'GCA@4782') { toast('Senha incorreta','error'); return; }
+
   const res = await api('/laudos/nr10/descartes', { method:'DELETE' });
   if (res?.ok) { toast(`${res.removidos} serial(is) excluído(s)!`, 'success'); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao excluir','error');
