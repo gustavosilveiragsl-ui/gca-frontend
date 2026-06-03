@@ -7804,8 +7804,14 @@ function laudosToggleGrupo_(gid) {
 }
 
 async function laudosCarregar_() {
-  const info = document.getElementById('laudoInfo');
-  if (info) info.textContent = '⏳ Carregando laudos...';
+  const tbody = document.getElementById('tbLaudosTbody');
+  const info  = document.getElementById('laudoInfo');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
+    <div style="font-size:13px;font-weight:600;color:var(--text-2)">Carregando laudos NR10...</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:4px">Buscando seriais e laudos no banco de dados</div>
+  </td></tr>`;
+  if (info) info.textContent = '⏳ Carregando...';
   const data = await api('/laudos/nr10');
   if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
   __LAUDOS_NR10__.lista = data.lista || [];
