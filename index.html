@@ -2146,7 +2146,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div>
                 <label class="form-label">Serial</label>
                 <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
-                  onkeydown="if(event.key==='Enter'){devEnelAddSerial(this.value);this.value=''}">
+                  oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){devEnelAddSerial(this.value);this.value=''}},300)">
               </div>
             </div>
             <div style="margin-bottom:16px">
@@ -9332,6 +9332,13 @@ function gerarPdfFicha() {
 let _enelMateriais = [];
 let _enelSaldos    = [];
 let _entSeriaisAtual = [];
+let _equipes = [];
+
+async function carregarEquipes() {
+  if (_equipes.length) return;
+  const data = await api('/equipes');
+  _equipes = (data?.data||[]).map(e=>({...e, nomeEquipe:e.nome_equipe||e.nomeEquipe||e.nome||'—', prefixo:e.prefixo||''  }));
+}
 
 async function carregarMateriaisEnel() {
   const data = await api('/enel/materiais');
@@ -9698,7 +9705,7 @@ function enelFiltrarMaterial() {
     <strong>${m.descricao}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
     ${m.possui_numero_serie?'<span style="color:#f59e0b;font-size:10px;margin-left:6px;border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px">Serial</span>':''}
   </div>`).join('');
-  sug.style.display = ''; sug.classList.remove('hidden');
+  sug.style.display = 'block'; sug.classList.remove('hidden');
 }
 
 function enelSelecionarMaterial(id) {
@@ -9761,7 +9768,7 @@ function enelRenderItens() {
         </div>
         <div style="display:flex;gap:8px;margin-bottom:8px">
           <input type="text" placeholder="Bipar e Enter..." class="form-input enel-serial-input" style="flex:1;font-family:var(--font-mono)"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();window.enelAddSerial(${idx},this.value);this.value=''}">
+            oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){window.enelAddSerial(${idx},this.value);this.value=''}},300)">
           <button class="btn btn-ghost" onclick="const i=this.previousElementSibling;window.enelAddSerial(${idx},i.value);i.value=''">+</button>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:6px">${(it.seriais||[]).map(s=>`
@@ -10061,7 +10068,8 @@ async function cmAbrirAba(aba) {
   document.getElementById('cmConteudo').style.display = 'none';
   const fs = document.getElementById('cmFiltrosStatus');
   if (fs) fs.style.display = aba==='campo' ? 'flex' : 'none';
-  const res = await api(`/enel/medidores${aba!=='instalados'?`?localizacao=${aba.toUpperCase()===''?'':aba==='estoque'?'ESTOQUE':aba==='campo'?'CAMPO':'INSTALADO'}`:''}`);
+  const loc = aba==='estoque'?'ESTOQUE':aba==='campo'?'CAMPO':aba==='instalados'?'INSTALADO':'';
+  const res = await api(`/enel/medidores${loc?'?localizacao='+loc:''}`);
   _cmDados = res?.data||[];
   document.getElementById('cmLoading').style.display = 'none';
   document.getElementById('cmConteudo').style.display = '';
