@@ -396,14 +396,20 @@ tbody tr:hover td{background:var(--bg-hover);}
       <!-- ENEL -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
-          <span class="nav-group-label">ENEL</span>
+          <span class="nav-group-label">Materiais Cliente 💡</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="atendimento-enel" onclick="showView('atendimento-enel',this)"><span class="ni-icon">⚡</span> Atendimento ENEL</button>
-          <button class="nav-item" data-view="devolucao-enel" onclick="showView('devolucao-enel',this)"><span class="ni-icon">↩️</span> Devolução ENEL</button>
-          <button class="nav-item" data-view="medidores" onclick="showView('medidores',this)"><span class="ni-icon">📟</span> Medidores</button>
-          <button class="nav-item" data-view="estoque-enel" onclick="showView('estoque-enel',this)"><span class="ni-icon">🔌</span> Estoque ENEL</button>
+          <button class="nav-item" data-view="enel-atendimento" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
+          <button class="nav-item" data-view="enel-devolucao" onclick="showView('enel-devolucao',this)"><span class="ni-icon">↩️</span> Devolução Material</button>
+          <button class="nav-item" data-view="enel-cadastro" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
+          <button class="nav-item" data-view="enel-transferencia" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
+          <button class="nav-item" data-view="enel-medidores" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
+          <button class="nav-item" data-view="enel-controle" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
+          <button class="nav-item" data-view="enel-estoque" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-baixas" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
+          <button class="nav-item" data-view="enel-entrada" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
+          <button class="nav-item" data-view="enel-saida" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
         </div>
       </div>
 
@@ -1780,10 +1786,217 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div id="prPaginacao"></div>
         </div>
       </div>
-      <div class="view" id="view-atendimento-enel"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Atendimento ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-devolucao-enel"><div class="empty-state"><div class="es-icon">↩️</div><div class="es-title">Devolução ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Medidores</div><div class="es-sub">Em desenvolvimento</div></div></div>
-      <div class="view" id="view-estoque-enel"><div class="empty-state"><div class="es-icon">🔌</div><div class="es-title">Estoque ENEL</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- ══════════════════════════════════════════════ -->
+      <!-- MÓDULO ENEL / MATERIAIS CLIENTE                -->
+      <!-- ══════════════════════════════════════════════ -->
+
+      <!-- CADASTRAR MATERIAL -->
+      <div class="view" id="view-enel-cadastro">
+        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Cadastrar Material ⚙️</div><div class="card-sub">Materiais para uso com equipes ENEL</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="enelMatEditId">
+              <div><label class="form-label">Descrição *</label><input id="enelCadDesc" class="form-input" placeholder="Ex: Cabo Flexível 16mm"></div>
+              <div><label class="form-label">Código *</label><input id="enelCadCod" class="form-input" placeholder="Ex: CAB-16MM" style="text-transform:uppercase"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Categoria *</label>
+                  <select id="enelCadCat" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="Medidores">📟 Medidor</option>
+                    <option value="Cabo">🪢 Cabo</option>
+                    <option value="Conector">🗜️ Conectores</option>
+                    <option value="Alça">🔗 Alças</option>
+                    <option value="Disjuntor">🎚️ Disjuntor</option>
+                    <option value="Diversos">🔩 Diversos</option>
+                  </select>
+                </div>
+                <div><label class="form-label">Unidade *</label>
+                  <select id="enelCadUn" class="form-input">
+                    <option value="UN">UN - Unidade</option>
+                    <option value="PR">PR - Par</option>
+                    <option value="CX">CX - Caixa</option>
+                    <option value="PC">PC - Peça</option>
+                    <option value="KG">KG - Quilograma</option>
+                    <option value="LT">LT - Litro</option>
+                    <option value="MT">MT - Metro</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Valor Unitário (R$)</label><input id="enelCadValor" class="form-input" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                <div><label class="form-label">Estoque mínimo</label><input id="enelCadMin" class="form-input" type="number" min="0" value="1"></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+                <input id="enelCadSerial" type="checkbox" style="width:18px;height:18px;cursor:pointer">
+                <label for="enelCadSerial" style="font-size:12px;color:var(--text-2);cursor:pointer">Possui número de série (medidores)</label>
+              </div>
+              <div id="enelCadMsg" style="font-size:12px;min-height:16px"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarMaterialEnel()">Salvar Material</button>
+                <button class="btn btn-ghost" onclick="limparFormMaterialEnel()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Materiais Cadastrados</div></div>
+              <div class="card-actions">
+                <input class="search-box" placeholder="Buscar..." oninput="filtrarTabela('enelMatBody',this.value,[0,1,2])">
+                <button class="btn btn-ghost" onclick="carregarMateriaisEnel()">↻</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th style="text-align:center">Un.</th><th style="text-align:center">Valor</th><th style="text-align:center">Mín.</th><th style="text-align:center">Serial</th><th></th></tr></thead>
+              <tbody id="enelMatBody"><tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr></tbody>
+            </table>
+            <div id="enelMatSum" style="padding:8px 16px;font-size:11px;color:var(--text-3)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ENTRADA ESTOQUE -->
+      <div class="view" id="view-enel-entrada">
+        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">⤴️ Entrada de Estoque</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label class="form-label">Material *</label>
+                <div style="position:relative">
+                  <input id="entMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('entMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="entMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="entMatId">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Data *</label><input id="entData" class="form-input" type="date"></div>
+                <div><label class="form-label">Quantidade *</label><input id="entQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              </div>
+              <div><label class="form-label">Motivo *</label>
+                <select id="entMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Recebimento do fornecedor">Recebimento do fornecedor</option>
+                  <option value="Devolução de equipe">Devolução de equipe</option>
+                  <option value="Transferência de parceira">Transferência de parceira</option>
+                  <option value="Ajuste de inventário">Ajuste de inventário</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div id="entSeriaisBox" style="display:none">
+                <label class="form-label">Seriais <span id="entSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <input id="entSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}">
+                  <button class="btn btn-ghost" onclick="const i=document.getElementById('entSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
+                </div>
+                <div id="entSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+              </div>
+              <div><label class="form-label">Observação</label><input id="entObs" class="form-input" placeholder="Opcional"></div>
+              <div id="entMsg" style="font-size:12px;min-height:16px"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()">✅ Registrar Entrada</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Histórico de Entradas</div></div><button class="btn btn-ghost" onclick="carregarHistEntradas()">↻</button></div>
+            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
+            <tbody id="entHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SAÍDA ESTOQUE -->
+      <div class="view" id="view-enel-saida">
+        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">⤵️ Saída de Estoque</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label class="form-label">Material *</label>
+                <div style="position:relative">
+                  <input id="saiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="saiMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="saiMatId">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div><label class="form-label">Data *</label><input id="saiData" class="form-input" type="date"></div>
+                <div><label class="form-label">Quantidade *</label><input id="saiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              </div>
+              <div><label class="form-label">Equipe / Destino *</label>
+                <div style="position:relative">
+                  <input id="saiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="saiEquipeSug" class="autocomplete-list hidden"></div>
+                </div>
+              </div>
+              <div><label class="form-label">Observação</label><input id="saiObs" class="form-input" placeholder="Opcional"></div>
+              <div id="saiMsg" style="font-size:12px;min-height:16px"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()">✅ Registrar Saída</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Histórico de Saídas</div></div>
+              <div class="card-actions">
+                <input class="form-input" type="date" id="saiHistDe" style="width:130px;font-size:11px">
+                <input class="form-input" type="date" id="saiHistAte" style="width:130px;font-size:11px">
+                <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻</button>
+              </div>
+            </div>
+            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
+            <tbody id="saiHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSULTA ESTOQUE ENEL -->
+      <div class="view" id="view-enel-estoque">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">🔎 Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
+            <div class="card-actions">
+              <input class="search-box" placeholder="Buscar material..." oninput="filtrarEstoqueEnel(this.value)">
+              <select class="form-input" id="enelEstFiltro" style="width:140px;font-size:11px" onchange="filtrarEstoqueEnel('')">
+                <option value="">Todos</option>
+                <option value="critico">🔴 Crítico</option>
+                <option value="baixo">🟡 Baixo</option>
+                <option value="ok">🟢 OK</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarEstoqueEnel()">↻</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Material</th><th>Código</th><th>Categoria</th><th style="text-align:center">Un.</th><th style="text-align:center">Saldo</th><th style="text-align:center">Mín.</th><th>Status</th></tr></thead>
+            <tbody id="enelEstBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- CONSULTA BAIXAS -->
+      <div class="view" id="view-enel-baixas">
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">🧮 Consulta de Baixas de Material</div><div class="card-sub">Histórico de saídas por período</div></div>
+            <div class="card-actions">
+              <input class="form-input" type="date" id="baixasHistDe" style="width:130px;font-size:11px">
+              <input class="form-input" type="date" id="baixasHistAte" style="width:130px;font-size:11px">
+              <select class="form-input" id="baixasFiltroEquipe" style="width:160px;font-size:11px">
+                <option value="">Todas as equipes</option>
+              </select>
+              <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Tipo</th><th>Usuário</th></tr></thead>
+            <tbody id="baixasBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3)">Selecione o período e clique em 🔍 Buscar</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- placeholders para os módulos mais complexos -->
+      <div class="view" id="view-enel-atendimento"><div class="empty-state"><div class="es-icon">🧰</div><div class="es-title">Atendimento Material</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
+      <div class="view" id="view-enel-devolucao"><div class="empty-state"><div class="es-icon">↩️</div><div class="es-title">Devolução Material</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
+      <div class="view" id="view-enel-transferencia"><div class="empty-state"><div class="es-icon">🔄</div><div class="es-title">Transferência de Seriais</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
+      <div class="view" id="view-enel-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Controle De Medidores</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
+      <div class="view" id="view-enel-controle"><div class="empty-state"><div class="es-icon">🧵</div><div class="es-title">Controle De Materiais</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
       <!-- ── FICHA EPI ── -->
       <div class="view" id="view-ficha-epi">
 
@@ -2827,7 +3040,6 @@ tbody tr:hover td{background:var(--bg-hover);}
             <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">CA</th>
             <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data Devolução</th>
             <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Situação</th>
-            <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Assinatura</th>
           </tr></thead>
           <tbody id="fichaModalBody"></tbody>
         </table>
@@ -3080,11 +3292,15 @@ function onViewLoad(nome) {
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
+  if (nome === 'enel-cadastro')      carregarMateriaisEnel();
+  if (nome === 'enel-estoque')       carregarEstoqueEnel();
+  if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
+  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('saiData').value=new Date().toISOString().split('T')[0]; }
+  if (nome === 'enel-baixas')        { if (!_enelMateriais.length) carregarMateriaisEnel(); }
   if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
     if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo();
   }
-  if (nome === 'viaturas')           carregarViaturas();
   if (nome === 'descarte')           { if (!_itens.length) carregarItensAtendimento().then(carregarDescarte); else carregarDescarte(); }
   if (nome === 'recuperados')        carregarRecuperados();
   if (nome === 'consulta-itens')     carregarConsultaItens();
@@ -8801,13 +9017,295 @@ async function abrirFichaEPI(colabId, nome, matricula, funcao) {
       <td style="padding:10px;text-align:center;font-size:11px;font-family:var(--font-mono)">${r.ca||'—'}</td>
       <td style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">${r.data_devolucao?formatarData(r.data_devolucao):'—'}</td>
       <td style="padding:10px;text-align:center">${situacao}</td>
-      <td style="padding:10px;text-align:center">${assinaturaTag}</td>
     </tr>`;
   }).join('');
 }
 
 function gerarPdfFicha() {
   toast('PDF da ficha EPI em desenvolvimento','info');
+}
+
+// ═══════════════════════════════════════════
+// MÓDULO ENEL — BASE
+// ═══════════════════════════════════════════
+let _enelMateriais = [];
+let _enelSaldos    = [];
+let _entSeriaisAtual = [];
+
+async function carregarMateriaisEnel() {
+  const data = await api('/enel/materiais');
+  _enelMateriais = data?.data || [];
+  renderMateriaisEnel();
+}
+
+function renderMateriaisEnel() {
+  const tbody = document.getElementById('enelMatBody');
+  const sum   = document.getElementById('enelMatSum');
+  if (!tbody) return;
+  tbody.innerHTML = _enelMateriais.length ? _enelMateriais.map(m=>`<tr>
+    <td class="td-main">${m.descricao||'—'}</td>
+    <td class="td-mono">${m.codigo||'—'}</td>
+    <td style="font-size:11px">${m.categoria||'—'}</td>
+    <td style="text-align:center;font-size:11px">${m.unidade_med||'UN'}</td>
+    <td style="text-align:center;font-weight:600;color:#22c55e">R$ ${Number(m.valor_unitario||0).toFixed(2)}</td>
+    <td style="text-align:center">${m.estoque_minimo||0}</td>
+    <td style="text-align:center">${m.possui_numero_serie?'<span style="color:#22c55e;font-weight:700">Sim</span>':'<span style="color:var(--text-3)">Não</span>'}</td>
+    <td><button class="row-action" onclick="editarMaterialEnel('${m.id}')">Editar</button></td>
+  </tr>`).join('') : `<tr><td colspan="8"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum material cadastrado</div></div></td></tr>`;
+  if (sum) sum.textContent = `Total: ${_enelMateriais.length} material(is)`;
+}
+
+function editarMaterialEnel(id) {
+  const m = _enelMateriais.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('enelMatEditId').value = id;
+  document.getElementById('enelCadDesc').value   = m.descricao||'';
+  document.getElementById('enelCadCod').value    = m.codigo||'';
+  document.getElementById('enelCadCat').value    = m.categoria||'';
+  document.getElementById('enelCadUn').value     = m.unidade_med||'UN';
+  document.getElementById('enelCadValor').value  = m.valor_unitario||0;
+  document.getElementById('enelCadMin').value    = m.estoque_minimo||0;
+  document.getElementById('enelCadSerial').checked = !!m.possui_numero_serie;
+  const msg = document.getElementById('enelCadMsg');
+  msg.style.color = '#f59e0b'; msg.textContent = 'Modo de edição ativado.';
+}
+
+async function salvarMaterialEnel() {
+  const editId = document.getElementById('enelMatEditId').value;
+  const desc   = document.getElementById('enelCadDesc').value.trim();
+  const cod    = document.getElementById('enelCadCod').value.trim().toUpperCase();
+  const cat    = document.getElementById('enelCadCat').value;
+  const un     = document.getElementById('enelCadUn').value;
+  const msg    = document.getElementById('enelCadMsg');
+  if (!desc||!cod||!cat) { msg.style.color='#ef4444'; msg.textContent='Preencha descrição, código e categoria.'; return; }
+  if (!editId && _enelMateriais.some(m=>(m.codigo||'').toLowerCase()===cod.toLowerCase())) {
+    msg.style.color='#ef4444'; msg.textContent='Código já existe.'; return;
+  }
+  const body = { descricao:desc, codigo:cod, categoria:cat, unidade_med:un,
+    valor_unitario: parseFloat(document.getElementById('enelCadValor').value)||0,
+    estoque_minimo: parseInt(document.getElementById('enelCadMin').value)||0,
+    possui_numero_serie: document.getElementById('enelCadSerial').checked,
+  };
+  const res = await api(editId?`/enel/materiais/${editId}`:'/enel/materiais', { method:editId?'PUT':'POST', body:JSON.stringify(body) });
+  if (res?.ok) { toast('Material salvo!','success'); limparFormMaterialEnel(); carregarMateriaisEnel(); }
+  else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao salvar'; }
+}
+
+function limparFormMaterialEnel() {
+  ['enelMatEditId','enelCadDesc','enelCadCod','enelCadValor'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('enelCadCat').value=''; document.getElementById('enelCadUn').value='UN';
+  document.getElementById('enelCadMin').value=1; document.getElementById('enelCadSerial').checked=false;
+  const msg=document.getElementById('enelCadMsg'); if(msg)msg.textContent='';
+}
+
+// ── ENTRADA ──
+function filtrarMatEntEnel(q) {
+  const sug = document.getElementById('entMatSug');
+  if (q.length<2) { sug.classList.add('hidden'); return; }
+  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onclick="selecionarMatEntEnel('${m.id}','${(m.descricao+' ('+m.codigo+')').replace(/'/g,"\\'")}',${!!m.possui_numero_serie})">
+    <strong>${m.descricao}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
+    ${m.possui_numero_serie?'<span style="color:#f59e0b;font-size:10px;margin-left:6px">Serial</span>':''}
+  </div>`).join('');
+  sug.classList.toggle('hidden', !lista.length);
+}
+
+function selecionarMatEntEnel(id, texto, temSerial) {
+  document.getElementById('entMatBusca').value = texto;
+  document.getElementById('entMatId').value = id;
+  document.getElementById('entMatSug').classList.add('hidden');
+  _entSeriaisAtual = [];
+  const box = document.getElementById('entSeriaisBox');
+  if (box) box.style.display = temSerial ? '' : 'none';
+  atualizarCountSeriais();
+}
+
+function addSerialEntEnel(serial) {
+  const s = serial.trim().toUpperCase();
+  if (!s) return;
+  if (_entSeriaisAtual.includes(s)) { toast('Serial duplicado: '+s,'warn'); return; }
+  _entSeriaisAtual.push(s);
+  renderSeriaisEnt();
+  atualizarCountSeriais();
+}
+
+function renderSeriaisEnt() {
+  const el = document.getElementById('entSeriaisList');
+  if (!el) return;
+  el.innerHTML = _entSeriaisAtual.map(s=>`<span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${s}<button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="_entSeriaisAtual=_entSeriaisAtual.filter(x=>x!=='${s}');renderSeriaisEnt();atualizarCountSeriais()">✕</button></span>`).join('');
+}
+
+function atualizarCountSeriais() {
+  const qtd = parseInt(document.getElementById('entQtd')?.value)||0;
+  const el = document.getElementById('entSeriaisCount');
+  if (el) el.textContent = `(${_entSeriaisAtual.length}/${qtd})`;
+}
+
+async function registrarEntradaEnel() {
+  const matId = document.getElementById('entMatId').value;
+  const data  = document.getElementById('entData').value;
+  const qtd   = parseInt(document.getElementById('entQtd').value)||0;
+  const motivo= document.getElementById('entMotivo').value;
+  const obs   = document.getElementById('entObs').value.trim();
+  const msg   = document.getElementById('entMsg');
+  if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
+  const mat = _enelMateriais.find(m=>m.id===matId);
+  if (mat?.possui_numero_serie && _entSeriaisAtual.length!==qtd) {
+    msg.style.color='#ef4444'; msg.textContent=`Faltam seriais: ${_entSeriaisAtual.length}/${qtd}`; return;
+  }
+  const res = await api('/enel/entrada', { method:'POST', body: JSON.stringify({
+    material_id:matId, descricao:mat?.descricao||'', codigo:mat?.codigo||'',
+    unidade_med:mat?.unidade_med||'UN', motivo, data, quantidade:qtd,
+    seriais:mat?.possui_numero_serie?_entSeriaisAtual:[], observacao:obs,
+  })});
+  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Entrada registrada!'; _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); setTimeout(()=>msg.textContent='',3000); }
+  else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
+}
+
+async function carregarHistEntradas() {
+  const tbody = document.getElementById('entHistBody');
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const data = await api('/enel/historico-entradas');
+  const lista = data?.data||[];
+  tbody.innerHTML = lista.length ? lista.map(e=>`<tr>
+    <td>${formatarData(e.data)}</td>
+    <td class="td-main">${e.descricao_material||'—'}</td>
+    <td style="text-align:center;font-weight:600;color:#22c55e">${e.quantidade}</td>
+    <td style="font-size:11px">${e.motivo||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${e.usuario||'—'}</td>
+  </tr>`).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma entrada</td></tr>`;
+}
+
+// ── SAÍDA ──
+let _saiMatSel = null;
+function filtrarMatSaiEnel(q) {
+  const sug = document.getElementById('saiMatSug');
+  if (q.length<2) { sug.classList.add('hidden'); return; }
+  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onclick="selecionarMatSaiEnel('${m.id}','${(m.descricao+' ('+m.codigo+')').replace(/'/g,"\\'")}')">
+    <strong>${m.descricao}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
+  </div>`).join('');
+  sug.classList.toggle('hidden', !lista.length);
+}
+function selecionarMatSaiEnel(id, texto) {
+  _saiMatSel = _enelMateriais.find(m=>m.id===id);
+  document.getElementById('saiMatBusca').value=texto;
+  document.getElementById('saiMatId').value=id;
+  document.getElementById('saiMatSug').classList.add('hidden');
+}
+
+function filtrarEquipeSaiEnel(q) {
+  const sug = document.getElementById('saiEquipeSug');
+  if (q.length<2) { sug.classList.add('hidden'); return; }
+  const lista = (_equipes||[]).filter(e=>(e.nomeEquipe||e.nome_equipe||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  sug.innerHTML = lista.map(e=>{const nm=e.nomeEquipe||e.nome_equipe||''; return `<div class="autocomplete-item" onclick="document.getElementById('saiEquipeBusca').value='${nm.replace(/'/g,"\\'")}';document.getElementById('saiEquipeSug').classList.add('hidden')"><strong>${nm}</strong></div>`;}).join('');
+  sug.classList.toggle('hidden', !lista.length);
+}
+
+async function registrarSaidaEnel() {
+  const matId  = document.getElementById('saiMatId')?.value;
+  const data   = document.getElementById('saiData').value;
+  const qtd    = parseInt(document.getElementById('saiQtd').value)||0;
+  const equipe = document.getElementById('saiEquipeBusca').value.trim();
+  const obs    = document.getElementById('saiObs').value.trim();
+  const msg    = document.getElementById('saiMsg');
+  if (!matId||!data||qtd<=0||!equipe) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e equipe.'; return; }
+  const mat = _enelMateriais.find(m=>m.id===matId);
+  const res = await api('/enel/saida', { method:'POST', body: JSON.stringify({
+    material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
+    tipo_saida:'Saída Direta', destino:equipe, data, quantidade:qtd, obs,
+  })});
+  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); setTimeout(()=>msg.textContent='',3000); }
+  else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
+}
+
+async function carregarHistSaidas() {
+  const tbody = document.getElementById('saiHistBody');
+  const de    = document.getElementById('saiHistDe')?.value;
+  const ate   = document.getElementById('saiHistAte')?.value;
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  let url = '/enel/historico-saidas';
+  if (de||ate) url += `?data_inicio=${de||''}&data_fim=${ate||''}`;
+  const data = await api(url);
+  const lista = data?.data||[];
+  tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
+    <td>${formatarData(s.data)}</td>
+    <td class="td-main">${s.material_descricao||'—'}</td>
+    <td style="text-align:center;font-weight:600;color:#ef4444">${s.quantidade}</td>
+    <td style="font-size:11px">${s.destino||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
+  </tr>`).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma saída</td></tr>`;
+}
+
+// ── ESTOQUE ENEL ──
+async function carregarEstoqueEnel() {
+  const tbody = document.getElementById('enelEstBody');
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  const [matData, saldData] = await Promise.all([api('/enel/materiais'), api('/enel/saldos')]);
+  _enelMateriais = matData?.data||[];
+  _enelSaldos    = saldData?.data||[];
+  filtrarEstoqueEnel('');
+}
+
+function filtrarEstoqueEnel(q) {
+  const tbody = document.getElementById('enelEstBody');
+  const filtro= document.getElementById('enelEstFiltro')?.value||'';
+  if (!tbody) return;
+  let lista = _enelMateriais.map(m=>{
+    const saldo = _enelSaldos.find(s=>s.id_material===m.id);
+    const qtd   = Number(saldo?.saldo||0);
+    const min   = Number(m.estoque_minimo||0);
+    const st    = qtd<=0?'critico':qtd<=min?'baixo':'ok';
+    return {...m, qtd, st};
+  });
+  if (q) lista = lista.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase()));
+  if (filtro) lista = lista.filter(m=>m.st===filtro);
+  tbody.innerHTML = lista.length ? lista.map(m=>{
+    const stTag = m.st==='critico'?'<span style="color:#ef4444;font-weight:700;font-size:10px">🔴 Crítico</span>'
+      :m.st==='baixo'?'<span style="color:#f59e0b;font-weight:700;font-size:10px">🟡 Baixo</span>'
+      :'<span style="color:#22c55e;font-weight:700;font-size:10px">🟢 OK</span>';
+    return `<tr>
+      <td class="td-main">${m.descricao||'—'}</td>
+      <td class="td-mono">${m.codigo||'—'}</td>
+      <td style="font-size:11px">${m.categoria||'—'}</td>
+      <td style="text-align:center;font-size:11px">${m.unidade_med||'UN'}</td>
+      <td style="text-align:center;font-weight:600;color:${m.st==='critico'?'#ef4444':m.st==='baixo'?'#f59e0b':'var(--text-1)'}">${m.qtd}</td>
+      <td style="text-align:center;font-size:11px;color:var(--text-3)">${m.estoque_minimo||0}</td>
+      <td>${stTag}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum material</div></div></td></tr>`;
+}
+
+// ── BAIXAS ──
+async function carregarBaixas() {
+  const tbody = document.getElementById('baixasBody');
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const de  = document.getElementById('baixasHistDe')?.value;
+  const ate = document.getElementById('baixasHistAte')?.value;
+  let url = '/enel/historico-saidas';
+  if (de||ate) url += `?data_inicio=${de||''}&data_fim=${ate||''}`;
+  const data = await api(url);
+  let lista = data?.data||[];
+  const equipeF = document.getElementById('baixasFiltroEquipe')?.value;
+  if (equipeF) lista = lista.filter(s=>s.destino===equipeF);
+  // Popula filtro de equipes
+  const sel = document.getElementById('baixasFiltroEquipe');
+  if (sel&&sel.options.length<=1) {
+    const equipes = [...new Set(lista.map(s=>s.destino).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">Todas as equipes</option>'+equipes.map(e=>`<option value="${e}">${e}</option>`).join('');
+  }
+  tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
+    <td>${formatarData(s.data)}</td>
+    <td class="td-main">${s.material_descricao||'—'}</td>
+    <td style="text-align:center;font-weight:600;color:#ef4444">${s.quantidade}</td>
+    <td style="font-size:11px">${s.destino||'—'}</td>
+    <td style="font-size:11px">${s.tipo_saida||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
+  </tr>`).join('') : `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3)">Nenhuma baixa encontrada</td></tr>`;
 }
 
 // ── ENTER no login ──
