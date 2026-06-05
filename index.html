@@ -9859,8 +9859,9 @@ async function carregarPreBaixasEquipeEnel(nomeEquipe) {
   // Medidores
   const divMed = document.getElementById('listaPreBaixaMedidores');
   divMed.innerHTML = '<p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">⏳ Carregando...</p>';
-  const medData = await api(`/enel/medidores?localizacao=CAMPO`);
-  const medList = (medData?.data||[]).filter(m=>(m.equipe_atual||'').toLowerCase()===nomeEquipe.toLowerCase());
+  // Busca medidores da equipe via controle-equipe
+  const controleData = await api(`/enel/controle-equipe/${encodeURIComponent(nomeEquipe)}`);
+  const medList = controleData?.medidores||[];
   window.__PRE_BAIXAS__._mediadoresLista = medList;
   divMed.innerHTML = medList.length ? `
     <input class="form-input" placeholder="Buscar serial..." oninput="filtrarMedPreBaixaEnel(this.value)" style="margin-bottom:8px;font-size:11px">
@@ -10092,20 +10093,31 @@ function cmRenderSumario() {
   const el = document.getElementById('cmSumario');
   if (!el) return;
   const total = _cmDados.length;
-  // Agrupa por modelo
-  const modelos = {};
-  _cmDados.forEach(m=>{ if(!modelos[m.material_descricao])modelos[m.material_descricao]=0; modelos[m.material_descricao]++; });
-  el.innerHTML = `<div style="font-size:12px;color:var(--text-3)">Total: <strong style="color:var(--text-1)">${total}</strong> medidor(es) em <strong>${Object.keys(modelos).length}</strong> modelo(s)</div>`;
+  const grupos = new Set(_cmDados.map(m => _cmAbaAtual==='campo' ? m.localizacao : (m.id_material||m.material_descricao)));
+  const label2 = _cmAbaAtual==='campo' ? 'equipe(s)' : 'modelo(s)';
+  // Status badges
+  const stCounts = {};
+  _cmDados.forEach(m=>{ const s=m.status_atual||'—'; stCounts[s]=(stCounts[s]||0)+1; });
+  const badges = Object.entries(stCounts).map(([s,n])=>{
+    const cor = s==='EM DIA'?'#22c55e':s==='INSTALADO'?'#3b82f6':s==='VENCIDO'?'#ef4444':'#f59e0b';
+    return `<span style="font-size:10px;font-weight:700;color:${cor};background:rgba(0,0,0,.2);padding:2px 8px;border-radius:4px;border:1px solid ${cor}40">${s}: ${n}</span>`;
+  }).join('');
+  el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:var(--text-3)">Total: <strong style="color:var(--text-1)">${total}</strong> em <strong>${grupos.size}</strong> ${label2}</span>${badges}</div>`;
 }
 
 function cmRenderModelos() {
   const busca = (document.getElementById('cmBuscaAba')?.value||'').toLowerCase();
   let dados = _cmDados;
-  if (busca) dados = dados.filter(m=>(m.material_descricao||'').toLowerCase().includes(busca)||(m.numero_serie||'').toLowerCase().includes(busca));
+  if (busca) dados = dados.filter(m=>(m.material_descricao||'').toLowerCase().includes(busca)||(m.numero_serie||'').toLowerCase().includes(busca)||(m.localizacao||'').toLowerCase().includes(busca));
   if (_cmFiltroStatus!=='TODOS') dados = dados.filter(m=>(m.status_atual||'').toUpperCase().includes(_cmFiltroStatus));
-  // Agrupa por modelo
+  // Campo: agrupa por equipe; outros: agrupa por modelo
   const grupos = {};
-  dados.forEach(m=>{ const k=m.id_material||m.material_descricao; if(!grupos[k])grupos[k]={descricao:m.material_descricao,seriais:[]}; grupos[k].seriais.push(m); });
+  dados.forEach(m=>{
+    const k = _cmAbaAtual==='campo' ? (m.localizacao||'Campo') : (m.id_material||m.material_descricao);
+    const label = _cmAbaAtual==='campo' ? (m.localizacao||'—').replace('ATENDIMENTO_ENEL - ','') : m.material_descricao;
+    if(!grupos[k])grupos[k]={descricao:label,seriais:[]};
+    grupos[k].seriais.push(m);
+  });
   const lista = document.getElementById('cmListaModelos');
   if (!lista) return;
   const arr = Object.values(grupos);
