@@ -1991,12 +1991,309 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
       </div>
 
-      <!-- placeholders para os módulos mais complexos -->
-      <div class="view" id="view-enel-atendimento"><div class="empty-state"><div class="es-icon">🧰</div><div class="es-title">Atendimento Material</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
-      <div class="view" id="view-enel-devolucao"><div class="empty-state"><div class="es-icon">↩️</div><div class="es-title">Devolução Material</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
-      <div class="view" id="view-enel-transferencia"><div class="empty-state"><div class="es-icon">🔄</div><div class="es-title">Transferência de Seriais</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
-      <div class="view" id="view-enel-medidores"><div class="empty-state"><div class="es-icon">📟</div><div class="es-title">Controle De Medidores</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
-      <div class="view" id="view-enel-controle"><div class="empty-state"><div class="es-icon">🧵</div><div class="es-title">Controle De Materiais</div><div class="es-sub">Em desenvolvimento — próxima etapa</div></div></div>
+      <!-- ATENDIMENTO MATERIAL ENEL -->
+      <div class="view" id="view-enel-atendimento">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Atendimento ENEL ⚡</div>
+            <div style="font-size:12px;color:var(--text-3)">Entregas por equipe com controle de tempo e seriais</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="enelIniciarAtendimento()">▶️ Iniciar Atendimento</button>
+            <button class="btn btn-ghost" onclick="enelAbrirConsulta()">🔍 Histórico</button>
+          </div>
+        </div>
+
+        <!-- Área atendimento em andamento -->
+        <div id="areaAtendEnelAndamento" style="display:none">
+          <div style="border:2px solid rgba(245,158,11,.6);border-radius:var(--radius-md);padding:20px;background:rgba(245,158,11,.04);margin-bottom:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(245,158,11,.2)">
+              <div>
+                <div style="font-size:16px;font-weight:700;color:#f59e0b">⏱️ Atendimento em Andamento</div>
+                <div style="font-size:11px;color:var(--text-3)">Iniciado às <span id="enelHoraInicio"></span></div>
+              </div>
+              <div style="text-align:right">
+                <div id="enelCronometro" style="font-size:28px;font-weight:800;color:#f59e0b;font-family:var(--font-mono)">00:00:00</div>
+                <div style="font-size:10px;color:var(--text-3)">Tempo decorrido</div>
+              </div>
+            </div>
+
+            <!-- Equipe e data -->
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
+              <div>
+                <label class="form-label">Equipe *</label>
+                <div style="position:relative">
+                  <input id="enelEquipeBusca" class="form-input" placeholder="Digite o nome/prefixo da equipe..." autocomplete="off"
+                    oninput="enelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('enelEquipeSug').style.display='none',200)">
+                  <div id="enelEquipeSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:200px;overflow-y:auto"></div>
+                  <input type="hidden" id="enelEquipeId">
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Data</label>
+                <input id="enelData" class="form-input" type="date" readonly style="color:var(--text-3)">
+              </div>
+            </div>
+
+            <!-- PRÉ-BAIXAS -->
+            <div id="areaPreBaixas" style="display:none;margin-bottom:16px">
+              <div style="border:2px solid rgba(245,158,11,.3);border-radius:var(--radius-md);padding:16px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                  <div>
+                    <div style="font-size:14px;font-weight:700;color:#f59e0b">📋 Pré-Baixas da Equipe</div>
+                    <div style="font-size:11px;color:var(--text-3)">Registre o que a equipe já utilizou antes de repor</div>
+                  </div>
+                  <button class="btn btn-ghost" style="font-size:11px" onclick="togglePreBaixasEnel()">▼ Expandir</button>
+                </div>
+                <div id="conteudoPreBaixas" style="display:none">
+                  <div style="margin-bottom:12px">
+                    <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:8px">📟 Medidores — selecione os utilizados</div>
+                    <div id="listaPreBaixaMedidores" style="background:rgba(0,0,0,.2);border-radius:var(--radius-sm);padding:10px;max-height:200px;overflow-y:auto">
+                      <p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">Selecione uma equipe</p>
+                    </div>
+                  </div>
+                  <div style="margin-bottom:12px">
+                    <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:8px">🧵 Materiais — informe o utilizado</div>
+                    <div id="listaPreBaixaMateriais" style="background:rgba(0,0,0,.2);border-radius:var(--radius-sm);padding:10px;max-height:200px;overflow-y:auto">
+                      <p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">Selecione uma equipe</p>
+                    </div>
+                  </div>
+                  <button class="btn btn-primary" style="width:100%;justify-content:center;background:#f59e0b;border-color:#f59e0b" onclick="confirmarPreBaixasEnel()">✅ Confirmar Pré-Baixas e Continuar</button>
+                  <div id="msgPreBaixas" style="text-align:center;font-size:12px;min-height:16px;margin-top:8px"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Adicionar item -->
+            <div style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
+              <div style="font-size:14px;font-weight:700;margin-bottom:12px">📦 Adicionar Material</div>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr 1.5fr auto;gap:8px;align-items:end">
+                <div>
+                  <label class="form-label">Material</label>
+                  <div style="position:relative">
+                    <input id="enelMatBusca" class="form-input" placeholder="Descrição ou código..." autocomplete="off"
+                      oninput="enelFiltrarMaterial()" onblur="setTimeout(()=>document.getElementById('enelMatSug').style.display='none',200)">
+                    <div id="enelMatSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto"></div>
+                    <input type="hidden" id="enelMatId">
+                  </div>
+                </div>
+                <div><label class="form-label">Qtd</label><input id="enelMatQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+                <div><label class="form-label">Motivo</label>
+                  <select id="enelMatMotivo" class="form-input">
+                    <option value="">Selecione...</option>
+                    <option value="entrega">🔶 Entrega De Kit</option>
+                    <option value="Reposição">🔷 Reposição Do Kit</option>
+                  </select>
+                </div>
+                <div><label class="form-label">Obs</label><input id="enelMatObs" class="form-input" placeholder="Opcional"></div>
+                <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="padding:10px 14px">+ Add</button>
+              </div>
+            </div>
+
+            <!-- Lista de itens -->
+            <div style="margin-bottom:16px">
+              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Materiais da Entrega</div>
+              <div id="enelListaItens" style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:12px;min-height:80px">
+                <p style="color:var(--text-3);text-align:center;padding:16px;margin:0;font-size:12px">Nenhum item adicionado</p>
+              </div>
+            </div>
+
+            <div id="msgAtendimentoEnel" style="text-align:center;font-size:13px;min-height:18px;margin-bottom:8px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" style="flex:1;justify-content:center;background:#f59e0b;border-color:#f59e0b;font-size:15px" onclick="enelFinalizarAtendimento()">✓ Finalizar Atendimento</button>
+              <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:15px;color:#ef4444;border-color:#ef4444" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Histórico -->
+        <div id="areaConsultaAtendEnel" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:16px;font-weight:700">Histórico de Atendimentos ENEL</div>
+            <button class="btn btn-ghost" onclick="enelAbrirAtendimento()">← Voltar</button>
+          </div>
+          <div class="card" style="overflow-x:auto">
+            <table id="tbHistAtendEnel" style="width:100%;border-collapse:collapse">
+              <thead><tr>
+                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Data/Hora</th>
+                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Equipe</th>
+                <th style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">Itens</th>
+                <th style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">Tempo</th>
+                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Atendente</th>
+              </tr></thead>
+              <tbody id="tbodyHistAtendEnel"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEVOLUÇÃO ENEL -->
+      <div class="view" id="view-enel-devolucao">
+        <div style="max-width:600px;margin:0 auto">
+          <div style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:4px">Devolução ENEL ↩️</div>
+          <div style="font-size:12px;color:var(--text-3);margin-bottom:20px">Bipe os seriais para retornar ao estoque</div>
+          <div style="border:2px solid rgba(245,158,11,.4);border-radius:var(--radius-md);padding:20px;background:rgba(245,158,11,.04)">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
+              <div>
+                <label class="form-label">Equipe (opcional)</label>
+                <div style="position:relative">
+                  <input id="devEnelEquipeBusca" class="form-input" placeholder="Nome/prefixo da equipe..." autocomplete="off"
+                    oninput="devEnelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('devEnelEquipeSug').classList.add('hidden'),200)">
+                  <div id="devEnelEquipeSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="devEnelEquipeId">
+                </div>
+              </div>
+              <div>
+                <label class="form-label">Serial</label>
+                <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
+                  onkeydown="if(event.key==='Enter'){devEnelAddSerial(this.value);this.value=''}">
+              </div>
+            </div>
+            <div style="margin-bottom:16px">
+              <div style="font-size:12px;font-weight:600;margin-bottom:8px">Seriais bipados <span id="devEnelCount" style="color:var(--accent-text)">(0)</span></div>
+              <div id="devEnelListaSeriais" style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:12px;min-height:70px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+                <p style="color:var(--text-3);font-size:12px;margin:0;width:100%;text-align:center">Nenhum serial ainda</p>
+              </div>
+            </div>
+            <div id="msgDevEnel" style="text-align:center;font-size:13px;min-height:18px;margin-bottom:8px"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" style="flex:1;justify-content:center;background:#22c55e;border-color:#22c55e" onclick="devEnelConfirmar()">✓ Confirmar Devolução</button>
+              <button class="btn btn-ghost" onclick="devEnelLimpar()">Limpar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSFERÊNCIA DE SERIAIS -->
+      <div class="view" id="view-enel-transferencia">
+        <div style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:4px">Transferência de Seriais 🔁</div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:20px">Transfira seriais de um tipo de material para outro</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div class="card-title" style="color:var(--accent-text)">📋 Passo 1 — Informe os Seriais</div></div>
+            <div style="padding:16px">
+              <label class="form-label">Cole ou digite os seriais (um por linha)</label>
+              <textarea id="trfSerialLista" class="form-input" rows="10" placeholder="Ex:&#10;12345678&#10;87654321" style="font-family:var(--font-mono);resize:vertical"></textarea>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="trfVerificarSeriais()">🔍 Verificar Seriais</button>
+              <div id="trfSerialResultado" style="display:none;margin-top:12px">
+                <div id="trfSerialEncontrados"></div>
+                <div id="trfSerialNaoEncontrados"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title" style="color:var(--accent-text)">🎯 Passo 2 — Selecione o Destino</div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div>
+                <label class="form-label">Material de Destino * <span style="font-size:10px;color:var(--text-3)">(apenas com serial)</span></label>
+                <select id="trfSerialDestino" class="form-input">
+                  <option value="">— Selecione —</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">Observação</label>
+                <textarea id="trfSerialObs" class="form-input" rows="3" placeholder="Motivo da transferência..."></textarea>
+              </div>
+              <div id="trfSerialResumo" style="display:none;padding:12px;border:1px solid rgba(0,184,230,.3);border-radius:var(--radius-sm);background:rgba(0,184,230,.06)">
+                <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Resumo:</div>
+                <div id="trfSerialResumoTexto" style="font-size:12px"></div>
+              </div>
+              <button id="btnConfirmarTrfSerial" class="btn btn-primary" style="justify-content:center" disabled onclick="trfConfirmar()">🔁 Confirmar Transferência</button>
+              <div id="msgTransfSerial" style="text-align:center;font-size:12px;min-height:16px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:20px">
+          <div class="card-header"><div class="card-title">Histórico de Transferências</div><button class="btn btn-ghost" onclick="carregarHistTrf()">↻</button></div>
+          <table><thead><tr><th>Data</th><th>Serial</th><th>Origem</th><th>Destino</th><th>Usuário</th><th>Obs</th></tr></thead>
+          <tbody id="tbodyHistTrf"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- CONTROLE DE MEDIDORES -->
+      <div class="view" id="view-enel-medidores">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Controle de Medidores ⚡</div>
+            <div style="font-size:12px;color:var(--text-3)">Gerencie seriais, status e localização dos medidores</div>
+          </div>
+        </div>
+        <!-- Botões principais -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <button onclick="cmAbrirAba('estoque')" style="background:rgba(0,184,230,.08);border:2px solid rgba(0,184,230,.25);border-radius:var(--radius-md);padding:20px;cursor:pointer;text-align:left">
+            <div style="font-size:28px;margin-bottom:6px">📦</div>
+            <div style="font-size:16px;font-weight:800;color:#00B8E6">Medidores em Estoque</div>
+            <div style="font-size:12px;color:var(--text-3)">Modelos disponíveis e seus seriais</div>
+          </button>
+          <button onclick="cmAbrirAba('campo')" style="background:rgba(245,158,11,.08);border:2px solid rgba(245,158,11,.25);border-radius:var(--radius-md);padding:20px;cursor:pointer;text-align:left">
+            <div style="font-size:28px;margin-bottom:6px">🚛</div>
+            <div style="font-size:16px;font-weight:800;color:#f59e0b">Medidores em Campo</div>
+            <div style="font-size:12px;color:var(--text-3)">Por equipe com prazos e status</div>
+          </button>
+        </div>
+        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+          <button onclick="cmAbrirAba('instalados')" style="flex:1;min-width:200px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-md);padding:14px 20px;cursor:pointer;display:flex;align-items:center;gap:12px">
+            <span style="font-size:24px">✅</span>
+            <div><div style="font-size:14px;font-weight:700;color:#22c55e">Medidores Instalados</div><div style="font-size:11px;color:var(--text-3)">Histórico de instalações</div></div>
+          </button>
+          <div style="flex:2;min-width:280px;background:rgba(0,184,230,.04);border:1px solid rgba(0,184,230,.18);border-radius:var(--radius-md);padding:14px 20px;display:flex;align-items:center;gap:12px">
+            <span style="font-size:24px">🔍</span>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:700;color:#00B8E6;margin-bottom:6px">Buscar Serial</div>
+              <div style="display:flex;gap:8px">
+                <input id="cmBuscaSerialInput" class="form-input" placeholder="Número de série..." onkeydown="if(event.key==='Enter')cmBuscarSerial()">
+                <button class="btn btn-ghost" style="color:#00B8E6;border-color:#00B8E6" onclick="cmBuscarSerial()">Buscar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtros status campo -->
+        <div id="cmFiltrosStatus" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button onclick="cmFiltrarStatus('TODOS')"    style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text-3)">Todos</button>
+          <button onclick="cmFiltrarStatus('EM DIA')"   style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#22c55e">✅ Em Dia</button>
+          <button onclick="cmFiltrarStatus('ALERTA')"   style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#f59e0b">⚠️ Alerta</button>
+          <button onclick="cmFiltrarStatus('BLOQUEADO')" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#ef4444">🚫 Bloqueado</button>
+        </div>
+
+        <div id="cmLoading" style="display:none;text-align:center;padding:40px">
+          <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
+          <p style="color:var(--text-3)">Carregando medidores...</p>
+        </div>
+
+        <div id="cmConteudo" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div id="cmAbaTitulo" style="font-size:16px;font-weight:700;color:var(--text-1)"></div>
+            <div style="display:flex;gap:8px">
+              <input id="cmBuscaAba" class="search-box" placeholder="Buscar modelo ou serial..." oninput="cmFiltrarAba()">
+              <button class="btn btn-ghost" onclick="cmRecarregarAba()">↻ Recarregar</button>
+            </div>
+          </div>
+          <div id="cmSumario" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+          <div id="cmListaModelos"></div>
+        </div>
+        <div id="cmMsg" style="font-size:12px;color:var(--text-3);margin-top:8px;min-height:16px"></div>
+      </div>
+
+      <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
+      <div class="view" id="view-enel-controle">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Controle de Materiais por Equipe 🧵</div>
+            <div style="font-size:12px;color:var(--text-3)">Saldo de materiais por equipe, descontando consumos por OS</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="abrirModalBaixaLote()">📋 Finalizar Pré-baixas OS</button>
+            <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="abrirBaixaDiretaOS()">⚡ Baixa Direta por OS</button>
+            <button class="btn btn-ghost" onclick="carregarControleMateriaisEquipe()">↻</button>
+          </div>
+        </div>
+        <input class="search-box" id="buscaControleEquipe" placeholder="Buscar equipe..." oninput="filtrarControleEquipe()" style="margin-bottom:12px;width:100%">
+        <div id="listaEquipesControle" style="display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>
+        </div>
+        <div id="sumControleEquipe" style="margin-top:12px;padding:10px;background:rgba(0,184,230,.06);border-radius:var(--radius-sm);font-size:12px;color:var(--text-3)"></div>
+      </div>
       <!-- ── FICHA EPI ── -->
       <div class="view" id="view-ficha-epi">
 
@@ -3292,7 +3589,11 @@ function onViewLoad(nome) {
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
-  if (nome === 'enel-cadastro')      carregarMateriaisEnel();
+  if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); enelAbrirAtendimento(); }
+  if (nome === 'enel-devolucao')     { if (!_equipes.length) carregarEquipes(); devEnelRender(); }
+  if (nome === 'enel-transferencia') { if (!_enelMateriais.length) carregarMateriaisEnel(); }
+  if (nome === 'enel-medidores')     { /* user clicks tab */ }
+  if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('saiData').value=new Date().toISOString().split('T')[0]; }
@@ -9307,6 +9608,615 @@ async function carregarBaixas() {
     <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
   </tr>`).join('') : `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3)">Nenhuma baixa encontrada</td></tr>`;
 }
+
+// ═══════════════════════════════════════════
+// ENEL — ATENDIMENTO MATERIAL
+// ═══════════════════════════════════════════
+window.__ENEL__ = { atendimento: null, itens: [], cronInt: null };
+window.__PRE_BAIXAS__ = { medidoresSelecionados: new Set(), materiaisQtd: {}, _mediadoresLista: [] };
+
+function enelAbrirAtendimento() {
+  document.getElementById('areaAtendEnelAndamento').style.display = 'none';
+  document.getElementById('areaConsultaAtendEnel').style.display = 'none';
+}
+function enelAbrirConsulta() {
+  document.getElementById('areaAtendEnelAndamento').style.display = 'none';
+  document.getElementById('areaConsultaAtendEnel').style.display = '';
+  carregarHistAtendEnel();
+}
+
+function enelIniciarAtendimento() {
+  if (!_enelMateriais.length) carregarMateriaisEnel();
+  const agora = new Date();
+  window.__ENEL__.atendimento = { id: 'enel_'+Date.now(), inicio: agora.toISOString(), seg: 0 };
+  window.__ENEL__.itens = [];
+  document.getElementById('enelData').value = agora.toISOString().split('T')[0];
+  document.getElementById('enelHoraInicio').textContent = agora.toLocaleTimeString('pt-BR');
+  document.getElementById('enelCronometro').textContent = '00:00:00';
+  document.getElementById('enelEquipeBusca').value = '';
+  document.getElementById('enelEquipeId').value = '';
+  document.getElementById('areaPreBaixas').style.display = 'none';
+  document.getElementById('conteudoPreBaixas').style.display = 'none';
+  if (window.__ENEL__.cronInt) clearInterval(window.__ENEL__.cronInt);
+  window.__ENEL__.cronInt = setInterval(() => {
+    const seg = Math.floor((new Date() - new Date(window.__ENEL__.atendimento.inicio)) / 1000);
+    window.__ENEL__.atendimento.seg = seg;
+    const h = String(Math.floor(seg/3600)).padStart(2,'0');
+    const m = String(Math.floor((seg%3600)/60)).padStart(2,'0');
+    const s = String(seg%60).padStart(2,'0');
+    document.getElementById('enelCronometro').textContent = `${h}:${m}:${s}`;
+  }, 1000);
+  enelRenderItens();
+  document.getElementById('areaAtendEnelAndamento').style.display = '';
+  enelMsg('Atendimento iniciado.', true);
+}
+
+function enelCancelarAtendimento() {
+  if (!confirm('Cancelar atendimento?')) return;
+  window.__ENEL__.atendimento = null; window.__ENEL__.itens = [];
+  if (window.__ENEL__.cronInt) { clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null; }
+  document.getElementById('areaAtendEnelAndamento').style.display = 'none';
+}
+
+function enelMsg(txt, ok) {
+  const el = document.getElementById('msgAtendimentoEnel');
+  if (!el) return;
+  el.style.color = ok ? '#22c55e' : '#ef4444';
+  el.textContent = txt || '';
+}
+
+function enelFiltrarEquipe() {
+  const q = (document.getElementById('enelEquipeBusca').value||'').toLowerCase();
+  const sug = document.getElementById('enelEquipeSug');
+  document.getElementById('enelEquipeId').value = '';
+  if (!q) { sug.style.display='none'; return; }
+  const lista = (_equipes||[]).filter(e=>(e.nomeEquipe||e.nome_equipe||'').toLowerCase().includes(q)||(e.prefixo||'').toLowerCase().includes(q)).slice(0,15);
+  if (!lista.length) { sug.style.display='none'; return; }
+  sug.innerHTML = lista.map(e=>{
+    const nm = e.nomeEquipe||e.nome_equipe||'';
+    const pf = e.prefixo||'';
+    return `<div class="autocomplete-item" onmousedown="enelSelecionarEquipe('${e.id}','${nm.replace(/'/g,"\\'")}','${pf}')"><strong>${nm}</strong><span style="font-size:10px;color:var(--text-3);margin-left:8px">${pf}</span></div>`;
+  }).join('');
+  sug.style.display = '';
+  sug.classList.remove('hidden');
+}
+
+function enelSelecionarEquipe(id, nome, prefixo) {
+  document.getElementById('enelEquipeBusca').value = nome;
+  document.getElementById('enelEquipeId').value = id;
+  document.getElementById('enelEquipeSug').style.display = 'none';
+  carregarPreBaixasEquipeEnel(nome);
+}
+
+function enelFiltrarMaterial() {
+  const q = (document.getElementById('enelMatBusca').value||'').toLowerCase();
+  const sug = document.getElementById('enelMatSug');
+  if (!q) { sug.style.display='none'; return; }
+  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)).slice(0,15);
+  if (!lista.length) { sug.style.display='none'; return; }
+  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onmousedown="enelSelecionarMaterial('${m.id}')">
+    <strong>${m.descricao}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
+    ${m.possui_numero_serie?'<span style="color:#f59e0b;font-size:10px;margin-left:6px;border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px">Serial</span>':''}
+  </div>`).join('');
+  sug.style.display = ''; sug.classList.remove('hidden');
+}
+
+function enelSelecionarMaterial(id) {
+  const m = _enelMateriais.find(x=>x.id===id);
+  if (!m) return;
+  document.getElementById('enelMatBusca').value = `${m.descricao} (${m.codigo})`;
+  document.getElementById('enelMatId').value = id;
+  document.getElementById('enelMatSug').style.display = 'none';
+}
+
+function enelAdicionarMaterial() {
+  if (!window.__ENEL__.atendimento) { enelMsg('Clique em Iniciar Atendimento.', false); return; }
+  const matId  = document.getElementById('enelMatId').value;
+  const qtd    = Number(document.getElementById('enelMatQtd').value||0);
+  const motivo = document.getElementById('enelMatMotivo').value;
+  const obs    = document.getElementById('enelMatObs').value.trim();
+  if (!matId||qtd<=0||!motivo) { enelMsg('Preencha material, quantidade e motivo.', false); return; }
+  const mat = _enelMateriais.find(x=>x.id===matId);
+  if (!mat) { enelMsg('Material inválido.', false); return; }
+  window.__ENEL__.itens.push({ materialId: mat.id, descricao: mat.descricao, codigo: mat.codigo,
+    quantidade: Math.floor(qtd), motivo, obs, usaSerial: !!mat.possui_numero_serie, seriais: [] });
+  document.getElementById('enelMatBusca').value=''; document.getElementById('enelMatId').value='';
+  document.getElementById('enelMatQtd').value=''; document.getElementById('enelMatMotivo').value='';
+  document.getElementById('enelMatObs').value='';
+  enelRenderItens(); enelMsg('Material adicionado.', true);
+}
+
+window.enelAddSerial = function(idx, serial) {
+  const it = window.__ENEL__.itens[idx]; const s = String(serial||'').trim().toUpperCase();
+  if (!it||!s) return;
+  if ((it.seriais||[]).includes(s)) { enelMsg(`Serial duplicado: ${s}`, false); return; }
+  const all = window.__ENEL__.itens.flatMap(x=>x.seriais||[]);
+  if (all.includes(s)) { enelMsg(`Serial já usado em outro item: ${s}`, false); return; }
+  if ((it.seriais||[]).length >= it.quantidade) { enelMsg(`Seriais completos para ${it.descricao}`, false); return; }
+  it.seriais.push(s); enelRenderItens(); enelMsg(`Serial adicionado: ${s}`, true);
+  setTimeout(()=>{ const inputs=document.querySelectorAll('.enel-serial-input'); if(inputs[idx])inputs[idx].focus(); },50);
+};
+window.enelRemSerial = function(idx, serial) {
+  const it = window.__ENEL__.itens[idx]; if (!it) return;
+  it.seriais = (it.seriais||[]).filter(x=>x!==serial); enelRenderItens();
+};
+window.enelRemItem = function(idx) {
+  if (!confirm('Remover item?')) return;
+  window.__ENEL__.itens.splice(idx,1); enelRenderItens();
+};
+
+function enelRenderItens() {
+  const box = document.getElementById('enelListaItens');
+  const itens = window.__ENEL__.itens||[];
+  if (!itens.length) { box.innerHTML='<p style="color:var(--text-3);text-align:center;padding:16px;margin:0;font-size:12px">Nenhum item adicionado</p>'; return; }
+  box.innerHTML = '';
+  itens.forEach((it,idx) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:8px';
+    const serialBlock = it.usaSerial ? `
+      <div style="margin-top:10px;background:rgba(245,158,11,.04);border:1px dashed rgba(245,158,11,.3);border-radius:var(--radius-sm);padding:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:11px;font-weight:700;color:#fcd34d">Seriais (${(it.seriais||[]).length}/${it.quantidade})</span>
+          <span style="font-size:11px;color:${(it.seriais||[]).length===it.quantidade?'#22c55e':'#ef4444'}">${(it.seriais||[]).length===it.quantidade?'Completo':'Pendente'}</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input type="text" placeholder="Bipar e Enter..." class="form-input enel-serial-input" style="flex:1;font-family:var(--font-mono)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();window.enelAddSerial(${idx},this.value);this.value=''}">
+          <button class="btn btn-ghost" onclick="const i=this.previousElementSibling;window.enelAddSerial(${idx},i.value);i.value=''">+</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">${(it.seriais||[]).map(s=>`
+          <span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${s}
+            <button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="window.enelRemSerial(${idx},'${s.replace(/'/g,"\\'")}')">✕</button>
+          </span>`).join('')}</div>
+      </div>` : '';
+    wrap.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px">
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${it.descricao} <span style="color:var(--text-3);font-size:11px">(${it.codigo})</span>
+          ${it.usaSerial?'<span style="color:#f59e0b;font-size:10px;border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px;margin-left:6px">Serial</span>':''}
+        </div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Qtd: <strong>${it.quantidade}</strong> · ${it.motivo}${it.obs?` · ${it.obs}`:''}</div>
+        ${serialBlock}
+      </div>
+      <button onclick="window.enelRemItem(${idx})" style="background:rgba(239,68,68,.8);border:0;color:#fff;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;align-self:flex-start">✕</button>
+    </div>`;
+    box.appendChild(wrap);
+  });
+}
+
+async function enelFinalizarAtendimento() {
+  if (!window.__ENEL__.atendimento) { enelMsg('Nenhum atendimento em andamento.', false); return; }
+  const equipeId = document.getElementById('enelEquipeId').value;
+  if (!equipeId) { enelMsg('Selecione uma equipe.', false); return; }
+  const itens = window.__ENEL__.itens||[];
+  if (!itens.length) { enelMsg('Adicione pelo menos 1 material.', false); return; }
+  const pend = itens.find(it=>it.usaSerial&&(it.seriais||[]).length!==Number(it.quantidade));
+  if (pend) { enelMsg(`Falta seriais em: ${pend.descricao} (${(pend.seriais||[]).length}/${pend.quantidade})`, false); return; }
+  const equipeObj = (_equipes||[]).find(x=>x.id===equipeId);
+  const equipeNome = equipeObj?.nomeEquipe||equipeObj?.nome_equipe||document.getElementById('enelEquipeBusca').value;
+  const agora = new Date();
+  const at = window.__ENEL__.atendimento;
+  enelMsg('Finalizando...', true);
+  const res = await api('/enel/atendimentos', { method:'POST', body: JSON.stringify({
+    equipe_id: equipeId, nome_equipe: equipeNome,
+    data: document.getElementById('enelData').value,
+    hora_inicio: new Date(at.inicio).toLocaleTimeString('pt-BR'),
+    hora_fim: agora.toLocaleTimeString('pt-BR'),
+    tempo_segundos: at.seg, itens,
+  })});
+  if (res?.ok) {
+    toast('Atendimento ENEL finalizado!','success');
+    clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null;
+    window.__ENEL__.atendimento = null; window.__ENEL__.itens = [];
+    document.getElementById('enelCronometro').textContent='00:00:00';
+    document.getElementById('enelEquipeBusca').value=''; document.getElementById('enelEquipeId').value='';
+    enelRenderItens();
+    document.getElementById('areaAtendEnelAndamento').style.display='none';
+    carregarEstoqueEnel();
+  } else enelMsg(res?.erro||'Erro ao finalizar', false);
+}
+
+async function carregarHistAtendEnel() {
+  const tbody = document.getElementById('tbodyHistAtendEnel');
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const data = await api('/enel/atendimentos');
+  const lista = data?.data||[];
+  tbody.innerHTML = lista.length ? lista.map(a=>{
+    const seg = Number(a.tempo_segundos||0);
+    const tempo = `${String(Math.floor(seg/3600)).padStart(2,'0')}:${String(Math.floor((seg%3600)/60)).padStart(2,'0')}:${String(seg%60).padStart(2,'0')}`;
+    return `<tr>
+      <td style="font-size:11px">${a.criado_em?a.criado_em.replace('T',' ').slice(0,16):'—'}</td>
+      <td class="td-main">${a.nome_equipe||'—'}</td>
+      <td style="text-align:center;font-weight:600">${a.qtd_itens||0}</td>
+      <td style="text-align:center;font-family:var(--font-mono);font-size:11px">${tempo}</td>
+      <td style="font-size:11px;color:var(--text-3)">${a.usuario||'—'}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhum atendimento</td></tr>`;
+}
+
+// ── PRÉ-BAIXAS ──
+function togglePreBaixasEnel() {
+  const c = document.getElementById('conteudoPreBaixas');
+  const b = document.querySelector('#areaPreBaixas .btn');
+  const aberto = c.style.display !== 'none';
+  c.style.display = aberto ? 'none' : '';
+  if (b) b.textContent = aberto ? '▼ Expandir' : '▲ Recolher';
+}
+
+async function carregarPreBaixasEquipeEnel(nomeEquipe) {
+  if (!nomeEquipe) { document.getElementById('areaPreBaixas').style.display='none'; return; }
+  document.getElementById('areaPreBaixas').style.display = '';
+  window.__PRE_BAIXAS__.medidoresSelecionados = new Set();
+  window.__PRE_BAIXAS__.materiaisQtd = {};
+
+  // Medidores
+  const divMed = document.getElementById('listaPreBaixaMedidores');
+  divMed.innerHTML = '<p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">⏳ Carregando...</p>';
+  const medData = await api(`/enel/medidores?localizacao=CAMPO`);
+  const medList = (medData?.data||[]).filter(m=>(m.equipe_atual||'').toLowerCase()===nomeEquipe.toLowerCase());
+  window.__PRE_BAIXAS__._mediadoresLista = medList;
+  divMed.innerHTML = medList.length ? `
+    <input class="form-input" placeholder="Buscar serial..." oninput="filtrarMedPreBaixaEnel(this.value)" style="margin-bottom:8px;font-size:11px">
+    <div id="listaMedPreBaixaEnel">${renderMedPreBaixaEnel(medList)}</div>` :
+    '<p style="color:#22c55e;text-align:center;font-size:12px;margin:0">✅ Nenhum medidor pendente</p>';
+
+  // Materiais (saldo por equipe)
+  const divMat = document.getElementById('listaPreBaixaMateriais');
+  divMat.innerHTML = '<p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">⏳ Carregando...</p>';
+  const controle = await api(`/enel/controle-equipe/${encodeURIComponent(nomeEquipe)}`);
+  const itensMat = (controle?.itens||[]).filter(it=>it.saldoTotal>0);
+  divMat.innerHTML = itensMat.length ? itensMat.map(it=>`
+    <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;align-items:center;padding:8px 10px;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.12);border-radius:var(--radius-sm);margin-bottom:6px">
+      <div>
+        <div style="font-size:12px;font-weight:600">${it.materialDesc}</div>
+        <div style="font-size:10px;color:var(--text-3)">Disponível: <strong style="color:#22c55e">${it.saldoTotal}</strong></div>
+      </div>
+      <div>
+        <label class="form-label" style="font-size:9px">Qtd utilizada</label>
+        <input type="number" min="0" max="${it.saldoTotal}" value="0" class="form-input inputPreBaixaMat" style="text-align:center;font-weight:700"
+          data-material-id="${it.materialId}" data-material-desc="${it.materialDesc}" data-material-cod="${it.materialCod||''}" data-saldo-max="${it.saldoTotal}"
+          oninput="window.__PRE_BAIXAS__.materiaisQtd['${it.materialId}']=Number(this.value)">
+      </div>
+    </div>`).join('') : '<p style="color:#22c55e;text-align:center;font-size:12px;margin:0">✅ Nenhum material com saldo</p>';
+}
+
+function renderMedPreBaixaEnel(lista) {
+  return lista.map(m=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:7px 8px;background:rgba(245,158,11,.04);border:1px solid rgba(245,158,11,.12);border-radius:var(--radius-sm);margin-bottom:5px;cursor:pointer">
+      <input type="checkbox" class="chkPreBaixaMed" data-serial="${m.numero_serie}" style="width:15px;height:15px;cursor:pointer"
+        onchange="window.__PRE_BAIXAS__.medidoresSelecionados[this.checked?'add':'delete'](this.dataset.serial)">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)">${m.numero_serie}</div>
+        <div style="font-size:10px;color:var(--text-3)">${m.material_descricao||'—'}</div>
+      </div>
+    </label>`).join('');
+}
+
+function filtrarMedPreBaixaEnel(q) {
+  const lista = q ? window.__PRE_BAIXAS__._mediadoresLista.filter(m=>(m.numero_serie||'').toLowerCase().includes(q.toLowerCase())) : window.__PRE_BAIXAS__._mediadoresLista;
+  const el = document.getElementById('listaMedPreBaixaEnel');
+  if (el) el.innerHTML = renderMedPreBaixaEnel(lista);
+}
+
+async function confirmarPreBaixasEnel() {
+  const msg = document.getElementById('msgPreBaixas');
+  const nomeEquipe = document.getElementById('enelEquipeBusca').value.trim();
+  const medSel = Array.from(window.__PRE_BAIXAS__.medidoresSelecionados);
+  const inputs = document.querySelectorAll('.inputPreBaixaMat');
+  const itensMat = [];
+  let erroQtd = false;
+  inputs.forEach(inp=>{
+    const qtd=Number(inp.value||0); const max=Number(inp.dataset.saldoMax||0);
+    if(qtd>max){msg.style.color='#ef4444';msg.textContent=`Qtd de "${inp.dataset.materialDesc}" maior que saldo (${max})`;erroQtd=true;}
+    if(qtd>0) itensMat.push({materialId:inp.dataset.materialId,materialDesc:inp.dataset.materialDesc,materialCod:inp.dataset.materialCod,quantidade:qtd});
+  });
+  if(erroQtd) return;
+  if(!medSel.length&&!itensMat.length){togglePreBaixasEnel();return;}
+  msg.style.color='var(--text-3)';msg.textContent='⏳ Registrando...';
+  const res = await api('/enel/pre-baixas', {method:'POST', body:JSON.stringify({nomeEquipe,medidores:medSel,materiais:itensMat})});
+  if(res?.ok){
+    msg.style.color='#22c55e';msg.textContent=`✅ ${medSel.length} medidor(es) · ${itensMat.reduce((s,i)=>s+i.quantidade,0)} un. registrados`;
+    setTimeout(()=>{togglePreBaixasEnel();msg.textContent='';},2000);
+  } else {msg.style.color='#ef4444';msg.textContent=res?.erro||'Erro ao registrar';}
+}
+
+// ═══════════════════════════════════════════
+// ENEL — DEVOLUÇÃO
+// ═══════════════════════════════════════════
+window.__DEV_ENEL__ = { seriais: [] };
+
+function devEnelFiltrarEquipe() {
+  const q = (document.getElementById('devEnelEquipeBusca').value||'').toLowerCase();
+  const sug = document.getElementById('devEnelEquipeSug');
+  document.getElementById('devEnelEquipeId').value = '';
+  if (!q) { sug.classList.add('hidden'); return; }
+  const lista = (_equipes||[]).filter(e=>(e.nomeEquipe||e.nome_equipe||'').toLowerCase().includes(q)||(e.prefixo||'').toLowerCase().includes(q)).slice(0,10);
+  sug.innerHTML = lista.map(e=>{const nm=e.nomeEquipe||e.nome_equipe||'';return `<div class="autocomplete-item" onclick="document.getElementById('devEnelEquipeBusca').value='${nm.replace(/'/g,"\\'")}';document.getElementById('devEnelEquipeId').value='${e.id}';document.getElementById('devEnelEquipeSug').classList.add('hidden')"><strong>${nm}</strong></div>`;}).join('');
+  sug.classList.toggle('hidden', !lista.length);
+}
+
+function devEnelAddSerial(s) {
+  s = String(s||'').trim().toUpperCase();
+  if (!s) return;
+  if (window.__DEV_ENEL__.seriais.includes(s)) { devEnelMsg(`Serial duplicado: ${s}`, false); return; }
+  window.__DEV_ENEL__.seriais.push(s);
+  devEnelRender(); devEnelMsg(`Serial adicionado: ${s}`, true);
+}
+
+function devEnelRemSerial(s) { window.__DEV_ENEL__.seriais = window.__DEV_ENEL__.seriais.filter(x=>x!==s); devEnelRender(); }
+window.devEnelRemSerial = devEnelRemSerial;
+
+function devEnelRender() {
+  const box = document.getElementById('devEnelListaSeriais');
+  const arr = window.__DEV_ENEL__.seriais;
+  const cnt = document.getElementById('devEnelCount');
+  if (cnt) cnt.textContent = `(${arr.length})`;
+  if (!arr.length) { box.innerHTML='<p style="color:var(--text-3);font-size:12px;margin:0;width:100%;text-align:center">Nenhum serial ainda</p>'; return; }
+  box.innerHTML = arr.map(s=>`<span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${s}
+    <button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="devEnelRemSerial('${s.replace(/'/g,"\\'")}')">✕</button>
+  </span>`).join('');
+}
+
+function devEnelLimpar() { window.__DEV_ENEL__.seriais=[]; devEnelRender(); devEnelMsg('Lista limpa.',true); }
+
+function devEnelMsg(txt, ok) {
+  const el = document.getElementById('msgDevEnel');
+  if (!el) return;
+  el.style.color = ok?'#22c55e':'#ef4444'; el.textContent = txt||'';
+}
+
+async function devEnelConfirmar() {
+  const seriais = window.__DEV_ENEL__.seriais.slice();
+  if (!seriais.length) { devEnelMsg('Bipe pelo menos 1 serial.', false); return; }
+  devEnelMsg('⏳ Devolvendo...', true);
+  const equipeId = document.getElementById('devEnelEquipeId').value;
+  const equipeNome = document.getElementById('devEnelEquipeBusca').value.trim();
+  const res = await api('/enel/devolucao', {method:'POST', body:JSON.stringify({seriais, equipeId, equipeNome})});
+  if (res?.ok) { devEnelMsg(`✅ ${res.devolvidos} serial(is) devolvido(s)!`, true); devEnelLimpar(); carregarEstoqueEnel(); }
+  else devEnelMsg(res?.erro||'Erro na devolução', false);
+}
+
+// ═══════════════════════════════════════════
+// ENEL — TRANSFERÊNCIA DE SERIAIS
+// ═══════════════════════════════════════════
+let _trfSeriaisVerificados = [];
+
+async function trfVerificarSeriais() {
+  const texto = document.getElementById('trfSerialLista').value.trim();
+  if (!texto) { toast('Digite pelo menos um serial','warn'); return; }
+  const seriais = texto.split(/[\n,;]+/).map(s=>s.trim().toUpperCase()).filter(Boolean);
+  const res = await api('/enel/transferencia/verificar', {method:'POST', body:JSON.stringify({seriais})});
+  if (!res?.ok) { toast('Erro ao verificar','error'); return; }
+  _trfSeriaisVerificados = res.encontrados||[];
+  const naoEnc = res.naoEncontrados||[];
+  const enc = document.getElementById('trfSerialEncontrados');
+  const nEnc = document.getElementById('trfSerialNaoEncontrados');
+  enc.innerHTML = _trfSeriaisVerificados.length ? `<div style="margin-bottom:8px">
+    <strong style="color:#22c55e">✅ ${_trfSeriaisVerificados.length} serial(is) encontrado(s):</strong>
+    <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${_trfSeriaisVerificados.map(s=>`
+      <span style="padding:3px 8px;border-radius:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);font-size:11px;font-family:var(--font-mono);color:#22c55e">${s.numero_serie} <span style="color:var(--text-3)">${s.material_descricao||''}</span></span>
+    `).join('')}</div></div>` : '';
+  nEnc.innerHTML = naoEnc.length ? `<div><strong style="color:#ef4444">❌ ${naoEnc.length} não encontrado(s):</strong>
+    <div style="margin-top:4px;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${naoEnc.join(', ')}</div></div>` : '';
+  document.getElementById('trfSerialResultado').style.display = '';
+  // Popula destino com materiais que têm serial
+  const sel = document.getElementById('trfSerialDestino');
+  sel.innerHTML = '<option value="">— Selecione —</option>' + _enelMateriais.filter(m=>m.possui_numero_serie).map(m=>`<option value="${m.id}">${m.descricao} (${m.codigo})</option>`).join('');
+  if (_trfSeriaisVerificados.length) {
+    document.getElementById('trfSerialResumo').style.display = '';
+    document.getElementById('btnConfirmarTrfSerial').disabled = false;
+    document.getElementById('trfSerialResumoTexto').textContent = `${_trfSeriaisVerificados.length} serial(is) serão transferidos para o material selecionado.`;
+  }
+}
+
+async function trfConfirmar() {
+  const destino = document.getElementById('trfSerialDestino').value;
+  const obs     = document.getElementById('trfSerialObs').value.trim();
+  const msg     = document.getElementById('msgTransfSerial');
+  if (!destino) { msg.style.color='#ef4444';msg.textContent='Selecione o material destino.'; return; }
+  if (!_trfSeriaisVerificados.length) { msg.style.color='#ef4444';msg.textContent='Verifique os seriais primeiro.'; return; }
+  msg.style.color='var(--text-3)';msg.textContent='⏳ Transferindo...';
+  const res = await api('/enel/transferencia/confirmar', {method:'POST', body:JSON.stringify({
+    seriais: _trfSeriaisVerificados.map(s=>s.numero_serie), material_destino_id: destino, observacao: obs,
+    usuario: GCA.usuario?.nome||GCA.usuario?.username,
+  })});
+  if (res?.ok) {
+    msg.style.color='#22c55e'; msg.textContent=`✅ ${_trfSeriaisVerificados.length} serial(is) transferido(s)!`;
+    _trfSeriaisVerificados=[]; document.getElementById('trfSerialLista').value='';
+    document.getElementById('trfSerialResultado').style.display='none';
+    document.getElementById('trfSerialResumo').style.display='none';
+    document.getElementById('btnConfirmarTrfSerial').disabled=true;
+    carregarHistTrf();
+  } else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao transferir'; }
+}
+
+async function carregarHistTrf() {
+  const tbody = document.getElementById('tbodyHistTrf');
+  if (!tbody) return;
+  tbody.innerHTML='<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const data = await api('/enel/transferencia/historico');
+  const lista = data?.data||[];
+  tbody.innerHTML = lista.length ? lista.map(t=>`<tr>
+    <td style="font-size:11px">${t.data||'—'}</td>
+    <td class="td-mono">${t.numero_serie||'—'}</td>
+    <td style="font-size:11px">${t.material_origem||'—'}</td>
+    <td style="font-size:11px">${t.material_destino||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${t.usuario||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${t.observacao||'—'}</td>
+  </tr>`).join('') : `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma transferência</td></tr>`;
+}
+
+// ═══════════════════════════════════════════
+// ENEL — CONTROLE DE MEDIDORES
+// ═══════════════════════════════════════════
+let _cmAbaAtual = null;
+let _cmDados = [];
+let _cmDadosFiltrados = [];
+let _cmFiltroStatus = 'TODOS';
+
+async function cmAbrirAba(aba) {
+  _cmAbaAtual = aba;
+  _cmFiltroStatus = 'TODOS';
+  document.getElementById('cmLoading').style.display = '';
+  document.getElementById('cmConteudo').style.display = 'none';
+  const fs = document.getElementById('cmFiltrosStatus');
+  if (fs) fs.style.display = aba==='campo' ? 'flex' : 'none';
+  const res = await api(`/enel/medidores${aba!=='instalados'?`?localizacao=${aba.toUpperCase()===''?'':aba==='estoque'?'ESTOQUE':aba==='campo'?'CAMPO':'INSTALADO'}`:''}`);
+  _cmDados = res?.data||[];
+  document.getElementById('cmLoading').style.display = 'none';
+  document.getElementById('cmConteudo').style.display = '';
+  const titulos = {estoque:'📦 Medidores em Estoque', campo:'🚛 Medidores em Campo', instalados:'✅ Medidores Instalados'};
+  document.getElementById('cmAbaTitulo').textContent = titulos[aba]||aba;
+  cmRenderSumario();
+  cmRenderModelos();
+}
+
+function cmRecarregarAba() { if (_cmAbaAtual) cmAbrirAba(_cmAbaAtual); }
+
+function cmFiltrarStatus(st) {
+  _cmFiltroStatus = st;
+  cmRenderModelos();
+}
+
+function cmFiltrarAba() { cmRenderModelos(); }
+
+function cmRenderSumario() {
+  const el = document.getElementById('cmSumario');
+  if (!el) return;
+  const total = _cmDados.length;
+  // Agrupa por modelo
+  const modelos = {};
+  _cmDados.forEach(m=>{ if(!modelos[m.material_descricao])modelos[m.material_descricao]=0; modelos[m.material_descricao]++; });
+  el.innerHTML = `<div style="font-size:12px;color:var(--text-3)">Total: <strong style="color:var(--text-1)">${total}</strong> medidor(es) em <strong>${Object.keys(modelos).length}</strong> modelo(s)</div>`;
+}
+
+function cmRenderModelos() {
+  const busca = (document.getElementById('cmBuscaAba')?.value||'').toLowerCase();
+  let dados = _cmDados;
+  if (busca) dados = dados.filter(m=>(m.material_descricao||'').toLowerCase().includes(busca)||(m.numero_serie||'').toLowerCase().includes(busca));
+  if (_cmFiltroStatus!=='TODOS') dados = dados.filter(m=>(m.status_atual||'').toUpperCase().includes(_cmFiltroStatus));
+  // Agrupa por modelo
+  const grupos = {};
+  dados.forEach(m=>{ const k=m.id_material||m.material_descricao; if(!grupos[k])grupos[k]={descricao:m.material_descricao,seriais:[]}; grupos[k].seriais.push(m); });
+  const lista = document.getElementById('cmListaModelos');
+  if (!lista) return;
+  const arr = Object.values(grupos);
+  if (!arr.length) { lista.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-3)">Nenhum medidor encontrado</div>'; return; }
+  lista.innerHTML = arr.map(g=>{
+    const gid = 'cmg_'+(g.descricao||'').replace(/\W/g,'_');
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;background:var(--bg-card)" onclick="document.getElementById('${gid}').style.display=document.getElementById('${gid}').style.display==='none'?'':'none';this.querySelector('.cm-arrow').textContent=document.getElementById('${gid}').style.display===''?'▼':'▶'">
+        <span class="cm-arrow" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text-1)">${g.descricao||'—'}</div>
+          <div style="font-size:11px;color:var(--text-3)">${g.seriais.length} serial(is)</div>
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;padding:12px">
+          ${g.seriais.map(s=>{
+            const stCor = s.status_atual==='CAMPO'?'#f59e0b':s.status_atual==='INSTALADO'?'#22c55e':'#3b82f6';
+            return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+              <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text)">${s.numero_serie}</div>
+              <div style="font-size:10px;color:${stCor};font-weight:600;margin-top:2px">${s.status_atual||'—'}</div>
+              ${s.equipe_atual?`<div style="font-size:10px;color:var(--text-3)">${s.equipe_atual}</div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function cmBuscarSerial() {
+  const serial = document.getElementById('cmBuscaSerialInput').value.trim().toUpperCase();
+  if (!serial) { toast('Digite um serial','warn'); return; }
+  const res = await api(`/enel/medidores/buscar/${encodeURIComponent(serial)}`);
+  const med = res?.medidor;
+  const hist = res?.historico||[];
+  const stCor = med?.status_atual==='CAMPO'?'#f59e0b':med?.status_atual==='INSTALADO'?'#22c55e':'#3b82f6';
+  const content = document.getElementById('buscaSerialConteudo') || document.createElement('div');
+  if (!med) { alert('Serial não encontrado'); return; }
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `<div style="background:var(--bg-card);border:1px solid rgba(0,184,230,.3);border-radius:var(--radius-md);padding:24px;width:100%;max-width:500px;position:relative">
+    <button onclick="this.closest('.cm-serial-modal').remove()" style="position:absolute;top:12px;right:12px;background:none;border:0;color:var(--text-3);font-size:18px;cursor:pointer">✕</button>
+    <div style="font-size:16px;font-weight:700;color:#00B8E6;margin-bottom:12px">🔍 Serial: ${med.numero_serie}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      ${[['Modelo',med.material_descricao||'—'],['Status',`<span style="color:${stCor};font-weight:700">${med.status_atual||'—'}</span>`],['Equipe',med.equipe_atual||'—'],['Entrada',med.data_entrada?formatarData(med.data_entrada):'—']].map(([l,v])=>`
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+          <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
+          <div style="font-size:12px;font-weight:600">${v}</div>
+        </div>`).join('')}
+    </div>
+    ${hist.length?`<div style="font-size:11px;font-weight:600;margin-bottom:6px">Histórico</div>
+    <div style="max-height:200px;overflow-y:auto">${hist.map(h=>`<div style="font-size:11px;padding:5px 0;border-bottom:1px solid var(--border);color:var(--text-2)">${h.data||'—'} — ${h.tipo||'—'} — ${h.equipe||h.localizacao||'—'}</div>`).join('')}</div>`:''}
+  </div>`;
+  modal.className = 'cm-serial-modal';
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+}
+
+// ═══════════════════════════════════════════
+// ENEL — CONTROLE DE MATERIAIS POR EQUIPE
+// ═══════════════════════════════════════════
+let _controleEquipes = [];
+
+async function carregarControleMateriaisEquipe() {
+  const el = document.getElementById('listaEquipesControle');
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>';
+  const res = await api('/enel/controle-equipes');
+  _controleEquipes = res?.data||[];
+  filtrarControleEquipe();
+}
+
+function filtrarControleEquipe() {
+  const q = (document.getElementById('buscaControleEquipe')?.value||'').toLowerCase();
+  const lista = q ? _controleEquipes.filter(e=>(e.nomeEquipe||'').toLowerCase().includes(q)) : _controleEquipes;
+  const el = document.getElementById('listaEquipesControle');
+  if (!el) return;
+  const sum = document.getElementById('sumControleEquipe');
+  if (!lista.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-3)">Nenhuma equipe encontrada</div>'; return; }
+  el.innerHTML = lista.map(eq=>{
+    const gid = 'ceq_'+(eq.nomeEquipe||'').replace(/\W/g,'_');
+    const itens = eq.itens||[];
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="document.getElementById('${gid}').style.display=document.getElementById('${gid}').style.display===''?'none':'';this.querySelector('.ceq-arrow').textContent=document.getElementById('${gid}').style.display===''?'▼':'▶'">
+        <span class="ceq-arrow" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${eq.nomeEquipe}</div>
+          <div style="font-size:11px;color:var(--text-3)">${itens.length} tipo(s) de material</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          ${itens.some(i=>i.pendente>0)?'<span style="font-size:10px;color:#f59e0b;font-weight:700;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:4px">⚠️ Pré-baixas pendentes</span>':'<span style="font-size:10px;color:#22c55e;font-weight:700">✅ Em dia</span>'}
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:rgba(0,0,0,.1)">
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Entregue</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#ef4444">Consumido</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b">Pendente</th>
+          </tr></thead>
+          <tbody>${itens.map(it=>`<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;font-size:12px;font-weight:600">${it.materialDesc}</td>
+            <td style="padding:8px;text-align:center;font-size:12px">${it.entregue||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;color:#ef4444">${it.consumido||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e">${it.saldoReal||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;color:#f59e0b">${it.pendente||0}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+  if (sum) sum.textContent = `Total: ${lista.length} equipe(s)`;
+}
+
+function abrirBaixaDiretaOS() { toast('Baixa Direta por OS em breve','info'); }
+function abrirModalBaixaLote() { toast('Finalizar Pré-baixas OS em breve','info'); }
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
