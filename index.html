@@ -3414,6 +3414,31 @@ tbody tr:hover td{background:var(--bg-hover);}
   </div>
 </div>
 
+<!-- MODAL BLOQUEIO ENEL -->
+<div class="modal-overlay hidden" id="modalEnelBloqueio">
+  <div class="modal-box" style="max-width:500px;border:2px solid rgba(239,68,68,.4)">
+    <div class="modal-header">
+      <div><div class="modal-title" style="color:#ef4444">🔒 Entrega Bloqueada</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEnelBloqueio').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div id="enelBloqueioDesc" style="font-size:13px;color:var(--text-2);padding:10px;border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-sm);background:rgba(239,68,68,.04);line-height:1.6"></div>
+      <div style="padding:10px;border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);background:rgba(245,158,11,.04)">
+        <div style="font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:8px">🔓 Para liberar, informe a senha e justificativa:</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <input id="enelBloqueioSenha" class="form-input" type="password" placeholder="Senha de desbloqueio...">
+          <textarea id="enelBloqueioJustificativa" class="form-input" rows="2" placeholder="Motivo do desbloqueio..." style="resize:none"></textarea>
+        </div>
+      </div>
+      <div id="enelBloqueioMsg" style="font-size:12px;min-height:16px;text-align:center"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalEnelBloqueio').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="confirmarDesbloqueioEnel()">🔓 Desbloquear e Adicionar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL LAUDO VIATURA -->
 <div class="modal-overlay hidden" id="modalViatura">
   <div class="modal-box" style="max-width:520px">
@@ -9716,7 +9741,9 @@ function enelSelecionarMaterial(id) {
   document.getElementById('enelMatSug').style.display = 'none';
 }
 
-function enelAdicionarMaterial() {
+window.__ENEL_BLOQUEIO_ITEM__ = null;
+
+async function enelAdicionarMaterial() {
   if (!window.__ENEL__.atendimento) { enelMsg('Clique em Iniciar Atendimento.', false); return; }
   const matId  = document.getElementById('enelMatId').value;
   const qtd    = Number(document.getElementById('enelMatQtd').value||0);
@@ -9725,12 +9752,62 @@ function enelAdicionarMaterial() {
   if (!matId||qtd<=0||!motivo) { enelMsg('Preencha material, quantidade e motivo.', false); return; }
   const mat = _enelMateriais.find(x=>x.id===matId);
   if (!mat) { enelMsg('Material inválido.', false); return; }
-  window.__ENEL__.itens.push({ materialId: mat.id, descricao: mat.descricao, codigo: mat.codigo,
-    quantidade: Math.floor(qtd), motivo, obs, usaSerial: !!mat.possui_numero_serie, seriais: [] });
+
+  // Verifica bloqueio se for material com serial (medidor)
+  if (mat.possui_numero_serie) {
+    const equipeNome = document.getElementById('enelEquipeBusca').value.trim();
+    if (equipeNome) {
+      enelMsg('⏳ Verificando bloqueio...', true);
+      const bloq = await api('/enel/verificar-bloqueio', { method:'POST', body: JSON.stringify({ equipeNome, materialId: mat.id }) });
+      if (bloq?.bloqueado) {
+        // Mostra modal de bloqueio
+        document.getElementById('enelBloqueioDesc').innerHTML =
+          `A equipe <strong>${equipeNome}</strong> possui <strong style="color:#ef4444">${bloq.quantidade}</strong> medidor(es) deste tipo há mais de 10 dias sem instalar:<br><br>` +
+          (bloq.medidores||[]).map(m=>`<span style="font-family:monospace;color:#00B8E6">${m.serial}</span> — ${m.diasNaEquipe} dias (entregue em ${formatarData(m.dataEntrega)})`).join('<br>');
+        window.__ENEL_BLOQUEIO_ITEM__ = { mat, qtd, motivo, obs };
+        document.getElementById('enelBloqueioSenha').value = '';
+        document.getElementById('enelBloqueioJustificativa').value = '';
+        document.getElementById('enelBloqueioMsg').textContent = '';
+        document.getElementById('modalEnelBloqueio').classList.remove('hidden');
+        enelMsg('', false);
+        return;
+      }
+      enelMsg('', false);
+    }
+  }
+
+  _enelAdicionarItemFinal(mat, qtd, motivo, obs);
+}
+
+function _enelAdicionarItemFinal(mat, qtd, motivo, obs) {
+  window.__ENEL__.itens.push({
+    materialId: mat.id, descricao: mat.descricao, codigo: mat.codigo,
+    quantidade: Math.floor(qtd), motivo, obs,
+    usaSerial: !!mat.possui_numero_serie, seriais: []
+  });
   document.getElementById('enelMatBusca').value=''; document.getElementById('enelMatId').value='';
   document.getElementById('enelMatQtd').value=''; document.getElementById('enelMatMotivo').value='';
   document.getElementById('enelMatObs').value='';
   enelRenderItens(); enelMsg('Material adicionado.', true);
+}
+
+async function confirmarDesbloqueioEnel() {
+  const senha = document.getElementById('enelBloqueioSenha').value;
+  const just  = document.getElementById('enelBloqueioJustificativa').value.trim();
+  const msg   = document.getElementById('enelBloqueioMsg');
+  if (senha !== 'Gca@4782') { msg.style.color='#ef4444'; msg.textContent='❌ Senha incorreta.'; return; }
+  if (!just) { msg.style.color='#ef4444'; msg.textContent='❌ Informe a justificativa.'; return; }
+  const item = window.__ENEL_BLOQUEIO_ITEM__;
+  if (!item) { document.getElementById('modalEnelBloqueio').classList.add('hidden'); return; }
+  // Registra desbloqueio
+  await api('/enel/registrar-desbloqueio', { method:'POST', body: JSON.stringify({
+    equipe: document.getElementById('enelEquipeBusca').value,
+    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(),
+  })});
+  document.getElementById('modalEnelBloqueio').classList.add('hidden');
+  _enelAdicionarItemFinal(item.mat, item.qtd, item.motivo, item.obs);
+  window.__ENEL_BLOQUEIO_ITEM__ = null;
+  enelMsg('⚠️ Item adicionado com desbloqueio — ' + just, true);
 }
 
 window.enelAddSerial = function(idx, serial) {
