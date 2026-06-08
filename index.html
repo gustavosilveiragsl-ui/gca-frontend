@@ -3399,16 +3399,16 @@ tbody tr:hover td{background:var(--bg-hover);}
 </div>
 
 <!-- MODAL BLOQUEIO ENEL -->
-<div class="modal-overlay hidden" id="modalEnelBloqueio">
-  <div class="modal-box" style="max-width:500px;border:2px solid rgba(239,68,68,.4)">
+<div class="modal-overlay hidden" id="modalEnelBloqueio" style="align-items:center;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:480px;width:100%;border:2px solid rgba(239,68,68,.4);max-height:90vh;overflow-y:auto">
     <div class="modal-header">
       <div><div class="modal-title" style="color:#ef4444">🔒 Entrega Bloqueada</div></div>
       <button class="modal-close" onclick="document.getElementById('modalEnelBloqueio').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <div id="enelBloqueioDesc" style="font-size:13px;color:var(--text-2);padding:10px;border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-sm);background:rgba(239,68,68,.04);line-height:1.6"></div>
+      <div id="enelBloqueioDesc" style="font-size:12px;color:var(--text-2);padding:10px;border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-sm);background:rgba(239,68,68,.04);line-height:1.6;max-height:200px;overflow-y:auto"></div>
       <div style="padding:10px;border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);background:rgba(245,158,11,.04)">
-        <div style="font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:8px">🔓 Para liberar, informe a senha e justificativa:</div>
+        <div style="font-size:11px;color:#f59e0b;font-weight:600;margin-bottom:8px">🔓 Senha e justificativa para liberar:</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <input id="enelBloqueioSenha" class="form-input" type="password" placeholder="Senha de desbloqueio...">
           <textarea id="enelBloqueioJustificativa" class="form-input" rows="2" placeholder="Motivo do desbloqueio..." style="resize:none"></textarea>
@@ -3418,7 +3418,7 @@ tbody tr:hover td{background:var(--bg-hover);}
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalEnelBloqueio').classList.add('hidden')">Cancelar</button>
-      <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="confirmarDesbloqueioEnel()">🔓 Desbloquear e Adicionar</button>
+      <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="confirmarDesbloqueioEnel()">🔓 Desbloquear</button>
     </div>
   </div>
 </div>
