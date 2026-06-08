@@ -10913,7 +10913,7 @@ async function enelFinalizarAtendimento() {
   const pend = itens.find(it=>it.usaSerial&&(it.seriais||[]).length!==Number(it.quantidade));
   if (pend) { enelMsg(`Falta seriais em: ${pend.descricao} (${(pend.seriais||[]).length}/${pend.quantidade})`, false); return; }
   const equipeObj = (_equipes||[]).find(x=>x.id===equipeId);
-  const equipeNome = equipeObj?.nomeEquipe||equipeObj?.nome_equipe||document.getElementById('enelEquipeBusca').value;
+  const equipeNome = document.getElementById('enelEquipeBusca').value.trim();
   const agora = new Date();
   const at = window.__ENEL__.atendimento;
   enelMsg('Finalizando...', true);
