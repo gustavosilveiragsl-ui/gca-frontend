@@ -2052,39 +2052,12 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
             </div>
 
-            <!-- PRÉ-BAIXAS -->
-            <div id="areaPreBaixas" style="display:none;margin-bottom:16px">
-              <div style="border:2px solid rgba(245,158,11,.3);border-radius:var(--radius-md);padding:16px">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                  <div>
-                    <div style="font-size:14px;font-weight:700;color:#f59e0b">📋 Pré-Baixas da Equipe</div>
-                    <div style="font-size:11px;color:var(--text-3)">Registre o que a equipe já utilizou antes de repor</div>
-                  </div>
-                  <button class="btn btn-ghost" style="font-size:11px" onclick="togglePreBaixasEnel()">▼ Expandir</button>
-                </div>
-                <div id="conteudoPreBaixas" style="display:none">
-                  <div style="margin-bottom:12px">
-                    <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:8px">📟 Medidores — selecione os utilizados</div>
-                    <div id="listaPreBaixaMedidores" style="background:rgba(0,0,0,.2);border-radius:var(--radius-sm);padding:10px;max-height:200px;overflow-y:auto">
-                      <p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">Selecione uma equipe</p>
-                    </div>
-                  </div>
-                  <div style="margin-bottom:12px">
-                    <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:8px">🧵 Materiais — informe o utilizado</div>
-                    <div id="listaPreBaixaMateriais" style="background:rgba(0,0,0,.2);border-radius:var(--radius-sm);padding:10px;max-height:200px;overflow-y:auto">
-                      <p style="color:var(--text-3);text-align:center;font-size:12px;margin:0">Selecione uma equipe</p>
-                    </div>
-                  </div>
-                  <button class="btn btn-primary" style="width:100%;justify-content:center;background:#f59e0b;border-color:#f59e0b" onclick="confirmarPreBaixasEnel()">✅ Confirmar Pré-Baixas e Continuar</button>
-                  <div id="msgPreBaixas" style="text-align:center;font-size:12px;min-height:16px;margin-top:8px"></div>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Adicionar item -->
             <div style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
               <div style="font-size:14px;font-weight:700;margin-bottom:12px">📦 Adicionar Material</div>
-              <div style="display:grid;grid-template-columns:2fr 1fr 1.5fr 1.5fr auto;gap:8px;align-items:end">
+              <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end">
                 <div>
                   <label class="form-label">Material</label>
                   <div style="position:relative">
@@ -2095,15 +2068,9 @@ tbody tr:hover td{background:var(--bg-hover);}
                   </div>
                 </div>
                 <div><label class="form-label">Qtd</label><input id="enelMatQtd" class="form-input" type="number" min="1" placeholder="0"></div>
-                <div><label class="form-label">Motivo</label>
-                  <select id="enelMatMotivo" class="form-input">
-                    <option value="">Selecione...</option>
-                    <option value="entrega">🔶 Entrega De Kit</option>
-                    <option value="Reposição">🔷 Reposição Do Kit</option>
-                  </select>
-                </div>
-                <div><label class="form-label">Obs</label><input id="enelMatObs" class="form-input" placeholder="Opcional"></div>
-                <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="padding:10px 14px">+ Add</button>
+<input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
+                <input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
+                <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="padding:10px 14px;align-self:end">+ Add</button>
               </div>
             </div>
 
@@ -10816,7 +10783,7 @@ async function enelAdicionarMaterial() {
   const qtd    = Number(document.getElementById('enelMatQtd').value||0);
   const motivo = document.getElementById('enelMatMotivo').value;
   const obs    = document.getElementById('enelMatObs').value.trim();
-  if (!matId||qtd<=0||!motivo) { enelMsg('Preencha material, quantidade e motivo.', false); return; }
+  if (!matId||qtd<=0) { enelMsg('Preencha material e quantidade.', false); return; }
   const mat = _enelMateriais.find(x=>x.id===matId);
   if (!mat) { enelMsg('Material inválido.', false); return; }
 
@@ -11241,7 +11208,10 @@ function cmRenderModelos() {
 
   // Aplica filtro de status/bloqueio
   if (_cmFiltroStatus === 'EM DIA')       dados = dados.filter(m=>m.status_atual==='EM DIA'&&!m.bloqueadoGlobal&&!m.bloqueadoEquipe);
-  else if (_cmFiltroStatus === 'PROXIMO') dados = dados.filter(m=>{ const d=_cmAbaAtual==='campo'?m.prazo10:m.prazo50; return d!==null&&d>=0&&d<=5&&!m.bloqueadoGlobal&&!m.bloqueadoEquipe; });
+  else if (_cmFiltroStatus === 'PROXIMO') dados = dados.filter(m=>{
+    const d = _cmAbaAtual==='campo' ? m.prazo10 : m.prazo50;
+    return m.status_atual==='PROXIMO AO VENCIMENTO' || (d!==null && d<=10 && !m.bloqueadoGlobal && !m.bloqueadoEquipe);
+  });
   else if (_cmFiltroStatus === 'VENCIDO') dados = dados.filter(m=>m.status_atual==='VENCIDO');
   else if (_cmFiltroStatus === 'BLOQUEADO_EQ') dados = dados.filter(m=>m.bloqueadoEquipe);
   else if (_cmFiltroStatus === 'BLOQUEADO_GL') dados = dados.filter(m=>m.bloqueadoGlobal);
