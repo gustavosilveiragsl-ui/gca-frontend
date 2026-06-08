@@ -1897,7 +1897,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Histórico de Entradas</div></div><button class="btn btn-ghost" onclick="carregarHistEntradas()">↻</button></div>
+            <div class="card-header"><div><div class="card-title">Histórico de Entradas</div></div><div class="card-actions"><input class="form-input" type="date" id="enelEntHistDe" style="width:130px;font-size:11px"><input class="form-input" type="date" id="enelEntHistAte" style="width:130px;font-size:11px"><button class="btn btn-ghost" onclick="carregarHistEntradas()">↻</button></div></div>
             <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
             <tbody id="enelEntHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
           </div>
@@ -1931,11 +1931,9 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div><label class="form-label">Motivo *</label>
                 <select id="enelSaiMotivo" class="form-input">
                   <option value="">Selecione...</option>
-                  <option value="entrega">🔶 Entrega De Kit</option>
-                  <option value="Reposição">🔷 Reposição Do Kit</option>
                   <option value="Transferência">🔄 Transferência</option>
-                  <option value="Ajuste">📝 Ajuste de Inventário</option>
-                  <option value="Outros">📦 Outros</option>
+                  <option value="Ajuste de inventário">📝 Ajuste de Inventário</option>
+                  <option value="Outro">📦 Outro</option>
                 </select>
               </div>
               <div><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
@@ -10446,7 +10444,7 @@ async function registrarEntradaEnel() {
     unidade_med:mat?.unidade_med||'UN', motivo, data, quantidade:qtd,
     seriais:mat?.possui_numero_serie?_entSeriaisAtual:[], observacao:obs,
   })});
-  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Entrada registrada!'; _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); setTimeout(()=>msg.textContent='',3000); }
+  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Entrada registrada!'; _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); limparEntradaEnel(); setTimeout(()=>msg.textContent='',3000); }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
 }
 
@@ -10454,7 +10452,11 @@ async function carregarHistEntradas() {
   const tbody = document.getElementById('enelEntHistBody');
   if (!tbody) return;
   tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-  const data = await api('/enel/historico-entradas');
+  const de  = document.getElementById('enelEntHistDe')?.value||'';
+  const ate = document.getElementById('enelEntHistAte')?.value||'';
+  let url = '/enel/historico-entradas';
+  if (de||ate) url += `?data_inicio=${de}&data_fim=${ate}`;
+  const data = await api(url);
   const lista = data?.data||[];
   tbody.innerHTML = lista.length ? lista.map(e=>`<tr>
     <td>${formatarData(e.data)}</td>
@@ -10467,21 +10469,48 @@ async function carregarHistEntradas() {
 
 // ── SAÍDA ──
 let _saiMatSel = null;
+
+function limparEntradaEnel() {
+  document.getElementById('enelEntMatBusca').value = '';
+  document.getElementById('enelEntMatId').value = '';
+  document.getElementById('enelEntData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('enelEntQtd').value = '';
+  document.getElementById('enelEntMotivo').selectedIndex = 0;
+  document.getElementById('enelEntObs').value = '';
+  document.getElementById('enelEntSeriaisBox').style.display = 'none';
+  _entSeriaisAtual = []; renderSeriaisEnt();
+}
+
+function limparSaidaEnel() {
+  document.getElementById('enelSaiMatBusca').value = '';
+  document.getElementById('enelSaiMatId').value = '';
+  document.getElementById('enelSaiData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('enelSaiQtd').value = '';
+  document.getElementById('enelSaiMotivo').selectedIndex = 0;
+  document.getElementById('enelSaiEquipeBusca').value = '';
+  document.getElementById('enelSaiObs').value = '';
+}
+
 function filtrarMatSaiEnel(q) {
-  const sug = document.getElementById('saiMatSug');
+  const sug = document.getElementById('enelSaiMatSug');
+  if (!sug) return;
   if (q.length<2) { sug.classList.add('hidden'); return; }
-  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onclick="selecionarMatSaiEnel('${m.id}','${(m.descricao+' ('+m.codigo+')').replace(/'/g,"\\'")}')">
-    <strong>${m.descricao}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
+  if (!_enelMateriais.length) { carregarMateriaisEnel(); return; }
+  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,15);
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onmousedown="selecionarMatSaiEnel('${m.id}','${(m.descricao+' ('+m.codigo+')').replace(/'/g,"\'")}')">
+    <div style="font-size:12px;font-weight:600">${m.descricao}</div>
+    <div style="font-size:10px;color:var(--text-3)">${m.codigo} · ${m.categoria||'—'}</div>
   </div>`).join('');
-  sug.classList.toggle('hidden', !lista.length);
+  sug.classList.remove('hidden');
 }
 function selecionarMatSaiEnel(id, texto) {
   _saiMatSel = _enelMateriais.find(m=>m.id===id);
-  document.getElementById('saiMatBusca').value=texto;
-  document.getElementById('enelSaiMatId').value=id;
-  document.getElementById('saiMatSug').classList.add('hidden');
+  document.getElementById('enelSaiMatBusca').value = texto;
+  document.getElementById('enelSaiMatId').value = id;
+  document.getElementById('enelSaiMatSug').classList.add('hidden');
 }
+
 
 function filtrarEquipeSaiEnel(q) {
   const sug = document.getElementById('enelSaiEquipeSug');
@@ -10499,13 +10528,13 @@ async function registrarSaidaEnel() {
   const motivo = document.getElementById('enelSaiMotivo')?.value||'';
   const obs    = document.getElementById('enelSaiObs').value.trim();
   const msg    = document.getElementById('enelSaiMsg');
-  if (!matId||!data||qtd<=0||!equipe||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade, equipe e motivo.'; return; }
+  if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
   const mat = _enelMateriais.find(m=>m.id===matId);
   const res = await api('/enel/saida', { method:'POST', body: JSON.stringify({
     material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
     tipo_saida:motivo, destino:equipe, data, quantidade:qtd, obs,
   })});
-  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); setTimeout(()=>msg.textContent='',3000); }
+  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); limparSaidaEnel(); setTimeout(()=>msg.textContent='',3000); }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
 }
 
