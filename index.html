@@ -1864,17 +1864,17 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div>
                 <label class="form-label">Material *</label>
                 <div style="position:relative">
-                  <input id="entMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('entMatSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="entMatSug" class="autocomplete-list hidden"></div>
-                  <input type="hidden" id="entMatId">
+                  <input id="enelEntMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelEntMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelEntMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="enelEntMatId">
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Data *</label><input id="entData" class="form-input" type="date"></div>
-                <div><label class="form-label">Quantidade *</label><input id="entQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+                <div><label class="form-label">Data *</label><input id="enelEntData" class="form-input" type="date"></div>
+                <div><label class="form-label">Quantidade *</label><input id="enelEntQtd" class="form-input" type="number" min="1" placeholder="0"></div>
               </div>
               <div><label class="form-label">Motivo *</label>
-                <select id="entMotivo" class="form-input">
+                <select id="enelEntMotivo" class="form-input">
                   <option value="">Selecione...</option>
                   <option value="Recebimento do fornecedor">Recebimento do fornecedor</option>
                   <option value="Devolução de equipe">Devolução de equipe</option>
@@ -1883,23 +1883,23 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <option value="Outros">Outros</option>
                 </select>
               </div>
-              <div id="entSeriaisBox" style="display:none">
-                <label class="form-label">Seriais <span id="entSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
+              <div id="enelEntSeriaisBox" style="display:none">
+                <label class="form-label">Seriais <span id="enelEntSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
                 <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <input id="entSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}">
-                  <button class="btn btn-ghost" onclick="const i=document.getElementById('entSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
+                  <input id="enelEntSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}">
+                  <button class="btn btn-ghost" onclick="const i=document.getElementById('enelEntSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
                 </div>
-                <div id="entSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+                <div id="enelEntSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
               </div>
-              <div><label class="form-label">Observação</label><input id="entObs" class="form-input" placeholder="Opcional"></div>
-              <div id="entMsg" style="font-size:12px;min-height:16px"></div>
+              <div><label class="form-label">Observação</label><input id="enelEntObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelEntMsg" style="font-size:12px;min-height:16px"></div>
               <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()">✅ Registrar Entrada</button>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><div><div class="card-title">Histórico de Entradas</div></div><button class="btn btn-ghost" onclick="carregarHistEntradas()">↻</button></div>
             <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
-            <tbody id="entHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+            <tbody id="enelEntHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -1913,36 +1913,46 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div>
                 <label class="form-label">Material *</label>
                 <div style="position:relative">
-                  <input id="saiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="saiMatSug" class="autocomplete-list hidden"></div>
-                  <input type="hidden" id="saiMatId">
+                  <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelSaiMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="enelSaiMatId">
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Data *</label><input id="saiData" class="form-input" type="date"></div>
-                <div><label class="form-label">Quantidade *</label><input id="saiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+                <div><label class="form-label">Data *</label><input id="enelSaiData" class="form-input" type="date"></div>
+                <div><label class="form-label">Quantidade *</label><input id="enelSaiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
               </div>
               <div><label class="form-label">Equipe / Destino *</label>
                 <div style="position:relative">
-                  <input id="saiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="saiEquipeSug" class="autocomplete-list hidden"></div>
+                  <input id="enelSaiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelSaiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelSaiEquipeSug" class="autocomplete-list hidden"></div>
                 </div>
               </div>
-              <div><label class="form-label">Observação</label><input id="saiObs" class="form-input" placeholder="Opcional"></div>
-              <div id="saiMsg" style="font-size:12px;min-height:16px"></div>
+              <div><label class="form-label">Motivo *</label>
+                <select id="enelSaiMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="entrega">🔶 Entrega De Kit</option>
+                  <option value="Reposição">🔷 Reposição Do Kit</option>
+                  <option value="Transferência">🔄 Transferência</option>
+                  <option value="Ajuste">📝 Ajuste de Inventário</option>
+                  <option value="Outros">📦 Outros</option>
+                </select>
+              </div>
+              <div><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelSaiMsg" style="font-size:12px;min-height:16px"></div>
               <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()">✅ Registrar Saída</button>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><div><div class="card-title">Histórico de Saídas</div></div>
               <div class="card-actions">
-                <input class="form-input" type="date" id="saiHistDe" style="width:130px;font-size:11px">
-                <input class="form-input" type="date" id="saiHistAte" style="width:130px;font-size:11px">
+                <input class="form-input" type="date" id="enelSaiHistDe" style="width:130px;font-size:11px">
+                <input class="form-input" type="date" id="enelSaiHistAte" style="width:130px;font-size:11px">
                 <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻</button>
               </div>
             </div>
             <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
-            <tbody id="saiHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+            <tbody id="enelSaiHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -3621,7 +3631,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
-  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('saiData').value=new Date().toISOString().split('T')[0]; }
+  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-baixas')        { if (!_enelMateriais.length) carregarMateriaisEnel(); }
   if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
@@ -5788,8 +5798,8 @@ async function registrarEntrada() {
   const armazem  = document.getElementById('entArmazem')?.value;
   const data     = document.getElementById('entData')?.value;
   const qtd      = parseFloat(document.getElementById('entQtd')?.value);
-  const motivo   = document.getElementById('entMotivo')?.value;
-  const obs      = document.getElementById('entObs')?.value || '';
+  const motivo   = document.getElementById('enelEntMotivo')?.value;
+  const obs      = document.getElementById('enelEntObs')?.value || '';
 
   if (!itemId || !armazem || !data || !qtd || !motivo) {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
@@ -5857,7 +5867,7 @@ function selecionarItemSai(id) {
 
 function atualizarTotalSaida() {
   if (!_saiItemSel) return;
-  const qtd   = parseFloat(document.getElementById('saiQtd')?.value) || 0;
+  const qtd   = parseFloat(document.getElementById('enelSaiQtd')?.value) || 0;
   const valor = parseFloat(_saiItemSel.valor_un) || 0;
   const elV = document.getElementById('saiPreviewValor');
   const elT = document.getElementById('saiPreviewTotal');
@@ -5892,10 +5902,10 @@ async function verificarSaldoSaida() {
 async function registrarSaida() {
   const itemId   = _saiItemSel?.id;
   const armazem  = document.getElementById('saiArmazem')?.value;
-  const data     = document.getElementById('saiData')?.value;
-  const qtd      = parseFloat(document.getElementById('saiQtd')?.value);
+  const data     = document.getElementById('enelSaiData')?.value;
+  const qtd      = parseFloat(document.getElementById('enelSaiQtd')?.value);
   const motivo   = document.getElementById('saiMotivo')?.value;
-  const obs      = document.getElementById('saiObs')?.value || '';
+  const obs      = document.getElementById('enelSaiObs')?.value || '';
   const colabId  = _saiColabSel?.id || null;
 
   if (!itemId || !armazem || !data || !qtd || !motivo) {
@@ -5921,7 +5931,7 @@ function limparSaida() {
   ['saiItemBusca','saiQtd','saiObs','saiColabBusca'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   ['saiArmazem','saiMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
   const hoje = new Date().toISOString().split('T')[0];
-  const dt = document.getElementById('saiData'); if(dt) dt.value = hoje;
+  const dt = document.getElementById('enelSaiData'); if(dt) dt.value = hoje;
   document.getElementById('saiSaldoBox')?.classList.add('hidden');
   document.getElementById('saiPreviewVazio')?.classList.remove('hidden');
   document.getElementById('saiPreviewDados')?.classList.add('hidden');
@@ -9044,6 +9054,951 @@ async function testarEmailViaturas() {
 // ═══════════════════════════════════════════
 // DESCARTE
 // ═══════════════════════════════════════════
+// let _descartData = [];
+
+function showDescTab(tab) {
+  const isSaldo = tab === 'saldo';
+  document.getElementById('descTabSaldo').style.display    = isSaldo ? '' : 'none';
+  document.getElementById('descTabHistorico').style.display = isSaldo ? 'none' : '';
+  document.getElementById('descTab1').classList.toggle('active', isSaldo);
+  document.getElementById('descTab2').classList.toggle('active', !isSaldo);
+  if (!isSaldo) carregarHistoricoDespachos();
+}
+
+function toggleSelectAllDesc(checked) {
+  document.querySelectorAll('.desc-check').forEach(cb => { cb.checked = checked; });
+}
+
+async function carregarDescarte() {
+  const tbody = document.getElementById('descartBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const [dataDesc, dataDesp] = await Promise.all([
+    api('/laudos/descarte'),
+    api('/laudos/despachos'),
+  ]);
+
+  _descartData = dataDesc?.data || [];
+  const totalDespachos = dataDesp?.data?.length || 0;
+
+  // KPIs
+  const totalQtd = _descartData.reduce((s,i) => s + Number(i.saldo_residuo||0), 0);
+  document.getElementById('descKpiTotal').textContent    = _descartData.filter(i => Number(i.saldo_residuo||0) > 0).length;
+  document.getElementById('descKpiQtd').textContent      = totalQtd;
+  document.getElementById('descKpiDespachos').textContent = totalDespachos;
+
+  const lista = _descartData.filter(i => Number(i.saldo_residuo||0) > 0);
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum material aguardando descarte</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(i => `<tr>
+    <td><input type="checkbox" class="desc-check" data-id="${i.item_id}" data-nome="${i.nome_item||'—'}" data-cod="${i.codigo_item||''}" data-max="${i.saldo_residuo||0}" style="cursor:pointer"></td>
+    <td class="td-main">${i.nome_item||'—'}</td>
+    <td class="td-mono">${i.codigo_item||'—'}</td>
+    <td style="text-align:center;font-size:11px">${i.unidade_med||'UN'}</td>
+    <td style="text-align:center;font-weight:600;color:#ef4444">${i.saldo_residuo||0}</td>
+    <td style="text-align:center">
+      <input type="number" min="1" max="${i.saldo_residuo||0}" value="${i.saldo_residuo||0}"
+        class="form-input desc-qtd" style="width:70px;font-size:12px;text-align:center" data-id="${i.item_id}">
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalDespacho() {
+  // Pega itens selecionados
+  const checks = document.querySelectorAll('.desc-check:checked');
+  if (!checks.length) { toast('Selecione pelo menos um item','warn'); return; }
+
+  document.getElementById('despData').value     = new Date().toISOString().split('T')[0];
+  document.getElementById('despEmpresa').value  = '';
+  document.getElementById('despManifesto').value= '';
+  document.getElementById('despObs').value      = '';
+  document.getElementById('despPdf').value      = '';
+
+  const lista = document.getElementById('despItensLista');
+  const semItens = document.getElementById('despSemItens');
+
+  const itens = [...checks].map(cb => {
+    const qtdEl = document.querySelector(`.desc-qtd[data-id="${cb.dataset.id}"]`);
+    const qtd = parseInt(qtdEl?.value)||0;
+    return { item_id: cb.dataset.id, nome: cb.dataset.nome, codigo: cb.dataset.cod, quantidade: qtd };
+  }).filter(it => it.quantidade > 0);
+
+  if (!itens.length) { toast('Quantidade deve ser maior que zero','warn'); return; }
+
+  semItens.style.display = 'none';
+  lista.innerHTML = itens.map(it=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.nome}<div style="font-size:10px;color:var(--text-3)">${it.codigo}</div></div>
+      <span style="font-size:13px;font-weight:700;color:#ef4444">${it.quantidade} un</span>
+    </div>`).join('');
+
+  // Salva itens no modal para usar no confirmar
+  document.getElementById('modalDespacho').dataset.itens = JSON.stringify(itens);
+  document.getElementById('modalDespacho').classList.remove('hidden');
+}
+
+async function confirmarDespacho() {
+  const data     = document.getElementById('despData').value;
+  const empresa  = document.getElementById('despEmpresa').value.trim();
+  const manifesto= document.getElementById('despManifesto').value.trim();
+  const obs      = document.getElementById('despObs').value.trim();
+  const pdfUrl   = document.getElementById('despPdf').value.trim();
+
+  if (!data || !empresa) { toast('Data e empresa coletora obrigatórios','warn'); return; }
+
+  const itens = JSON.parse(document.getElementById('modalDespacho').dataset.itens||'[]');
+  if (!itens.length) { toast('Nenhum item selecionado','warn'); return; }
+
+  const res = await api('/laudos/despachos', {
+    method: 'POST',
+    body: JSON.stringify({ data_despacho: data, empresa, manifesto, observacao: obs, pdf_url: pdfUrl, itens })
+  });
+
+  if (res?.ok) {
+    toast('Despacho registrado com sucesso!','success');
+    document.getElementById('modalDespacho').classList.add('hidden');
+    carregarDescarte();
+  } else toast(res?.erro||'Erro ao registrar despacho','error');
+}
+
+async function carregarHistoricoDespachos() {
+  const tbody = document.getElementById('descHistBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+
+  const data = await api('/laudos/despachos');
+  const lista = data?.data || [];
+
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Nenhum despacho registrado</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = lista.map(d => {
+    let itens = []; try { itens = JSON.parse(d.itens_json||'[]'); } catch {}
+    const resumo = itens.slice(0,2).map(i=>i.nome||'—').join(', ') + (itens.length>2?` +${itens.length-2}`:'');
+    return `<tr>
+      <td>${formatarData(d.data_despacho)}</td>
+      <td class="td-main">${d.empresa||'—'}</td>
+      <td style="font-size:11px;font-family:var(--font-mono)">${d.manifesto||'—'}</td>
+      <td style="text-align:center;font-size:11px;color:var(--text-3)" title="${itens.map(i=>i.nome+': '+i.quantidade).join('\n')}">${itens.length} item(ns)</td>
+      <td style="font-size:11px;color:var(--text-3)">${d.usuario||'—'}</td>
+      <td>${d.pdf_url?`<a href="${d.pdf_url}" target="_blank" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">📄 PDF</a>`:'<span style="color:var(--text-3);font-size:11px">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════
+// RECUPERADOS
+// ═══════════════════════════════════════════
+// let _recupData = [];
+
+async function carregarRecuperados() {
+  const tbody = document.getElementById('recupBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const data = await api('/laudos/recuperados');
+  _recupData = data?.data || [];
+  renderRecuperados();
+}
+
+async function buscarRecupSerial() {
+  const q = document.getElementById('recupBusca').value.trim();
+  if (!q) { carregarRecuperados(); return; }
+  const tbody = document.getElementById('recupBody');
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const data = await api(`/laudos/recuperados?busca=${encodeURIComponent(q)}`);
+  _recupData = data?.data || [];
+  renderRecuperados();
+}
+
+function renderRecuperados() {
+  const tbody = document.getElementById('recupBody');
+  const q     = (document.getElementById('recupBusca')?.value||'').toLowerCase();
+  let lista   = _recupData;
+  if (q) lista = lista.filter(r =>
+    (r.item||'').toLowerCase().includes(q) ||
+    (r.serial||'').toLowerCase().includes(q)
+  );
+
+  tbody.innerHTML = lista.length ? lista.map(r => `<tr>
+    <td class="td-main">${r.item||'—'}</td>
+    <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${r.serial||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${r.dt_ult_mov_raw ? r.dt_ult_mov_raw.replace('T',' ').slice(0,16) : '—'}</td>
+    <td style="font-size:11px;color:var(--text-2)">${r.motivo||'Aguardando Laudo'}</td>
+    <td>
+      <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 10px"
+        onclick="abrirModalRecuperar('${r.id_ativo}','${(r.serial||'').replace(/'/g,"\\'")}','${(r.item||'').replace(/'/g,"\\'")}')">
+        ✅ Recuperar
+      </button>
+    </td>
+  </tr>`).join('')
+  : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum item aguardando recuperação</div></div></td></tr>`;
+}
+
+function abrirModalRecuperar(idAtivo, serial, item) {
+  document.getElementById('recupIdAtivo').value         = idAtivo;
+  document.getElementById('recupSerialAtual').value     = serial;
+  document.getElementById('recupSerialAtualDisplay').textContent = serial;
+  document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupItemInfo').textContent  = item;
+
+  // Armazéns do usuário
+  const selArm = document.getElementById('recupArmazem');
+  let armazensUser = _armazens;
+  if (GCA.usuario?.role !== 'admin') {
+    let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens||'[]'); } catch {}
+    if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
+  }
+  selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}">${a.nome}</option>`).join('');
+
+  document.getElementById('modalRecuperar').classList.remove('hidden');
+}
+
+async function confirmarRecuperacao() {
+  const idAtivo    = document.getElementById('recupIdAtivo').value;
+  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
+  const armazemId  = document.getElementById('recupArmazem').value;
+
+  if (!armazemId) { toast('Selecione o armazém destino','warn'); return; }
+
+  const res = await api('/laudos/recuperados/recuperar', {
+    method: 'POST',
+    body: JSON.stringify({ id_ativo: idAtivo, serial_novo: serialNovo||null, armazem_id: armazemId })
+  });
+
+  if (res?.ok) {
+    toast('Item recuperado e devolvido ao estoque!','success');
+    document.getElementById('modalRecuperar').classList.add('hidden');
+    carregarRecuperados();
+    // Atualiza laudos NR10 se estiver carregado
+    if (__LAUDOS_NR10__?.lista?.length) laudosCarregar_();
+  } else toast(res?.erro||'Erro ao recuperar','error');
+}
+
+// ═══════════════════════════════════════════
+// FICHA EPI
+// ═══════════════════════════════════════════
+// let _fichaEpiData = [];
+
+async function carregarFichaEPI() {
+  const tbody = document.getElementById('fichaEpiBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const data = await api('/ficha-epi');
+  _fichaEpiData = data?.data || [];
+  const kpi = document.getElementById('fichaEpiKpi');
+  if (kpi) kpi.textContent = `${_fichaEpiData.length} colaborador(es) com ficha`;
+  filtrarFichaEPI();
+}
+
+function filtrarFichaEPI() {
+  const q = (document.getElementById('fichaEpiBusca')?.value||'').toLowerCase();
+  const lista = q ? _fichaEpiData.filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.matricula||'').toLowerCase().includes(q)) : _fichaEpiData;
+  const tbody = document.getElementById('fichaEpiBody');
+  tbody.innerHTML = lista.length ? lista.map(c=>`<tr>
+    <td class="td-main">${c.nome||'—'}</td>
+    <td style="text-align:center;font-family:var(--font-mono)">${c.matricula||'—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${c.funcao||'—'}</td>
+    <td style="text-align:center;font-size:12px;font-weight:600;color:var(--accent-text)">${c.total||0}</td>
+    <td style="text-align:center;font-size:11px">${formatarData(c.ultima_entrega)}</td>
+    <td><button class="btn btn-ghost" style="font-size:10px;padding:4px 10px" onclick="abrirFichaEPI('${c.colaborador_id}','${(c.nome||'').replace(/'/g,"\\'")}','${c.matricula||''}','${(c.funcao||'').replace(/'/g,"\\'")}')">📋 Ver Ficha</button></td>
+  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">🔖</div><div class="es-title">Nenhuma ficha encontrada</div></div></td></tr>`;
+}
+
+async function abrirFichaEPI(colabId, nome, matricula, funcao) {
+  // Preenche header
+  const unidadeNome = GCA.unidade === 'marica' ? 'FILIAL MARICÁ' : 'FILIAL RIO DAS OSTRAS';
+  const cnpj = GCA.unidade === 'marica' ? '07.698.801/0006-26' : '07.698.801/0007-07';
+  document.getElementById('fichaEmpresa').textContent = 'CENEGED ENERGIA POSITIVA';
+  document.getElementById('fichaCNPJ').textContent    = cnpj;
+  document.getElementById('fichaFilial').textContent  = unidadeNome;
+  document.getElementById('fichaModalNome').textContent      = nome;
+  document.getElementById('fichaModalMatricula').textContent = matricula;
+  document.getElementById('fichaModalFuncao').textContent    = funcao;
+
+  // Admissão do colaborador
+  const colab = _colaboradores.find(c=>c.id===colabId);
+  document.getElementById('fichaModalAdmissao').textContent = colab?.data_admissao ? formatarData(colab.data_admissao) : '—';
+
+  // Loading
+  document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
+  document.getElementById('modalFichaEPI').classList.remove('hidden');
+
+  // Busca registros
+  const data = await api(`/ficha-epi/${colabId}`);
+  const lista = data?.data || [];
+
+  if (!lista.length) {
+    document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum registro encontrado</td></tr>';
+    return;
+  }
+
+  document.getElementById('fichaModalBody').innerHTML = lista.map((r,i) => {
+    const situacao = r.data_devolucao
+      ? `<span style="color:var(--text-3);font-size:10px">Devolvido</span>`
+      : `<span style="color:#22c55e;font-size:10px;font-weight:600">Em uso</span>`;
+    const assinaturaTag = r.assinatura
+      ? `<span style="color:#22c55e;font-size:10px">✅ Assinado</span>`
+      : `<span style="color:#f59e0b;font-size:10px">⏳ Pendente</span>`;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:10px;font-size:12px;color:var(--text-1)">${r.nome_item||'—'}</td>
+      <td style="padding:10px;text-align:center;font-size:12px;font-weight:600">${r.quantidade||1}</td>
+      <td style="padding:10px;text-align:center;font-size:11px">${formatarData(r.data_entrega)}</td>
+      <td style="padding:10px;text-align:center;font-size:11px;font-family:var(--font-mono)">${r.ca||'—'}</td>
+      <td style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">${r.data_devolucao?formatarData(r.data_devolucao):'—'}</td>
+      <td style="padding:10px;text-align:center">${situacao}</td>
+    </tr>`;
+  }).join('');
+}
+
+function gerarPdfFicha() {
+  toast('PDF da ficha EPI em desenvolvimento','info');
+}
+
+// ═══════════════════════════════════════════
+// LAUDOS NR10
+// ═══════════════════════════════════════════
+// __LAUDOS_NR10__ already declared above
+
+function abrirFormNovoSerial() { document.getElementById('formNovoSerial').classList.remove('hidden'); }
+function fecharFormNovoSerial() {
+  document.getElementById('formNovoSerial').classList.add('hidden');
+  ['nsItemBusca','nsItemId','nsSerial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nsMsgConsistencia').textContent='';
+}
+
+function filtrarItensNS(q) {
+  const sug = document.getElementById('nsItemSug');
+  if (q.length < 2) { sug.classList.add('hidden'); return; }
+  const lista = (_itens||[]).filter(i=>i.requer_ensaio && ((i.descricao||'').toLowerCase().includes(q.toLowerCase())||(i.codigo||'').toLowerCase().includes(q.toLowerCase()))).slice(0,10);
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(i=>`<div class="autocomplete-item" onclick="selecionarItemNS('${i.id}','${(i.descricao+' ('+i.codigo+')').replace(/'/g,"\\'")}')"><strong>${i.descricao}</strong> <span style="color:var(--text-3);font-size:11px">${i.codigo}</span></div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function selecionarItemNS(id, texto) {
+  document.getElementById('nsItemBusca').value = texto;
+  document.getElementById('nsItemId').value = id;
+  document.getElementById('nsItemSug').classList.add('hidden');
+
+  const msg = document.getElementById('nsMsgConsistencia');
+  msg.textContent = '';
+
+  // Calcula consistência
+  const itemLocal = (_itens||[]).find(i=>i.id===id);
+  const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
+  const saldoEst  = Number(_estoqueData.find(s=>s.item_id===id)?.saldo||0);
+  const serialsNecessarios = saldoEst * fatorPar;
+  const serialsEstoque = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
+
+  if (serialsEstoque >= serialsNecessarios && serialsNecessarios > 0) {
+    msg.style.color = '#ef4444';
+    msg.textContent = `🚫 Bloqueado: já tem ${serialsEstoque} serial(is) em estoque para saldo de ${saldoEst}${fatorPar===2?' (PAR×2='+serialsNecessarios+')':''}. Verifique antes de continuar.`;
+    document.getElementById('nsSerial').disabled = true;
+    document.getElementById('nsSerial').style.opacity = '0.4';
+  } else if (serialsEstoque < serialsNecessarios) {
+    const faltam = serialsNecessarios - serialsEstoque;
+    msg.style.color = '#f59e0b';
+    msg.textContent = `⚠️ Faltam ${faltam} serial(is) para consistência (saldo: ${saldoEst}${fatorPar===2?`, PAR×2=${serialsNecessarios}`:''})`;
+    document.getElementById('nsSerial').disabled = false;
+    document.getElementById('nsSerial').style.opacity = '';
+  } else {
+    msg.style.color = '#22c55e';
+    msg.textContent = `✅ Consistente: ${serialsEstoque} serial(is) para ${saldoEst} em estoque`;
+    document.getElementById('nsSerial').disabled = false;
+    document.getElementById('nsSerial').style.opacity = '';
+    setTimeout(()=>msg.textContent='',3000);
+  }
+}
+
+async function salvarNovoSerial() {
+  const itemId = document.getElementById('nsItemId').value;
+  const serial  = document.getElementById('nsSerial').value.trim().toUpperCase().replace(/\s+/g,'');
+  const status  = document.getElementById('nsStatus').value;
+  const item    = (_itens||[]).find(i=>i.id===itemId);
+  if (!itemId || !serial) { toast('Item e serial obrigatórios','warn'); return; }
+  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status }) });
+  if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+function laudosAtualizarContadores_(lista) {
+  const el = document.getElementById('laudosContadores');
+  if (!el) return;
+  const total=lista.length, ok=lista.filter(x=>x.status==='OK').length,
+    alerta=lista.filter(x=>x.status==='ALERTA_30').length,
+    vencido=lista.filter(x=>x.status==='VENCIDO').length,
+    semLaudo=lista.filter(x=>x.status==='SEM_LAUDO').length;
+  el.innerHTML = [
+    ['Total Ativos',total,'var(--accent-text)'],
+    ['OK',ok,'#22c55e'],['Alerta 30d',alerta,'#f59e0b'],
+    ['Vencidos',vencido,'#ef4444'],['Sem Laudo',semLaudo,'var(--text-3)'],
+  ].map(([l,v,c])=>`<div class="kpi-card"><div class="kpi-value" style="color:${c}">${v}</div><div class="kpi-label">${l}</div></div>`).join('');
+}
+
+function laudosLimparFiltros_() {
+  ['laudoFiltro','laudoFiltroStatus','laudoFiltroLocal','laudoFiltroVencDe','laudoFiltroVencAte'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  laudosRender_();
+}
+
+function laudosRender_() {
+  const texto  = (document.getElementById('laudoFiltro')?.value||'').toLowerCase();
+  const status = document.getElementById('laudoFiltroStatus')?.value||'';
+  const local  = document.getElementById('laudoFiltroLocal')?.value||'';
+  const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
+  const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
+  const tbody  = document.getElementById('tbLaudosTbody');
+  const info   = document.getElementById('laudoInfo');
+  if (!tbody) return;
+
+  let lista = __LAUDOS_NR10__.lista || [];
+  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
+  if (status) lista = lista.filter(x=>x.status===status);
+  if (local)  lista = lista.filter(x=>x.statusLocal===local);
+  if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
+  if (vencAte)lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)<=vencAte);
+
+  // Agrupa por item
+  const grupos = {};
+  lista.forEach(x=>{ const k=x.itemId||x.itemNome; if(!grupos[k]) grupos[k]={itemId:x.itemId,itemNome:x.itemNome,seriais:[]}; grupos[k].seriais.push(x); });
+  const arr = Object.values(grupos).sort((a,b)=>a.itemNome.localeCompare(b.itemNome));
+
+  if (info) info.textContent = `${arr.length} item(ns) · ${lista.length} serial(is)`;
+  tbody.innerHTML = '';
+
+  if (!arr.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum ativo encontrado</td></tr>`;
+    return;
+  }
+
+  arr.forEach(grupo => {
+    const s = grupo.seriais;
+    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length;
+    const venc=s.filter(x=>x.status==='VENCIDO').length, alrt=s.filter(x=>x.status==='ALERTA_30').length, sem=s.filter(x=>x.status==='SEM_LAUDO').length;
+
+    let badge='';
+    if(venc>0) badge+=`<span style="color:#ef4444;font-size:10px;font-weight:700;margin-right:4px">🔴 ${venc} vencido(s)</span>`;
+    if(alrt>0) badge+=`<span style="color:#f59e0b;font-size:10px;font-weight:700;margin-right:4px">🟡 ${alrt} alerta(s)</span>`;
+    if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
+    if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
+
+    const saldoEstObj = _estoqueData.find(x=>x.item_id===grupo.itemId);
+    const saldoEst = Number(saldoEstObj?.saldo||0);
+    const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
+    const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
+    const serialsNecessarios = saldoEst * fatorPar;
+    // emEst = seriais com statusLocal === ESTOQUE (já calculado acima)
+    let consist;
+    if (emEst > serialsNecessarios) {
+      consist = `<span style="color:#ef4444;font-size:10px;font-weight:700" title="${emEst} seriais em estoque mas saldo é ${saldoEst}${fatorPar===2?' (PAR×2)':''}">⚠️ ${emEst} seriais / ${saldoEst} em estoque</span>`;
+    } else if (emEst < serialsNecessarios) {
+      const faltam = serialsNecessarios - emEst;
+      consist = `<span style="color:#f59e0b;font-size:10px;font-weight:700" title="Faltam ${faltam} serial(is) para bater com o saldo de ${saldoEst}${fatorPar===2?' (PAR×2)':''}">📋 Faltam ${faltam} serial(is)${fatorPar===2?' (PAR)':''}</span>`;
+    } else {
+      consist = `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
+    }
+
+    const gid = 'grp_'+grupo.itemId.replace(/[^a-z0-9]/gi,'_');
+    const trGrupo = document.createElement('tr');
+    trGrupo.style.cssText='cursor:pointer;border-bottom:1px solid var(--border)';
+    trGrupo.onclick = () => laudosToggleGrupo_(gid);
+    trGrupo.innerHTML = `
+      <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${grupo.itemNome}</td>
+      <td style="padding:12px;text-align:center"><span style="color:var(--accent-text);font-size:11px;font-weight:700">${s.length} serial(is)</span></td>
+      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}</td>
+      <td style="padding:12px" colspan="2">${badge}</td>
+      <td style="padding:12px" colspan="2">${consist}</td>`;
+    tbody.appendChild(trGrupo);
+
+    const trContent = document.createElement('tr');
+    trContent.id = gid;
+    trContent.style.display = 'none';
+    const td = document.createElement('td');
+    td.colSpan = 7;
+    td.style.cssText = 'padding:0;background:var(--bg)';
+    td.innerHTML = `<div style="padding:8px 16px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:1px solid var(--border)">
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Serial</th>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Local</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Status</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Vencimento</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Dias</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
+        </tr></thead>
+        <tbody>${s.map(x=>{
+          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : '📦 Estoque';
+          const diasCor = x.status==='VENCIDO'?'#ef4444':x.status==='ALERTA_30'?'#f59e0b':'#22c55e';
+          const stBadge = x.status==='OK'?'<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>'
+            :x.status==='VENCIDO'?'<span style="color:#ef4444;font-size:10px;font-weight:700">❌ Vencido</span>'
+            :x.status==='ALERTA_30'?'<span style="color:#f59e0b;font-size:10px;font-weight:700">⚠️ Alerta</span>'
+            :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
+          return `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${x.serial}</td>
+            <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}</td>
+            <td style="padding:8px;text-align:center">${stBadge}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}</td>
+            <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
+            <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
+              ${x.anexoUrl?`<a href="${x.anexoUrl}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
+              <button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>
+            </td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>`;
+    trContent.appendChild(td);
+    tbody.appendChild(trContent);
+  });
+}
+
+function laudosToggleGrupo_(gid) {
+  const tr = document.getElementById(gid);
+  const icon = document.getElementById('icon_'+gid);
+  if (!tr) return;
+  const aberto = tr.style.display!=='none';
+  tr.style.display = aberto?'none':'table-row';
+  if (icon) icon.textContent = aberto?'▶':'▼';
+}
+
+async function laudosCarregar_() {
+  const tbody = document.getElementById('tbLaudosTbody');
+  const info  = document.getElementById('laudoInfo');
+  if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center">
+    <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
+    <div style="font-size:13px;font-weight:600;color:var(--text-2)">Carregando laudos NR10...</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:4px">Buscando seriais e laudos no banco de dados</div>
+  </td></tr>`;
+  if (info) info.textContent = '⏳ Carregando...';
+  const data = await api('/laudos/nr10');
+  if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
+  __LAUDOS_NR10__.lista = data.lista || [];
+  laudosAtualizarContadores__(__LAUDOS_NR10__.lista);
+  laudosRender_();
+}
+
+function laudosAtualizarContadores__(lista) { laudosAtualizarContadores_(lista); }
+
+function abrirEditarLaudo(idAtivo) {
+  const x = __LAUDOS_NR10__.lista.find(a=>a.idAtivo===idAtivo);
+  if (!x) return;
+  __LAUDOS_NR10__.selecionado = x;
+  document.getElementById('laudoIdAtivo').value     = idAtivo;
+  document.getElementById('laudoLote').value        = x.loteLaudo||'';
+  document.getElementById('laudoDataEnsaio').value  = x.dataEnsaio?x.dataEnsaio.slice(0,10):'';
+  document.getElementById('laudoValDias').value     = x.validadeDias||'';
+  document.getElementById('laudoAnexoUrl').value    = x.anexoUrl||'';
+  document.getElementById('laudoItemSerial').textContent = `${x.itemNome} · Serial: ${x.serial}`;
+  document.getElementById('modalEditarLaudo').classList.remove('hidden');
+}
+
+async function salvarLaudo() {
+  const id = document.getElementById('laudoIdAtivo').value;
+  const body = {
+    lote_laudo: document.getElementById('laudoLote').value.trim(),
+    dt_ensaio:  document.getElementById('laudoDataEnsaio').value,
+    validade_dias: document.getElementById('laudoValDias').value,
+    anexo_url:  document.getElementById('laudoAnexoUrl').value.trim(),
+  };
+  if (!body.dt_ensaio || !body.validade_dias) { toast('Data de ensaio e validade obrigatórios','warn'); return; }
+  const res = await api(`/laudos/nr10/laudo/${encodeURIComponent(id)}`, { method:'PUT', body: JSON.stringify(body) });
+  if (res?.ok) { toast('Laudo salvo!','success'); document.getElementById('modalEditarLaudo').classList.add('hidden'); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+// ── LOCALIZADOR NR10 ──
+function abrirLocalizadorNR10() {
+  document.getElementById('locSerial').value = '';
+  document.getElementById('locResultado').style.display = 'none';
+  document.getElementById('locNaoEncontrado').style.display = 'none';
+  document.getElementById('modalLocalizadorNR10').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('locSerial').focus(), 100);
+}
+
+async function buscarLocalizador() {
+  const serial = document.getElementById('locSerial').value.trim().toUpperCase();
+  if (!serial) { toast('Digite um serial','warn'); return; }
+  document.getElementById('locResultado').style.display = 'none';
+  document.getElementById('locNaoEncontrado').style.display = 'none';
+
+  const data = await api(`/laudos/nr10/historico/${encodeURIComponent(serial)}`);
+  if (!data?.ok) { toast('Erro ao buscar','error'); return; }
+
+  if (!data.ativo && !data.historico?.length) {
+    document.getElementById('locNaoEncontrado').style.display = '';
+    return;
+  }
+
+  // Situação atual
+  const a = data.ativo;
+  const localCor = a?.status_local==='COM_COLAB'?'#a855f7':a?.status_local==='DESCARTE'?'#ef4444':a?.status_local==='AGUARDANDO_LAUDO'?'#f59e0b':'#22c55e';
+  document.getElementById('locSituacaoAtual').innerHTML = a ? [
+    ['Item', a.item||'—'],
+    ['Serial', a.serial||'—'],
+    ['Status', `<span style="color:${localCor};font-weight:700">${a.status_local||'—'}</span>`],
+    ['Localização', a.nome_colab_atual||a.local_atual||'—'],
+    ['Última mov.', formatarData(a.dt_ult_mov_raw?.split('T')[0])||'—'],
+    ['Motivo', a.motivo||'—'],
+  ].map(([l,v])=>`<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+    <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+  </div>`).join('') : '<div style="color:var(--text-3);font-size:12px">Ativo não encontrado no cadastro</div>';
+
+  // Laudo atual
+  const l = data.laudo;
+  const laudoBox = document.getElementById('locLaudoBox');
+  if (l) {
+    laudoBox.style.display = '';
+    const stCor = l.status==='OK'?'#22c55e':l.status==='VENCIDO'?'#ef4444':l.status==='ALERTA_30'?'#f59e0b':'var(--text-3)';
+    document.getElementById('locLaudoInfo').innerHTML = [
+      ['Lote', l.lote_laudo||'—'],
+      ['Data Ensaio', formatarData(l.dt_ensaio)||'—'],
+      ['Validade', l.validade_dias?`${l.validade_dias} dias`:'—'],
+      ['Vencimento', formatarData(l.dt_venc)||'—'],
+      ['Dias rest.', l.dias_rest!==null?`<span style="color:${stCor};font-weight:700">${l.dias_rest}</span>`:'—'],
+      ['Status', `<span style="color:${stCor};font-weight:700">${l.status||'—'}</span>`],
+    ].map(([lb,v])=>`<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
+      <div style="font-size:9px;color:var(--text-3)">${lb.toUpperCase()}</div>
+      <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+    </div>`).join('');
+    if (l.anexo_url) document.getElementById('locLaudoInfo').innerHTML += `<div style="grid-column:span 2"><a href="${l.anexo_url}" target="_blank" class="btn btn-ghost" style="font-size:11px">📄 Ver PDF do Laudo</a></div>`;
+  } else laudoBox.style.display = 'none';
+
+  // Histórico
+  const hist = data.historico || [];
+  const histBody = document.getElementById('locHistoricoBody');
+  const semHist  = document.getElementById('locSemHistorico');
+  if (hist.length) {
+    semHist.style.display = 'none';
+    histBody.innerHTML = hist.map(h=>`<tr>
+      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${(h.dt||'—').replace('T',' ').slice(0,16)}</td>
+      <td style="padding:6px 8px;font-size:11px;font-weight:600;border-bottom:1px solid var(--border)">${h.tipo||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${h.resp||'—'}</td>
+      <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${h.obs||'—'}</td>
+    </tr>`).join('');
+  } else {
+    histBody.innerHTML = '';
+    semHist.style.display = '';
+  }
+
+  document.getElementById('locResultado').style.display = '';
+}
+
+// ── DEVOLUÇÃO NR10 ──
+// let _devNR10SerialsSelecionados = [];
+
+function abrirDevolucaoNR10() {
+  document.getElementById('devNR10ColabBusca').value = '';
+  document.getElementById('devNR10SerialBusca').value = '';
+  document.getElementById('devNR10Lista').innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>';
+  document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+  _devNR10SerialsSelecionados = [];
+  // Garante colaboradores carregados
+  if (!_colaboradores.length) carregarColaboradoresAtendimento();
+  document.getElementById('modalDevolucaoNR10').classList.remove('hidden');
+}
+
+function filtrarColabDevNR10(q) {
+  if (q.length < 2) { document.getElementById('devNR10ColabSug').classList.add('hidden'); return; }
+  const lista = (_colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())||(c.matricula||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  const sug = document.getElementById('devNR10ColabSug');
+  if (!lista.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = lista.map(c=>`
+    <div class="autocomplete-item" onclick="carregarSeriaisColab('${c.nome.toUpperCase().replace(/'/g,"\\'")}','${c.id}')">
+      <strong>${c.nome}</strong>
+      <span style="font-size:10px;color:var(--text-3);margin-left:8px">${c.matricula||''} • ${c.funcao||''}</span>
+    </div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function buscarColabDev() {
+  const q = document.getElementById('devNR10ColabBusca').value.trim();
+  if (!q) { toast('Digite um nome ou matrícula','warn'); return; }
+  await carregarSeriaisColab(q.toUpperCase(), '');
+}
+
+async function buscarSerialDev() {
+  const serial = document.getElementById('devNR10SerialBusca').value.trim().toUpperCase();
+  if (!serial) { toast('Digite um serial','warn'); return; }
+
+  const lista = document.getElementById('devNR10Lista');
+  lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+
+  // Busca direto nos ativos pelo serial
+  const all = await api('/laudos/nr10/seriais-colab');
+  const seriais = (all?.data||[]).filter(s=>(s.serial||'').toUpperCase().includes(serial));
+
+  if (!seriais.length) {
+    lista.innerHTML = `<div style="text-align:center;color:#ef4444;font-size:12px;padding:20px">Serial "${serial}" não encontrado ou não está com nenhum colaborador</div>`;
+    document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+    return;
+  }
+  renderListaDevNR10(seriais);
+}
+
+function renderListaDevNR10(seriais) {
+  const lista = document.getElementById('devNR10Lista');
+  _devNR10SerialsSelecionados = [];
+  lista.innerHTML = seriais.map(s=>`
+    <label style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer">
+      <input type="checkbox" class="devnr10-check" data-id="${s.id_ativo}" onchange="atualizarSelecaoDevNR10()" style="width:16px;height:16px;cursor:pointer">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.item||'—'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+          <span style="font-size:10px;color:var(--accent-text);font-family:var(--font-mono)">🔢 ${s.serial}</span>
+          <span style="font-size:10px;color:var(--text-3)">👤 ${s.nome_colab_atual||'—'}</span>
+          <span style="font-size:10px;color:var(--text-3)">${formatarData(s.dt_ult_mov_raw?.split('T')[0])||'—'}</span>
+        </div>
+      </div>
+      <span style="font-size:10px;color:#a855f7;font-weight:600">COM COLAB</span>
+    </label>`).join('');
+  document.getElementById('btnConfirmarDevNR10').style.display = '';
+  document.getElementById('btnConfirmarDevNR10').textContent = '📮 Devolver Selecionados';
+  document.getElementById('btnConfirmarDevNR10').disabled = true;
+}
+
+async function carregarSeriaisColab(nome, colabId) {
+  document.getElementById('devNR10ColabBusca').value = nome;
+  document.getElementById('devNR10ColabSug').classList.add('hidden');
+  _devNR10SerialsSelecionados = [];
+
+  const lista = document.getElementById('devNR10Lista');
+  lista.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+
+  const data = await api('/laudos/nr10/seriais-colab');
+  // Busca flexível: qualquer parte do nome bate
+  const q = nome.toLowerCase();
+  const seriais = (data?.data||[]).filter(s =>
+    (s.nome_colab_atual||'').toLowerCase().includes(q) ||
+    q.split(' ').every(p => (s.nome_colab_atual||'').toLowerCase().includes(p))
+  );
+
+  if (!seriais.length) {
+    lista.innerHTML = `<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Nenhum serial NR10 encontrado para "${nome}"</div>`;
+    document.getElementById('btnConfirmarDevNR10').style.display = 'none';
+    return;
+  }
+  renderListaDevNR10(seriais);
+}
+
+function atualizarSelecaoDevNR10() {
+  _devNR10SerialsSelecionados = [...document.querySelectorAll('.devnr10-check:checked')].map(c=>c.dataset.id);
+  const btn = document.getElementById('btnConfirmarDevNR10');
+  btn.textContent = `📮 Devolver ${_devNR10SerialsSelecionados.length} Serial(is)`;
+  btn.disabled = _devNR10SerialsSelecionados.length === 0;
+}
+
+async function confirmarDevolucaoNR10() {
+  if (!_devNR10SerialsSelecionados.length) { toast('Selecione pelo menos um serial','warn'); return; }
+  const res = await api('/laudos/nr10/devolver', {
+    method: 'POST',
+    body: JSON.stringify({ ids_ativos: _devNR10SerialsSelecionados })
+  });
+  if (res?.ok) {
+    toast(`${res.devolvidos} serial(is) devolvido(s) ao estoque!`, 'success');
+    document.getElementById('modalDevolucaoNR10').classList.add('hidden');
+    laudosCarregar_();
+  } else toast(res?.erro||'Erro ao devolver','error');
+}
+
+// ── LIMPAR DESCARTES ──
+async function limparDescartes() {
+  const totalDesc = __LAUDOS_NR10__.lista.filter(x=>x.statusLocal==='DESCARTE').length;
+  if (!totalDesc) { toast('Nenhum serial com status DESCARTE','info'); return; }
+
+  const senha = prompt(`Esta ação irá excluir ${totalDesc} serial(is) com status DESCARTE.\n\nDigite a senha para confirmar:`);
+  if (senha === null) return;
+  if (senha !== 'GCA@4782') { toast('Senha incorreta','error'); return; }
+
+  const res = await api('/laudos/nr10/descartes', { method:'DELETE' });
+  if (res?.ok) { toast(`${res.removidos} serial(is) excluído(s)!`, 'success'); laudosCarregar_(); }
+  else toast(res?.erro||'Erro ao excluir','error');
+}
+
+// ═══════════════════════════════════════════
+// LAUDOS VIATURAS
+// ═══════════════════════════════════════════
+// let _viatData = [];
+
+function showViatTab(tab) {
+  const isLista = tab === 'lista';
+  document.getElementById('viatPainelLista').style.display  = isLista ? '' : 'none';
+  document.getElementById('viatPainelConfig').style.display = isLista ? 'none' : '';
+  document.getElementById('btnViatConfig').style.display    = isLista ? '' : 'none';
+  document.getElementById('btnViatLista').style.display     = isLista ? 'none' : '';
+  if (!isLista) carregarConfigViaturas();
+}
+
+async function carregarViaturas() {
+  document.getElementById('viatListaEl').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 12px"></div><div style="font-size:13px">Carregando viaturas...</div></div>';
+  const data = await api('/laudos/viaturas');
+  _viatData = data?.data || [];
+  renderViaturasAgrupado();
+}
+
+function renderViaturasAgrupado() {
+  const q      = (document.getElementById('viatBusca')?.value||'').toLowerCase();
+  const filtro = document.getElementById('viatFiltroStatus')?.value||'';
+  const el     = document.getElementById('viatListaEl');
+  const hoje   = new Date();
+
+  const todos = _viatData.map(v => {
+    const venc  = new Date(v.data_vencimento);
+    const dias  = Math.ceil((venc - hoje) / 86400000);
+    const alerta = Number(v.dias_alerta||30);
+    const st    = dias < 0 ? 'vencido' : dias <= alerta ? 'alerta' : 'ok';
+    return {...v, dias, st};
+  });
+
+  const placas = {};
+  todos.forEach(v => { if (!placas[v.placa]) placas[v.placa] = []; placas[v.placa].push(v); });
+
+  let placasArr = Object.entries(placas).map(([placa, laudos]) => {
+    const st = laudos.some(l=>l.st==='vencido')?'vencido':laudos.some(l=>l.st==='alerta')?'alerta':'ok';
+    const proxVenc = [...laudos].sort((a,b)=>a.dias-b.dias)[0];
+    return { placa, laudos, st, proxVenc };
+  }).sort((a,b) => ({vencido:0,alerta:1,ok:2})[a.st]-({vencido:0,alerta:1,ok:2})[b.st] || a.placa.localeCompare(b.placa));
+
+  if (q) placasArr = placasArr.filter(p=>p.placa.toLowerCase().includes(q));
+  if (filtro) placasArr = placasArr.filter(p=>p.st===filtro);
+
+  document.getElementById('viatKpiPlacas').textContent = Object.keys(placas).length;
+  document.getElementById('viatKpiOk').textContent     = Object.values(placas).filter(l=>!l.some(x=>x.st!=='ok')).length;
+  document.getElementById('viatKpiAlerta').textContent = Object.values(placas).filter(l=>l.some(x=>x.st==='alerta')&&!l.some(x=>x.st==='vencido')).length;
+  document.getElementById('viatKpiVenc').textContent   = Object.values(placas).filter(l=>l.some(x=>x.st==='vencido')).length;
+
+  if (!placasArr.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3);font-size:13px">Nenhuma viatura encontrada</div>'; return; }
+
+  el.innerHTML = placasArr.map(p => {
+    const gid = 'vgp_'+p.placa.replace(/[^a-z0-9]/gi,'_');
+    const nVenc  = p.laudos.filter(l=>l.st==='vencido').length;
+    const nAlerta= p.laudos.filter(l=>l.st==='alerta').length;
+    const vencLabel = p.proxVenc.dias < 0 ? `venceu há ${Math.abs(p.proxVenc.dias)}d` : `vence em ${p.proxVenc.dias}d`;
+    return `
+    <div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleViatPlaca('${gid}')">
+        <span id="icon_${gid}" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${p.placa}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${p.laudos.length} laudo(s) · ${vencLabel}</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${nVenc?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:4px">❌ ${nVenc} vencido(s)</span>`:''}
+          ${nAlerta?`<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:4px">⚠️ ${nAlerta} alerta(s)</span>`:''}
+          ${!nVenc&&!nAlerta?`<span style="font-size:10px;font-weight:700;color:#22c55e">✅ OK</span>`:''}
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirModalViatura('${p.placa}')">+ Laudo</button>
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+        ${p.laudos.map(l=>{
+          const lCor = l.st==='vencido'?'#ef4444':l.st==='alerta'?'#f59e0b':'#22c55e';
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${l.tipo_laudo}</div>
+              <div style="font-size:10px;color:var(--text-3)">Vence: ${formatarData(l.data_vencimento)}</div>
+            </div>
+            <span style="font-size:12px;font-weight:700;color:${lCor};min-width:70px;text-align:center">${l.dias<0?`${Math.abs(l.dias)}d atrás`:`${l.dias}d`}</span>
+            <div style="display:flex;gap:4px">
+              ${l.link_pdf?`<a href="${l.link_pdf}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
+              <button class="row-action" onclick="editarViatura('${l.id}')">✏️</button>
+              <button class="row-action" style="color:var(--red)" onclick="excluirViatura('${l.id}')">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleViatPlaca(gid) {
+  const el = document.getElementById(gid);
+  const icon = document.getElementById('icon_'+gid);
+  if (!el) return;
+  const aberto = el.style.display !== 'none';
+  el.style.display = aberto ? 'none' : '';
+  if (icon) icon.textContent = aberto ? '▶' : '▼';
+}
+
+function abrirModalViatura(placa) {
+  document.getElementById('viatEditId').value = '';
+  document.getElementById('viatPlaca').value  = placa||'';
+  document.getElementById('viatPlaca').readOnly = !!placa;
+  document.getElementById('viatTipo').selectedIndex = 0;
+  document.getElementById('viatVenc').value   = '';
+  document.getElementById('viatAlerta').value = '30';
+  document.getElementById('viatPdf').value    = '';
+  document.getElementById('viatModalTitulo').textContent = placa ? `Novo Laudo — ${placa}` : 'Novo Laudo';
+  document.getElementById('modalViatura').classList.remove('hidden');
+}
+function fecharModalViatura() { document.getElementById('modalViatura').classList.add('hidden'); }
+
+async function salvarLaudoViatura() {
+  const id   = document.getElementById('viatEditId').value;
+  const body = {
+    placa:           document.getElementById('viatPlaca').value.trim().toUpperCase(),
+    tipo_laudo:      document.getElementById('viatTipo').value,
+    data_vencimento: document.getElementById('viatVenc').value,
+    dias_alerta:     parseInt(document.getElementById('viatAlerta').value)||30,
+    link_pdf:        document.getElementById('viatPdf').value.trim(),
+  };
+  if (!body.placa||!body.tipo_laudo||!body.data_vencimento) { toast('Placa, tipo e vencimento obrigatórios','warn'); return; }
+  const res = await api(id?`/laudos/viaturas/${id}`:'/laudos/viaturas', { method:id?'PUT':'POST', body:JSON.stringify(body) });
+  if (res?.ok) { toast('Laudo salvo!','success'); fecharModalViatura(); carregarViaturas(); }
+  else toast(res?.erro||'Erro ao salvar','error');
+}
+
+function editarViatura(id) {
+  const v = _viatData.find(x=>x.id===id);
+  if (!v) return;
+  document.getElementById('viatEditId').value  = id;
+  document.getElementById('viatPlaca').value   = v.placa||'';
+  document.getElementById('viatPlaca').readOnly = false;
+  document.getElementById('viatTipo').value    = v.tipo_laudo||'';
+  document.getElementById('viatVenc').value    = v.data_vencimento||'';
+  document.getElementById('viatAlerta').value  = v.dias_alerta||30;
+  document.getElementById('viatPdf').value     = v.link_pdf||'';
+  document.getElementById('viatModalTitulo').textContent = `Editar — ${v.placa}`;
+  document.getElementById('modalViatura').classList.remove('hidden');
+}
+
+async function excluirViatura(id) {
+  if (!confirm('Excluir este laudo?')) return;
+  const res = await api(`/laudos/viaturas/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Laudo excluído!','success'); carregarViaturas(); }
+  else toast(res?.erro||'Erro','error');
+}
+
+function carregarConfigViaturas() {
+  const emails = localStorage.getItem('viat_config_emails')||'';
+  const dias   = localStorage.getItem('viat_config_dias')||'30';
+  const e = document.getElementById('viatConfigEmails'); if(e) e.value = emails;
+  const d = document.getElementById('viatConfigDias');   if(d) d.value = dias;
+}
+
+async function salvarConfigViaturas() {
+  const emails = document.getElementById('viatConfigEmails').value.trim();
+  const dias   = document.getElementById('viatConfigDias').value;
+  const msg    = document.getElementById('viatConfigMsg');
+  localStorage.setItem('viat_config_emails', emails);
+  localStorage.setItem('viat_config_dias', dias);
+  if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Configurações salvas!'; setTimeout(()=>msg.textContent='',3000); }
+}
+
+async function testarEmailViaturas() {
+  const msg = document.getElementById('viatConfigMsg');
+  if (msg) { msg.style.color='#f59e0b'; msg.textContent='⏳ Envio de emails em desenvolvimento...'; }
+  toast('Funcionalidade de email em breve','info');
+}
+
+// ═══════════════════════════════════════════
+// DESCARTE
+// ═══════════════════════════════════════════
 let _descartData = [];
 
 function showDescTab(tab) {
@@ -9433,7 +10388,7 @@ function limparFormMaterialEnel() {
 
 // ── ENTRADA ──
 function filtrarMatEntEnel(q) {
-  const sug = document.getElementById('entMatSug');
+  const sug = document.getElementById('enelEntMatSug');
   if (q.length<2) { sug.classList.add('hidden'); return; }
   const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
   sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onclick="selecionarMatEntEnel('${m.id}','${(m.descricao+' ('+m.codigo+')').replace(/'/g,"\\'")}',${!!m.possui_numero_serie})">
@@ -9444,11 +10399,11 @@ function filtrarMatEntEnel(q) {
 }
 
 function selecionarMatEntEnel(id, texto, temSerial) {
-  document.getElementById('entMatBusca').value = texto;
-  document.getElementById('entMatId').value = id;
-  document.getElementById('entMatSug').classList.add('hidden');
+  document.getElementById('enelEntMatBusca').value = texto;
+  document.getElementById('enelEntMatId').value = id;
+  document.getElementById('enelEntMatSug').classList.add('hidden');
   _entSeriaisAtual = [];
-  const box = document.getElementById('entSeriaisBox');
+  const box = document.getElementById('enelEntSeriaisBox');
   if (box) box.style.display = temSerial ? '' : 'none';
   atualizarCountSeriais();
 }
@@ -9463,24 +10418,24 @@ function addSerialEntEnel(serial) {
 }
 
 function renderSeriaisEnt() {
-  const el = document.getElementById('entSeriaisList');
+  const el = document.getElementById('enelEntSeriaisList');
   if (!el) return;
   el.innerHTML = _entSeriaisAtual.map(s=>`<span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${s}<button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="_entSeriaisAtual=_entSeriaisAtual.filter(x=>x!=='${s}');renderSeriaisEnt();atualizarCountSeriais()">✕</button></span>`).join('');
 }
 
 function atualizarCountSeriais() {
   const qtd = parseInt(document.getElementById('entQtd')?.value)||0;
-  const el = document.getElementById('entSeriaisCount');
+  const el = document.getElementById('enelEntSeriaisCount');
   if (el) el.textContent = `(${_entSeriaisAtual.length}/${qtd})`;
 }
 
 async function registrarEntradaEnel() {
-  const matId = document.getElementById('entMatId').value;
+  const matId = document.getElementById('enelEntMatId').value;
   const data  = document.getElementById('entData').value;
   const qtd   = parseInt(document.getElementById('entQtd').value)||0;
-  const motivo= document.getElementById('entMotivo').value;
-  const obs   = document.getElementById('entObs').value.trim();
-  const msg   = document.getElementById('entMsg');
+  const motivo= document.getElementById('enelEntMotivo').value;
+  const obs   = document.getElementById('enelEntObs').value.trim();
+  const msg   = document.getElementById('enelEntMsg');
   if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
   const mat = _enelMateriais.find(m=>m.id===matId);
   if (mat?.possui_numero_serie && _entSeriaisAtual.length!==qtd) {
@@ -9496,7 +10451,7 @@ async function registrarEntradaEnel() {
 }
 
 async function carregarHistEntradas() {
-  const tbody = document.getElementById('entHistBody');
+  const tbody = document.getElementById('enelEntHistBody');
   if (!tbody) return;
   tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const data = await api('/enel/historico-entradas');
@@ -9524,39 +10479,40 @@ function filtrarMatSaiEnel(q) {
 function selecionarMatSaiEnel(id, texto) {
   _saiMatSel = _enelMateriais.find(m=>m.id===id);
   document.getElementById('saiMatBusca').value=texto;
-  document.getElementById('saiMatId').value=id;
+  document.getElementById('enelSaiMatId').value=id;
   document.getElementById('saiMatSug').classList.add('hidden');
 }
 
 function filtrarEquipeSaiEnel(q) {
-  const sug = document.getElementById('saiEquipeSug');
+  const sug = document.getElementById('enelSaiEquipeSug');
   if (q.length<2) { sug.classList.add('hidden'); return; }
   const lista = (_equipes||[]).filter(e=>(e.nomeEquipe||e.nome_equipe||'').toLowerCase().includes(q.toLowerCase())).slice(0,10);
-  sug.innerHTML = lista.map(e=>{const nm=e.nomeEquipe||e.nome_equipe||''; return `<div class="autocomplete-item" onclick="document.getElementById('saiEquipeBusca').value='${nm.replace(/'/g,"\\'")}';document.getElementById('saiEquipeSug').classList.add('hidden')"><strong>${nm}</strong></div>`;}).join('');
+  sug.innerHTML = lista.map(e=>{const nm=e.nomeEquipe||e.nome_equipe||''; return `<div class="autocomplete-item" onclick="document.getElementById('enelSaiEquipeBusca').value='${nm.replace(/'/g,"\\'")}';document.getElementById('enelSaiEquipeSug').classList.add('hidden')"><strong>${nm}</strong></div>`;}).join('');
   sug.classList.toggle('hidden', !lista.length);
 }
 
 async function registrarSaidaEnel() {
-  const matId  = document.getElementById('saiMatId')?.value;
-  const data   = document.getElementById('saiData').value;
-  const qtd    = parseInt(document.getElementById('saiQtd').value)||0;
-  const equipe = document.getElementById('saiEquipeBusca').value.trim();
-  const obs    = document.getElementById('saiObs').value.trim();
-  const msg    = document.getElementById('saiMsg');
-  if (!matId||!data||qtd<=0||!equipe) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e equipe.'; return; }
+  const matId  = document.getElementById('enelSaiMatId')?.value;
+  const data   = document.getElementById('enelSaiData').value;
+  const qtd    = parseInt(document.getElementById('enelSaiQtd').value)||0;
+  const equipe = document.getElementById('enelSaiEquipeBusca').value.trim();
+  const motivo = document.getElementById('enelSaiMotivo')?.value||'';
+  const obs    = document.getElementById('enelSaiObs').value.trim();
+  const msg    = document.getElementById('enelSaiMsg');
+  if (!matId||!data||qtd<=0||!equipe||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade, equipe e motivo.'; return; }
   const mat = _enelMateriais.find(m=>m.id===matId);
   const res = await api('/enel/saida', { method:'POST', body: JSON.stringify({
     material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
-    tipo_saida:'Saída Direta', destino:equipe, data, quantidade:qtd, obs,
+    tipo_saida:motivo, destino:equipe, data, quantidade:qtd, obs,
   })});
   if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); setTimeout(()=>msg.textContent='',3000); }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
 }
 
 async function carregarHistSaidas() {
-  const tbody = document.getElementById('saiHistBody');
-  const de    = document.getElementById('saiHistDe')?.value;
-  const ate   = document.getElementById('saiHistAte')?.value;
+  const tbody = document.getElementById('enelSaiHistBody');
+  const de    = document.getElementById('enelSaiHistDe')?.value;
+  const ate   = document.getElementById('enelSaiHistAte')?.value;
   if (!tbody) return;
   tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   let url = '/enel/historico-saidas';
