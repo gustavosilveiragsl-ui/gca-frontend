@@ -11383,59 +11383,6 @@ function cmRenderSumario() {
   el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:12px;color:var(--text-3)">Total: <strong style="color:var(--text-1)">${total}</strong> em <strong>${grupos.size}</strong> ${label2}</span>${badges}</div>`;
 }
 
-function cmRenderModelos() {
-  const busca = (document.getElementById('cmBuscaAba')?.value||'').toLowerCase();
-  let dados = _cmDados;
-  if (busca) dados = dados.filter(m=>(m.material_descricao||'').toLowerCase().includes(busca)||(m.numero_serie||'').toLowerCase().includes(busca)||(m.localizacao||'').toLowerCase().includes(busca));
-  if (_cmFiltroStatus!=='TODOS') dados = dados.filter(m=>(m.status_atual||'').toUpperCase().includes(_cmFiltroStatus));
-  // Campo: agrupa por equipe; outros: agrupa por modelo
-  const grupos = {};
-  if (_cmAbaAtual === 'campo') {
-    // Campo: dois níveis — equipe > modelo
-    dados.forEach(m=>{
-      const equipe = (m.localizacao||'—').replace('ATENDIMENTO_ENEL - ','');
-      const modelo = m.material_descricao||'—';
-      if(!grupos[equipe]) grupos[equipe]={descricao:equipe, subgrupos:{}, seriais:[]};
-      if(!grupos[equipe].subgrupos[modelo]) grupos[equipe].subgrupos[modelo]={descricao:modelo, seriais:[]};
-      grupos[equipe].subgrupos[modelo].seriais.push(m);
-      grupos[equipe].seriais.push(m);
-    });
-  } else {
-    dados.forEach(m=>{
-      const k = m.id_material||m.material_descricao;
-      if(!grupos[k])grupos[k]={descricao:m.material_descricao,seriais:[]};
-      grupos[k].seriais.push(m);
-    });
-  }
-  const lista = document.getElementById('cmListaModelos');
-  if (!lista) return;
-  const arr = Object.values(grupos);
-  if (!arr.length) { lista.innerHTML='<div style="text-align:center;padding:40px;color:var(--text-3)">Nenhum medidor encontrado</div>'; return; }
-  lista.innerHTML = arr.map(g=>{
-    const gid = 'cmg_'+(g.descricao||'').replace(/\W/g,'_');
-    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;background:var(--bg-card)" onclick="document.getElementById('${gid}').style.display=document.getElementById('${gid}').style.display==='none'?'':'none';this.querySelector('.cm-arrow').textContent=document.getElementById('${gid}').style.display===''?'▼':'▶'">
-        <span class="cm-arrow" style="font-size:11px;color:var(--text-3)">▶</span>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:var(--text-1)">${g.descricao||'—'}</div>
-          <div style="font-size:11px;color:var(--text-3)">${g.seriais.length} serial(is)</div>
-        </div>
-      </div>
-      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;padding:12px">
-          ${g.seriais.map(s=>{
-            const stCor = s.status_atual==='CAMPO'?'#f59e0b':s.status_atual==='INSTALADO'?'#22c55e':'#3b82f6';
-            return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px">
-              <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text)">${s.numero_serie}</div>
-              <div style="font-size:10px;color:${stCor};font-weight:600;margin-top:2px">${s.status_atual||'—'}</div>
-              ${s.equipe_atual?`<div style="font-size:10px;color:var(--text-3)">${s.equipe_atual}</div>`:''}
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
 
 function cmBuscarSerialDireto(serial) {
   document.getElementById('cmBuscaSerialInput').value = serial;
