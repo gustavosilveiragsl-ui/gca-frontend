@@ -10840,14 +10840,21 @@ async function confirmarDesbloqueioEnel() {
   enelMsg('⚠️ Item adicionado com desbloqueio — ' + just, true);
 }
 
-window.enelAddSerial = function(idx, serial) {
+window.enelAddSerial = async function(idx, serial) {
   const it = window.__ENEL__.itens[idx]; const s = String(serial||'').trim().toUpperCase();
   if (!it||!s) return;
   if ((it.seriais||[]).includes(s)) { enelMsg(`Serial duplicado: ${s}`, false); return; }
   const all = window.__ENEL__.itens.flatMap(x=>x.seriais||[]);
   if (all.includes(s)) { enelMsg(`Serial já usado em outro item: ${s}`, false); return; }
   if ((it.seriais||[]).length >= it.quantidade) { enelMsg(`Seriais completos para ${it.descricao}`, false); return; }
-  it.seriais.push(s); enelRenderItens(); enelMsg(`Serial adicionado: ${s}`, true);
+
+  // Valida serial no controle de medidores
+  const res = await api(`/enel/medidores/buscar/${encodeURIComponent(s)}`);
+  if (!res?.medidor) { enelMsg(`🚫 Serial ${s} não encontrado no controle de medidores`, false); return; }
+  if (res.medidor.status_atual === 'INSTALADO') { enelMsg(`🚫 Serial ${s} já está INSTALADO`, false); return; }
+  if (res.medidor.localizacao !== 'ESTOQUE') { enelMsg(`🚫 Serial ${s} não está em estoque (${res.medidor.localizacao})`, false); return; }
+
+  it.seriais.push(s); enelRenderItens(); enelMsg(`✅ Serial ${s} adicionado`, true);
   setTimeout(()=>{ const inputs=document.querySelectorAll('.enel-serial-input'); if(inputs[idx])inputs[idx].focus(); },50);
 };
 window.enelRemSerial = function(idx, serial) {
