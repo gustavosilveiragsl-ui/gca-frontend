@@ -10749,7 +10749,6 @@ function enelSelecionarEquipe(id, nome, prefixo) {
   document.getElementById('enelEquipeBusca').value = nome;
   document.getElementById('enelEquipeId').value = id;
   document.getElementById('enelEquipeSug').style.display = 'none';
-  carregarPreBaixasEquipeEnel(nome);
 }
 
 function enelFiltrarMaterial() {
@@ -10780,7 +10779,7 @@ async function enelAdicionarMaterial() {
   const matId  = document.getElementById('enelMatId').value;
   const qtd    = Number(document.getElementById('enelMatQtd').value||0);
   const motivo = document.getElementById('enelMatMotivo').value;
-  const obs    = document.getElementById('enelMatObs').value.trim();
+  const obs    = '';
   if (!matId||qtd<=0) { enelMsg('Preencha material e quantidade.', false); return; }
   const mat = _enelMateriais.find(x=>x.id===matId);
   if (!mat) { enelMsg('Material inválido.', false); return; }
@@ -10818,7 +10817,7 @@ function _enelAdicionarItemFinal(mat, qtd, motivo, obs) {
     usaSerial: !!mat.possui_numero_serie, seriais: []
   });
   document.getElementById('enelMatBusca').value=''; document.getElementById('enelMatId').value='';
-  document.getElementById('enelMatQtd').value=''; document.getElementById('enelMatMotivo').value='';
+  document.getElementById('enelMatQtd').value='';
   document.getElementById('enelMatObs').value='';
   enelRenderItens(); enelMsg('Material adicionado.', true);
 }
