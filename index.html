@@ -11273,16 +11273,16 @@ function cmRenderModelos() {
   const arr = Object.values(grupos);
   if (!arr.length) { lista.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-3)">Nenhum medidor encontrado${_cmFiltroStatus!=='TODOS'?' para o filtro selecionado':''}</div>`; return; }
 
-  lista.innerHTML = arr.map(g=>{
-    const gid = 'cmg_'+(g.descricao||'').replace(/[^a-z0-9]/gi,'_');
+  lista.innerHTML = arr.map((g,gi)=>{
+    const gid = 'cmg_'+(gi||0);
 
     if (_cmAbaAtual === 'campo' && g.subgrupos) {
       const subArr = Object.values(g.subgrupos);
       const nBlqEq = g.seriais.filter(s=>s.bloqueadoEquipe).length;
       const nProx  = g.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=5).length;
-      // Pré-calcula subgrupo HTML fora do template
+      // Pré-calcula subgrupo HTML — usa índice numérico puro para evitar chars inválidos
       const subHtml = subArr.map((sg,sgi)=>{
-        const sgid = gid+'_sub'+sgi;
+        const sgid = 'cm_sg_'+Date.now()+'_'+sgi;
         const nBlq = sg.seriais.filter(s=>s.bloqueadoEquipe).length;
         const nVSg = sg.seriais.filter(s=>s.status_atual==='VENCIDO').length;
         const nPSg = sg.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=5).length;
