@@ -2267,10 +2267,12 @@ tbody tr:hover td{background:var(--bg-hover);}
 
         <!-- Filtros status campo -->
         <div id="cmFiltrosStatus" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-          <button onclick="cmFiltrarStatus('TODOS')"    style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text-3)">Todos</button>
-          <button onclick="cmFiltrarStatus('EM DIA')"   style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#22c55e">✅ Em Dia</button>
-          <button onclick="cmFiltrarStatus('ALERTA')"   style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#f59e0b">⚠️ Alerta</button>
-          <button onclick="cmFiltrarStatus('BLOQUEADO')" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#ef4444">🚫 Bloqueado</button>
+          <button onclick="cmFiltrarStatus('TODOS')"         class="cm-btn-filtro" style="background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:var(--text-3)">Todos</button>
+          <button onclick="cmFiltrarStatus('EM DIA')"        class="cm-btn-filtro" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#22c55e">✅ Em Dia</button>
+          <button onclick="cmFiltrarStatus('PROXIMO')"       class="cm-btn-filtro" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#f59e0b">⚠️ Próx. Venc.</button>
+          <button onclick="cmFiltrarStatus('VENCIDO')"       class="cm-btn-filtro" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#ef4444">🔴 Vencidos</button>
+          <button onclick="cmFiltrarStatus('BLOQUEADO_EQ')"  class="cm-btn-filtro" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#ef4444">🚫 Bloq. Equipe</button>
+          <button onclick="cmFiltrarStatus('BLOQUEADO_GL')"  class="cm-btn-filtro" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer;color:#ef4444">🚫 Bloq. Global</button>
         </div>
 
         <div id="cmLoading" style="display:none;text-align:center;padding:40px">
@@ -11209,8 +11211,9 @@ async function cmAbrirAba(aba) {
   _cmFiltroStatus = 'TODOS';
   document.getElementById('cmLoading').style.display = '';
   document.getElementById('cmConteudo').style.display = 'none';
+  // Mostra filtros em todas as abas (não só campo)
   const fs = document.getElementById('cmFiltrosStatus');
-  if (fs) fs.style.display = aba==='campo' ? 'flex' : 'none';
+  if (fs) fs.style.display = 'flex';
   const loc = aba==='estoque'?'ESTOQUE':aba==='campo'?'CAMPO':aba==='instalados'?'INSTALADO':'';
   const res = await api(`/enel/medidores${loc?'?localizacao='+loc:''}`);
   _cmDados = res?.data||[];
@@ -11222,14 +11225,140 @@ async function cmAbrirAba(aba) {
   cmRenderModelos();
 }
 
-function cmRecarregarAba() { if (_cmAbaAtual) cmAbrirAba(_cmAbaAtual); }
-
 function cmFiltrarStatus(st) {
   _cmFiltroStatus = st;
+  // Highlight botão ativo
+  document.querySelectorAll('.cm-btn-filtro').forEach(b => {
+    b.style.fontWeight = b.getAttribute('onclick')?.includes(`'${st}'`) ? '900' : '700';
+    b.style.opacity = b.getAttribute('onclick')?.includes(`'${st}'`) ? '1' : '0.7';
+  });
   cmRenderModelos();
 }
 
-function cmFiltrarAba() { cmRenderModelos(); }
+function cmRenderModelos() {
+  const busca = (document.getElementById('cmBuscaAba')?.value||'').toLowerCase();
+  let dados = _cmDados;
+
+  // Aplica filtro de status/bloqueio
+  if (_cmFiltroStatus === 'EM DIA')       dados = dados.filter(m=>m.status_atual==='EM DIA'&&!m.bloqueadoGlobal&&!m.bloqueadoEquipe);
+  else if (_cmFiltroStatus === 'PROXIMO') dados = dados.filter(m=>{ const d=_cmAbaAtual==='campo'?m.prazo10:m.prazo50; return d!==null&&d>=0&&d<=5&&!m.bloqueadoGlobal&&!m.bloqueadoEquipe; });
+  else if (_cmFiltroStatus === 'VENCIDO') dados = dados.filter(m=>m.status_atual==='VENCIDO');
+  else if (_cmFiltroStatus === 'BLOQUEADO_EQ') dados = dados.filter(m=>m.bloqueadoEquipe);
+  else if (_cmFiltroStatus === 'BLOQUEADO_GL') dados = dados.filter(m=>m.bloqueadoGlobal);
+
+  if (busca) dados = dados.filter(m=>(m.material_descricao||'').toLowerCase().includes(busca)||(m.numero_serie||'').toLowerCase().includes(busca)||(m.localizacao||'').toLowerCase().includes(busca));
+
+  const grupos = {};
+  if (_cmAbaAtual === 'campo') {
+    // Dois níveis: equipe → modelo
+    dados.forEach(m=>{
+      const equipe = (m.localizacao||'—').replace('ATENDIMENTO_ENEL - ','');
+      const modelo = m.material_descricao||'—';
+      if(!grupos[equipe]) grupos[equipe]={descricao:equipe, subgrupos:{}, seriais:[]};
+      if(!grupos[equipe].subgrupos[modelo]) grupos[equipe].subgrupos[modelo]={descricao:modelo, seriais:[]};
+      grupos[equipe].subgrupos[modelo].seriais.push(m);
+      grupos[equipe].seriais.push(m);
+    });
+  } else {
+    // Um nível: modelo
+    dados.forEach(m=>{
+      const k = m.material_descricao||'—';
+      if(!grupos[k])grupos[k]={descricao:k,seriais:[]};
+      grupos[k].seriais.push(m);
+    });
+  }
+
+  const lista = document.getElementById('cmListaModelos');
+  if (!lista) return;
+  const arr = Object.values(grupos);
+  if (!arr.length) { lista.innerHTML=`<div style="text-align:center;padding:40px;color:var(--text-3)">Nenhum medidor encontrado${_cmFiltroStatus!=='TODOS'?' para o filtro selecionado':''}</div>`; return; }
+
+  lista.innerHTML = arr.map(g=>{
+    const gid = 'cmg_'+(g.descricao||'').replace(/[^a-z0-9]/gi,'_');
+
+    if (_cmAbaAtual === 'campo' && g.subgrupos) {
+      const subArr = Object.values(g.subgrupos);
+      const nBlqEq  = g.seriais.filter(s=>s.bloqueadoEquipe).length;
+      const nProx   = g.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=5).length;
+      return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="toggleCm('${gid}')">
+          <span id="i_${gid}" style="font-size:11px;color:var(--text-3)">▶</span>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:700">${g.descricao}</div>
+            <div style="font-size:11px;color:var(--text-3)">${g.seriais.length} serial(is) · ${subArr.length} modelo(s)</div>
+          </div>
+          ${nBlqEq?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px">🚫 ${nBlqEq} bloq.</span>`:''}
+          ${nProx?`<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.12);padding:2px 8px;border-radius:4px">⚠️ ${nProx} alerta</span>`:''}
+        </div>
+        <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+          ${subArr.map(sg=>{
+            const sgid = gid+'_'+(sg.descricao||'').replace(/[^a-z0-9]/gi,'_');
+            const nBlq = sg.seriais.filter(s=>s.bloqueadoEquipe).length;
+            return `<div style="border-bottom:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 16px 10px 28px;cursor:pointer;background:rgba(0,0,0,.03)" onclick="toggleCm('${sgid}')">
+                <span id="i_${sgid}" style="font-size:10px;color:var(--text-3)">▶</span>
+                <div style="flex:1;font-size:13px;font-weight:600">${sg.descricao}</div>
+                <span style="font-size:11px;color:var(--text-3)">${sg.seriais.length}</span>
+                ${nBlq?`<span style="font-size:10px;color:#ef4444;font-weight:700">🚫 ${nBlq}</span>`:''}
+              </div>
+              <div id="${sgid}" style="display:none;padding:10px 16px;background:rgba(0,0,0,.02)">
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">
+                  ${sg.seriais.map(s=>cmSerialCard(s,'campo')).join('')}
+                </div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+
+    // Estoque / Instalados
+    const nBlq = g.seriais.filter(s=>s.bloqueadoGlobal).length;
+    const nVenc = g.seriais.filter(s=>s.status_atual==='VENCIDO').length;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:8px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="toggleCm('${gid}')">
+        <span id="i_${gid}" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700">${g.descricao}</div>
+          <div style="font-size:11px;color:var(--text-3)">${g.seriais.length} serial(is)</div>
+        </div>
+        ${nBlq?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px">🚫 ${nBlq} bloq.</span>`:''}
+        ${nVenc?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.12);padding:2px 8px;border-radius:4px">🔴 ${nVenc} venc.</span>`:''}
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border);padding:10px 16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">
+          ${g.seriais.map(s=>cmSerialCard(s,'estoque')).join('')}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleCm(id) {
+  const el = document.getElementById(id);
+  const icon = document.getElementById('i_'+id);
+  if (!el) return;
+  const aberto = el.style.display !== 'none';
+  el.style.display = aberto ? 'none' : '';
+  if (icon) icon.textContent = aberto ? '▶' : '▼';
+}
+
+function cmSerialCard(s, tipo) {
+  const blq  = tipo==='campo' ? s.bloqueadoEquipe : s.bloqueadoGlobal;
+  const dias  = tipo==='campo' ? s.diasEquipe : s.diasEstoque;
+  const prazo = tipo==='campo' ? s.prazo10 : s.prazo50;
+  const max   = tipo==='campo' ? 10 : 50;
+  const vencido = s.status_atual==='VENCIDO';
+  const cor = blq||vencido ? '#ef4444' : prazo!==null&&prazo<=5 ? '#f59e0b' : '#22c55e';
+  const icon = blq ? '🚫' : vencido ? '🔴' : prazo!==null&&prazo<=5 ? '⚠️' : '✅';
+  const prazoLabel = s.status_atual==='INSTALADO' ? '' :
+    blq ? ` ${dias}d (bloq.)` : prazo!==null ? ` ${prazo}d/${max}` : '';
+  return `<div style="border:1px solid ${cor}40;border-radius:var(--radius-sm);padding:8px;background:${cor}06;cursor:pointer${blq||vencido?';border-width:2px':''}" onclick="cmBuscarSerialDireto('${s.numero_serie}')">
+    <div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:${blq||vencido?cor:'var(--accent-text)'}">${blq||vencido?icon+' ':''} ${s.numero_serie}</div>
+    <div style="font-size:10px;color:${cor};font-weight:600;margin-top:2px">${s.status_atual||'—'}${prazoLabel}</div>
+    ${s.localizacao&&s.localizacao!=='ESTOQUE'?`<div style="font-size:9px;color:var(--text-3)">${s.localizacao.replace('ATENDIMENTO_ENEL - ','')}</div>`:''}
+  </div>`;
+}
 
 function cmRenderSumario() {
   const el = document.getElementById('cmSumario');
