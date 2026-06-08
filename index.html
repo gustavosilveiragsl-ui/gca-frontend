@@ -1994,10 +1994,9 @@ tbody tr:hover td{background:var(--bg-hover);}
               <select class="form-input" id="baixasFiltroTipo" style="width:180px;font-size:11px">
                 <option value="atendimentos">🔶 Atendimentos (padrão)</option>
                 <option value="">Todos os motivos</option>
-                <option value="entrega">Entrega De Kit</option>
-                <option value="Reposição">Reposição Do Kit</option>
-                <option value="Transferência">Transferência</option>
+                <option value="ATENDIMENTO_ENEL">Atendimento ENEL</option>
                 <option value="Ajuste de inventário">Ajuste de Inventário</option>
+                <option value="Transferência">Transferência</option>
               </select>
             </div>
             <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
@@ -10625,9 +10624,9 @@ async function carregarBaixas() {
 
   const data = await api(url);
   let lista = data?.data||[];
-  // 'atendimentos' = entrega + reposição; '' = tudo; outros = filtro exato
+  // 'atendimentos' = ATENDIMENTO_ENEL; '' = tudo; outros = filtro exato
   if (tipo === 'atendimentos') {
-    lista = lista.filter(s => s.tipo_saida==='entrega' || s.tipo_saida==='Reposição' || !s.tipo_saida);
+    lista = lista.filter(s => (s.tipo_saida||'').toUpperCase().includes('ATENDIMENTO'));
   } else if (tipo) {
     lista = lista.filter(s => s.tipo_saida === tipo);
   }
