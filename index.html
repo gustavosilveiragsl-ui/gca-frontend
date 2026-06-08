@@ -1991,7 +1991,8 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div><label class="form-label">De</label><input class="form-input" type="date" id="baixasHistDe" style="width:140px"></div>
             <div><label class="form-label">Até</label><input class="form-input" type="date" id="baixasHistAte" style="width:140px"></div>
             <div><label class="form-label">Tipo</label>
-              <select class="form-input" id="baixasFiltroTipo" style="width:160px;font-size:11px">
+              <select class="form-input" id="baixasFiltroTipo" style="width:180px;font-size:11px">
+                <option value="atendimentos">🔶 Atendimentos (padrão)</option>
                 <option value="">Todos os motivos</option>
                 <option value="entrega">Entrega De Kit</option>
                 <option value="Reposição">Reposição Do Kit</option>
@@ -10624,7 +10625,12 @@ async function carregarBaixas() {
 
   const data = await api(url);
   let lista = data?.data||[];
-  if (tipo) lista = lista.filter(s=>s.tipo_saida===tipo);
+  // 'atendimentos' = entrega + reposição; '' = tudo; outros = filtro exato
+  if (tipo === 'atendimentos') {
+    lista = lista.filter(s => s.tipo_saida==='entrega' || s.tipo_saida==='Reposição' || !s.tipo_saida);
+  } else if (tipo) {
+    lista = lista.filter(s => s.tipo_saida === tipo);
+  }
 
   if (!lista.length) {
     document.getElementById('baixasResumo').textContent = 'Nenhuma baixa encontrada no período';
