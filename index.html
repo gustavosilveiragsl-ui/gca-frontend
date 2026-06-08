@@ -11360,17 +11360,17 @@ function filtrarControleEquipe() {
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:rgba(0,0,0,.1)">
             <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Entregue</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:#ef4444">Consumido</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#3b82f6">Entregue</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b">Pendente</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b">Pré-baixa Pend.</th>
           </tr></thead>
           <tbody>${itens.map(it=>`<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-size:12px;font-weight:600">${it.materialDesc}</td>
             <td style="padding:8px;text-align:center;font-size:12px">${it.entregue||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;color:#ef4444">${it.consumido||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;font-weight:600;color:#22c55e">${it.saldoReal||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;color:#f59e0b">${it.pendente||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;font-weight:700;color:#22c55e">${it.saldoReal||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;font-weight:${it.pendente>0?'700':'400'};color:${it.pendente>0?'#f59e0b':'var(--text-3)'}">
+              ${it.pendente>0?it.pendente:'—'}
+            </td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
