@@ -11282,7 +11282,7 @@ function cmRenderModelos() {
       const nProx  = g.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=5).length;
       // Pré-calcula subgrupo HTML — usa índice numérico puro para evitar chars inválidos
       const subHtml = subArr.map((sg,sgi)=>{
-        const sgid = 'cm_sg_'+Date.now()+'_'+sgi;
+        const sgid = 'cm_sg_'+gi+'_'+sgi;
         const nBlq = sg.seriais.filter(s=>s.bloqueadoEquipe).length;
         const nVSg = sg.seriais.filter(s=>s.status_atual==='VENCIDO').length;
         const nPSg = sg.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=5).length;
@@ -11405,9 +11405,8 @@ async function cmBuscarSerial() {
   const prazo50Label = med.diasEstoque !== null && med.status_atual !== 'INSTALADO'
     ? (med.bloqueadoGlobal
         ? `<span style="color:#ef4444;font-weight:700">🚫 BLOQUEADO (${med.diasEstoque}d no sistema)</span>`
-        : `<span style="color:${med.prazo50<10?'#f59e0b':'#22c55e'}">${med.prazo50}d restantes de 50</span>`)
+        : `<span style="color:${(med.prazo50??99)<10?'#f59e0b':'#22c55e'}">${med.prazo50??'—'}d restantes de 50</span>`)
     : '—';
-
   const prazo10Label = med.data_entrega_equipe && med.status_atual !== 'INSTALADO'
     ? (med.bloqueadoEquipe
         ? `<span style="color:#ef4444;font-weight:700">🚫 BLOQUEADO (${med.diasEquipe}d com a equipe)</span>`
