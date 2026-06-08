@@ -1980,22 +1980,31 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- CONSULTA BAIXAS -->
       <div class="view" id="view-enel-baixas">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">🧮 Consulta de Baixas de Material</div><div class="card-sub">Histórico de saídas por período</div></div>
-            <div class="card-actions">
-              <input class="form-input" type="date" id="baixasHistDe" style="width:130px;font-size:11px">
-              <input class="form-input" type="date" id="baixasHistAte" style="width:130px;font-size:11px">
-              <select class="form-input" id="baixasFiltroEquipe" style="width:160px;font-size:11px">
-                <option value="">Todas as equipes</option>
-              </select>
-              <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
-            </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Consulta de Baixas 🧮</div>
+            <div style="font-size:12px;color:var(--text-3)" id="baixasResumo">Selecione o período e clique em buscar</div>
           </div>
-          <table>
-            <thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Tipo</th><th>Usuário</th></tr></thead>
-            <tbody id="baixasBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3)">Selecione o período e clique em 🔍 Buscar</td></tr></tbody>
-          </table>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="padding:12px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+            <div><label class="form-label">De</label><input class="form-input" type="date" id="baixasHistDe" style="width:140px"></div>
+            <div><label class="form-label">Até</label><input class="form-input" type="date" id="baixasHistAte" style="width:140px"></div>
+            <div><label class="form-label">Tipo</label>
+              <select class="form-input" id="baixasFiltroTipo" style="width:160px;font-size:11px">
+                <option value="">Todos os motivos</option>
+                <option value="entrega">Entrega De Kit</option>
+                <option value="Reposição">Reposição Do Kit</option>
+                <option value="Transferência">Transferência</option>
+                <option value="Ajuste de inventário">Ajuste de Inventário</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
+            <div id="baixasKpis" style="margin-left:auto;display:flex;gap:12px"></div>
+          </div>
+        </div>
+        <div id="baixasListaMateriais" style="display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;padding:40px;color:var(--text-3)">Selecione o período e clique em 🔍 Buscar</div>
         </div>
       </div>
 
@@ -10599,31 +10608,99 @@ function filtrarEstoqueEnel(q) {
 
 // ── BAIXAS ──
 async function carregarBaixas() {
-  const tbody = document.getElementById('baixasBody');
-  if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const el  = document.getElementById('baixasListaMateriais');
   const de  = document.getElementById('baixasHistDe')?.value;
   const ate = document.getElementById('baixasHistAte')?.value;
+  const tipo = document.getElementById('baixasFiltroTipo')?.value||'';
+  if (!de && !ate) { toast('Selecione pelo menos uma data','warn'); return; }
+
+  el.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="width:28px;height:28px;border-width:3px;margin:0 auto 12px"></div><div style="color:var(--text-3)">Buscando baixas...</div></div>';
+
   let url = '/enel/historico-saidas';
-  if (de||ate) url += `?data_inicio=${de||''}&data_fim=${ate||''}`;
+  const params = [];
+  if (de)  params.push(`data_inicio=${de}`);
+  if (ate) params.push(`data_fim=${ate}`);
+  if (params.length) url += '?' + params.join('&');
+
   const data = await api(url);
   let lista = data?.data||[];
-  const equipeF = document.getElementById('baixasFiltroEquipe')?.value;
-  if (equipeF) lista = lista.filter(s=>s.destino===equipeF);
-  // Popula filtro de equipes
-  const sel = document.getElementById('baixasFiltroEquipe');
-  if (sel&&sel.options.length<=1) {
-    const equipes = [...new Set(lista.map(s=>s.destino).filter(Boolean))].sort();
-    sel.innerHTML = '<option value="">Todas as equipes</option>'+equipes.map(e=>`<option value="${e}">${e}</option>`).join('');
+  if (tipo) lista = lista.filter(s=>s.tipo_saida===tipo);
+
+  if (!lista.length) {
+    document.getElementById('baixasResumo').textContent = 'Nenhuma baixa encontrada no período';
+    document.getElementById('baixasKpis').innerHTML = '';
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)">Nenhuma baixa no período selecionado</div>';
+    return;
   }
-  tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
-    <td>${formatarData(s.data)}</td>
-    <td class="td-main">${s.material_descricao||'—'}</td>
-    <td style="text-align:center;font-weight:600;color:#ef4444">${s.quantidade}</td>
-    <td style="font-size:11px">${s.destino||'—'}</td>
-    <td style="font-size:11px">${s.tipo_saida||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
-  </tr>`).join('') : `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3)">Nenhuma baixa encontrada</td></tr>`;
+
+  // Agrupa por material
+  const materiais = {};
+  lista.forEach(s => {
+    const k = s.material_id || s.material_descricao;
+    if (!materiais[k]) materiais[k] = {
+      materialId: s.material_id, descricao: s.material_descricao||'—',
+      codigo: s.codigo||'', totalQtd: 0, equipes: {}, registros: []
+    };
+    materiais[k].totalQtd += Number(s.quantidade||0);
+    const eq = s.destino||'—';
+    if (!materiais[k].equipes[eq]) materiais[k].equipes[eq] = 0;
+    materiais[k].equipes[eq] += Number(s.quantidade||0);
+    materiais[k].registros.push(s);
+  });
+
+  const arr = Object.values(materiais).sort((a,b)=>b.totalQtd-a.totalQtd);
+  const totalItens = arr.length;
+  const totalQtd   = arr.reduce((s,m)=>s+m.totalQtd, 0);
+  const totalEquipes = new Set(lista.map(s=>s.destino).filter(Boolean)).size;
+
+  // KPIs
+  const periodoLabel = de && ate ? `${formatarData(de)} a ${formatarData(ate)}` : de ? `A partir de ${formatarData(de)}` : `Até ${formatarData(ate)}`;
+  document.getElementById('baixasResumo').textContent = `Período: ${periodoLabel}`;
+  document.getElementById('baixasKpis').innerHTML = `
+    <div style="text-align:center;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="font-size:18px;font-weight:800;color:var(--accent-text)">${totalItens}</div>
+      <div style="font-size:10px;color:var(--text-3)">Materiais</div>
+    </div>
+    <div style="text-align:center;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="font-size:18px;font-weight:800;color:#ef4444">${totalQtd}</div>
+      <div style="font-size:10px;color:var(--text-3)">Unidades</div>
+    </div>
+    <div style="text-align:center;padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="font-size:18px;font-weight:800;color:#f59e0b">${totalEquipes}</div>
+      <div style="font-size:10px;color:var(--text-3)">Equipes</div>
+    </div>`;
+
+  // Renderiza cards agrupados
+  el.innerHTML = arr.map(m => {
+    const nEquipes = Object.keys(m.equipes).length;
+    const gid = 'bx_'+(m.materialId||m.descricao).replace(/\W/g,'_');
+    const equipesDetalhe = Object.entries(m.equipes)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([eq,qtd]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 12px;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px;color:var(--text-2)">${eq}</span>
+          <span style="font-size:12px;font-weight:600;color:#ef4444">${qtd} un.</span>
+        </div>`).join('');
+
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer"
+        onclick="const c=document.getElementById('${gid}');const i=document.getElementById('${gid}_i');c.style.display=c.style.display===''?'none':'';i.textContent=c.style.display===''?'▼':'▶'">
+        <span id="${gid}_i" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:var(--text-1)">${m.descricao}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${m.codigo} · ${nEquipes} equipe(s)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:20px;font-weight:800;color:#ef4444">${m.totalQtd}</div>
+          <div style="font-size:10px;color:var(--text-3)">unidades</div>
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;border-top:1px solid var(--border);background:rgba(0,0,0,.03)">
+        <div style="padding:8px 12px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase">Detalhamento por equipe</div>
+        ${equipesDetalhe}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════════════
