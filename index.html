@@ -10701,8 +10701,6 @@ function enelIniciarAtendimento() {
   document.getElementById('enelCronometro').textContent = '00:00:00';
   document.getElementById('enelEquipeBusca').value = '';
   document.getElementById('enelEquipeId').value = '';
-  document.getElementById('areaPreBaixas').style.display = 'none';
-  document.getElementById('conteudoPreBaixas').style.display = 'none';
   if (window.__ENEL__.cronInt) clearInterval(window.__ENEL__.cronInt);
   window.__ENEL__.cronInt = setInterval(() => {
     const seg = Math.floor((new Date() - new Date(window.__ENEL__.atendimento.inicio)) / 1000);
@@ -10962,8 +10960,7 @@ function togglePreBaixasEnel() {
 }
 
 async function carregarPreBaixasEquipeEnel(nomeEquipe) {
-  if (!nomeEquipe) { document.getElementById('areaPreBaixas').style.display='none'; return; }
-  document.getElementById('areaPreBaixas').style.display = '';
+  if (!nomeEquipe) return;
   window.__PRE_BAIXAS__.medidoresSelecionados = new Set();
   window.__PRE_BAIXAS__.materiaisQtd = {};
 
