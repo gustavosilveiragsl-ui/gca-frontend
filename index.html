@@ -11326,7 +11326,9 @@ function cmSerialCard(s, tipo) {
   const st     = (s.status_atual||'').toUpperCase();
   const vencido  = st==='VENCIDO';
   const limiar   = tipo==='campo' ? 3 : 10;
-  const proximo  = st==='PROXIMO AO VENCIMENTO' || (prazo!==null && prazo<=limiar && !blq && !vencido);
+  const proximo  = (tipo==='campo')
+    ? (prazo!==null && prazo<=limiar && !blq && !vencido)
+    : (st==='PROXIMO AO VENCIMENTO' || (prazo!==null && prazo<=limiar && !blq && !vencido));
   const emDia    = !blq && !vencido && !proximo;
   const cor = blq||vencido ? '#ef4444' : proximo ? '#f59e0b' : '#22c55e';
   const icon = blq ? '🚫' : vencido ? '🔴' : proximo ? '⚠️' : '';
