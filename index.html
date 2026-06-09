@@ -2950,12 +2950,9 @@ tbody tr:hover td{background:var(--bg-hover);}
 
     </div>
     <div class="modal-footer">
+      <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="gerarTermoDesligamentoFromModal()">📄 Termo Desligamento</button>
       <button class="btn btn-ghost" onclick="fecharConsultaColab()">Fechar</button>
     </div>
-  </div>
-</div>
-
-<!-- MODAL DEVOLUÇÃO COLABORADOR -->
 <div class="modal-overlay hidden" id="modalDevolucaoColab">
   <div class="modal-box" style="max-width:600px">
     <div class="modal-header">
@@ -3943,6 +3940,28 @@ function abrirModalColab(id) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+async function gerarTermoDesligamentoFromModal() {
+  const dados = _dadosColabAtual;
+  if (!dados) { toast('Carregue a ficha primeiro','warn'); return; }
+  const c = dados.colaborador;
+  const atendimentos = dados.atendimentos||dados.historico||[];
+  const mapa = {};
+  atendimentos.forEach(a=>{
+    const itensAt = typeof a.itens_json==='string'?JSON.parse(a.itens_json||'[]'):a.itens_json||[];
+    itensAt.forEach(it=>{
+      const k = it.itemId||it.item_id||it.descricao;
+      if (!mapa[k]) mapa[k]={ descricao:it.descricao||it.nome_item||'—', totalEntregue:0, totalTrocado:0, ultimaData:a.data };
+      const mot = (it.motivo||'').toLowerCase();
+      if (mot.includes('troca')||mot.includes('devolucao')||mot.includes('devolução')) mapa[k].totalTrocado+=Number(it.quantidade||1);
+      else mapa[k].totalEntregue+=Number(it.quantidade||1);
+      if (a.data>mapa[k].ultimaData) mapa[k].ultimaData=a.data;
+    });
+  });
+  const itens = Object.values(mapa).map(it=>({...it, saldoEmMaos:Math.max(it.totalEntregue-it.totalTrocado,0)}));
+  window.dadosHistoricoAtual = { colaborador:{...c}, itens, totalAtendimentos:atendimentos.length };
+  gerarPDFDesligamento();
 }
 
 async function gerarTermoDesligamentoColab(colabId) {
