@@ -3946,21 +3946,19 @@ async function gerarTermoDesligamentoFromModal() {
   const dados = _dadosColabAtual;
   if (!dados) { toast('Carregue a ficha primeiro','warn'); return; }
   const c = dados.colaborador;
-  const atendimentos = dados.atendimentos||dados.historico||[];
-  const mapa = {};
-  atendimentos.forEach(a=>{
-    const itensAt = typeof a.itens_json==='string'?JSON.parse(a.itens_json||'[]'):a.itens_json||[];
-    itensAt.forEach(it=>{
-      const k = it.itemId||it.item_id||it.descricao;
-      if (!mapa[k]) mapa[k]={ descricao:it.descricao||it.nome_item||'—', totalEntregue:0, totalTrocado:0, ultimaData:a.data };
-      const mot = (it.motivo||'').toLowerCase();
-      if (mot.includes('troca')||mot.includes('devolucao')||mot.includes('devolução')) mapa[k].totalTrocado+=Number(it.quantidade||1);
-      else mapa[k].totalEntregue+=Number(it.quantidade||1);
-      if (a.data>mapa[k].ultimaData) mapa[k].ultimaData=a.data;
-    });
-  });
-  const itens = Object.values(mapa).map(it=>({...it, saldoEmMaos:Math.max(it.totalEntregue-it.totalTrocado,0)}));
-  window.dadosHistoricoAtual = { colaborador:{...c}, itens, totalAtendimentos:atendimentos.length };
+  // Dados já vêm processados na chave 'itens'
+  const itens = (dados.itens||[]).map(it=>({
+    descricao:    it.descricao||it.nome_item||'—',
+    totalEntregue:it.totalEntregue||it.total_entregue||0,
+    totalTrocado: it.totalTrocado||it.total_trocado||0,
+    saldoEmMaos:  it.saldoEmMaos||it.saldo_em_maos||0,
+    ultimaData:   it.ultimaData||it.ultima_data||null,
+  }));
+  window.dadosHistoricoAtual = {
+    colaborador: {...c},
+    itens,
+    totalAtendimentos: dados.totalAtendimentos||0,
+  };
   gerarPDFDesligamento();
 }
 
