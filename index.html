@@ -4701,8 +4701,9 @@ async function concluirAtendimento() {
   const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
 
   if (!res || !res.ok) {
+    console.error('[concluirAtendimento] erro:', res);
     document.getElementById('overlayProcessando').style.display = 'none';
-    toast(res?.erro || 'Erro ao salvar atendimento', 'error');
+    toast((res?.erro || res?.detalhe || 'Erro ao salvar atendimento') + ' — verifique o console', 'error', 6000);
     btn.disabled = false;
     btn.textContent = 'Concluir Atendimento';
     clearInterval(ATEND.cronometro);
