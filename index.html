@@ -11251,13 +11251,13 @@ function cmRenderModelos() {
     if (_cmAbaAtual === 'campo' && g.subgrupos) {
       const subArr = Object.values(g.subgrupos);
       const nBlqEq = g.seriais.filter(s=>s.bloqueadoEquipe).length;
-      const nProx  = g.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=10).length;
+      const nProx  = g.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=3).length;
       // Pré-calcula subgrupo HTML — usa índice numérico puro para evitar chars inválidos
       const subHtml = subArr.map((sg,sgi)=>{
         const sgid = 'cm_sg_'+gi+'_'+sgi;
         const nBlq = sg.seriais.filter(s=>s.bloqueadoEquipe).length;
         const nVSg = sg.seriais.filter(s=>s.status_atual==='VENCIDO').length;
-        const nPSg = sg.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=10).length;
+        const nPSg = sg.seriais.filter(s=>!s.bloqueadoEquipe&&s.prazo10!==null&&s.prazo10<=3).length;
         const serialCards = sg.seriais.map(s=>cmSerialCard(s,'campo')).join('');
         return `<div style="border-bottom:1px solid var(--border)">
           <div style="display:flex;align-items:center;gap:8px;padding:10px 16px 10px 28px;cursor:pointer;background:rgba(0,0,0,.03)" onclick="toggleCm('${sgid}')">
