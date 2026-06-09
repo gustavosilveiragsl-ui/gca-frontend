@@ -3836,9 +3836,15 @@ function trocarUnidade() {
 
 // ── API HELPER ──
 async function api(path, opts={}) {
-  const res = await fetch(`${API}${path}`, { ...opts, headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
-  if (res.status === 401) { fazerLogout(); return null; }
-  return res.json();
+  try {
+    const res = await fetch(`${API}${path}`, { ...opts, headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
+    if (res.status === 401) { fazerLogout(); return null; }
+    const json = await res.json().catch(() => ({ ok: false, erro: `Erro HTTP ${res.status}` }));
+    return json;
+  } catch (err) {
+    console.error('[api]', path, err.message);
+    return { ok: false, erro: 'Erro de conexão: ' + err.message };
+  }
 }
 
 // ── DASHBOARD ──
