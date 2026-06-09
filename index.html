@@ -552,6 +552,13 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <option value="Junior">Junior</option>
                 </select>
               </div>
+              <div><label class="form-label">Filial(is) *</label>
+                <select id="colabUnidades" class="form-input">
+                  <option value="marica">Somente Maricá</option>
+                  <option value="rio_das_ostras">Somente Rio das Ostras</option>
+                  <option value="ambas">Ambas as filiais</option>
+                </select>
+              </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarColaborador()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormColab()">Limpar</button>
@@ -7017,6 +7024,7 @@ async function salvarColaborador() {
     telefone:      document.getElementById('colabTelefone').value.trim(),
     data_admissao: document.getElementById('colabAdmissao').value,
     nivel:         document.getElementById('colabNivel').value,
+    unidades:      document.getElementById('colabUnidades').value,
   };
   if (!body.nome || !body.matricula) { toast('Nome e matrícula obrigatórios', 'warn'); return; }
   const res = await api(id ? `/colaboradores/${id}` : '/colaboradores', {
@@ -7041,6 +7049,7 @@ function editarColabForm(id) {
   document.getElementById('colabTelefone').value = c.telefone||'';
   document.getElementById('colabAdmissao').value = c.data_admissao||'';
   document.getElementById('colabNivel').value    = c.nivel||'Pleno';
+  document.getElementById('colabUnidades').value = c.unidades||'marica';
   document.getElementById('colabFormTitulo').textContent = 'Editar Colaborador';
   document.getElementById('colabFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
   // fecha modal se aberto
