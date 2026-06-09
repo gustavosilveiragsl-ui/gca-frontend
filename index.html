@@ -5975,11 +5975,9 @@ async function registrarSaida() {
     limparSaida();
     carregarUltimasSaidas();
   } else {
+    console.log('res completo:', res);
     toast(res?.erro || 'Erro ao registrar saída', 'error');
   }
-}
-
-function limparSaida() {
   _saiItemSel = null; _saiColabSel = null;
   ['saiItemBusca','saiQtd','saiObs','saiColabBusca'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   ['saiArmazem','saiMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
