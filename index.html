@@ -4663,7 +4663,20 @@ async function concluirAtendimento() {
 
   const btn = document.getElementById('btnConcluirAtendimento');
   btn.disabled  = true;
-  btn.textContent = 'Salvando...';
+  btn.textContent = '⏳ Salvando...';
+
+  // Mostra overlay de carregamento
+  let overlay = document.getElementById('overlayProcessando');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'overlayProcessando';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+    overlay.innerHTML = `<div class="spinner" style="width:48px;height:48px;border-width:4px;border-color:rgba(255,255,255,.2);border-top-color:#fff;"></div>
+      <div style="color:#fff;font-size:16px;font-weight:600;">Processando atendimento...</div>
+      <div style="color:rgba(255,255,255,.6);font-size:12px;">Aguarde, não feche a página</div>`;
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'flex';
 
   clearInterval(ATEND.cronometro);
 
@@ -4688,6 +4701,7 @@ async function concluirAtendimento() {
   const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
 
   if (!res || !res.ok) {
+    document.getElementById('overlayProcessando').style.display = 'none';
     toast(res?.erro || 'Erro ao salvar atendimento', 'error');
     btn.disabled = false;
     btn.textContent = 'Concluir Atendimento';
@@ -4716,6 +4730,7 @@ async function concluirAtendimento() {
     });
   }
 
+  document.getElementById('overlayProcessando').style.display = 'none';
   abrirModalFinalizado(registro);
   toast('Atendimento registrado com sucesso!', 'success');
 }
