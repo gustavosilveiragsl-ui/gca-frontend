@@ -633,8 +633,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarItem()">Salvar</button>
-                <button class="btn btn-ghost" id="btnCancelarEdicaoItem" onclick="limparFormItem()" style="display:none">✕ Cancelar Edição</button>
-                <button class="btn btn-ghost" id="btnLimparItem" onclick="limparFormItem()">Limpar</button>
+                <button class="btn btn-ghost" onclick="limparFormItem()">Limpar</button>
               </div>
             </div>
           </div>
@@ -645,12 +644,10 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div><div class="card-title">Itens</div><div class="card-sub" id="subItens">carregando...</div></div>
               <input class="search-box" type="text" placeholder="Buscar item..." oninput="filtrarItens(this.value)">
             </div>
-            <div style="overflow-x:auto">
-            <table style="min-width:520px">
+            <table>
               <thead><tr><th>Descrição</th><th>Código</th><th>Categoria</th><th>Un.</th><th></th></tr></thead>
               <tbody id="itensBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
             </table>
-            </div>
           </div>
         </div>
       </div>
@@ -3944,6 +3941,7 @@ function abrirModalColab(id) {
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="gerarTermoDesligamentoColab('${c.id}')">📄 Termo Desligamento</button>
         <button class="btn btn-ghost" onclick="editarColabForm('${c.id}')">✏️ Editar</button>
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
@@ -5847,8 +5845,8 @@ async function registrarEntrada() {
   const armazem  = document.getElementById('entArmazem')?.value;
   const data     = document.getElementById('entData')?.value;
   const qtd      = parseFloat(document.getElementById('entQtd')?.value);
-  const motivo   = document.getElementById('enelEntMotivo')?.value;
-  const obs      = document.getElementById('enelEntObs')?.value || '';
+  const motivo   = document.getElementById('entMotivo')?.value;
+  const obs      = document.getElementById('entObs')?.value || '';
 
   if (!itemId || !armazem || !data || !qtd || !motivo) {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
@@ -6993,8 +6991,6 @@ function editarItem(id) {
   document.getElementById('itemPossuiSerie').checked  = !!(item.possui_serie);
   document.getElementById('itemFormTitulo').textContent = 'Editar Item';
   document.getElementById('itemFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
-  document.getElementById('btnCancelarEdicaoItem').style.display = '';
-  document.getElementById('btnLimparItem').style.display = 'none';
 }
 
 async function excluirItem(id, nome) {
@@ -7014,8 +7010,6 @@ function limparFormItem() {
   document.getElementById('itemRequerEnsaio').checked = false;
   document.getElementById('itemPossuiSerie').checked  = false;
   document.getElementById('itemFormTitulo').textContent = 'Novo Item';
-  document.getElementById('btnCancelarEdicaoItem').style.display = 'none';
-  document.getElementById('btnLimparItem').style.display = '';
 }
 
 // ════════════ COLABORADORES CRUD ════════════
