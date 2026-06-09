@@ -3327,7 +3327,7 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="gerarPdfFicha()">📄 Gerar PDF</button>
+      <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="gerarPDFFichaEPI(fichaEPIColaboradorAtual)">📄 Gerar PDF</button>
       <button class="btn btn-ghost" onclick="document.getElementById('modalFichaEPI').classList.add('hidden')">Fechar</button>
     </div>
   </div>
@@ -3937,11 +3937,39 @@ function abrirModalColab(id) {
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="gerarTermoDesligamentoColab('${c.id}')">📄 Termo Desligamento</button>
         <button class="btn btn-ghost" onclick="editarColabForm('${c.id}')">✏️ Editar</button>
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+async function gerarTermoDesligamentoColab(colabId) {
+  toast('Carregando histórico...','info');
+  const colab = _colaboradores.find(c=>c.id===colabId)||{};
+  // Busca atendimentos do colaborador
+  const res = await api(`/consulta/colab/${colabId}`);
+  const atendimentos = res?.data||[];
+  // Agrupa por item
+  const mapa = {};
+  atendimentos.forEach(a=>{
+    const itensAt = typeof a.itens_json==='string'?JSON.parse(a.itens_json||'[]'):a.itens_json||[];
+    itensAt.forEach(it=>{
+      const k = it.itemId||it.item_id;
+      if (!mapa[k]) mapa[k]={ descricao:it.descricao||it.nome_item||'—', totalEntregue:0, totalTrocado:0, ultimaData:a.data };
+      const mot = (it.motivo||'').toLowerCase();
+      if (mot.includes('troca')||mot.includes('devolucao')||mot.includes('devolução')) mapa[k].totalTrocado+=Number(it.quantidade||1);
+      else mapa[k].totalEntregue+=Number(it.quantidade||1);
+      if (a.data>mapa[k].ultimaData) mapa[k].ultimaData=a.data;
+    });
+  });
+  const itens = Object.values(mapa).map(it=>({...it, saldoEmMaos:Math.max(it.totalEntregue-it.totalTrocado,0)}));
+  window.dadosHistoricoAtual = {
+    colaborador: { ...colab, id:colabId },
+    itens, totalAtendimentos: atendimentos.length,
+  };
+  gerarPDFDesligamento();
 }
 
 function editarColab(id) {
@@ -4717,7 +4745,12 @@ function enviarTablet() {
 }
 
 function imprimirFicha() {
-  toast('Em desenvolvimento', 'info');
+  const colabId = ATEND.colab?.id||'';
+  const itensAT = ATEND.itens||[];
+  const link    = ATEND.linkGerado||'';
+  imprimirFichaSeparacao(ATEND.id, colabId, itensAT.map(it=>({
+    descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
+  })), link);
 }
 
 // ═══════════════════════════════════════════
@@ -9286,6 +9319,7 @@ function filtrarFichaEPI() {
 }
 
 async function abrirFichaEPI(colabId, nome, matricula, funcao) {
+  window.fichaEPIColaboradorAtual = colabId;
   // Preenche header
   const unidadeNome = GCA.unidade === 'marica' ? 'FILIAL MARICÁ' : 'FILIAL RIO DAS OSTRAS';
   const cnpj = GCA.unidade === 'marica' ? '07.698.801/0006-26' : '07.698.801/0007-07';
@@ -10231,6 +10265,7 @@ function filtrarFichaEPI() {
 }
 
 async function abrirFichaEPI(colabId, nome, matricula, funcao) {
+  window.fichaEPIColaboradorAtual = colabId;
   // Preenche header
   const unidadeNome = GCA.unidade === 'marica' ? 'FILIAL MARICÁ' : 'FILIAL RIO DAS OSTRAS';
   const cnpj = GCA.unidade === 'marica' ? '07.698.801/0006-26' : '07.698.801/0007-07';
@@ -11507,6 +11542,340 @@ function filtrarControleEquipe() {
 
 function abrirBaixaDiretaOS() { toast('Baixa Direta por OS em breve','info'); }
 function abrirModalBaixaLote() { toast('Finalizar Pré-baixas OS em breve','info'); }
+
+// ═══════════════════════════════════════════
+// PDFs — UTILITÁRIOS
+// ═══════════════════════════════════════════
+function fmtData(val) {
+  if (!val) return '—';
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0,10).split('-').reverse().join('/');
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.substring(0,10);
+  const d = new Date(val);
+  if (!isNaN(d)) return d.toLocaleDateString('pt-BR');
+  return s;
+}
+
+function abrirJanelaPDF(html, titulo) {
+  const win = window.open('', '_blank');
+  if (!win) { toast('Permita pop-ups para gerar PDF','warn'); return; }
+  win.document.write(html);
+  win.document.close();
+  setTimeout(() => win.print(), 800);
+}
+
+const CSS_PDF_BASE = `
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Arial,sans-serif; color:#111; padding:28px; font-size:13px; }
+  h1 { font-size:20px; font-weight:800; }
+  h2 { font-size:14px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; margin:20px 0 8px; color:#1e3a8a; border-bottom:2px solid #1e3a8a; padding-bottom:4px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+  thead tr { background:#1e3a8a; color:#fff; }
+  th { padding:8px 10px; text-align:left; font-size:11px; }
+  td { padding:7px 10px; border-bottom:1px solid #e5e7eb; font-size:12px; }
+  tr:nth-child(even) td { background:#f9fafb; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px; }
+  .card { border:1px solid #e5e7eb; border-radius:6px; padding:10px; }
+  .card .lbl { font-size:10px; color:#6b7280; text-transform:uppercase; }
+  .card .val { font-size:14px; font-weight:600; margin-top:2px; }
+  .assinatura { margin-top:48px; display:grid; grid-template-columns:1fr 1fr; gap:60px; }
+  .linha-ass { border-top:2px solid #111; padding-top:8px; font-size:11px; color:#6b7280; text-align:center; }
+  .rodape { text-align:center; font-size:10px; color:#9ca3af; margin-top:32px; border-top:1px solid #e5e7eb; padding-top:12px; }
+  @media print { body { padding:16px; } }
+`;
+
+// ═══════════════════════════════════════════
+// PDF 2 — FICHA DE SEPARAÇÃO (após atendimento, com QR)
+// ═══════════════════════════════════════════
+async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirmacao) {
+  const colab  = _colaboradores.find(c=>c.id===colabId)||{};
+  const agora  = new Date();
+  const hoje   = agora.toLocaleDateString('pt-BR');
+  const horaFmt= agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const usuario = GCA.usuario?.nome || GCA.usuario?.username || '—';
+
+  // Gera QR
+  let qrHtml = '';
+  if (linkConfirmacao) {
+    qrHtml = `
+    <div style="margin-top:28px;border-top:2px dashed #1a237e;padding-top:20px;display:flex;align-items:center;gap:28px;">
+      <div style="border:2px solid #1a237e;border-radius:10px;padding:12px;text-align:center;flex-shrink:0;">
+        <div id="qrcode_sep" style="width:180px;height:180px;"></div>
+        <p style="font-size:10px;color:#555;margin-top:6px;">Escaneie para assinar</p>
+      </div>
+      <div style="flex:1;">
+        <h2 style="font-size:15px;font-weight:800;color:#1a237e;margin-bottom:10px;border:none;text-transform:none;">📱 Confirmação de Recebimento</h2>
+        <ol style="padding-left:16px;font-size:12px;line-height:2.2;color:#333;">
+          <li>Aponte a câmera do celular para o QR Code ao lado</li>
+          <li>Acesse o link que aparecer na tela</li>
+          <li>Confira os itens recebidos</li>
+          <li>Assine digitalmente na tela</li>
+        </ol>
+        <div style="margin-top:10px;background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:11px;color:#92400e;">
+          ⏰ <strong>Atenção:</strong> Este link é válido por 10 dias a partir da data de emissão.
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const itensHtml = (itens||[]).map(it => {
+    const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
+    const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.posicao].filter(Boolean).join(' · ') : '—';
+    return `<tr>
+      <td style="width:28px;text-align:center;"><div style="width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block;"></div></td>
+      <td>${it.descricao||'—'}</td>
+      <td style="text-align:center;font-weight:700;font-size:15px;">${it.quantidade||1}</td>
+      <td style="font-family:monospace;color:#1a237e;font-weight:700;">${loc}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Ficha de Separação — ${colab.nome||''}</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+  <style>${CSS_PDF_BASE}
+    .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:12px; }
+    .check { width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block; }
+  </style></head><body>
+  <div class="header">
+    <div><h1>Ficha de Separação e Recebimento</h1><p style="font-size:11px;color:#555;">GCA — Almoxarifado Ceneged</p></div>
+    <div style="text-align:right;font-size:12px;"><strong>Data:</strong> ${hoje}<br><strong>Gerado em:</strong> ${hoje}, ${horaFmt}</div>
+  </div>
+  <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:20px;">
+    <p><strong>Colaborador:</strong> ${colab.nome||'—'}</p>
+    <p><strong>Função:</strong> ${colab.funcao||'—'}</p>
+    <p><strong>Setor:</strong> ${colab.setor||colab.base||'—'}</p>
+    <p><strong>Total de itens:</strong> ${(itens||[]).length} tipo(s) · ${(itens||[]).reduce((s,i)=>s+Number(i.quantidade||1),0)} unidade(s)</p>
+  </div>
+  <table>
+    <thead><tr><th style="width:28px;">✓</th><th>Item</th><th style="text-align:center;">Qtd</th><th>Localização</th></tr></thead>
+    <tbody>${itensHtml}</tbody>
+  </table>
+  <div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px;">
+    <div style="border:2px solid #1a237e;border-radius:8px;padding:14px;text-align:center;">
+      <p style="font-size:10px;font-weight:700;color:#1a237e;margin-bottom:6px;">✦ RESPONSÁVEL PELA ENTREGA ✦</p>
+      <p style="font-weight:700;font-size:13px;">${usuario}</p>
+      <p style="font-size:10px;color:#555;">GCA — Sistema de Almoxarifado</p>
+    </div>
+    <div style="border-bottom:1px solid #000;display:flex;align-items:flex-end;padding-bottom:8px;justify-content:center;">
+      <p style="font-size:11px;color:#6b7280;">Responsável pela Separação</p>
+    </div>
+  </div>
+  ${qrHtml}
+  <script>
+    window.onload = function() {
+      ${linkConfirmacao ? `try { new QRCode(document.getElementById('qrcode_sep'), { text:'${linkConfirmacao}', width:180, height:180, colorDark:'#000', colorLight:'#fff', correctLevel:QRCode.CorrectLevel.H }); } catch(e){}` : ''}
+      setTimeout(function(){ window.print(); }, 1200);
+    };
+  <\/script>
+  </body></html>`;
+
+  abrirJanelaPDF(html);
+}
+
+// ═══════════════════════════════════════════
+// PDF 3 — TERMO DE DESLIGAMENTO
+// ═══════════════════════════════════════════
+function gerarPDFDesligamento() {
+  const res = window.dadosHistoricoAtual;
+  if (!res) { toast('Nenhum colaborador selecionado','warn'); return; }
+  const c = res.colaborador;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const totalSaldo    = res.itens.reduce((s,i)=>s+i.saldoEmMaos,0);
+  const totalEntregue = res.itens.reduce((s,i)=>s+i.totalEntregue,0);
+  const unidadeNome   = GCA.unidade==='marica'?'Maricá':'Rio das Ostras';
+
+  const linhas = res.itens.map(it=>{
+    const cor = it.saldoEmMaos>0?'#16a34a':it.saldoEmMaos===0?'#6b7280':'#dc2626';
+    return `<tr>
+      <td>${it.descricao}</td>
+      <td style="text-align:center;">${it.totalEntregue}</td>
+      <td style="text-align:center;color:#d97706;">${it.totalTrocado||0}</td>
+      <td style="text-align:center;font-weight:700;color:${cor};">${it.saldoEmMaos}</td>
+      <td style="text-align:center;color:#6b7280;">${fmtData(it.ultimaData)}</td>
+    </tr>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Termo de Desligamento — ${c.nome}</title>
+  <style>${CSS_PDF_BASE}</style></head><body>
+  <h1 style="color:#1e3a8a;">📋 Termo de Devolução de EPIs — Desligamento</h1>
+  <p style="color:#6b7280;font-size:12px;margin:4px 0 20px;">Emitido em: ${hoje} | Sistema GCA - Ceneged ${unidadeNome}</p>
+  <div class="grid3">
+    <div class="card"><div class="lbl">Colaborador</div><div class="val">${c.nome}</div></div>
+    <div class="card"><div class="lbl">Matrícula</div><div class="val">${c.matricula||'—'}</div></div>
+    <div class="card"><div class="lbl">Função</div><div class="val">${c.funcao||'—'}</div></div>
+    <div class="card"><div class="lbl">Setor</div><div class="val">${c.setor||'—'}</div></div>
+    <div class="card"><div class="lbl">Data de Admissão</div><div class="val">${fmtData(c.dataAdmissao||c.data_admissao)}</div></div>
+    <div class="card"><div class="lbl">Data do Desligamento</div><div class="val">${hoje}</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;">
+    ${[['Total de Retiradas',res.totalAtendimentos,'#1e3a8a'],['Tipos de Itens',res.itens.length,'#1e3a8a'],['Total Entregue',totalEntregue,'#1e3a8a'],['Itens a Devolver',totalSaldo,totalSaldo>0?'#16a34a':'#6b7280']].map(([l,v,cor])=>`
+    <div style="border:2px solid #e5e7eb;border-radius:8px;padding:10px;text-align:center;">
+      <div style="font-size:22px;font-weight:700;color:${cor};">${v}</div>
+      <div style="font-size:10px;color:#6b7280;margin-top:2px;">${l}</div>
+    </div>`).join('')}
+  </div>
+  <table>
+    <thead><tr>
+      <th>Item / EPI</th><th style="text-align:center;">Total Entregue</th>
+      <th style="text-align:center;color:#fbbf24;">Total Trocado</th>
+      <th style="text-align:center;color:#4ade80;">Saldo a Devolver</th>
+      <th style="text-align:center;">Última Retirada</th>
+    </tr></thead>
+    <tbody>${linhas}</tbody>
+  </table>
+  <div class="assinatura">
+    <div class="linha-ass">Assinatura do Colaborador<br><br>${c.nome}</div>
+    <div class="linha-ass">Assinatura do Responsável<br><br>Almoxarifado</div>
+  </div>
+  <div class="rodape">Documento gerado automaticamente pelo Sistema GCA</div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+
+  abrirJanelaPDF(html);
+}
+
+// ═══════════════════════════════════════════
+// PDF 6 — FICHA DE EPI (modelo oficial empresa)
+// ═══════════════════════════════════════════
+async function gerarPDFFichaEPI(colabId) {
+  if (!colabId && window.fichaEPIColaboradorAtual) colabId = window.fichaEPIColaboradorAtual;
+  if (!colabId) { toast('Nenhum colaborador selecionado','warn'); return; }
+
+  toast('Gerando Ficha EPI...','info');
+  const colab = _colaboradores.find(c=>c.id===colabId)||{};
+  const res   = await api(`/ficha-epi/${colabId}`);
+  const itens = res?.data||[];
+  const hoje  = new Date().toLocaleDateString('pt-BR');
+  const unidadeNome = GCA.unidade==='marica'?'Maricá':'Rio das Ostras';
+  const cnpj = GCA.unidade==='marica'?'07.698.801/0006-26':'07.698.801/0007-07';
+
+  // Responsável logado (assinatura)
+  const usuario = GCA.usuario?.nome||GCA.usuario?.username||'—';
+
+  // Busca assinatura do último atendimento com assinatura
+  const comAssinatura = itens.find(i=>i.assinatura);
+  const assinaturaBase64 = comAssinatura?.assinatura||'';
+
+  const linhasItens = itens.map(it=>`<tr>
+    <td>${it.nome_item||'—'}</td>
+    <td style="text-align:center;">${it.quantidade||1}</td>
+    <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_entrega?fmtData(it.data_entrega):'—'}</td>
+    <td style="text-align:center;font-family:monospace;font-size:11px;">${it.ca||'—'}</td>
+    <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_devolucao?fmtData(it.data_devolucao):'—'}</td>
+    <td style="text-align:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:28px;max-width:80px;">`:''}</td>
+  </tr>`).join('');
+
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>Ficha EPI — ${colab.nome||''}</title>
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Arial,sans-serif; color:#000; padding:20px; font-size:12px; }
+    .header-table { width:100%; border-collapse:collapse; margin-bottom:0; }
+    .header-table td, .header-table th { border:1px solid #000; padding:6px 8px; }
+    .title-box { text-align:center; font-weight:700; font-size:14px; }
+    .info-row td { border:1px solid #000; padding:6px 8px; font-weight:600; }
+    table.itens { width:100%; border-collapse:collapse; margin-top:16px; }
+    table.itens th { background:#e8e8e8; border:1px solid #000; padding:6px 8px; text-align:center; font-size:11px; }
+    table.itens td { border:1px solid #000; padding:6px 8px; font-size:11px; min-height:24px; }
+    .termo { font-size:11px; line-height:1.5; margin:16px 0; text-align:justify; }
+    .ass-area { margin-top:32px; display:grid; grid-template-columns:1fr 1fr; gap:40px; }
+    .ass-box { border-top:1px solid #000; padding-top:6px; text-align:center; font-size:11px; }
+    .formulario-info { text-align:right; border:1px solid #000; padding:6px; font-size:10px; }
+    @media print { body { padding:10px; } }
+  </style></head><body>
+
+  <!-- PÁGINA 1 — TERMO -->
+  <table class="header-table">
+    <tr>
+      <td style="width:100px;text-align:center;font-weight:900;font-size:18px;color:#c00;border:1px solid #000;">C+<br><span style="font-size:9px;font-weight:400;">Ceneged</span></td>
+      <td class="title-box">FORMULÁRIO<br>COMPROVANTE DE ENTREGA DE EPI</td>
+      <td class="formulario-info">FORMULÁRIO<br>Revisão 00<br>01/01/2018<br>Página 1 / 2</td>
+    </tr>
+  </table>
+  <table class="header-table" style="margin-top:-1px;">
+    <tr><td colspan="2" class="info-row">CENEGED – COMPANHIA ELETROMECÂNICA E GERENCIAMENTO DE DADOS S/A.</td><td style="border:1px solid #000;padding:6px 8px;"><strong>CNPJ:</strong> ${cnpj}</td></tr>
+    <tr><td colspan="2" style="border:1px solid #000;padding:6px 8px;"><strong>NOME:</strong> ${(colab.nome||'—').toUpperCase()}</td><td style="border:1px solid #000;padding:6px 8px;"><strong>MATRÍCULA:</strong> ${colab.matricula||'—'}</td></tr>
+    <tr><td style="border:1px solid #000;padding:6px 8px;"><strong>DATA DE ADMISSÃO:</strong> ${fmtData(colab.data_admissao||colab.dataAdmissao)}</td><td colspan="2" style="border:1px solid #000;padding:6px 8px;"><strong>FUNÇÃO:</strong> ${(colab.funcao||'—').toUpperCase()}</td></tr>
+    <tr><td style="border:1px solid #000;padding:6px 8px;"><strong>DATA DA MUDANÇA DE FUNÇÃO:</strong></td><td colspan="2" style="border:1px solid #000;padding:6px 8px;"><strong>NOVA FUNÇÃO:</strong></td></tr>
+  </table>
+
+  <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin:12px 0 6px;">Termo de Responsabilidade</div>
+  <div class="termo">
+    Recebi, da CENEGED, os EPI's adequados abaixo, os quais desde já me comprometo sempre usar na execução de minhas tarefas, zelando pela sua perfeita guarda e conservação, uso e funcionamento de acordo com as orientações e treinamentos recebidos da CIPA e/ou SESMT, assumindo também o compromisso de devolvê-lo quando solicitado ou em ocasião de rescisão do meu contrato de trabalho.<br><br>
+    Estou ciente e de pleno acordo que o não cumprimento das condições estabelecidas, acarretará, além de aplicações de penas disciplinares, inclusive rescisão de meu contrato laboral, outras sanções previstas em lei, em especial nas constantes na NR06, portaria 3.214 de 08/06/78, do Ministério do Trabalho e Emprego.
+  </div>
+  <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin:12px 0 6px;">Ato Faltoso</div>
+  <div class="termo">"Constitui-se ato faltoso do colaborador a recusa injustificada do uso e/ou conservação dos EPI's (Equipamento de Proteção Individual) fornecidos pela empresa". (Conforme previsto na Legislação vigente em seu artigo 158 da CLT).</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+    <div style="border:1px solid #000;padding:10px;">
+      <div style="font-weight:700;font-size:11px;margin-bottom:6px;">Obrigações do Empregador</div>
+      <ul style="padding-left:14px;font-size:10px;line-height:1.8;">
+        <li>Adquirir o tipo adequado de EPI à atividade do colaborador.</li>
+        <li>Treinar o colaborador sobre o uso.</li>
+        <li>Fornecer ao colaborador somente EPI aprovado pelo MTE.</li>
+        <li>Tornar obrigatório o seu uso e acompanhamento do EPI.</li>
+        <li>Substituí-lo, imediatamente, quando danificado, extraviado ou quando pela perda de sua eficácia.</li>
+        <li>Comunicar ao MTE qualquer irregularidade observada no EPI.</li>
+      </ul>
+    </div>
+    <div style="border:1px solid #000;padding:10px;">
+      <div style="font-weight:700;font-size:11px;margin-bottom:6px;">Obrigações dos Colaboradores</div>
+      <ul style="padding-left:14px;font-size:10px;line-height:1.8;">
+        <li>Usá-los apenas para a finalidade a que se destina.</li>
+        <li>Responsabilizar-se por sua guarda e conservação.</li>
+        <li>Comunicar ao empregador qualquer alteração que o torne impróprio para o uso.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="termo" style="margin-top:14px;">E para constar, assino a presente para produção dos efeitos legais.</div>
+  <div style="margin-top:20px;"><strong>ASSINATURA:</strong><br>
+    ${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:60px;margin-top:8px;">`:''}<br>
+    <div style="border-top:1px solid #000;width:280px;margin-top:${assinaturaBase64?'4px':'48px'};"></div>
+  </div>
+  <div style="text-align:center;margin-top:20px;font-size:11px;">${unidadeNome}, ${hoje}</div>
+
+  <!-- PÁGINA 2 — TABELA DE ITENS -->
+  <div style="page-break-before:always;"></div>
+  <table class="header-table">
+    <tr>
+      <td style="width:100px;text-align:center;font-weight:900;font-size:18px;color:#c00;border:1px solid #000;">C+<br><span style="font-size:9px;font-weight:400;">Ceneged</span></td>
+      <td class="title-box">FORMULÁRIO<br>COMPROVANTE DE ENTREGA DE EPI</td>
+      <td class="formulario-info">FORMULÁRIO<br>Revisão 00<br>01/01/2018<br>Página 2 / 2</td>
+    </tr>
+  </table>
+  <table class="itens">
+    <thead><tr>
+      <th style="text-align:left;width:35%;">TIPO DE EQUIPAMENTO</th>
+      <th style="width:8%;">QUANT.</th>
+      <th style="width:14%;">DATA DE ENTREGA</th>
+      <th style="width:10%;">C.A</th>
+      <th style="width:14%;">DATA DE DEVOLUÇÃO</th>
+      <th style="width:19%;">ASSINATURA</th>
+    </tr></thead>
+    <tbody>
+      ${linhasItens}
+      ${Array(Math.max(0,12-itens.length)).fill('<tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>').join('')}
+    </tbody>
+  </table>
+
+  <div style="margin-top:20px;border:2px solid #1a237e;border-radius:8px;padding:12px;display:inline-block;">
+    <p style="font-size:10px;font-weight:700;color:#1a237e;margin-bottom:4px;">✦ RESPONSÁVEL PELA ENTREGA ✦</p>
+    <p style="font-weight:700;font-size:12px;">${usuario}</p>
+    <p style="font-size:10px;color:#555;">GCA — Sistema de Almoxarifado</p>
+    ${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:40px;margin-top:6px;">`:''}</div>
+
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:60px;">
+    <div style="border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px;">RESPONSÁVEL PELA ENTREGA</div>
+    <div style="border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px;">ASSINATURA DO EMPREGADO</div>
+  </div>
+
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`;
+
+  abrirJanelaPDF(html);
+}
 
 // ── ENTER no login ──
 document.addEventListener('DOMContentLoaded',()=>{
