@@ -4447,8 +4447,8 @@ async function confirmarItensModal() {
       if (resNivel && !resNivel.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Item bloqueado', resNivel.erro); return; }
 
       // PASSO 2: Validar dotação da função
-      const resDot = await api('/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
-      if (resDot && !resDot.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Fora da dotação', resDot.erro); return; }
+      const resDot = await api('/validacoes/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
+      if (resDot && !resDot.ok) { toast(`⚠️ Aviso dotação: ${resDot.erro}`, 'warn', 4000); }
 
       // PASSO 3: Verificar saldo
       const resSaldo = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
