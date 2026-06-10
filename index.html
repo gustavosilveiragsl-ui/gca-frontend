@@ -5895,6 +5895,17 @@ function limparEntrada() {
   document.getElementById('entPreviewDados')?.classList.add('hidden');
 }
 
+function limparSaida() {
+  _saiItemSel = null; _saiColabSel = null;
+  ['saiItemBusca','saiQtd','saiObs','saiColabBusca'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['saiArmazem','saiMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex = 0; });
+  const hoje = new Date().toISOString().split('T')[0];
+  const dt = document.getElementById('saiData'); if(dt) dt.value = hoje;
+  document.getElementById('saiSaldoBox')?.classList.add('hidden');
+  document.getElementById('saiPreviewVazio')?.classList.remove('hidden');
+  document.getElementById('saiPreviewDados')?.classList.add('hidden');
+}
+
 async function carregarUltimasEntradas() {
   const tbody = document.getElementById('entHistoricoBody');
   if (!tbody) return;
