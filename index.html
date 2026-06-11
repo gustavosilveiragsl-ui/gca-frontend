@@ -341,12 +341,12 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="atendimento" onclick="showView('atendimento',this)"><span class="ni-icon">🤝</span> Atendimento</button>
-          <button class="nav-item" data-view="assinaturas" onclick="showView('assinaturas',this)">
+          <button class="nav-item" data-view="atendimento" data-perm="iniciar_atendimento" onclick="showView('atendimento',this)"><span class="ni-icon">🤝</span> Atendimento</button>
+          <button class="nav-item" data-view="assinaturas" data-perm="ver_assinaturas" onclick="showView('assinaturas',this)">
             <span class="ni-icon">✍️</span> Assinaturas
             <span class="ni-badge" id="badgeAssinaturas" style="display:none">0</span>
           </button>
-          <button class="nav-item" data-view="solicitacoes" onclick="showView('solicitacoes',this)">
+          <button class="nav-item" data-view="solicitacoes" data-perm="ver_solicitacoes" onclick="showView('solicitacoes',this)">
             <span class="ni-icon">📋</span> Solicitações
             <span class="ni-badge" id="badgeSolicitacoes" style="display:none">0</span>
           </button>
@@ -360,11 +360,11 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="entrada" onclick="showView('entrada',this)"><span class="ni-icon">📥</span> Entrada</button>
-          <button class="nav-item" data-view="saida" onclick="showView('saida',this)"><span class="ni-icon">📤</span> Saída</button>
-          <button class="nav-item" data-view="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon">🔄</span> Transferência</button>
-          <button class="nav-item" data-view="estoque" onclick="showView('estoque',this)"><span class="ni-icon">📦</span> Consulta de Estoque</button>
-          <button class="nav-item" data-view="movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon">📊</span> Movimentações</button>
+          <button class="nav-item" data-view="entrada" data-perm="entrada_material" onclick="showView('entrada',this)"><span class="ni-icon">📥</span> Entrada</button>
+          <button class="nav-item" data-view="saida" data-perm="saida_material" onclick="showView('saida',this)"><span class="ni-icon">📤</span> Saída</button>
+          <button class="nav-item" data-view="transferencia" data-perm="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon">🔄</span> Transferência</button>
+          <button class="nav-item" data-view="estoque" data-perm="ver_estoque" onclick="showView('estoque',this)"><span class="ni-icon">📦</span> Consulta de Estoque</button>
+          <button class="nav-item" data-view="movimentacoes" data-perm="ver_movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon">📊</span> Movimentações</button>
         </div>
       </div>
 
@@ -375,9 +375,9 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="consulta-itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
-          <button class="nav-item" data-view="consulta-colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
-          <button class="nav-item" data-view="consulta-dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
+          <button class="nav-item" data-view="consulta-itens" data-perm="ver_estoque" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
+          <button class="nav-item" data-view="consulta-colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
+          <button class="nav-item" data-view="consulta-dotacao" data-perm="cadastrar_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
         </div>
       </div>
 
@@ -388,9 +388,9 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="descontos" onclick="showView('descontos',this)"><span class="ni-icon">💰</span> Descontos</button>
-          <button class="nav-item" data-view="solicitacoes-compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
-          <button class="nav-item" data-view="protheus" onclick="showView('protheus',this)"><span class="ni-icon">🗂️</span> Lançamentos Protheus</button>
+          <button class="nav-item" data-view="descontos" data-perm="descontos" onclick="showView('descontos',this)"><span class="ni-icon">💰</span> Descontos</button>
+          <button class="nav-item" data-view="solicitacoes-compra" data-perm="protheus" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
+          <button class="nav-item" data-view="protheus" data-perm="protheus" onclick="showView('protheus',this)"><span class="ni-icon">🗂️</span> Lançamentos Protheus</button>
         </div>
       </div>
 
@@ -401,16 +401,16 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="enel-atendimento" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
-          <button class="nav-item" data-view="enel-devolucao" onclick="showView('enel-devolucao',this)"><span class="ni-icon">↩️</span> Devolução Material</button>
-          <button class="nav-item" data-view="enel-cadastro" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
-          <button class="nav-item" data-view="enel-transferencia" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
-          <button class="nav-item" data-view="enel-medidores" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
-          <button class="nav-item" data-view="enel-controle" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
-          <button class="nav-item" data-view="enel-estoque" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
-          <button class="nav-item" data-view="enel-baixas" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
-          <button class="nav-item" data-view="enel-entrada" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
-          <button class="nav-item" data-view="enel-saida" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
+          <button class="nav-item" data-view="enel-atendimento" data-perm="atendimento_enel" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
+          <button class="nav-item" data-view="enel-devolucao" data-perm="atendimento_enel" onclick="showView('enel-devolucao',this)"><span class="ni-icon">↩️</span> Devolução Material</button>
+          <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
+          <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
+          <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
+          <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
+          <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
+          <button class="nav-item" data-view="enel-entrada" data-perm="ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
+          <button class="nav-item" data-view="enel-saida" data-perm="ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
         </div>
       </div>
 
@@ -421,12 +421,12 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="ficha-epi" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
-          <button class="nav-item" data-view="laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
-          <button class="nav-item" data-view="viaturas" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
-          <button class="nav-item" data-view="descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
-          <button class="nav-item" data-view="recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
-          <button class="nav-item" data-view="indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
+          <button class="nav-item" data-view="ficha-epi" data-perm="ver_laudos" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
+          <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
+          <button class="nav-item" data-view="viaturas" data-perm="ver_laudos" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
+          <button class="nav-item" data-view="descarte" data-perm="ver_laudos" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
+          <button class="nav-item" data-view="recuperados" data-perm="ver_laudos" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
+          <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
         </div>
       </div>
 
@@ -437,12 +437,12 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon">👥</span> Colaboradores</button>
-          <button class="nav-item" data-view="itens" onclick="showView('itens',this)"><span class="ni-icon">📦</span> Itens</button>
-          <button class="nav-item" data-view="armazens" onclick="showView('armazens',this)"><span class="ni-icon">🏭</span> Armazéns</button>
-          <button class="nav-item" data-view="equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
-          <button class="nav-item" data-view="dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
-          <button class="nav-item" data-view="usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
+          <button class="nav-item" data-view="colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon">👥</span> Colaboradores</button>
+          <button class="nav-item" data-view="itens" data-perm="cadastrar_itens" onclick="showView('itens',this)"><span class="ni-icon">📦</span> Itens</button>
+          <button class="nav-item" data-view="armazens" data-perm="cadastrar_armazens" onclick="showView('armazens',this)"><span class="ni-icon">🏭</span> Armazéns</button>
+          <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
+          <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
+          <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
           <button class="nav-item" id="menuRecuperacaoSenha" style="display:none" data-view="recuperacao-senha" onclick="showView('recuperacao-senha',this)"><span class="ni-icon">🔑</span> Recuperação de Senha <span class="ni-badge" id="badgeSenha" style="display:none">0</span></button>
         </div>
       </div>
@@ -2698,6 +2698,13 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniRdo" value="rio_das_ostras"> Rio das Ostras</label>
                 </div>
               </div>
+              <div>
+                <label class="form-label">Armazéns permitidos</label>
+                <div id="usrArmazensLista" style="display:flex;flex-direction:column;gap:4px;margin-top:4px;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px">
+                  <span style="font-size:11px;color:var(--text-3)">Carregando armazéns...</span>
+                </div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:4px">Deixe todos desmarcados para liberar acesso a todos os armazéns.</div>
+              </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarUsuario()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormUsuario()">Limpar</button>
@@ -3621,7 +3628,7 @@ function onViewLoad(nome) {
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
-  if (nome === 'usuarios')           carregarUsuariosView();
+  if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
@@ -3778,6 +3785,7 @@ function iniciarApp() {
   }
   carregarArmazens();
   mostrarTela('app');
+  aplicarPermissoesMenu();
 
   // Lê a hash da URL para ir à tela certa (ex: ao recarregar ou colar link)
   const hashView = window.location.hash.replace('#/', '').split('?')[0];
@@ -6862,11 +6870,13 @@ async function salvarUsuario() {
   if (document.getElementById('usrUniMarica')?.checked) unis.push('marica');
   if (document.getElementById('usrUniRdo')?.checked)    unis.push('rio_das_ostras');
   const base = document.getElementById('usrBase')?.value || '';
+  // Coleta armazéns marcados
+  const armazens = [...document.querySelectorAll('#usrArmazensLista input[type=checkbox]:checked')].map(cb => cb.value);
   const body = {
     nome:     document.getElementById('usrNome').value.trim(),
     username: document.getElementById('usrUsername').value.trim(),
     role:     document.getElementById('usrRole').value,
-    base, unidades: unis,
+    base, unidades: unis, armazens,
   };
   const senha = document.getElementById('usrSenha').value;
   if (senha) body.password = senha;
@@ -6887,6 +6897,20 @@ async function salvarUsuario() {
   } else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
+function renderArmazensUsuario(armazensSelecionados = []) {
+  const lista = document.getElementById('usrArmazensLista');
+  if (!lista) return;
+  if (!_armazens.length) {
+    lista.innerHTML = '<span style="font-size:11px;color:var(--text-3)">Nenhum armazém cadastrado.</span>';
+    return;
+  }
+  lista.innerHTML = _armazens.map(a => `
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer">
+      <input type="checkbox" value="${a.id}" ${armazensSelecionados.includes(a.id) ? 'checked' : ''}>
+      ${a.nome}
+    </label>`).join('');
+}
+
 function editarUsuario(id) {
   const u = (window._usuariosList||[]).find(x => x.id === id);
   if (!u) return;
@@ -6899,6 +6923,9 @@ function editarUsuario(id) {
   let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = []; }
   document.getElementById('usrUniMarica').checked = unis.includes('marica');
   document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
+  let armazens = []; try { armazens = typeof u.armazens==='string' ? JSON.parse(u.armazens||'[]') : (Array.isArray(u.armazens)?u.armazens:[]); } catch { armazens = []; }
+  renderArmazensUsuario(armazens);
+  document.getElementById('usrNome').closest('.card').scrollIntoView({ behavior:'smooth' });
 }
 
 function limparFormUsuario() {
@@ -6907,6 +6934,7 @@ function limparFormUsuario() {
   if (document.getElementById('usrBase')) document.getElementById('usrBase').value = 'marica';
   document.getElementById('usrUniMarica').checked = false;
   document.getElementById('usrUniRdo').checked    = false;
+  renderArmazensUsuario([]);
   document.getElementById('permissoesPanel').style.display = 'none';
   _usrEditandoId = null;
 }
@@ -6955,6 +6983,22 @@ const PERMISSOES_SCHEMA = {
     aprovar_recuperacao:'Aprovar recuperação de senha'
   }}
 };
+
+// Aplica permissões no menu — oculta itens que o usuário não tem acesso
+function aplicarPermissoesMenu() {
+  if (GCA.usuario?.role === 'admin') return; // admin vê tudo
+  document.querySelectorAll('.nav-item[data-perm]').forEach(btn => {
+    const perm = btn.dataset.perm;
+    if (!temPermissao(perm)) btn.style.display = 'none';
+  });
+  // Oculta grupos inteiros que ficaram sem nenhum item visível
+  document.querySelectorAll('.nav-group').forEach(grupo => {
+    const items = grupo.querySelectorAll('.nav-item[data-perm]');
+    const visiveis = [...items].filter(b => b.style.display !== 'none');
+    if (items.length > 0 && visiveis.length === 0)
+      grupo.style.display = 'none';
+  });
+}
 
 // Verifica se usuário tem permissão (admin tem tudo)
 function temPermissao(perm) {
