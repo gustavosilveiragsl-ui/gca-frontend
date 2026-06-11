@@ -3955,6 +3955,7 @@ function renderColaboradores(lista) {
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="abrirModalColab('${c.id}')">Ver</button>
         <button class="row-action" onclick="editarColabForm('${c.id}')">Editar</button>
+        <button class="row-action" style="color:var(--color-danger,#e53e3e)" onclick="excluirColab('${c.id}','${(c.nome||'').replace(/'/g,"\\'")}')">Excluir</button>
       </td>
     </tr>`;
   }).join('');
@@ -3983,6 +3984,7 @@ function abrirModalColab(id) {
       <div class="modal-footer">
         <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="gerarTermoDesligamentoColab('${c.id}')">📄 Termo Desligamento</button>
         <button class="btn btn-ghost" onclick="editarColabForm('${c.id}')">✏️ Editar</button>
+        <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="excluirColab('${c.id}','${(c.nome||'').replace(/'/g,"\\'")}', true)">🗑️ Excluir</button>
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
     </div>`;
@@ -7108,6 +7110,19 @@ function editarColabForm(id) {
   document.getElementById('colabFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
   // fecha modal se aberto
   document.querySelector('.modal-overlay')?.remove();
+}
+
+async function excluirColab(id, nome, fecharModal = false) {
+  if (!confirm(`Desativar o colaborador "${nome}"?\n\nO colaborador será marcado como inativo e não aparecerá mais nas listas, mas o histórico de atendimentos será preservado.`)) return;
+  const res = await api(`/colaboradores/${id}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast('Colaborador desativado!', 'success');
+    if (fecharModal) document.querySelector('.modal-overlay')?.remove();
+    _colaboradores = [];
+    carregarColaboradores();
+  } else {
+    toast(res?.erro || 'Erro ao desativar', 'error');
+  }
 }
 
 function limparFormColab() {
