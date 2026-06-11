@@ -375,9 +375,9 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="consulta-itens" data-perm="ver_estoque" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
-          <button class="nav-item" data-view="consulta-colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
-          <button class="nav-item" data-view="consulta-dotacao" data-perm="cadastrar_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
+          <button class="nav-item" data-view="consulta-itens" data-perm="consulta_itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
+          <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
+          <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
         </div>
       </div>
 
@@ -421,11 +421,11 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="ficha-epi" data-perm="ver_laudos" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
+          <button class="nav-item" data-view="ficha-epi" data-perm="ficha_epi" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
-          <button class="nav-item" data-view="viaturas" data-perm="ver_laudos" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
-          <button class="nav-item" data-view="descarte" data-perm="ver_laudos" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
-          <button class="nav-item" data-view="recuperados" data-perm="ver_laudos" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
+          <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
+          <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
+          <button class="nav-item" data-view="recuperados" data-perm="ver_recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
           <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
         </div>
       </div>
@@ -6975,17 +6975,23 @@ const PERMISSOES_SCHEMA = {
     saida_material:'Registrar saída', transferencia:'Transferência',
     ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra'
   }},
+  consulta: { label:'Consulta', icon:'🔍', itens:{
+    consulta_itens:'Consulta de itens', consulta_colaboradores:'Consulta de colaboradores',
+    consulta_dotacao:'Consulta de dotação'
+  }},
   financeiro: { label:'Financeiro', icon:'💰', itens:{
     ver_financeiro:'Ver financeiro', descontos:'Gerenciar descontos', protheus:'Protheus / Compras'
   }},
   laudos: { label:'Laudos / NR10', icon:'🔬', itens:{
-    ver_laudos:'Ver laudos', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais'
+    ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais'
   }},
   enel: { label:'ENEL', icon:'⚡', itens:{
     ver_enel:'Ver módulo ENEL', marcar_instalado:'Marcar como instalado',
     desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento ENEL'
   }},
   gestao: { label:'Gestão', icon:'📊', itens:{
+    ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
+    ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
     ver_indicadores:'Ver indicadores', relatorios:'Relatórios'
   }},
   cadastros: { label:'Cadastros', icon:'🗂️', itens:{
