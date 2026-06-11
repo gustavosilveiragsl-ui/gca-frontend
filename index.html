@@ -389,7 +389,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
         <div class="nav-group-items">
           <button class="nav-item" data-view="descontos" data-perm="descontos" onclick="showView('descontos',this)"><span class="ni-icon">💰</span> Descontos</button>
-          <button class="nav-item" data-view="solicitacoes-compra" data-perm="protheus" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
+          <button class="nav-item" data-view="solicitacoes-compra" data-perm="previsao_compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
           <button class="nav-item" data-view="protheus" data-perm="protheus" onclick="showView('protheus',this)"><span class="ni-icon">🗂️</span> Lançamentos Protheus</button>
         </div>
       </div>
@@ -3071,6 +3071,10 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div><label class="form-label">Data abertura</label><input id="scData" class="form-input" type="date" readonly style="background:var(--bg);color:var(--text-3)"></div>
       </div>
       <div><label class="form-label">Comprador *</label><input id="scComprador" class="form-input" placeholder="Nome do comprador"></div>
+      <div id="scArmazemRow">
+        <label class="form-label">Armazém</label>
+        <select id="scArmazem" class="form-input"></select>
+      </div>
       <div>
         <label class="form-label">Itens</label>
         <!-- Igual ao atendimento: autocomplete com foto -->
@@ -5966,8 +5970,8 @@ async function carregarUltimasEntradas() {
   const tbody = document.getElementById('entHistoricoBody');
   if (!tbody) return;
   tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
-  const data = await api('/movimentacoes?tipo=entrada&limit=20');
-  renderHistoricoMov(tbody, data?.movimentacoes || []);
+  const data = await api('/movimentacoes?tipo=ENTRADA&limit=20');
+  renderHistoricoMov(tbody, data?.registros || []);
 }
 
 // ── SAÍDA ──
@@ -6064,18 +6068,18 @@ async function carregarUltimasTransferencias() {
   const tbody = document.getElementById('trfHistoricoBody');
   if (!tbody) return;
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-  const data = await api('/movimentacoes?tipo=transferencia&limit=20');
-  const lista = data?.movimentacoes || [];
+  const data = await api('/movimentacoes?tipo=TRANSFERENCIA&limit=20');
+  const lista = data?.registros || [];
   if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-title">Nenhuma transferência</div></div></td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(m => `<tr>
-    <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
-    <td style="font-size:11px">${m.nome_armazem||'—'}</td>
-    <td style="font-size:11px">${m.nome_armazem_destino||'—'}</td>
+    <td class="td-main">${m.descricao||m.nome_item||'—'}</td>
+    <td style="font-size:11px">${m.nomeArmazem||m.nome_armazem||'—'}</td>
+    <td style="font-size:11px">${m.nomeArmazemDestino||m.nome_armazem_destino||'—'}</td>
     <td>${m.quantidade} ${m.un_med||'UN'}</td>
-    <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
+    <td>${formatarData(m.data||m.criadoEm?.split('T')[0])}</td>
   </tr>`).join('');
 }
 
@@ -6083,8 +6087,8 @@ async function carregarUltimasSaidas() {
   const tbody = document.getElementById('saiHistoricoBody');
   if (!tbody) return;
   tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
-  const data = await api('/movimentacoes?tipo=saida&limit=20');
-  renderHistoricoMov(tbody, data?.movimentacoes || []);
+  const data = await api('/movimentacoes?tipo=SAIDA&limit=20');
+  renderHistoricoMov(tbody, data?.registros || []);
 }
 
 // ── TRANSFERÊNCIA ──
@@ -6159,12 +6163,12 @@ function renderHistoricoMov(tbody, lista) {
     return;
   }
   tbody.innerHTML = lista.map(m => `<tr>
-    <td class="td-main">${m.item_descricao||m.nome_item||'—'}</td>
-    <td style="font-size:11px">${m.nome_armazem||'—'}</td>
+    <td class="td-main">${m.descricao||m.nome_item||'—'}</td>
+    <td style="font-size:11px">${m.nomeArmazem||m.nome_armazem||'—'}</td>
     <td>${m.quantidade} ${m.un_med||'UN'}</td>
     <td><span class="tag tag-gray">${m.motivo||'—'}</span></td>
-    <td>${formatarData(m.data||m.criado_em?.split('T')[0])}</td>
-    <td style="font-size:11px;color:var(--text-3)">${m.usuario_nome||'—'}</td>
+    <td>${formatarData(m.data||m.criadoEm?.split('T')[0])}</td>
+    <td style="font-size:11px;color:var(--text-3)">${m.nomeColaborador||m.usuario||'—'}</td>
   </tr>`).join('');
 }
 
@@ -6183,7 +6187,16 @@ async function carregarEstoque() {
 
   const data = await api('/saldos');
   if (!data) return;
-  _estoqueData = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
+  let todos = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
+
+  // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
+  let userArmazens = [];
+  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  if (userArmazens.length) {
+    todos = todos.filter(s => userArmazens.includes(s.armazem_id));
+  }
+
+  _estoqueData = todos;
 
   // Monta abas de armazém
   const armazens = [...new Map(_estoqueData.map(s => [s.armazem_id, s])).values()];
@@ -7928,6 +7941,26 @@ function abrirModalSC(id) {
   if (row) row.style.display = 'none';
   document.getElementById('scModalTitulo').textContent = 'Nova Solicitação de Compra';
 
+  // Popula select de armazém filtrado pelos armazéns do usuário
+  let userArmazens = [];
+  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  const armazensDisponiveis = userArmazens.length
+    ? (_armazens || []).filter(a => userArmazens.includes(a.id))
+    : (_armazens || []);
+  const scArmazemRow = document.getElementById('scArmazemRow');
+  const scArmazem    = document.getElementById('scArmazem');
+  if (armazensDisponiveis.length <= 1) {
+    // Só um armazém — esconde o select, valor fixo
+    if (scArmazemRow) scArmazemRow.style.display = 'none';
+    if (scArmazem) scArmazem.value = armazensDisponiveis[0]?.id || '';
+  } else {
+    if (scArmazemRow) scArmazemRow.style.display = '';
+    if (scArmazem) {
+      scArmazem.innerHTML = '<option value="">Todos os armazéns</option>' +
+        armazensDisponiveis.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
+    }
+  }
+
   if (id) {
     const sc = _scData.find(x=>x.id===id);
     if (sc) {
@@ -7937,9 +7970,9 @@ function abrirModalSC(id) {
       document.getElementById('scComprador').value = sc.comprador||'';
       document.getElementById('scObs').value       = sc.observacao||'';
       document.getElementById('scStatus').value    = sc.status||'Pendente';
+      if (scArmazem && sc.armazem_id) scArmazem.value = sc.armazem_id;
       try { 
         const raw = JSON.parse(sc.itens_json||'[]');
-        // Normaliza campos antigos (nomeItem/qtdSolicitada) para novo formato (nome/qtd)
         _scItens = raw.map(it => ({
           itemId:  it.itemId || it.item_id || '',
           nome:    it.nomeItem || it.nome || it.descricao || '—',
@@ -7954,7 +7987,6 @@ function abrirModalSC(id) {
       document.getElementById('scModalTitulo').textContent = 'Editar SC';
     }
   }
-  // Fecha o modal de visualização se estiver aberto
   document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalSC').classList.remove('hidden');
 }
@@ -7970,6 +8002,7 @@ async function salvarSC() {
     observacao:   document.getElementById('scObs').value.trim(),
     status:       document.getElementById('scStatus').value,
     itens_json:   JSON.stringify(_scItens),
+    armazem_id:   document.getElementById('scArmazem')?.value || null,
   };
   if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
   const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
@@ -8389,7 +8422,16 @@ async function carregarSC() {
   const tbody = document.getElementById('scBody');
   if (!tbody) return;
   const data = await api('/solicitacoes-compra');
-  _scData = data?.data || [];
+  let lista = data?.data || [];
+
+  // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
+  let userArmazens = [];
+  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  if (userArmazens.length) {
+    lista = lista.filter(sc => !sc.armazem_id || userArmazens.includes(sc.armazem_id));
+  }
+
+  _scData = lista;
   document.getElementById('scKpiPendente').textContent = _scData.filter(x=>x.status==='Pendente').length;
   document.getElementById('scKpiAprovada').textContent = _scData.filter(x=>x.status==='Aprovado').length;
   document.getElementById('scKpiParcial').textContent  = _scData.filter(x=>x.status==='Recebido Parcial').length;
