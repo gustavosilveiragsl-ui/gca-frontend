@@ -3562,6 +3562,26 @@ function showView(nome, btnEl) {
     resetarAtendimento();
   }
 
+  // Limpa formulários ao sair das telas de cadastro
+  const limpezas = {
+    'view-armazens':       () => limparFormArmazem(),
+    'view-equipes':        () => limparFormEquipe(),
+    'view-itens':          () => limparFormItem(),
+    'view-colaboradores':  () => limparFormColab(),
+    'view-dotacao':        () => limparFormDotacao(),
+    'view-usuarios':       () => limparFormUsuario(),
+    'view-entrada':        () => limparEntrada(),
+    'view-saida':          () => limparSaida(),
+    'view-transferencia':  () => limparTransferencia(),
+    'view-enel-entrada':   () => limparEntradaEnel(),
+    'view-enel-saida':     () => limparSaidaEnel(),
+    'view-enel-cadastro':  () => limparFormMaterialEnel(),
+    'view-descontos':      () => limparDesconto(),
+  };
+  if (viewAtual && limpezas[viewAtual] && viewAtual !== 'view-' + nome) {
+    try { limpezas[viewAtual](); } catch(e) {}
+  }
+
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
   const btn = btnEl || document.querySelector(`.nav-item[data-view="${nome}"]`);
   if (btn) {
@@ -3579,6 +3599,10 @@ function showView(nome, btnEl) {
   const info = VIEW_TITLES[nome] || [nome,''];
   document.getElementById('topbarTitle').textContent = info[0];
   document.getElementById('topbarCrumb').textContent = info[1];
+  // Atualiza a URL sem recarregar a página
+  if (window.location.hash !== '#/' + nome) {
+    history.pushState(null, '', '#/' + nome);
+  }
   onViewLoad(nome);
 }
 
@@ -3754,7 +3778,17 @@ function iniciarApp() {
   }
   carregarArmazens();
   mostrarTela('app');
-  showView('home');
+
+  // Lê a hash da URL para ir à tela certa (ex: ao recarregar ou colar link)
+  const hashView = window.location.hash.replace('#/', '').split('?')[0];
+  const viewInicial = hashView && document.getElementById('view-' + hashView) ? hashView : 'home';
+  showView(viewInicial);
+
+  // Botão voltar/avançar do navegador
+  window.addEventListener('popstate', () => {
+    const v = window.location.hash.replace('#/', '').split('?')[0];
+    if (v && document.getElementById('view-' + v)) showView(v);
+  });
 }
 
 // ── RECUPERAÇÃO DE SENHA ──
