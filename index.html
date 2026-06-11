@@ -3512,7 +3512,14 @@ window.addEventListener('load', () => {
     const unidade = localStorage.getItem('gca_unidade');
     if (token && usuario && unidade) {
       GCA.token = token; GCA.unidade = unidade;
-      try { GCA.usuario = JSON.parse(usuario); } catch { GCA.usuario = {}; }
+      try {
+        GCA.usuario = JSON.parse(usuario);
+        // Garante que permissoes seja sempre objeto
+        if (typeof GCA.usuario?.permissoes === 'string') {
+          try { GCA.usuario.permissoes = JSON.parse(GCA.usuario.permissoes || '{}'); }
+          catch { GCA.usuario.permissoes = {}; }
+        }
+      } catch { GCA.usuario = {}; }
       esconderLoading(); iniciarApp();
     } else { esconderLoading(); mostrarTela('login'); }
   }, 1200);
@@ -3759,6 +3766,11 @@ async function selecionarUnidade(unidade) {
 function finalizarLogin(data) {
   GCA.token   = data.token;
   GCA.usuario = data.usuario;
+  // Garante que permissoes seja sempre objeto (pode vir como string do backend)
+  if (typeof GCA.usuario?.permissoes === 'string') {
+    try { GCA.usuario.permissoes = JSON.parse(GCA.usuario.permissoes || '{}'); }
+    catch { GCA.usuario.permissoes = {}; }
+  }
   GCA.unidade = data.usuario?.unidade || data.unidade;
   GCA.unidades = data.usuario?.unidades || [];
   localStorage.setItem('gca_token',   GCA.token);
