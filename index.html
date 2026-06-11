@@ -1370,7 +1370,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
-              <button class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()">🔔 Previsão de Compra</button>
+              <button id="btnPrevisaoCompra" class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()">🔔 Previsão de Compra</button>
             <div class="card-actions">
               <div id="estAbasArmazem" style="display:flex;gap:6px"></div>
               <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
@@ -6190,8 +6190,7 @@ async function carregarEstoque() {
   let todos = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
 
   // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
-  let userArmazens = [];
-  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  const userArmazens = getUserArmazens();
   if (userArmazens.length) {
     todos = todos.filter(s => userArmazens.includes(s.armazem_id));
   }
@@ -6202,7 +6201,9 @@ async function carregarEstoque() {
   const armazens = [...new Map(_estoqueData.map(s => [s.armazem_id, s])).values()];
   const abasEl = document.getElementById('estAbasArmazem');
   if (abasEl) {
-    abasEl.innerHTML = `<button class="atend-tab ${!_estArmazem ? 'active' : ''}" onclick="selecionarArmazemEst('')">Todos</button>` +
+    const mostrarTodos = armazens.length > 1;
+    if (!mostrarTodos && armazens.length === 1) _estArmazem = armazens[0].armazem_id;
+    abasEl.innerHTML = (mostrarTodos ? `<button class="atend-tab ${!_estArmazem ? 'active' : ''}" onclick="selecionarArmazemEst('')">Todos</button>` : '') +
       armazens.map(a => `<button class="atend-tab ${_estArmazem === a.armazem_id ? 'active' : ''}" onclick="selecionarArmazemEst('${a.armazem_id}')">${a.nome_armazem}</button>`).join('');
   }
 
@@ -7022,6 +7023,9 @@ function aplicarPermissoesMenu() {
     const perm = btn.dataset.perm;
     if (!temPermissao(perm)) btn.style.display = 'none';
   });
+  // Oculta botão de Previsão de Compra na tela de estoque
+  const btnPC = document.getElementById('btnPrevisaoCompra');
+  if (btnPC && !temPermissao('previsao_compra')) btnPC.style.display = 'none';
   // Oculta grupos inteiros que ficaram sem nenhum item visível
   document.querySelectorAll('.nav-group').forEach(grupo => {
     const items = grupo.querySelectorAll('.nav-item[data-perm]');
@@ -7032,6 +7036,14 @@ function aplicarPermissoesMenu() {
 }
 
 // Verifica se usuário tem permissão (admin tem tudo)
+// Retorna array de IDs dos armazéns permitidos do usuário ([] = todos)
+function getUserArmazens() {
+  const raw = GCA.usuario?.armazens;
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
 function temPermissao(perm) {
   if (GCA.usuario?.role === 'admin') return true;
   const perms = GCA.usuario?.permissoes || {};
@@ -7942,8 +7954,7 @@ function abrirModalSC(id) {
   document.getElementById('scModalTitulo').textContent = 'Nova Solicitação de Compra';
 
   // Popula select de armazém filtrado pelos armazéns do usuário
-  let userArmazens = [];
-  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  const userArmazens = getUserArmazens();
   const armazensDisponiveis = userArmazens.length
     ? (_armazens || []).filter(a => userArmazens.includes(a.id))
     : (_armazens || []);
@@ -8425,8 +8436,7 @@ async function carregarSC() {
   let lista = data?.data || [];
 
   // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
-  let userArmazens = [];
-  try { userArmazens = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+  const userArmazens = getUserArmazens();
   if (userArmazens.length) {
     lista = lista.filter(sc => !sc.armazem_id || userArmazens.includes(sc.armazem_id));
   }
