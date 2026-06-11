@@ -1147,18 +1147,6 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
 
         </div>
-
-        <!-- ÚLTIMAS ENTRADAS -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <div><div class="card-title">Últimas Entradas</div><div class="card-sub">Registros mais recentes</div></div>
-            <button class="btn btn-ghost" onclick="carregarUltimasEntradas()">↻ Atualizar</button>
-          </div>
-          <table>
-            <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th>Data</th><th>Usuário</th></tr></thead>
-            <tbody id="entHistoricoBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
       </div>
       <!-- ── SAÍDA ── -->
       <div class="view" id="view-saida">
@@ -1260,18 +1248,6 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
 
         </div>
-
-        <!-- ÚLTIMAS SAÍDAS -->
-        <div class="card" style="margin-top:20px">
-          <div class="card-header">
-            <div><div class="card-title">Últimas Saídas</div></div>
-            <button class="btn btn-ghost" onclick="carregarUltimasSaidas()">↻ Atualizar</button>
-          </div>
-          <table>
-            <thead><tr><th>Item</th><th>Armazém</th><th>Qtd</th><th>Motivo</th><th>Data</th><th>Usuário</th></tr></thead>
-            <tbody id="saiHistoricoBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
       </div>
       <!-- ── TRANSFERÊNCIA ── -->
       <div class="view" id="view-transferencia">
@@ -1320,16 +1296,17 @@ tbody tr:hover td{background:var(--bg-hover);}
             </div>
           </div>
 
-          <!-- ÚLTIMAS TRANSFERÊNCIAS -->
+          <!-- SALDO POR ARMAZÉM -->
           <div class="card">
             <div class="card-header">
-              <div><div class="card-title">Últimas Transferências</div></div>
-              <button class="btn btn-ghost" onclick="carregarUltimasTransferencias()">↻ Atualizar</button>
+              <div><div class="card-title">Saldo por Armazém</div><div class="card-sub" id="trfSaldoCardSub">Selecione um item para ver o saldo em cada armazém</div></div>
             </div>
-            <table>
-              <thead><tr><th>Item</th><th>Origem</th><th>Destino</th><th>Qtd</th><th>Data</th></tr></thead>
-              <tbody id="trfHistoricoBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-            </table>
+            <div id="trfSaldoCards" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+              <div style="text-align:center;padding:40px 0;color:var(--text-3)">
+                <div style="font-size:32px;margin-bottom:8px">📦</div>
+                <div style="font-size:12px">Busque um item para ver a disponibilidade</div>
+              </div>
+            </div>
           </div>
 
         </div>
@@ -6106,6 +6083,44 @@ function selecionarItemTrf(id) {
   document.getElementById('trfItemBusca').value = _trfItemSel.descricao;
   document.getElementById('trfItemSugestoes').classList.add('hidden');
   verificarSaldoTrf();
+  atualizarSaldoCardTrf();
+}
+
+async function atualizarSaldoCardTrf() {
+  const container = document.getElementById('trfSaldoCards');
+  const sub       = document.getElementById('trfSaldoCardSub');
+  if (!container || !_trfItemSel) return;
+
+  container.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
+  if (sub) sub.textContent = _trfItemSel.descricao;
+
+  const data = await api(`/saldos?item_id=${_trfItemSel.id}`);
+  const saldos = (data?.data || []).filter(s => s.saldo > 0 || s.armazem_id);
+
+  if (!saldos.length) {
+    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-3);font-size:12px">Nenhum saldo encontrado para este item</div>`;
+    return;
+  }
+
+  const userArmazens = getUserArmazens();
+  const lista = userArmazens.length ? saldos.filter(s => userArmazens.includes(s.armazem_id)) : saldos;
+
+  container.innerHTML = lista.map(s => {
+    const pct   = Math.min(100, s.saldo > 0 ? 100 : 0);
+    const cor   = s.saldo === 0 ? '#ef4444' : s.saldo < 10 ? '#f59e0b' : '#22c55e';
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;cursor:pointer;transition:background .15s"
+      onclick="document.getElementById('trfOrigem').value='${s.armazem_id}';verificarSaldoTrf()"
+      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.nome_armazem||'—'}</div>
+        <div style="font-size:14px;font-weight:700;color:${cor}">${s.saldo} <span style="font-size:10px;font-weight:400">${_trfItemSel.un_med||'UN'}</span></div>
+      </div>
+      <div style="height:4px;background:var(--border);border-radius:2px">
+        <div style="height:4px;background:${cor};border-radius:2px;width:${pct}%;transition:width .3s"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:4px">Clique para selecionar como origem</div>
+    </div>`;
+  }).join('');
 }
 
 async function verificarSaldoTrf() {
@@ -6154,6 +6169,10 @@ function limparTransferencia() {
   const hoje = new Date().toISOString().split('T')[0];
   const dt = document.getElementById('trfData'); if(dt) dt.value = hoje;
   document.getElementById('trfSaldoBox')?.classList.add('hidden');
+  const sub = document.getElementById('trfSaldoCardSub');
+  if (sub) sub.textContent = 'Selecione um item para ver o saldo em cada armazém';
+  const cards = document.getElementById('trfSaldoCards');
+  if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-3)"><div style="font-size:32px;margin-bottom:8px">📦</div><div style="font-size:12px">Busque um item para ver a disponibilidade</div></div>`;
 }
 
 // ── RENDER HISTÓRICO COMUM ──
