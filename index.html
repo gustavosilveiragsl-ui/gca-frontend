@@ -6482,21 +6482,6 @@ function filtrarTabela(tbodyId, q, colunas=[0]) {
 }
 
 // ════════════ ARMAZÉNS ════════════
-async function carregarArmazensView() {
-  const tbody = document.getElementById('armBody');
-  if (!tbody) return;
-  const data = await api('/armazens');
-  if (!data) return;
-  const lista = data.data || data.armazens || [];
-  tbody.innerHTML = lista.length ? lista.map(a => `<tr>
-    <td class="td-main">${a.nome}</td>
-    <td style="font-size:11px">${a.tipo||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
-    <td><button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button></td>
-  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
-}
-
 async function salvarArmazem() {
   const id   = document.getElementById('armEditId').value;
   const body = {
@@ -6539,8 +6524,23 @@ async function carregarArmazensView() {
     <td class="td-main">${a.nome}<div style="font-size:10px;color:var(--text-3)">${a.descricao||''}</div></td>
     <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
-    <td><button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button></td>
-  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
+    <td style="display:flex;gap:6px">
+      <button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button>
+      <button class="row-action" style="color:var(--color-danger,#e53e3e)" onclick="excluirArmazem('${a.id}','${a.nome.replace(/'/g,"\\'")}')">Excluir</button>
+    </td>
+  </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
+}
+
+async function excluirArmazem(id, nome) {
+  if (!confirm(`Excluir o armazém "${nome}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await api(`/armazens/${id}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast('Armazém excluído!', 'success');
+    _armazens = []; // limpa cache para recarregar na próxima vez
+    carregarArmazensView();
+  } else {
+    toast(res?.erro || 'Erro ao excluir', 'error');
+  }
 }
 
 // ════════════ EQUIPES ════════════
