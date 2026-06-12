@@ -4397,43 +4397,65 @@ async function confirmarItensModal() {
   btn.textContent = 'Validando...';
 
   try {
-    for (const s of selecionados) {
-      // PASSO 1: Validar nível/categoria
-      const resNivel = await api('/validacoes/nivel', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) });
-      if (resNivel && !resNivel.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Item bloqueado', resNivel.erro); return; }
+    // ── PRÉ-VALIDAÇÃO PARALELA DE TODOS OS ITENS ──
+    const resultados = await Promise.all(selecionados.map(async s => {
+      const [resNivel, resDot, resSaldo, resDur, resTroca] = await Promise.all([
+        api('/validacoes/nivel',        { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) }),
+        api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) }),
+        api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`),
+        (s.motivo||'').toLowerCase() !== 'entrega inicial'
+          ? api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) })
+          : Promise.resolve(null),
+        api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) }),
+      ]);
 
-      // PASSO 2: Validar dotação da função — BLOQUEIA se não estiver na dotação
-      const resDot = await api('/validacoes/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
-      if (resDot && !resDot.ok) {
-        fecharModalItens();
-        mostrarModalBloqueio('🚫 Item bloqueado pela dotação', resDot.erro);
-        return;
-      }
+      const saldo = resSaldo?.data?.[0]?.saldo ?? 0;
+      const bloqueios = [];
+      const avisos    = [];
 
-      // PASSO 3: Verificar saldo
-      const resSaldo = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
-      const saldo = resSaldo?.data?.[0]?.saldo || 0;
-      if (saldo < s.qtd) { fecharModalItens(); mostrarModalBloqueio('🚫 Saldo insuficiente', `"${s.item.descricao}" — Disponível: ${saldo} | Solicitado: ${s.qtd}`); return; }
+      if (resNivel && !resNivel.ok)  bloqueios.push(resNivel.erro);
+      if (resDot   && !resDot.ok)    bloqueios.push(resDot.erro);
+      if (saldo < s.qtd)             bloqueios.push(`Saldo insuficiente — disponível: ${saldo}, solicitado: ${s.qtd}`);
+      if (resDur && !resDur.dentro && resDur.ultimaEntrega)
+        avisos.push(`Prazo de durabilidade não atingido (${resDur.diasDecorridos} de ${resDur.prazoMinDias} dias)`);
+      if (resTroca?.troca)
+        avisos.push(`Troca de tamanho detectada — colaborador possui "${resTroca.troca.nomeAntigo}"`);
 
-      // PASSO 4: Verificar durabilidade (avisa, não bloqueia)
-      const motivoLower = (s.motivo || '').toLowerCase();
-      if (motivoLower !== 'entrega inicial') {
-        const resDur = await api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) });
-        if (resDur && !resDur.dentro && resDur.ultimaEntrega) {
-          const confirmar = await mostrarModalDurabilidade(s.item.descricao, resDur.ultimaEntrega, resDur.diasDecorridos, resDur.prazoMinDias);
-          if (!confirmar) return;
-        }
-      }
+      return { s, bloqueios, avisos, resTroca };
+    }));
 
-      // PASSO 5: Verificar troca de tamanho
-      const resTroca = await api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) });
-      if (resTroca?.troca) {
-        const confirmar = await mostrarModalTrocaTamanho(resTroca.troca, s.item.descricao);
-        if (!confirmar) return;
-      }
+    const comBloqueio = resultados.filter(r => r.bloqueios.length);
+    const comAviso    = resultados.filter(r => r.avisos.length && !r.bloqueios.length);
+    const limpos      = resultados.filter(r => !r.bloqueios.length && !r.avisos.length);
+
+    // Se há bloqueios — mostra resumo e para
+    if (comBloqueio.length) {
+      fecharModalItens();
+      const html = comBloqueio.map(r =>
+        `<div style="margin-bottom:12px;padding:10px;background:var(--red-soft);border-radius:var(--radius-sm);border-left:3px solid #ef4444">
+          <div style="font-weight:700;font-size:12px;color:var(--text-1);margin-bottom:4px">🚫 ${r.s.item.descricao}</div>
+          ${r.bloqueios.map(b => `<div style="font-size:11px;color:var(--text-2)">• ${b}</div>`).join('')}
+        </div>`
+      ).join('');
+      mostrarModalBloqueio(
+        `🚫 ${comBloqueio.length} item(ns) bloqueado(s)`,
+        '__HTML__' + html + (limpos.length + comAviso.length > 0
+          ? `<div style="margin-top:8px;font-size:11px;color:var(--text-3)">Os demais ${limpos.length + comAviso.length} item(ns) foram cancelados. Corrija e tente novamente.</div>`
+          : '')
+      );
+      return;
     }
 
-    adicionarItensAoAtendimento(selecionados);
+    // Se há avisos — mostra resumo e pede confirmação
+    if (comAviso.length) {
+      const prosseguir = await mostrarResumoAvisos(comAviso, limpos.length);
+      if (!prosseguir) return;
+    }
+
+    // Adiciona todos os itens aprovados (limpos + com aviso confirmado)
+    const aprovados = [...limpos, ...comAviso].map(r => r.s);
+    adicionarItensAoAtendimento(aprovados);
+
   } catch (err) {
     console.error('[validacao]', err);
     toast('Erro ao validar itens', 'error');
@@ -4443,9 +4465,46 @@ async function confirmarItensModal() {
   }
 }
 
+function mostrarResumoAvisos(comAviso, qtdLimpos) {
+  return new Promise(resolve => {
+    // Monta modal dinâmico de resumo de avisos
+    const existing = document.getElementById('modalResumoAvisos');
+    if (existing) existing.remove();
+
+    const html = `
+    <div class="modal-overlay" id="modalResumoAvisos" style="z-index:300">
+      <div class="modal-box" style="max-width:520px">
+        <div class="modal-header">
+          <div><div class="modal-title">⚠️ Avisos encontrados</div>
+          <div style="font-size:11px;color:var(--text-3)">${comAviso.length} item(ns) com aviso — deseja prosseguir mesmo assim?</div></div>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto">
+          ${comAviso.map(r => `
+            <div style="padding:10px;background:var(--yellow-soft);border-radius:var(--radius-sm);border-left:3px solid #f59e0b">
+              <div style="font-weight:700;font-size:12px;color:var(--text-1);margin-bottom:4px">⚠️ ${r.s.item.descricao}</div>
+              ${r.avisos.map(a => `<div style="font-size:11px;color:var(--text-2)">• ${a}</div>`).join('')}
+            </div>`).join('')}
+          ${qtdLimpos > 0 ? `<div style="font-size:11px;color:var(--text-3);padding:6px">✅ ${qtdLimpos} item(ns) sem aviso serão incluídos normalmente.</div>` : ''}
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" onclick="document.getElementById('modalResumoAvisos').remove();window._avisoResolve&&window._avisoResolve(false)">Cancelar</button>
+          <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="document.getElementById('modalResumoAvisos').remove();window._avisoResolve&&window._avisoResolve(true)">Prosseguir mesmo assim</button>
+        </div>
+      </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+    window._avisoResolve = resolve;
+  });
+}
+
 function mostrarModalBloqueio(titulo, mensagem) {
   document.getElementById('modalBloqueioTitulo').textContent = titulo;
-  document.getElementById('modalBloqueioMsg').textContent    = mensagem;
+  const msgEl = document.getElementById('modalBloqueioMsg');
+  if (typeof mensagem === 'string' && mensagem.startsWith('__HTML__')) {
+    msgEl.innerHTML = mensagem.replace('__HTML__', '');
+  } else {
+    msgEl.textContent = mensagem;
+  }
   document.getElementById('modalBloqueio').classList.remove('hidden');
 }
 
