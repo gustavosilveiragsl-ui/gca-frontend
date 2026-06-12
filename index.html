@@ -8599,7 +8599,7 @@ async function selecionarItemNS(id, texto) {
   // Calcula consistência
   const itemLocal = (_itens||[]).find(i=>i.id===id);
   const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
-  const saldoEst  = Number(_estoqueData.find(s=>s.item_id===id)?.saldo||0);
+  const saldoEst  = _estoqueData.filter(s=>s.item_id===id).reduce((acc,s)=>acc+Number(s.saldo||0),0);
   const serialsNecessarios = saldoEst * fatorPar;
   const serialsEstoque = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
 
@@ -8694,8 +8694,8 @@ function laudosRender_() {
     if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
-    const saldoEstObj = _estoqueData.find(x=>x.item_id===grupo.itemId);
-    const saldoEst = Number(saldoEstObj?.saldo||0);
+    const saldoEstObj = _estoqueData.filter(x=>x.item_id===grupo.itemId);
+    const saldoEst = saldoEstObj.reduce((acc, x) => acc + Number(x.saldo||0), 0);
     const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
     const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
     const serialsNecessarios = saldoEst * fatorPar;
