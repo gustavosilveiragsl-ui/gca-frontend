@@ -10867,116 +10867,7 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
   </div>
   ${qrHtml}
 
-<!-- MODAL LOCALIZADOR NR10 -->
-<div class="modal-overlay hidden" id="modalLocalizadorNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
-    <div class="modal-header">
-      <div><div class="modal-title">📍 Localizador NR10</div><div style="font-size:11px;color:var(--text-3)">Histórico completo do serial</div></div>
-      <button class="modal-close" onclick="document.getElementById('modalLocalizadorNR10').classList.add('hidden')">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <div style="display:flex;gap:8px">
-        <input id="locSerial" class="form-input" placeholder="Digite o número de série..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase"
-          onkeydown="if(event.key==='Enter')buscarLocalizador()">
-        <button class="btn btn-primary" onclick="buscarLocalizador()">Buscar</button>
-      </div>
-      <div id="locResultado" style="display:none">
-        <!-- Situação atual -->
-        <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px">
-          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📌 Situação Atual</div>
-          <div id="locSituacaoAtual" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
-        </div>
-        <!-- Laudo atual -->
-        <div id="locLaudoBox" style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;display:none">
-          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📋 Laudo Atual</div>
-          <div id="locLaudoInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
-        </div>
-        <!-- Histórico -->
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📜 Histórico de Movimentações</div>
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Tipo</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Colaborador</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Obs</th>
-          </tr></thead>
-          <tbody id="locHistoricoBody"></tbody>
-        </table>
-        <div id="locSemHistorico" style="display:none;text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum histórico de movimentação encontrado</div>
-      </div>
-      <div id="locNaoEncontrado" style="display:none;text-align:center;color:#ef4444;font-size:12px;padding:16px">Serial não encontrado</div>
-    </div>
-  </div>
-</div>
 
-
-<div class="modal-overlay hidden" id="modalDevolucaoNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:640px;width:100%;margin:auto">
-    <div class="modal-header">
-      <div><div class="modal-title">📮 Devolver ao Estoque</div><div style="font-size:11px;color:var(--text-3)">Seriais com colaboradores</div></div>
-      <button class="modal-close" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <!-- Busca colaborador ou serial -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div>
-          <label class="form-label">Buscar por Colaborador</label>
-          <div style="display:flex;gap:6px">
-            <div style="flex:1;position:relative">
-              <input id="devNR10ColabBusca" class="form-input" placeholder="Nome ou matrícula..."
-                oninput="filtrarColabDevNR10(this.value)"
-                onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)"
-                onkeydown="if(event.key==='Enter')buscarColabDev()"
-                autocomplete="off">
-              <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
-            </div>
-            <button class="btn btn-ghost" onclick="buscarColabDev()">🔍</button>
-          </div>
-        </div>
-        <div>
-          <label class="form-label">Ou buscar por Serial</label>
-          <div style="display:flex;gap:6px">
-            <input id="devNR10SerialBusca" class="form-input" placeholder="Nº do serial..."
-              style="font-family:var(--font-mono);text-transform:uppercase"
-              onkeydown="if(event.key==='Enter')buscarSerialDev()">
-            <button class="btn btn-ghost" onclick="buscarSerialDev()">🔍</button>
-          </div>
-        </div>
-      </div>
-      <div id="devNR10Lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
-        <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">Fechar</button>
-      <button class="btn btn-primary" id="btnConfirmarDevNR10" style="display:none" onclick="confirmarDevolucaoNR10()">📮 Devolver Selecionados</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- MODAL EDITAR LAUDO NR10 -->
-<div class="modal-overlay hidden" id="modalEditarLaudo">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-header">
-      <div><div class="modal-title">✏️ Editar Laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
-      <button class="modal-close" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <input type="hidden" id="laudoIdAtivo">
-      <div><label class="form-label">Lote / Nº Laudo</label><input id="laudoLote" class="form-input" placeholder="Ex: LOT-2024-001"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label class="form-label">Data do Ensaio *</label><input id="laudoDataEnsaio" class="form-input" type="date"></div>
-        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" placeholder="Ex: 365"></div>
-      </div>
-      <div><label class="form-label">Link PDF do Laudo (Drive)</label><input id="laudoAnexoUrl" class="form-input" placeholder="https://drive.google.com/..."></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarLaudo()">Salvar Laudo</button>
-    </div>
-  </div>
-</div>
 
 
   </body>
@@ -11194,5 +11085,117 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 </script>
 <div id="toastContainer"></div>
+
+<!-- MODAL LOCALIZADOR NR10 -->
+<div class="modal-overlay hidden" id="modalLocalizadorNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div><div class="modal-title">📍 Localizador NR10</div><div style="font-size:11px;color:var(--text-3)">Histórico completo do serial</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalLocalizadorNR10').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;gap:8px">
+        <input id="locSerial" class="form-input" placeholder="Digite o número de série..." style="flex:1;font-family:var(--font-mono);text-transform:uppercase"
+          onkeydown="if(event.key==='Enter')buscarLocalizador()">
+        <button class="btn btn-primary" onclick="buscarLocalizador()">Buscar</button>
+      </div>
+      <div id="locResultado" style="display:none">
+        <!-- Situação atual -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📌 Situação Atual</div>
+          <div id="locSituacaoAtual" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <!-- Laudo atual -->
+        <div id="locLaudoBox" style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📋 Laudo Atual</div>
+          <div id="locLaudoInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <!-- Histórico -->
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📜 Histórico de Movimentações</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Data</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Tipo</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Colaborador</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Obs</th>
+          </tr></thead>
+          <tbody id="locHistoricoBody"></tbody>
+        </table>
+        <div id="locSemHistorico" style="display:none;text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum histórico de movimentação encontrado</div>
+      </div>
+      <div id="locNaoEncontrado" style="display:none;text-align:center;color:#ef4444;font-size:12px;padding:16px">Serial não encontrado</div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal-overlay hidden" id="modalDevolucaoNR10" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:640px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div><div class="modal-title">📮 Devolver ao Estoque</div><div style="font-size:11px;color:var(--text-3)">Seriais com colaboradores</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <!-- Busca colaborador ou serial -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div>
+          <label class="form-label">Buscar por Colaborador</label>
+          <div style="display:flex;gap:6px">
+            <div style="flex:1;position:relative">
+              <input id="devNR10ColabBusca" class="form-input" placeholder="Nome ou matrícula..."
+                oninput="filtrarColabDevNR10(this.value)"
+                onblur="setTimeout(()=>document.getElementById('devNR10ColabSug').classList.add('hidden'),200)"
+                onkeydown="if(event.key==='Enter')buscarColabDev()"
+                autocomplete="off">
+              <div id="devNR10ColabSug" class="autocomplete-list hidden"></div>
+            </div>
+            <button class="btn btn-ghost" onclick="buscarColabDev()">🔍</button>
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Ou buscar por Serial</label>
+          <div style="display:flex;gap:6px">
+            <input id="devNR10SerialBusca" class="form-input" placeholder="Nº do serial..."
+              style="font-family:var(--font-mono);text-transform:uppercase"
+              onkeydown="if(event.key==='Enter')buscarSerialDev()">
+            <button class="btn btn-ghost" onclick="buscarSerialDev()">🔍</button>
+          </div>
+        </div>
+      </div>
+      <div id="devNR10Lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
+        <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalDevolucaoNR10').classList.add('hidden')">Fechar</button>
+      <button class="btn btn-primary" id="btnConfirmarDevNR10" style="display:none" onclick="confirmarDevolucaoNR10()">📮 Devolver Selecionados</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL EDITAR LAUDO NR10 -->
+<div class="modal-overlay hidden" id="modalEditarLaudo">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <div><div class="modal-title">✏️ Editar Laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="laudoIdAtivo">
+      <div><label class="form-label">Lote / Nº Laudo</label><input id="laudoLote" class="form-input" placeholder="Ex: LOT-2024-001"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Data do Ensaio *</label><input id="laudoDataEnsaio" class="form-input" type="date"></div>
+        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" placeholder="Ex: 365"></div>
+      </div>
+      <div><label class="form-label">Link PDF do Laudo (Drive)</label><input id="laudoAnexoUrl" class="form-input" placeholder="https://drive.google.com/..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarLaudo()">Salvar Laudo</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
