@@ -2325,7 +2325,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <input type="hidden" id="nsItemId">
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase">
+              <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase" oninput="validarSerialDuplicado(this.value)">
               <select id="nsStatus" class="form-input">
                 <option value="ESTOQUE">📦 Estoque</option>
               </select>
@@ -8623,12 +8623,46 @@ async function selecionarItemNS(id, texto) {
   }
 }
 
+function validarSerialDuplicado(valor) {
+  const serial = valor.trim().toUpperCase().replace(/\s+/g,'');
+  const itemId = document.getElementById('nsItemId').value;
+  const msg = document.getElementById('nsMsgConsistencia');
+  if (!serial || !itemId) return;
+
+  const duplicado = __LAUDOS_NR10__.lista.find(x =>
+    x.serial.toUpperCase() === serial && x.itemId === itemId
+  );
+
+  if (duplicado) {
+    const local = duplicado.statusLocal === 'COM_COLAB'
+      ? `com colaborador: ${duplicado.nomeColab||'—'}`
+      : duplicado.statusLocal === 'AGUARDANDO_LAUDO'
+      ? 'aguardando laudo'
+      : 'em estoque';
+    msg.style.color = '#ef4444';
+    msg.textContent = `🚫 Serial "${serial}" já cadastrado para este item (${local}).`;
+    document.getElementById('nsSerial').style.borderColor = '#ef4444';
+    return true; // é duplicado
+  } else {
+    document.getElementById('nsSerial').style.borderColor = '';
+    // Não limpa msg pois pode ter mensagem de consistência do item
+    return false;
+  }
+}
+
 async function salvarNovoSerial() {
   const itemId = document.getElementById('nsItemId').value;
   const serial  = document.getElementById('nsSerial').value.trim().toUpperCase().replace(/\s+/g,'');
   const status  = document.getElementById('nsStatus').value;
   const item    = (_itens||[]).find(i=>i.id===itemId);
   if (!itemId || !serial) { toast('Item e serial obrigatórios','warn'); return; }
+
+  // Bloqueia se serial duplicado
+  if (validarSerialDuplicado(serial)) {
+    toast('Serial já cadastrado para este item!', 'error');
+    return;
+  }
+
   const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status }) });
   if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
