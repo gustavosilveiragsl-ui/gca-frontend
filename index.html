@@ -8783,9 +8783,9 @@ async function laudosCarregar_() {
   </td></tr>`;
   if (info) info.textContent = '⏳ Carregando...';
 
-  // Garante que itens e saldos estejam carregados antes de renderizar
-  if (!_itens.length)       await carregarItensAtendimento();
-  if (!_estoqueData.length) await carregarSaldosCache();
+  // Garante que itens e saldos estejam atualizados
+  if (!_itens.length)  await carregarItensAtendimento();
+  _estoqueData = []; await carregarSaldosCache(); // sempre atualiza saldos ao carregar laudos
 
   const data = await api('/laudos/nr10');
   if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
