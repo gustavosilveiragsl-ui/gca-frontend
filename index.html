@@ -16,7 +16,7 @@
   --transition:0.15s ease;
 }
 [data-theme="dark"]{--bg:#0a0a0f;--bg-card:#0f0f17;--bg-hover:#0f172a;--border:#1e1e2e;--border-mid:#2a2a3e;--text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#475569;--sidebar-bg:#0c0c14;}
-[data-theme="light"]{--bg:#f8fafc;--bg-card:#ffffff;--bg-hover:#f1f5f9;--border:#e2e8f0;--border-mid:#cbd5e1;--text-1:#0f172a;--text-2:#475569;--text-3:#94a3b8;--sidebar-bg:#ffffff;}
+[data-theme="light"]{--bg:#f8fafc;--bg-card:#ffffff;--bg-hover:#f1f5f9;--border:#e2e8f0;--border-mid:#cbd5e1;--text-1:#0f172a;--text-2:#475569;--text-3:#94a3b8;--sidebar-bg:#ffffff;--green-soft:#dcfce7;--yellow-soft:#fef9c3;--red-soft:#fee2e2;--accent-soft:#ede9fe;--blue-soft:#e0f2fe;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:13px;}
 body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;}
@@ -720,7 +720,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <div class="colab-card-nome" id="atendColabNome">—</div>
                   <div class="colab-card-sub" id="atendColabSub">—</div>
                 </div>
-                <span class="tag tag-green" id="atendColabStatus">Ativo</span>
+                <span style="font-size:11px;font-weight:600;color:#22c55e;display:flex;align-items:center;gap:4px" id="atendColabStatus">✓ Ativo</span>
                 <button class="row-action" style="margin-left:auto" onclick="limparColaboradorAtend()">Trocar</button>
               </div>
             </div>
@@ -4402,9 +4402,13 @@ async function confirmarItensModal() {
       const resNivel = await api('/validacoes/nivel', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) });
       if (resNivel && !resNivel.ok) { fecharModalItens(); mostrarModalBloqueio('🚫 Item bloqueado', resNivel.erro); return; }
 
-      // PASSO 2: Validar dotação da função
+      // PASSO 2: Validar dotação da função — BLOQUEIA se não estiver na dotação
       const resDot = await api('/validacoes/dotacao', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) });
-      if (resDot && !resDot.ok) { toast(`⚠️ Aviso dotação: ${resDot.erro}`, 'warn', 4000); }
+      if (resDot && !resDot.ok) {
+        fecharModalItens();
+        mostrarModalBloqueio('🚫 Item bloqueado pela dotação', resDot.erro);
+        return;
+      }
 
       // PASSO 3: Verificar saldo
       const resSaldo = await api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`);
