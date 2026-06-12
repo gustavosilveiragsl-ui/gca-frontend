@@ -6769,7 +6769,7 @@ async function salvarDotacao() {
     grupo:            document.getElementById('dotGrupo').value.trim().toUpperCase() || null,
   };
   if (!body.funcao || !itemId) { toast('Função e item são obrigatórios', 'warn'); return; }
-  const res = await api(id ? `/validacoes/dotacao/${id}` : '/validacoes/dotacao', {
+  const res = await api(id ? `/dotacao/${id}` : '/dotacao', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
   if (res?.ok) { toast('Dotação salva!', 'success'); limparFormDotacao(); carregarDotacao(); }
