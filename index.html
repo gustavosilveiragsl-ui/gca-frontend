@@ -541,7 +541,11 @@ tbody tr:hover td{background:var(--bg-hover);}
                   </select>
                 </div>
               </div>
-              <div><label class="form-label">Função *</label><input id="colabFuncao" class="form-input" placeholder="Ex: ELETRICISTA"></div>
+              <div><label class="form-label">Função *</label>
+                <select id="colabFuncao" class="form-input">
+                  <option value="">Carregando funções...</option>
+                </select>
+              </div>
               <div><label class="form-label">Setor</label><input id="colabSetor" class="form-input" placeholder="Ex: Operacional SOC"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div><label class="form-label">Telefone</label><input id="colabTelefone" class="form-input" placeholder="(00) 00000-0000"></div>
@@ -3494,7 +3498,7 @@ function showView(nome, btnEl) {
 
 function onViewLoad(nome) {
   if (nome === 'home')               carregarDashboard();
-  if (nome === 'colaboradores')      carregarColaboradores();
+  if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        carregarAssinaturas();
@@ -3825,6 +3829,22 @@ function statusTag(s) {
 
 // ── COLABORADORES ──
 let _colaboradores=[];
+async function carregarFuncoesDotacao() {
+  const sel = document.getElementById('colabFuncao');
+  if (!sel) return;
+  // Já populado — não recarrega
+  if (sel.options.length > 1 && sel.options[0].value === '') return;
+  const data = await api('/dotacao');
+  const dotacao = data?.data || data?.dotacao || [];
+  const funcoes = [...new Set(dotacao.map(d => d.funcao).filter(Boolean))].sort();
+  if (!funcoes.length) {
+    sel.innerHTML = '<option value="">Nenhuma função com dotação cadastrada</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Selecione a função...</option>' +
+    funcoes.map(f => `<option value="${f}">${f}</option>`).join('');
+}
+
 async function carregarColaboradores() {
   const tbody = document.getElementById('colaboradoresBody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
@@ -7162,14 +7182,16 @@ async function salvarColaborador() {
   } else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
-function editarColabForm(id) {
+async function editarColabForm(id) {
   const c = _colaboradores.find(x => x.id === id);
   if (!c) return;
   document.getElementById('colabEditId').value   = id;
   document.getElementById('colabNome').value     = c.nome||'';
   document.getElementById('colabMatricula').value= c.matricula||'';
   document.getElementById('colabStatus').value   = c.status||'ativo';
-  document.getElementById('colabFuncao').value   = c.funcao||'';
+  // Garante que o select de função está populado antes de setar o valor
+  await carregarFuncoesDotacao();
+  document.getElementById('colabFuncao').value = c.funcao||'';
   document.getElementById('colabSetor').value    = c.setor||'';
   document.getElementById('colabTelefone').value = c.telefone||'';
   document.getElementById('colabAdmissao').value = c.data_admissao||'';
@@ -7200,6 +7222,8 @@ function limparFormColab() {
   });
   document.getElementById('colabStatus').value = 'ativo';
   document.getElementById('colabNivel').value  = 'Pleno';
+  const selFuncao = document.getElementById('colabFuncao');
+  if (selFuncao) selFuncao.selectedIndex = 0;
   document.getElementById('colabFormTitulo').textContent = 'Novo Colaborador';
 }
 
