@@ -3777,6 +3777,8 @@ function iniciarApp() {
     verificarSolicitacoesSenhaPendentes();
   }
   carregarArmazens();
+  carregarItensAtendimento(); // popula _itens para uso em Laudos NR10 e outras telas
+  carregarSaldosCache();      // popula _estoqueData para consistência NR10
   mostrarTela('app');
   aplicarPermissoesMenu();
 
@@ -5101,6 +5103,13 @@ async function carregarArmazens() {
   if (_armazens.length) return;
   const data = await api('/armazens');
   if (data) _armazens = data.data || data.armazens || [];
+}
+
+// Carrega saldos silenciosamente para consistência NR10
+async function carregarSaldosCache() {
+  if (_estoqueData.length) return;
+  const data = await api('/saldos');
+  if (data) _estoqueData = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
 }
 
 // Carrega colaboradores silenciosamente para o atendimento
