@@ -3874,7 +3874,7 @@ function trocarUnidade() {
 // ── API HELPER ──
 async function api(path, opts={}) {
   try {
-    const res = await fetch(`${API}${path}`, { ...opts, headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
+    const res = await fetch(`${API}${path}`, { ...opts, cache: 'no-store', headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
     if (res.status === 401) { fazerLogout(); return null; }
     const json = await res.json().catch(() => ({ ok: false, erro: `Erro HTTP ${res.status}` }));
     return json;
