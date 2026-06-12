@@ -8891,6 +8891,11 @@ async function laudosCarregar_() {
     <div style="font-size:11px;color:var(--text-3);margin-top:4px">Buscando seriais e laudos no banco de dados</div>
   </td></tr>`;
   if (info) info.textContent = '⏳ Carregando...';
+
+  // Garante que itens e saldos estejam carregados antes de renderizar
+  if (!_itens.length)       await carregarItensAtendimento();
+  if (!_estoqueData.length) await carregarSaldosCache();
+
   const data = await api('/laudos/nr10');
   if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
   __LAUDOS_NR10__.lista = data.lista || [];
