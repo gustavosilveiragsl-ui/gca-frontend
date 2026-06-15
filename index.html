@@ -3773,121 +3773,6 @@ function limparAssinatura() {
   if (_assinCtx && _assinCanvas) _assinCtx.clearRect(0, 0, _assinCanvas.width, _assinCanvas.height);
 }
 
-async function _uploadComprovanteDrive(pdfBase64, nomeArquivo) {
-  const EDGE_URL = 'https://hyrpvxzcfikdxzsqebnu.supabase.co/functions/v1/upload-comprovante-drive';
-  try {
-    const res = await fetch(EDGE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdfBase64, nomeArquivo })
-    });
-    const data = await res.json();
-    console.log('[Drive]', data);
-    return data.ok ? data.url : null;
-  } catch(e) { console.error('[Drive erro]', e); return null; }
-}
-
-async function _carregarJsPDF() {
-  if (window.jspdf) return window.jspdf.jsPDF;
-  return new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-    s.onload = () => resolve(window.jspdf.jsPDF);
-    s.onerror = reject;
-    document.head.appendChild(s);
-  });
-}
-
-async function _gerarPDFComprovante(dados) {
-  const { nomeColaborador, dataAtendimento, itens, assinaturaBase64, geradoEm } = dados;
-  const JsPDF = await _carregarJsPDF();
-  const doc = new JsPDF({ unit: 'mm', format: 'a4' });
-  const W = 210, M = 15, CW = W - M * 2;
-
-  // ── Cabeçalho ──
-  doc.setFillColor(30, 58, 138); // azul escuro
-  doc.rect(0, 0, W, 28, 'F');
-  doc.setFontSize(16); doc.setFont('helvetica', 'bold'); doc.setTextColor(255,255,255);
-  doc.text('Comprovante de Recebimento de EPI / Material', W/2, 12, { align: 'center' });
-  doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text('GCA · Sistema de Almoxarifado · Ceneged', W/2, 20, { align: 'center' });
-  doc.setTextColor(0,0,0);
-
-  // ── Dados do recebimento ──
-  let y = 36;
-  doc.setFillColor(241, 245, 249);
-  doc.roundedRect(M, y, CW, 22, 2, 2, 'F');
-  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(30,58,138);
-  doc.text('DADOS DO RECEBIMENTO', M+4, y+6);
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(30,30,30); doc.setFontSize(9);
-  doc.text(`Colaborador: ${nomeColaborador}`, M+4, y+13);
-  doc.text(`Data do Atendimento: ${dataAtendimento}`, M+4, y+19);
-  doc.text(`Gerado em: ${geradoEm}`, W/2+10, y+13);
-
-  // ── Tabela de itens ──
-  y += 28;
-  doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(30,58,138);
-  doc.text('ITENS RECEBIDOS', M, y); y += 4;
-
-  // Cabeçalho da tabela
-  doc.setFillColor(30, 58, 138);
-  doc.rect(M, y, CW, 7, 'F');
-  doc.setTextColor(255,255,255); doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-  const cols = [M+2, M+72, M+112, M+132, M+152];
-  doc.text('Item / EPI', cols[0], y+5);
-  doc.text('Código', cols[1], y+5);
-  doc.text('Qtd', cols[2], y+5);
-  doc.text('Un.', cols[3], y+5);
-  doc.text('Motivo', cols[4], y+5);
-  y += 7;
-
-  doc.setFont('helvetica', 'normal'); doc.setTextColor(30,30,30); doc.setFontSize(8);
-  itens.forEach((it, i) => {
-    if (i % 2 === 0) { doc.setFillColor(248,250,252); doc.rect(M, y, CW, 7, 'F'); }
-    const nome = doc.splitTextToSize(it.descricao || it.nomeItem || '—', 68);
-    doc.text(nome[0], cols[0], y+5);
-    doc.text(String(it.codigo || it.codigo_item || '—'), cols[1], y+5);
-    doc.text(String(it.quantidade), cols[2], y+5);
-    doc.text(String(it.unidade || 'UN'), cols[3], y+5);
-    doc.text(String(it.motivo || '—'), cols[4], y+5);
-    doc.setDrawColor(220,220,220);
-    doc.line(M, y+7, M+CW, y+7);
-    y += 7;
-  });
-
-  // ── Termo de responsabilidade ──
-  y += 6;
-  doc.setFillColor(254, 249, 195);
-  doc.setDrawColor(251, 191, 36);
-  doc.roundedRect(M, y, CW, 20, 2, 2, 'FD');
-  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(120, 53, 15);
-  doc.text('Termo de Responsabilidade:', M+4, y+6);
-  doc.setFont('helvetica', 'normal');
-  const termo = 'Declaro que recebi os materiais/EPIs acima em perfeito estado e que os utilizarei exclusivamente para fins profissionais, conforme as normas de segurança vigentes. Estou ciente de que, em caso de danos, perda ou uso indevido dos materiais recebidos, o valor correspondente poderá ser descontado da minha remuneração, conforme política interna da empresa.';
-  const termoLinhas = doc.splitTextToSize(termo, CW-8);
-  doc.text(termoLinhas, M+4, y+12);
-
-  // ── Assinatura ──
-  y += 26;
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(8); doc.setTextColor(30,58,138);
-  doc.text('ASSINATURA DIGITAL DO COLABORADOR', M, y); y += 4;
-  doc.setDrawColor(200,200,200);
-  doc.rect(M, y, CW, 38, 'D');
-  if (assinaturaBase64) {
-    try { doc.addImage(assinaturaBase64, 'PNG', M+CW/2-30, y+4, 60, 26); } catch {}
-  }
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(80,80,80);
-  doc.line(M+CW/2-35, y+34, M+CW/2+35, y+34);
-  doc.text(nomeColaborador, M+CW/2, y+38, { align: 'center' });
-
-  // ── Rodapé ──
-  y = 285;
-  doc.setFontSize(7); doc.setTextColor(150,150,150);
-  doc.text('Documento gerado automaticamente pelo Sistema GCA · Gestão de Almoxarifado · Ceneged', W/2, y, { align: 'center' });
-
-  return doc.output('datauristring').split(',')[1]; // retorna base64 puro
-}
-
 async function confirmarAssinatura(token, atendimentoId) {
   if (!_assinCanvas) return;
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
@@ -3899,68 +3784,27 @@ async function confirmarAssinatura(token, atendimentoId) {
 
   const API = 'https://gca-backend-production.up.railway.app';
   try {
-    // 1. Buscar dados do atendimento
-    const resAtend = await fetch(`${API}/atendimentos/dados-publicos/${token}`, { cache: 'no-store' });
-    const dadosAtend = resAtend.ok ? await resAtend.json() : null;
-
-    // 2. Salvar assinatura no backend
-    const resSalvar = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
+    const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, pdf_url: null })
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64 })
     });
-    const dataSalvar = await resSalvar.json();
+    const data = await res.json();
 
-    if (!dataSalvar.ok) {
+    if (!data.ok) {
       if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
-      alert(dataSalvar.erro || 'Erro ao confirmar. Tente novamente.');
+      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
       return;
     }
 
-    // 3. Mostrar tela de sucesso
     const card = document.getElementById('assinCardConteudo');
     card.innerHTML = `
       <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px">
         <div style="font-size:56px;margin-bottom:16px">✅</div>
         <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
-        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px" id="msgComprovante">Gerando comprovante...</div>
-        <div id="linkComprovante"></div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Sua assinatura foi registrada com sucesso.</div>
+        ${data.pdf_url ? `<a href="${data.pdf_url}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>` : ''}
       </div>`;
-
-    // 4. Gerar PDF via jsPDF (sem dependência de html2canvas)
-    if (dadosAtend && dadosAtend.ok !== false) {
-      const nomeColab = dadosAtend.nomeColaborador || 'Colaborador';
-      const dataFormatada = dadosAtend.data ? formatarData(dadosAtend.data) : new Date().toLocaleDateString('pt-BR');
-      const geradoEm = new Date().toLocaleString('pt-BR');
-      let itens = []; try { itens = Array.isArray(dadosAtend.itens) ? dadosAtend.itens : JSON.parse(dadosAtend.itens_json || '[]'); } catch {}
-
-      let pdfBase64 = null;
-      try {
-        pdfBase64 = await _gerarPDFComprovante({ nomeColaborador: nomeColab, dataAtendimento: dataFormatada, itens, assinaturaBase64, geradoEm });
-      } catch(e) { console.error('[PDF erro]', e); }
-
-      // 5. Upload no Drive
-      if (pdfBase64) {
-        const nomeArq = `Comprovante_${nomeColab.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-        const urlDrive = await _uploadComprovanteDrive(pdfBase64, nomeArq);
-
-        // 6. Salvar link no banco
-        if (urlDrive) {
-          await fetch(`${API}/atendimentos/salvar-pdf-url`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, pdf_url: urlDrive })
-          });
-          document.getElementById('linkComprovante').innerHTML =
-            `<a href="${urlDrive}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>`;
-          document.getElementById('msgComprovante').textContent = 'Sua assinatura foi registrada com sucesso.';
-          return;
-        }
-      }
-      document.getElementById('msgComprovante').textContent = 'Assinatura registrada. Comprovante indisponível no momento.';
-    } else {
-      document.getElementById('msgComprovante').textContent = 'Assinatura registrada com sucesso.';
-    }
 
   } catch(e) {
     console.error('[confirmarAssinatura]', e);
