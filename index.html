@@ -3773,6 +3773,101 @@ function limparAssinatura() {
   if (_assinCtx && _assinCanvas) _assinCtx.clearRect(0, 0, _assinCanvas.width, _assinCanvas.height);
 }
 
+function _gerarHTMLComprovante(dados) {
+  const { nomeColaborador, dataAtendimento, itens, assinaturaBase64, geradoEm } = dados;
+  const linhasItens = itens.map(it => `
+    <tr>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px">${it.descricao||it.nomeItem||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.codigo||it.codigo_item||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.quantidade}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.unidade||'UN'}</td>
+      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px">${it.motivo||'—'}</td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: Arial, sans-serif; background:#fff; color:#111; padding:32px; }
+    .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #1e3a8a; padding-bottom:16px; margin-bottom:24px; }
+    .logos { display:flex; align-items:center; gap:20px; }
+    .logos img { height:56px; object-fit:contain; }
+    .header-title { text-align:right; }
+    .header-title h1 { font-size:18px; font-weight:700; color:#1e3a8a; }
+    .header-title p { font-size:11px; color:#6b7280; margin-top:2px; }
+    .section { margin-bottom:20px; }
+    .section-title { font-size:13px; font-weight:700; color:#1e3a8a; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-bottom:10px; }
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
+    .info-row { font-size:12px; color:#374151; }
+    .info-row span { font-weight:600; color:#111; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { background:#1e3a8a; color:#fff; padding:8px 10px; font-size:11px; text-align:left; }
+    thead th:nth-child(3), thead th:nth-child(4) { text-align:center; }
+    .termo { background:#fef9c3; border:1px solid #fbbf24; border-radius:6px; padding:12px 14px; font-size:11px; color:#78350f; line-height:1.6; margin-bottom:20px; }
+    .termo strong { color:#92400e; }
+    .assinatura-box { border:1px solid #d1d5db; border-radius:8px; padding:16px; text-align:center; }
+    .assinatura-box p { font-size:11px; color:#6b7280; margin-bottom:8px; }
+    .assinatura-box img { max-height:80px; max-width:280px; border-bottom:1px solid #374151; padding-bottom:4px; }
+    .assinatura-linha { border-top:1px solid #374151; width:280px; margin:0 auto; padding-top:4px; font-size:10px; color:#6b7280; }
+    .rodape { text-align:center; font-size:9px; color:#9ca3af; border-top:1px solid #e5e7eb; padding-top:10px; margin-top:24px; }
+  </style></head><body>
+  <div class="header">
+    <div class="logos">
+      <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" onerror="this.style.display='none'">
+      <img src="https://www.opovo.com.br/_midias/png/2023/04/28/logo_ceneged_vertical___variacoes__1__1-21836628.png" alt="Ceneged" onerror="this.style.display='none'">
+    </div>
+    <div class="header-title">
+      <h1>Comprovante de Recebimento</h1>
+      <p>EPI / Material de Almoxarifado</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Dados do Recebimento</div>
+    <div class="info-grid">
+      <div class="info-row">Colaborador: <span>${nomeColaborador}</span></div>
+      <div class="info-row">Data do Atendimento: <span>${dataAtendimento}</span></div>
+      <div class="info-row">Documento gerado em: <span>${geradoEm}</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Itens Recebidos</div>
+    <table>
+      <thead><tr>
+        <th>Item / EPI</th><th>Código</th><th style="text-align:center">Qtd</th><th style="text-align:center">Un.</th><th>Motivo</th>
+      </tr></thead>
+      <tbody>${linhasItens}</tbody>
+    </table>
+  </div>
+
+  <div class="termo">
+    <strong>Termo de Responsabilidade:</strong> Declaro que recebi os materiais/EPIs listados acima em perfeito estado e que os utilizarei exclusivamente para fins profissionais, conforme normas de segurança vigentes.
+    Estou ciente de que, em caso de <strong>danos, perda ou uso indevido</strong> dos materiais recebidos, o valor correspondente poderá ser <strong>descontado da minha remuneração</strong>, conforme política interna da empresa.
+  </div>
+
+  <div class="assinatura-box">
+    <p>Assinatura Digital do Colaborador</p>
+    ${assinaturaBase64 ? `<img src="${assinaturaBase64}" alt="Assinatura">` : '<div style="height:80px"></div>'}
+    <div class="assinatura-linha">${nomeColaborador}</div>
+  </div>
+
+  <div class="rodape">Documento gerado automaticamente pelo Sistema GCA · Gestão de Almoxarifado · Ceneged</div>
+  </body></html>`;
+}
+
+async function _uploadComprovanteDrive(pdfBase64, nomeArquivo) {
+  const EDGE_URL = 'https://hyrpvxzcfikdxzsqebnu.supabase.co/functions/v1/upload-comprovante-drive';
+  try {
+    const res = await fetch(EDGE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pdfBase64, nomeArquivo })
+    });
+    const data = await res.json();
+    return data.ok ? data.url : null;
+  } catch { return null; }
+}
+
 async function confirmarAssinatura(token, atendimentoId) {
   if (!_assinCanvas) return;
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
@@ -3780,28 +3875,102 @@ async function confirmarAssinatura(token, atendimentoId) {
 
   const assinaturaBase64 = _assinCanvas.toDataURL('image/png');
   const btn = document.querySelector('#assinCardConteudo button[onclick*="confirmarAssinatura"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Confirmando...'; }
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
 
   const API = 'https://gca-backend-production.up.railway.app';
   try {
-    const res = await fetch(`${API}/atendimentos/assinar`, {
+    // 1. Buscar dados do atendimento para montar o comprovante
+    const resAtend = await fetch(`${API}/atendimentos/dados-publicos/${token}`, { cache: 'no-store' });
+    const dadosAtend = resAtend.ok ? await resAtend.json() : null;
+
+    // 2. Salvar assinatura no backend primeiro
+    const resSalvar = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64 })
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, pdf_url: null })
     });
-    const data = await res.json();
-    const card = document.getElementById('assinCardConteudo');
-    if (data.ok) {
-      card.innerHTML = `
-        <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:var(--radius-lg)">
-          <div style="font-size:56px;margin-bottom:16px">✅</div>
-          <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
-          <div style="font-size:13px;color:var(--text-3)">Sua assinatura foi registrada com sucesso. Você pode fechar esta página.</div>
-        </div>`;
-    } else {
+    const dataSalvar = await resSalvar.json();
+
+    if (!dataSalvar.ok) {
       if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
-      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
+      alert(dataSalvar.erro || 'Erro ao confirmar. Tente novamente.');
+      return;
     }
+
+    // 3. Gerar PDF e fazer upload no Drive (em paralelo ao feedback visual)
+    const card = document.getElementById('assinCardConteudo');
+    card.innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px">
+        <div style="font-size:56px;margin-bottom:16px">✅</div>
+        <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Gerando comprovante...</div>
+        <div id="linkComprovante"></div>
+      </div>`;
+
+    // 4. Gerar PDF usando html2pdf se disponível, senão window.print
+    if (dadosAtend) {
+      const nomeColab = dadosAtend.nomeColaborador || 'Colaborador';
+      const dataFormatada = dadosAtend.data ? formatarData(dadosAtend.data) : new Date().toLocaleDateString('pt-BR');
+      const geradoEm = new Date().toLocaleString('pt-BR');
+      let itens = []; try { itens = JSON.parse(dadosAtend.itens_json || dadosAtend.itens || '[]'); } catch {}
+
+      const htmlComprovante = _gerarHTMLComprovante({ nomeColaborador: nomeColab, dataAtendimento: dataFormatada, itens, assinaturaBase64, geradoEm });
+
+      // Tenta usar html2pdf.js (carregado dinamicamente)
+      let pdfBase64 = null;
+      try {
+        if (!window.html2pdf) {
+          await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            s.onload = resolve; s.onerror = reject;
+            document.head.appendChild(s);
+          });
+        }
+        const container = document.createElement('div');
+        container.innerHTML = htmlComprovante;
+        document.body.appendChild(container);
+        const blob = await window.html2pdf().set({
+          margin: 0, filename: 'comprovante.pdf',
+          image: { type: 'jpeg', quality: 0.95 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).from(container.firstElementChild).outputPdf('blob');
+        document.body.removeChild(container);
+
+        // Converter blob para base64
+        pdfBase64 = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.readAsDataURL(blob);
+        });
+      } catch(e) { console.warn('html2pdf erro:', e); }
+
+      // 5. Upload no Drive
+      if (pdfBase64) {
+        if (btn) btn.textContent = '⬆️ Salvando no Drive...';
+        const nomeArq = `Comprovante_${nomeColab.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+        const urlDrive = await _uploadComprovanteDrive(pdfBase64, nomeArq);
+
+        // 6. Atualizar pdf_url no banco
+        if (urlDrive) {
+          await fetch(`${API}/atendimentos/confirmar-assinatura`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, pdf_url: urlDrive })
+          });
+          document.getElementById('linkComprovante').innerHTML =
+            `<a href="${urlDrive}" target="_blank" style="display:inline-block;padding:10px 20px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">📄 Abrir Comprovante</a>`;
+        } else {
+          document.getElementById('linkComprovante').innerHTML =
+            `<div style="font-size:12px;color:#94a3b8">Comprovante salvo. Link indisponível no momento.</div>`;
+        }
+      }
+    }
+
+    const msg = document.querySelector('#assinCardConteudo [style*="Gerando comprovante"]');
+    if (msg) msg.textContent = 'Sua assinatura foi registrada com sucesso.';
+
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
     alert('Erro de conexão. Tente novamente.');
@@ -5478,7 +5647,12 @@ async function verItensAtendimento(id) {
 
 // ── Ver PDF ──
 function verPdfAtendimento(id) {
-  toast('Geração de PDF em desenvolvimento', 'info');
+  const atend = (_assinaturasList||[]).find(a => a.id === id);
+  if (atend && atend.pdfUrl) {
+    window.open(atend.pdfUrl, '_blank');
+  } else {
+    toast('Comprovante não disponível para este atendimento', 'warning');
+  }
 }
 
 // ── Modal Cancelar ──
