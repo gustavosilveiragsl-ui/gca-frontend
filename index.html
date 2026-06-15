@@ -4915,7 +4915,7 @@ async function concluirAtendimento() {
   const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
   if (resToken?.ok) {
     ATEND.tokenGerado = resToken.token;
-    ATEND.linkGerado  = `https://gcasistema.com.br/#/assinar?token=${resToken.token}`;
+    ATEND.linkGerado  = `https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${resToken.token}`;
   }
 
   // Atualiza seriais de itens com ensaio NR10
@@ -4996,7 +4996,7 @@ function fecharModalPendencia() {
 
 function abrirLinkPendencia() {
   if (ATEND.pendenciaToken) {
-    window.open(`https://gcasistema.com.br/#/assinar?token=${ATEND.pendenciaToken}`, '_blank');
+    window.open(`https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${ATEND.pendenciaToken}`, '_blank');
   }
   fecharModalPendencia();
 }
@@ -5211,7 +5211,7 @@ function verDetalhesAtendimento(id) {
         </table>
       </div>
       <div class="modal-footer">
-        ${atend.status === 'PENDENTE' && atend.token ? `<button class="btn btn-ghost" onclick="copiarLink('https://gcasistema.com.br/#/assinar?token=${atend.token}')">📋 Copiar link</button>` : ''}
+        ${atend.status === 'PENDENTE' && atend.token ? `<button class="btn btn-ghost" onclick="copiarLink('https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${atend.token}')">📋 Copiar link</button>` : ''}
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
     </div>`;
@@ -5427,7 +5427,7 @@ function formatarTempoRestante(data) {
 
 // ── Reenviar link ──
 function reenviarLink(id, token) {
-  const link = `https://gcasistema.com.br/#/assinar?token=${token}`;
+  const link = `https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${token}`;
   document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
   document.getElementById('finalizadoNome').textContent    = '—';
   document.getElementById('finalizadoResumo').textContent  = 'Escaneie ou compartilhe o link abaixo';
