@@ -4421,7 +4421,7 @@ async function confirmarItensModal() {
     const resultados = await Promise.all(selecionados.map(async s => {
       const [resNivel, resDot, resSaldo, resDur, resTroca] = await Promise.all([
         api('/validacoes/nivel',        { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) }),
-        api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo }) }),
+        api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo, quantidade: s.qtd }) }),
         api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`),
         (s.motivo||'').toLowerCase() !== 'entrega inicial'
           ? api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) })
