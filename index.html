@@ -4966,7 +4966,22 @@ function copiarLinkAtendimento() {
 
 function enviarWhatsApp() {
   if (!ATEND.linkGerado) return;
-  const msg = encodeURIComponent(`Olá! Confirme o recebimento dos materiais: ${ATEND.linkGerado}`);
+  const nome = ATEND.colab?.nome || 'Colaborador';
+  const dataAtend = ATEND.data ? formatarData(ATEND.data) : new Date().toLocaleDateString('pt-BR');
+  const msg = encodeURIComponent(
+`Olá, ${nome}! 👋
+
+Você recebeu materiais/EPIs da Ceneged em *${dataAtend}* e precisa confirmar o recebimento.
+
+📋 *Confirme clicando no link abaixo:*
+${ATEND.linkGerado}
+
+⏰ Este link é válido por *10 dias*.
+
+Após clicar no link, assine digitalmente na tela e confirme o recebimento. Em caso de dúvidas, entre em contato com o almoxarifado.
+
+_GCA · Sistema de Gestão de Almoxarifado · Ceneged_`
+  );
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
@@ -11082,13 +11097,13 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
   const horaFmt= agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   const usuario = GCA.usuario?.nome || GCA.usuario?.username || '—';
 
-  // Gera QR
   let qrHtml = '';
   if (linkConfirmacao) {
+    const qrUrl = `https://chart.googleapis.com/chart?chs=180x180&cht=qr&chl=${encodeURIComponent(linkConfirmacao)}&choe=UTF-8`;
     qrHtml = `
     <div style="margin-top:28px;border-top:2px dashed #1a237e;padding-top:20px;display:flex;align-items:center;gap:28px;">
       <div style="border:2px solid #1a237e;border-radius:10px;padding:12px;text-align:center;flex-shrink:0;">
-        <div id="qrcode_sep" style="width:180px;height:180px;"></div>
+        <img src="${qrUrl}" width="180" height="180" alt="QR Code">
         <p style="font-size:10px;color:#555;margin-top:6px;">Escaneie para assinar</p>
       </div>
       <div style="flex:1;">
@@ -11105,7 +11120,6 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
       </div>
     </div>`;
   }
-
   const itensHtml = (itens||[]).map(it => {
     const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
     const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.posicao].filter(Boolean).join(' · ') : '—';
@@ -11119,8 +11133,6 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
   <title>Ficha de Separação — ${colab.nome||''}</title>
-  <style>body{display:none}</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
   <style>${CSS_PDF_BASE}
     .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:12px; }
     .check { width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block; }
@@ -11150,11 +11162,6 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
     </div>
   </div>
   ${qrHtml}
-
-
-
-
-  </body>
   </body></html>`;
 
   abrirJanelaPDF(html);
