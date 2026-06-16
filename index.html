@@ -233,7 +233,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 .validacao-erro{background:var(--red-soft);color:var(--red)}
 .validacao-aviso{background:var(--yellow-soft);color:var(--yellow)}
 /* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;animation:fadeIn .15s ease;}
+.modal-overlay{position:fixed;inset:0;width:100%;height:100%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;animation:fadeIn .15s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:460px;animation:slideUp .2s ease;}
 @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -966,6 +966,9 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <option value="PENDENTE">Pendentes</option>
                 <option value="ASSINADO">Assinados</option>
                 <option value="EXPIRADO">Expirados</option>
+              </select>
+              <select id="assFiltroSetor" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
+                <option value="">Todos os setores</option>
               </select>
               <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarAssinaturas(this.value)">
               <button class="btn btn-ghost" onclick="carregarAssinaturas()">↻ Atualizar</button>
@@ -3039,151 +3042,13 @@ tbody tr:hover td{background:var(--bg-hover);}
 </div>
 
 <!-- MODAL EDITAR SC -->
-<div class="modal-overlay hidden" id="modalSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
-    <div class="modal-header">
-      <div><div class="modal-title" id="scModalTitulo">Nova Solicitação de Compra</div></div>
-      <button class="modal-close" onclick="fecharModalSC()">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-      <input type="hidden" id="scEditId">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label class="form-label">Nº da SC *</label><input id="scNumero" class="form-input" placeholder="Ex: SC-2024-001"></div>
-        <div><label class="form-label">Data abertura</label><input id="scData" class="form-input" type="date" readonly style="background:var(--bg);color:var(--text-3)"></div>
-      </div>
-      <div><label class="form-label">Comprador *</label><input id="scComprador" class="form-input" placeholder="Nome do comprador"></div>
-      <div id="scArmazemRow">
-        <label class="form-label">Armazém</label>
-        <select id="scArmazem" class="form-input"></select>
-      </div>
-      <div>
-        <label class="form-label">Itens</label>
-        <!-- Igual ao atendimento: autocomplete com foto -->
-        <div style="position:relative;margin-bottom:8px">
-          <input id="scItemBusca" class="form-input" placeholder="Buscar item por descrição ou código..." oninput="filtrarItensSC(this.value)" onblur="setTimeout(()=>document.getElementById('scItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
-          <div id="scItemSugestoes" class="autocomplete-list hidden" style="max-height:220px;overflow-y:auto"></div>
-          <input type="hidden" id="scItemId">
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px" id="scItemPreviewRow" style="display:none">
-          <div id="scItemPreviewImg" style="width:48px;height:48px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg)"></div>
-          <div style="flex:1">
-            <div id="scItemPreviewNome" style="font-size:12px;font-weight:600;color:var(--text-1)"></div>
-            <div id="scItemPreviewCod" style="font-size:10px;color:var(--text-3)"></div>
-          </div>
-          <input id="scItemQtd" class="form-input" type="number" min="1" value="1" style="width:70px" placeholder="Qtd">
-          <button class="btn btn-primary" style="padding:8px 12px" onclick="adicionarItemSC()">+</button>
-        </div>
-        <div id="scItensLista" style="display:flex;flex-direction:column;gap:6px"></div>
-      </div>
-      <div><label class="form-label">Observação</label><textarea id="scObs" class="form-input" rows="2" style="resize:vertical"></textarea></div>
-      <div><label class="form-label">Status</label>
-        <select id="scStatus" class="form-input">
-          <option value="Pendente">⏳ Pendente</option>
-          <option value="Aprovado">✅ Aprovado</option>
-          <option value="Recebido Parcial">📦 Recebido Parcial</option>
-          <option value="Recebido Total">✅ Recebido Total</option>
-          <option value="Cancelado">❌ Cancelado</option>
-        </select>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="fecharModalSC()">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarSC()">Salvar</button>
-    </div>
-  </div>
-</div>
+
 
 <!-- MODAL VER SC -->
-<div class="modal-overlay hidden" id="modalVerSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title" id="verSCNumero">SC-000</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="verSCSub"></div>
-      </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <span id="verSCStatus"></span>
-        <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalSC(document.getElementById('verSCId').value)">✏️ Editar</button>
-        <button class="modal-close" onclick="document.getElementById('modalVerSC').classList.add('hidden')">×</button>
-      </div>
-    </div>
-    <input type="hidden" id="verSCId">
-    <div class="modal-body">
 
-      <!-- Info NF se já recebeu -->
-      <div id="verSCNfInfo" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;background:var(--bg)"></div>
-
-      <!-- Itens (somente visualização) -->
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens</div>
-      <div style="overflow-x:auto">
-      <table style="width:100%;min-width:500px;border-collapse:collapse">
-        <thead><tr>
-          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Solicitado</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Recebido</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Pendente</th>
-          <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
-          <th style="padding:8px;text-align:left;font-size:10px;color:#3b82f6;border-bottom:1px solid var(--border)">Pedido Compra</th>
-        </tr></thead>
-        <tbody id="verSCItensBody"></tbody>
-      </table></div>
-      <div id="verSCObs" style="font-size:11px;color:var(--text-3);margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);display:none"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('modalVerSC').classList.add('hidden')">Fechar</button>
-      <button class="btn btn-primary" id="btnAbrirRecebimento" onclick="abrirRecebimentoSC()">📦 Registrar Recebimento</button>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL RECEBIMENTO SC -->
-<div class="modal-overlay hidden" id="modalRecSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
-  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
-    <div class="modal-header">
-      <div>
-        <div class="modal-title">📦 Registrar Recebimento</div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="recSCNumero"></div>
-      </div>
-      <button class="modal-close" onclick="document.getElementById('modalRecSC').classList.add('hidden')">×</button>
-    </div>
-    <input type="hidden" id="recSCId">
-    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
 
-      <!-- Dados NF -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px">📄 Dados da NF</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
-          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
-          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
-          <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input"></select></div>
-          <div style="grid-column:span 2"><label class="form-label">Link PDF da NF (Google Drive)</label>
-            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/..."></div>
-        </div>
-      </div>
-
-      <!-- Itens pendentes -->
-      <!-- Itens - selecione os que vai receber -->
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Selecione os itens a receber</div>
-      <div style="font-size:10px;color:var(--text-3);margin-bottom:8px">Marque o checkbox do item para informar quantidade e confirmar recebimento</div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
-        </tr></thead>
-        <tbody id="recItensBody"></tbody>
-      </table>
-      <div id="recSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="document.getElementById('modalRecSC').classList.add('hidden')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarRecebimentoSC()">✅ Confirmar Recebimento</button>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL DEVOLUÇÃO NR10 -->
 <!-- MODAL FICHA EPI -->
@@ -3520,7 +3385,7 @@ function onViewLoad(nome) {
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
-  if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
+  if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
   if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); enelAbrirAtendimento(); }
@@ -3773,101 +3638,6 @@ function limparAssinatura() {
   if (_assinCtx && _assinCanvas) _assinCtx.clearRect(0, 0, _assinCanvas.width, _assinCanvas.height);
 }
 
-function _gerarHTMLComprovante(dados) {
-  const { nomeColaborador, dataAtendimento, itens, assinaturaBase64, geradoEm } = dados;
-  const linhasItens = itens.map(it => `
-    <tr>
-      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px">${it.descricao||it.nomeItem||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.codigo||it.codigo_item||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.quantidade}</td>
-      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px;text-align:center">${it.unidade||'UN'}</td>
-      <td style="padding:8px 10px;border:1px solid #d1d5db;font-size:12px">${it.motivo||'—'}</td>
-    </tr>`).join('');
-
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family: Arial, sans-serif; background:#fff; color:#111; padding:32px; }
-    .header { display:flex; justify-content:space-between; align-items:center; border-bottom:3px solid #1e3a8a; padding-bottom:16px; margin-bottom:24px; }
-    .logos { display:flex; align-items:center; gap:20px; }
-    .logos img { height:56px; object-fit:contain; }
-    .header-title { text-align:right; }
-    .header-title h1 { font-size:18px; font-weight:700; color:#1e3a8a; }
-    .header-title p { font-size:11px; color:#6b7280; margin-top:2px; }
-    .section { margin-bottom:20px; }
-    .section-title { font-size:13px; font-weight:700; color:#1e3a8a; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid #e5e7eb; padding-bottom:6px; margin-bottom:10px; }
-    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px 24px; }
-    .info-row { font-size:12px; color:#374151; }
-    .info-row span { font-weight:600; color:#111; }
-    table { width:100%; border-collapse:collapse; }
-    thead th { background:#1e3a8a; color:#fff; padding:8px 10px; font-size:11px; text-align:left; }
-    thead th:nth-child(3), thead th:nth-child(4) { text-align:center; }
-    .termo { background:#fef9c3; border:1px solid #fbbf24; border-radius:6px; padding:12px 14px; font-size:11px; color:#78350f; line-height:1.6; margin-bottom:20px; }
-    .termo strong { color:#92400e; }
-    .assinatura-box { border:1px solid #d1d5db; border-radius:8px; padding:16px; text-align:center; }
-    .assinatura-box p { font-size:11px; color:#6b7280; margin-bottom:8px; }
-    .assinatura-box img { max-height:80px; max-width:280px; border-bottom:1px solid #374151; padding-bottom:4px; }
-    .assinatura-linha { border-top:1px solid #374151; width:280px; margin:0 auto; padding-top:4px; font-size:10px; color:#6b7280; }
-    .rodape { text-align:center; font-size:9px; color:#9ca3af; border-top:1px solid #e5e7eb; padding-top:10px; margin-top:24px; }
-  </style></head><body>
-  <div class="header">
-    <div class="logos">
-      <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" onerror="this.style.display='none'">
-      <img src="https://www.opovo.com.br/_midias/png/2023/04/28/logo_ceneged_vertical___variacoes__1__1-21836628.png" alt="Ceneged" onerror="this.style.display='none'">
-    </div>
-    <div class="header-title">
-      <h1>Comprovante de Recebimento</h1>
-      <p>EPI / Material de Almoxarifado</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Dados do Recebimento</div>
-    <div class="info-grid">
-      <div class="info-row">Colaborador: <span>${nomeColaborador}</span></div>
-      <div class="info-row">Data do Atendimento: <span>${dataAtendimento}</span></div>
-      <div class="info-row">Documento gerado em: <span>${geradoEm}</span></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Itens Recebidos</div>
-    <table>
-      <thead><tr>
-        <th>Item / EPI</th><th>Código</th><th style="text-align:center">Qtd</th><th style="text-align:center">Un.</th><th>Motivo</th>
-      </tr></thead>
-      <tbody>${linhasItens}</tbody>
-    </table>
-  </div>
-
-  <div class="termo">
-    <strong>Termo de Responsabilidade:</strong> Declaro que recebi os materiais/EPIs listados acima em perfeito estado e que os utilizarei exclusivamente para fins profissionais, conforme normas de segurança vigentes.
-    Estou ciente de que, em caso de <strong>danos, perda ou uso indevido</strong> dos materiais recebidos, o valor correspondente poderá ser <strong>descontado da minha remuneração</strong>, conforme política interna da empresa.
-  </div>
-
-  <div class="assinatura-box">
-    <p>Assinatura Digital do Colaborador</p>
-    ${assinaturaBase64 ? `<img src="${assinaturaBase64}" alt="Assinatura">` : '<div style="height:80px"></div>'}
-    <div class="assinatura-linha">${nomeColaborador}</div>
-  </div>
-
-  <div class="rodape">Documento gerado automaticamente pelo Sistema GCA · Gestão de Almoxarifado · Ceneged</div>
-  </body></html>`;
-}
-
-async function _uploadComprovanteDrive(pdfBase64, nomeArquivo) {
-  const EDGE_URL = 'https://hyrpvxzcfikdxzsqebnu.supabase.co/functions/v1/upload-comprovante-drive';
-  try {
-    const res = await fetch(EDGE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pdfBase64, nomeArquivo })
-    });
-    const data = await res.json();
-    return data.ok ? data.url : null;
-  } catch { return null; }
-}
-
 async function confirmarAssinatura(token, atendimentoId) {
   if (!_assinCanvas) return;
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
@@ -3879,99 +3649,30 @@ async function confirmarAssinatura(token, atendimentoId) {
 
   const API = 'https://gca-backend-production.up.railway.app';
   try {
-    // 1. Buscar dados do atendimento para montar o comprovante
-    const resAtend = await fetch(`${API}/atendimentos/dados-publicos/${token}`, { cache: 'no-store' });
-    const dadosAtend = resAtend.ok ? await resAtend.json() : null;
-
-    // 2. Salvar assinatura no backend primeiro
-    const resSalvar = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
+    const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, pdf_url: null })
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64 })
     });
-    const dataSalvar = await resSalvar.json();
+    const data = await res.json();
 
-    if (!dataSalvar.ok) {
+    if (!data.ok) {
       if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
-      alert(dataSalvar.erro || 'Erro ao confirmar. Tente novamente.');
+      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
       return;
     }
 
-    // 3. Gerar PDF e fazer upload no Drive (em paralelo ao feedback visual)
     const card = document.getElementById('assinCardConteudo');
     card.innerHTML = `
       <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px">
         <div style="font-size:56px;margin-bottom:16px">✅</div>
         <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
-        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Gerando comprovante...</div>
-        <div id="linkComprovante"></div>
+        <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Sua assinatura foi registrada com sucesso.</div>
+        ${data.pdf_url ? `<a href="${data.pdf_url}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>` : ''}
       </div>`;
 
-    // 4. Gerar PDF usando html2pdf se disponível, senão window.print
-    if (dadosAtend) {
-      const nomeColab = dadosAtend.nomeColaborador || 'Colaborador';
-      const dataFormatada = dadosAtend.data ? formatarData(dadosAtend.data) : new Date().toLocaleDateString('pt-BR');
-      const geradoEm = new Date().toLocaleString('pt-BR');
-      let itens = []; try { itens = JSON.parse(dadosAtend.itens_json || dadosAtend.itens || '[]'); } catch {}
-
-      const htmlComprovante = _gerarHTMLComprovante({ nomeColaborador: nomeColab, dataAtendimento: dataFormatada, itens, assinaturaBase64, geradoEm });
-
-      // Tenta usar html2pdf.js (carregado dinamicamente)
-      let pdfBase64 = null;
-      try {
-        if (!window.html2pdf) {
-          await new Promise((resolve, reject) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-            s.onload = resolve; s.onerror = reject;
-            document.head.appendChild(s);
-          });
-        }
-        const container = document.createElement('div');
-        container.innerHTML = htmlComprovante;
-        document.body.appendChild(container);
-        const blob = await window.html2pdf().set({
-          margin: 0, filename: 'comprovante.pdf',
-          image: { type: 'jpeg', quality: 0.95 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        }).from(container.firstElementChild).outputPdf('blob');
-        document.body.removeChild(container);
-
-        // Converter blob para base64
-        pdfBase64 = await new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(',')[1]);
-          reader.readAsDataURL(blob);
-        });
-      } catch(e) { console.warn('html2pdf erro:', e); }
-
-      // 5. Upload no Drive
-      if (pdfBase64) {
-        if (btn) btn.textContent = '⬆️ Salvando no Drive...';
-        const nomeArq = `Comprovante_${nomeColab.replace(/\s+/g,'_')}_${new Date().toISOString().slice(0,10)}.pdf`;
-        const urlDrive = await _uploadComprovanteDrive(pdfBase64, nomeArq);
-
-        // 6. Atualizar pdf_url no banco
-        if (urlDrive) {
-          await fetch(`${API}/atendimentos/confirmar-assinatura`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, pdf_url: urlDrive })
-          });
-          document.getElementById('linkComprovante').innerHTML =
-            `<a href="${urlDrive}" target="_blank" style="display:inline-block;padding:10px 20px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600">📄 Abrir Comprovante</a>`;
-        } else {
-          document.getElementById('linkComprovante').innerHTML =
-            `<div style="font-size:12px;color:#94a3b8">Comprovante salvo. Link indisponível no momento.</div>`;
-        }
-      }
-    }
-
-    const msg = document.querySelector('#assinCardConteudo [style*="Gerando comprovante"]');
-    if (msg) msg.textContent = 'Sua assinatura foi registrada com sucesso.';
-
   } catch(e) {
+    console.error('[confirmarAssinatura]', e);
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
     alert('Erro de conexão. Tente novamente.');
   }
@@ -5130,7 +4831,22 @@ function copiarLinkAtendimento() {
 
 function enviarWhatsApp() {
   if (!ATEND.linkGerado) return;
-  const msg = encodeURIComponent(`Olá! Confirme o recebimento dos materiais: ${ATEND.linkGerado}`);
+  const nome = ATEND.colab?.nome || 'Colaborador';
+  const dataAtend = ATEND.data ? formatarData(ATEND.data) : new Date().toLocaleDateString('pt-BR');
+  const msg = encodeURIComponent(
+`Olá, ${nome}! 👋
+
+Você recebeu materiais/EPIs da Ceneged em *${dataAtend}* e precisa confirmar o recebimento.
+
+📋 *Confirme clicando no link abaixo:*
+${ATEND.linkGerado}
+
+⏰ Este link é válido por *10 dias*.
+
+Após clicar no link, assine digitalmente na tela e confirme o recebimento. Em caso de dúvidas, entre em contato com o almoxarifado.
+
+_GCA · Sistema de Gestão de Almoxarifado · Ceneged_`
+  );
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
@@ -5478,36 +5194,47 @@ async function carregarAssinaturas() {
   filtrarAssinaturas();
 }
 
-function _popularFiltroSetores() {
-  const sel = document.getElementById('assFiltroSetor');
-  if (!sel) return;
-  const setores = [...new Set((_assinaturas||[]).map(a => {
-    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
-    return (colab?.setor || '').trim();
-  }).filter(Boolean))].sort();
-  const current = sel.value;
-  sel.innerHTML = '<option value="">Todos setores</option>' + setores.map(s => '<option value="'+s+'"'+( s===current?' selected':'')+'>'+s+'</option>').join('');
-}
-
 let _assPagina = 1;
 const _assPorPagina = 20;
+
+let _assListaFiltrada = [];
 
 function filtrarAssinaturas(busca) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
-  const filtroSetor  = document.getElementById('assFiltroSetor')?.value  || '';
+  const filtroSetor  = document.getElementById('assFiltroSetor')?.value || '';
   const q = (_assQuery || '').toLowerCase();
 
   let lista = _assinaturas;
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
   if (filtroSetor)  lista = lista.filter(a => {
     const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
-    return (colab?.setor || '') === filtroSetor;
+    return (colab?.setor || '').trim() === filtroSetor;
   });
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
+  _assListaFiltrada = lista;
   _assPagina = 1;
   renderAssinaturas(lista);
+}
+
+function mudarPaginaAss(delta) {
+  _assPagina += delta;
+  renderAssinaturas(_assListaFiltrada);
+}
+
+function _popularFiltroSetores() {
+  const sel = document.getElementById('assFiltroSetor');
+  if (!sel) return;
+  // Normaliza: trim + uppercase para deduplicar variações
+  const setoresRaw = _assinaturas.map(a => {
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    return (colab?.setor || '').trim();
+  }).filter(Boolean);
+  const setores = [...new Set(setoresRaw)].sort();
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos os setores</option>' +
+    setores.map(s => `<option value="${s}" ${s===atual?'selected':''}>${s}</option>`).join('');
 }
 
 function renderAssinaturas(lista) {
@@ -5544,12 +5271,11 @@ function renderAssinaturas(lista) {
 
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
-        <button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>
+        ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : ''}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
-        <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarTokenAtendimento('${a.id}')">🔄 Regerar</button>
-        <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
+        <button class="row-action" style="color:var(--accent);border-color:var(--accent)" onclick="regerarLink('${a.id}')">🔄 Regerar</button>
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
@@ -5586,9 +5312,9 @@ function renderPaginacaoAss(total, lista) {
   div.innerHTML = `
     <span>Exibindo ${(_assPagina-1)*_assPorPagina+1}–${Math.min(_assPagina*_assPorPagina,total)} de ${total}</span>
     <div style="display:flex;gap:6px">
-      <button class="row-action" ${_assPagina===1?'disabled':''} onclick="_assPagina--;filtrarAssinaturas()">← Anterior</button>
+      <button class="row-action" ${_assPagina===1?'disabled':''} onclick="mudarPaginaAss(-1)">← Anterior</button>
       <span style="padding:4px 10px;font-weight:600">${_assPagina} / ${totalPaginas}</span>
-      <button class="row-action" ${_assPagina===totalPaginas?'disabled':''} onclick="_assPagina++;filtrarAssinaturas()">Próxima →</button>
+      <button class="row-action" ${_assPagina===totalPaginas?'disabled':''} onclick="mudarPaginaAss(1)">Próxima →</button>
     </div>`;
 
   document.getElementById('assBody').closest('table').parentElement.appendChild(div);
@@ -5609,6 +5335,22 @@ function formatarTempoRestante(data) {
 }
 
 // ── Reenviar link ──
+async function regerarLink(id) {
+  const atend = _assinaturas.find(a => a.id === id);
+  if (!atend) return;
+  const conf = confirm(`Regerar link para ${atend.nomeColaborador}?\n\nUm novo link será gerado com prazo de 10 dias.`);
+  if (!conf) return;
+  try {
+    const data = await api(`/atendimentos/${id}/regerar-token`, { method: 'POST' });
+    if (data?.ok) {
+      toast('Link regerado com sucesso!', 'success');
+      await carregarAssinaturas();
+    } else {
+      toast(data?.erro || 'Erro ao regerar link', 'error');
+    }
+  } catch { toast('Erro de conexão', 'error'); }
+}
+
 function reenviarLink(id, token) {
   const link = `https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${token}`;
   document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
@@ -5640,24 +5382,25 @@ async function verItensAtendimento(id) {
 
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  overlay.style.cssText = 'align-items:flex-start;padding:20px;overflow-y:auto';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:520px">
+    <div class="modal-box" style="max-width:520px;width:100%;margin:auto">
       <div class="modal-header">
-        <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${formatarData(atend.data)}</div></div>
+        <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${formatarData(atend.data)} · ${itens.length} item(ns)</div></div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
-      <div class="modal-body" style="max-height:60vh;overflow-y:auto">
+      <div class="modal-body" style="max-height:60vh;overflow-y:auto;padding:0">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
-            <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Qtd</th>
-            <th style="padding:8px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
+            <th style="padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card)">Item</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);text-align:center;position:sticky;top:0;background:var(--bg-card)">Qtd</th>
+            <th style="padding:8px 10px;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg-card)">Motivo</th>
           </tr></thead>
           <tbody>
             ${itens.map(i => `<tr>
-              <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||'—'}</td>
-              <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade}</td>
-              <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${i.motivo||'—'}</span></td>
+              <td style="padding:8px 10px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||'—'}</td>
+              <td style="padding:8px 10px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);text-align:center">${i.quantidade}</td>
+              <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${i.motivo||'—'}</span></td>
             </tr>`).join('')}
           </tbody>
         </table>
@@ -5674,22 +5417,6 @@ function verPdfAtendimento(id) {
     window.open(atend.pdfUrl, '_blank');
   } else {
     toast('Comprovante não disponível para este atendimento', 'warning');
-  }
-}
-
-// ── Regerar token ──
-async function regerarTokenAtendimento(id) {
-  const btn = event.target;
-  btn.disabled = true; btn.textContent = '⏳';
-  const res = await api('/atendimentos/' + id + '/regerar-token', { method: 'POST' });
-  if (res?.ok) {
-    toast('Novo link gerado! Reenvie ao colaborador.', 'success');
-    await carregarAssinaturas();
-    const atend = _assinaturas.find(a => a.id === id);
-    if (atend?.token) reenviarLink(id, atend.token);
-  } else {
-    toast(res?.erro || 'Erro ao regerar token', 'error');
-    btn.disabled = false; btn.textContent = '🔄 Regerar';
   }
 }
 
@@ -8312,8 +8039,7 @@ function renderSCItens() {
 
 function fecharTodosModaisSC() {
   ['modalSC','modalVerSC','modalRecSC'].forEach(id => {
-    const m = document.getElementById(id);
-    if (m) m.classList.add('hidden');
+    document.getElementById(id)?.classList.add('hidden');
   });
 }
 
@@ -8377,11 +8103,10 @@ function abrirModalSC(id) {
       document.getElementById('scModalTitulo').textContent = 'Editar SC';
     }
   }
-  document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalSC').classList.remove('hidden');
 }
 
-function fecharModalSC() { document.getElementById('modalSC').classList.add('hidden'); }
+function fecharModalSC() { fecharTodosModaisSC(); }
 
 async function salvarSC() {
   const id = document.getElementById('scEditId').value;
@@ -11287,23 +11012,47 @@ const CSS_PDF_BASE = `
 // PDF 2 — FICHA DE SEPARAÇÃO (após atendimento, com QR)
 // ═══════════════════════════════════════════
 async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirmacao) {
-  const colab  = _colaboradores.find(c=>c.id===colabId)||{};
-  const agora  = new Date();
-  const hoje   = agora.toLocaleDateString('pt-BR');
-  const horaFmt= agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const colab   = _colaboradores.find(c=>c.id===colabId)||{};
+  const agora   = new Date();
+  const hoje    = agora.toLocaleDateString('pt-BR');
+  const horaFmt = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
   const usuario = GCA.usuario?.nome || GCA.usuario?.username || '—';
 
-  // Gera QR
-  let qrHtml = '';
+  const LOGO_GCA      = 'https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png';
+  const LOGO_CENEGED  = 'data:image/jpeg;base64,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xzvIyA1pP4cFSn0dRGLuYR4Kzsq4HmzXhZNwRfKmqYKlhdTzMlAOCWnOCvquYiy6AboiIiIiIiJwRERETgiIiIiIiIiIiIiIiIiIi63VNzZZdNXK7yH3aOlkn891pOPkvP8AqZpKioknleXySPL3OJySScklXL6SVf7BsfvGHYfUdVA3x3pG5/s5VLwofEnXeGr1DYOANppJuJNvIfVbsrUFbVrlRivwK3BW36KdmFv2am4vYBLcqp8u9jiWN91o+Id8VUcK9myehFu2a6epQMFtBG4jxcN4/MqQw1l5SeQVL27qSygZEP3O9AL++yyhERTa8lREREREREREREREREREREREREREREREREREREREREREREREREREREVdOl3frnanUdJA98UVQzLZI3brhjPDI4qsc9dWTuLpquokJ7XyEq73SE0bTas0PKXU8slTRO9oYYCA8hrXZH0SSOP0R2qjtTGYZ5I3MewscWlrxgjHYfFXvAZY30waBmNVUMXieyoJOh0WwucTkuJ8ytFsfJG36T2t8ytjqumbzmZ6HKmS9o1KjQxztAvsi1t7TXulbSNMphiMr+zDBzPHzWscb3hxa0ndbvO8AjXtdm03XxzHNNnCy2oubb6E1lLUvjJ66N0bWN7HFxI4lZNs92S681uyoqLdBSwUlNVPpJ5HyNLmSN5+6SMjPb5rnqK2GnF5CuiCklnPUCwxfakqJ6Wdk8EjmSRneaR2YU7WvopailiJumt6Omfn6NPRulHxLm+HYu4p+ifCaZoqddVnXbo3uro27od24y7OFGux+k0zXc3BqjsUW6Y2oastbiyO5TRsdwDWMeW/sh7QFOOyzbU641sVtujZKp78DNNRSDdzyLnySkAfJfO39Ga1UjWNOp56kMxhs9BC4HvycZPxC7I9H+0tuENUw2drYvqRUtVC536zanA/ZUTV19DUNI3c+5SNNRVULgQ7JTPR1dPVs3oJWPIHvNDgS3zwvuun07YaSzWyKjpxNG1nHd9qlkAPcC9xOF3CrjrXyU0L2zRERfF9REREREREREREREREREREREREUNdLx5bsypmg4D7lGD+w8qpgVt+lxA+XZbHK0ZENwie7wBDm/iQqjqDxAfm+C9b2MI/Df8j8FuC1W0LULhVvBW4L0E0u1rdNWxrfoikiA/YC8+gr67Nq1tw2f2Gsac9ZQQk+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ZNJaSN2F13aDvPkH+MzjOe04cfAdizHUTgel/p4sdlrrdwIPMdVKvrUbGdZakuNEzXeu3XW10cvWNgZFuuf69hPLPErItqeyuv1Jq226r01qF1jutFEId/q94FozgjBGDgkHmCF9bFIG6aEcr5LGWvonTZy5uY8E3cWgu0tfMX42y0Uf6istq1B0vpLXeaOKso5aVpfDJnDiKXI5eIXJ6U1ntmn9N6QttlooqGkiuLzHFEMBpIBJ88rLNoGyG53u92vU9k1TLbNRUlMyCer6v+Xc1u7v8CN0kZB5gjgt+q9kdy1Ps4orFetVT1l7pKl1Sy4yR5Bcc+5u5zu44cDzGfBfXQvLXjdzOd/gsYsTpmy0spm6rAGlueRAI3tLWz71jXSTp5dN670dtFgYTFS1DIKojtDXbwHq3fC23qoh2idJeywUE0dRadO07auSVjstLhh+Qf0jGPQqRG6BrrtstqNIawvj7xVzh3/TTGAY3A5YQPu4HnxXx2IbMoNndnrIZqpldX1smZpwzdG4PotAPmT5lZmF7n6dU2J8FysxKmhpD1ryxhzG2vYh37s+Qv5qLnXXSOoa+8UmkNkbtUxtkf7Vc5pwx73uJJcHOBIyckcR5BZB0NKyom0VeKKV7jDTV/5ppOdzebxHxC3f8i2qtP3K5f4B63daLZcXZkpnw7xYOPAO7cZODwPj2qQtkWgqPZ9pg2mnqXVdRNKZqmoc3d6x5AHAdgAHAcVjDFJ0gc4Wtfl/fNbcTr6I0L4YX728W2uXFwtqTfIcuqstrKanrKSWkqoWTQTMMckbxlr2kYII7sKqm1no7XigrZ7looe30DyX+xOdiaHwaTwePn581bBFOUVfNRu3ozrqOColVRxVLbPHivOC8WS82eo9nutqraGX7E8LmE+WRxXBDHnkxx9F6VSwwzDdliZIO5zQV8I7db43b0dDSsd3tiaD+Cnm7T5Zx59/0UQcBzyf6fVUE0ts61pqaSNtp09XSRycp3xmOLHfvuwFY/Y30f7fpuphveq5YrncoyHw0zBmCB3ec/TcPHAHd2qdgABgAAeCKPrMdqKhpY3qjs1812U2EQwned1imABgBERQilUREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREREXWf4P2EV3t/5Ft3tec9f7Mzfz372Mrs0XwgFZNe5vsmyIiL6sURERFx6WhoqSSaSlpIIHzO35XRxhpe7vOOZ81yERF9JJzKIiIviIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi0WqIiIiIiIiIiIiIiIiIiIiIOSIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIhRERERERERERERERERERERF//9k=';
+  const AZUL          = '#1e3a8a';
+
+  // QR Code via backend
+  let qrImgHtml = '<div style="width:180px;height:180px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;">QR Code</div>';
   if (linkConfirmacao) {
-    qrHtml = `
-    <div style="margin-top:28px;border-top:2px dashed #1a237e;padding-top:20px;display:flex;align-items:center;gap:28px;">
-      <div style="border:2px solid #1a237e;border-radius:10px;padding:12px;text-align:center;flex-shrink:0;">
-        <div id="qrcode_sep" style="width:180px;height:180px;"></div>
+    try {
+      const API = 'https://gca-backend-production.up.railway.app';
+      const res = await fetch(`${API}/atendimentos/qrcode?url=${encodeURIComponent(linkConfirmacao)}`);
+      const data = await res.json();
+      if (data.ok) qrImgHtml = `<img src="${data.dataUrl}" width="180" height="180">`;
+    } catch(e) { console.warn('QR erro:', e); }
+  }
+
+  const itensHtml = (itens||[]).map((it,i) => {
+    const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
+    const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.posicao].filter(Boolean).join(' · ') : '—';
+    const bg = i%2===0?'#f8fafc':'#ffffff';
+    return `<tr style="background:${bg}">
+      <td style="width:28px;text-align:center;"><div style="width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block;"></div></td>
+      <td>${it.descricao||'—'}</td>
+      <td style="text-align:center;font-weight:700;font-size:15px;">${it.quantidade||1}</td>
+      <td style="font-family:monospace;color:${AZUL};font-weight:700;">${loc}</td>
+    </tr>`;
+  }).join('');
+
+  const qrHtml = linkConfirmacao ? `
+    <div style="margin-top:28px;border-top:2px dashed ${AZUL};padding-top:20px;display:flex;align-items:center;gap:28px;">
+      <div style="border:2px solid ${AZUL};border-radius:10px;padding:12px;text-align:center;flex-shrink:0;">
+        ${qrImgHtml}
         <p style="font-size:10px;color:#555;margin-top:6px;">Escaneie para assinar</p>
       </div>
       <div style="flex:1;">
-        <h2 style="font-size:15px;font-weight:800;color:#1a237e;margin-bottom:10px;border:none;text-transform:none;">📱 Confirmação de Recebimento</h2>
+        <h2 style="font-size:15px;font-weight:800;color:${AZUL};margin-bottom:10px;border:none;text-transform:none;">📱 Confirmação de Recebimento</h2>
         <ol style="padding-left:16px;font-size:12px;line-height:2.2;color:#333;">
           <li>Aponte a câmera do celular para o QR Code ao lado</li>
           <li>Acesse o link que aparecer na tela</li>
@@ -11314,63 +11063,75 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
           ⏰ <strong>Atenção:</strong> Este link é válido por 10 dias a partir da data de emissão.
         </div>
       </div>
-    </div>`;
-  }
-
-  const itensHtml = (itens||[]).map(it => {
-    const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
-    const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.posicao].filter(Boolean).join(' · ') : '—';
-    return `<tr>
-      <td style="width:28px;text-align:center;"><div style="width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block;"></div></td>
-      <td>${it.descricao||'—'}</td>
-      <td style="text-align:center;font-weight:700;font-size:15px;">${it.quantidade||1}</td>
-      <td style="font-family:monospace;color:#1a237e;font-weight:700;">${loc}</td>
-    </tr>`;
-  }).join('');
+    </div>` : '';
 
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
   <title>Ficha de Separação — ${colab.nome||''}</title>
-  <style>body{display:none}</style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
-  <style>${CSS_PDF_BASE}
-    .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; border-bottom:2px solid #000; padding-bottom:12px; }
-    .check { width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block; }
+  <style>
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:Arial,sans-serif; color:#111; padding:28px; font-size:13px; }
+    table { width:100%; border-collapse:collapse; margin-bottom:20px; }
+    thead tr { background:${AZUL}; color:#fff; }
+    th { padding:8px 10px; text-align:left; font-size:11px; }
+    td { padding:7px 10px; border-bottom:1px solid #e5e7eb; font-size:12px; }
+    @media print { body { padding:16px; } }
   </style></head><body>
-  <div class="header">
-    <div><h1>Ficha de Separação e Recebimento</h1><p style="font-size:11px;color:#555;">GCA — Almoxarifado Ceneged</p></div>
-    <div style="text-align:right;font-size:12px;"><strong>Data:</strong> ${hoje}<br><strong>Gerado em:</strong> ${hoje}, ${horaFmt}</div>
+
+  <!-- Cabeçalho com logos -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;margin-bottom:20px;border-bottom:3px solid ${AZUL};">
+    <img src="${LOGO_CENEGED}" style="height:60px;object-fit:contain;">
+    <div style="text-align:center;">
+      <div style="font-size:18px;font-weight:800;color:${AZUL};">Ficha de Separação e Recebimento</div>
+      <div style="font-size:10px;color:#666;margin-top:2px;">GCA — Almoxarifado Ceneged</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#444;">
+      <div><strong>Data:</strong> ${hoje}</div>
+      <div><strong>Gerado em:</strong> ${horaFmt}</div>
+      <img src="${LOGO_GCA}" style="height:36px;object-fit:contain;margin-top:6px;">
+    </div>
   </div>
-  <div style="background:#f5f5f5;border:1px solid #ddd;border-radius:6px;padding:12px 16px;margin-bottom:20px;">
-    <p><strong>Colaborador:</strong> ${colab.nome||'—'}</p>
-    <p><strong>Função:</strong> ${colab.funcao||'—'}</p>
-    <p><strong>Setor:</strong> ${colab.setor||colab.base||'—'}</p>
-    <p><strong>Total de itens:</strong> ${(itens||[]).length} tipo(s) · ${(itens||[]).reduce((s,i)=>s+Number(i.quantidade||1),0)} unidade(s)</p>
+
+  <!-- Dados do colaborador -->
+  <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;margin-bottom:20px;">
+    <div style="font-size:8px;font-weight:700;color:${AZUL};text-transform:uppercase;margin-bottom:6px;">Dados do Colaborador</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px;font-size:12px;">
+      <div><strong>Colaborador:</strong> ${colab.nome||'—'}</div>
+      <div><strong>Função:</strong> ${colab.funcao||'—'}</div>
+      <div><strong>Setor:</strong> ${colab.setor||colab.base||'—'}</div>
+      <div><strong>Total:</strong> ${(itens||[]).length} tipo(s) · ${(itens||[]).reduce((s,i)=>s+Number(i.quantidade||1),0)} unidade(s)</div>
+    </div>
   </div>
+
+  <!-- Tabela de itens -->
+  <div style="font-size:8px;font-weight:700;color:${AZUL};text-transform:uppercase;margin-bottom:6px;">Itens Recebidos</div>
   <table>
-    <thead><tr><th style="width:28px;">✓</th><th>Item</th><th style="text-align:center;">Qtd</th><th>Localização</th></tr></thead>
+    <thead><tr>
+      <th style="width:28px;">✓</th>
+      <th>Item / EPI</th>
+      <th style="text-align:center;">Qtd</th>
+      <th>Localização</th>
+    </tr></thead>
     <tbody>${itensHtml}</tbody>
   </table>
+
+  <!-- Assinaturas -->
   <div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px;">
-    <div style="border:2px solid #1a237e;border-radius:8px;padding:14px;text-align:center;">
-      <p style="font-size:10px;font-weight:700;color:#1a237e;margin-bottom:6px;">✦ RESPONSÁVEL PELA ENTREGA ✦</p>
+    <div style="border:2px solid ${AZUL};border-radius:8px;padding:14px;text-align:center;">
+      <p style="font-size:10px;font-weight:700;color:${AZUL};margin-bottom:6px;">✦ RESPONSÁVEL PELA ENTREGA ✦</p>
       <p style="font-weight:700;font-size:13px;">${usuario}</p>
-      <p style="font-size:10px;color:#555;">GCA — Sistema de Almoxarifado</p>
+      <p style="font-size:10px;color:#555;margin-top:4px;">GCA — Sistema de Almoxarifado</p>
     </div>
-    <div style="border-bottom:1px solid #000;display:flex;align-items:flex-end;padding-bottom:8px;justify-content:center;">
-      <p style="font-size:11px;color:#6b7280;">Responsável pela Separação</p>
+    <div style="display:flex;align-items:flex-end;padding-bottom:8px;justify-content:center;border-bottom:1px solid #000;">
+      <p style="font-size:11px;color:#6b7280;">Assinatura do Colaborador</p>
     </div>
   </div>
+
   ${qrHtml}
 
-
-
-
-  </body>
   </body></html>`;
 
   abrirJanelaPDF(html);
 }
-
 // ═══════════════════════════════════════════
 // PDF 3 — TERMO DE DESLIGAMENTO
 // ═══════════════════════════════════════════
@@ -11700,5 +11461,152 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
 
 
+
+<!-- MODAL modalSC MOVIDO -->
+<div class="modal-overlay hidden" id="modalSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:600px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div><div class="modal-title" id="scModalTitulo">Nova Solicitação de Compra</div></div>
+      <button class="modal-close" onclick="fecharModalSC()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <input type="hidden" id="scEditId">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div><label class="form-label">Nº da SC *</label><input id="scNumero" class="form-input" placeholder="Ex: SC-2024-001"></div>
+        <div><label class="form-label">Data abertura</label><input id="scData" class="form-input" type="date" readonly style="background:var(--bg);color:var(--text-3)"></div>
+      </div>
+      <div><label class="form-label">Comprador *</label><input id="scComprador" class="form-input" placeholder="Nome do comprador"></div>
+      <div id="scArmazemRow">
+        <label class="form-label">Armazém</label>
+        <select id="scArmazem" class="form-input"></select>
+      </div>
+      <div>
+        <label class="form-label">Itens</label>
+        <!-- Igual ao atendimento: autocomplete com foto -->
+        <div style="position:relative;margin-bottom:8px">
+          <input id="scItemBusca" class="form-input" placeholder="Buscar item por descrição ou código..." oninput="filtrarItensSC(this.value)" onblur="setTimeout(()=>document.getElementById('scItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
+          <div id="scItemSugestoes" class="autocomplete-list hidden" style="max-height:220px;overflow-y:auto"></div>
+          <input type="hidden" id="scItemId">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px" id="scItemPreviewRow" style="display:none">
+          <div id="scItemPreviewImg" style="width:48px;height:48px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--bg)"></div>
+          <div style="flex:1">
+            <div id="scItemPreviewNome" style="font-size:12px;font-weight:600;color:var(--text-1)"></div>
+            <div id="scItemPreviewCod" style="font-size:10px;color:var(--text-3)"></div>
+          </div>
+          <input id="scItemQtd" class="form-input" type="number" min="1" value="1" style="width:70px" placeholder="Qtd">
+          <button class="btn btn-primary" style="padding:8px 12px" onclick="adicionarItemSC()">+</button>
+        </div>
+        <div id="scItensLista" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+      <div><label class="form-label">Observação</label><textarea id="scObs" class="form-input" rows="2" style="resize:vertical"></textarea></div>
+      <div><label class="form-label">Status</label>
+        <select id="scStatus" class="form-input">
+          <option value="Pendente">⏳ Pendente</option>
+          <option value="Aprovado">✅ Aprovado</option>
+          <option value="Recebido Parcial">📦 Recebido Parcial</option>
+          <option value="Recebido Total">✅ Recebido Total</option>
+          <option value="Cancelado">❌ Cancelado</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalSC()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarSC()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL modalVerSC MOVIDO -->
+<div class="modal-overlay hidden" id="modalVerSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="verSCNumero">SC-000</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="verSCSub"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span id="verSCStatus"></span>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalSC(document.getElementById('verSCId').value)">✏️ Editar</button>
+        <button class="modal-close" onclick="document.getElementById('modalVerSC').classList.add('hidden')">×</button>
+      </div>
+    </div>
+    <input type="hidden" id="verSCId">
+    <div class="modal-body">
+
+      <!-- Info NF se já recebeu -->
+      <div id="verSCNfInfo" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;background:var(--bg)"></div>
+
+      <!-- Itens (somente visualização) -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens</div>
+      <div style="overflow-x:auto">
+      <table style="width:100%;min-width:500px;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Solicitado</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Recebido</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Pendente</th>
+          <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
+          <th style="padding:8px;text-align:left;font-size:10px;color:#3b82f6;border-bottom:1px solid var(--border)">Pedido Compra</th>
+        </tr></thead>
+        <tbody id="verSCItensBody"></tbody>
+      </table></div>
+      <div id="verSCObs" style="font-size:11px;color:var(--text-3);margin-top:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);display:none"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalVerSC').classList.add('hidden')">Fechar</button>
+      <button class="btn btn-primary" id="btnAbrirRecebimento" onclick="abrirRecebimentoSC()">📦 Registrar Recebimento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL modalRecSC MOVIDO -->
+<div class="modal-overlay hidden" id="modalRecSC" style="align-items:flex-start;padding:20px;overflow-y:auto">
+  <div class="modal-box" style="max-width:680px;width:100%;margin:auto">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📦 Registrar Recebimento</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="recSCNumero"></div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modalRecSC').classList.add('hidden')">×</button>
+    </div>
+    <input type="hidden" id="recSCId">
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+
+      <!-- Dados NF -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px">📄 Dados da NF</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
+          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
+          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
+          <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input"></select></div>
+          <div style="grid-column:span 2"><label class="form-label">Link PDF da NF (Google Drive)</label>
+            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/..."></div>
+        </div>
+      </div>
+
+      <!-- Itens pendentes -->
+      <!-- Itens - selecione os que vai receber -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Selecione os itens a receber</div>
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:8px">Marque o checkbox do item para informar quantidade e confirmar recebimento</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Qtd</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Valor Un.</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total</th>
+        </tr></thead>
+        <tbody id="recItensBody"></tbody>
+      </table>
+      <div id="recSCTotal" style="text-align:right;font-size:13px;font-weight:700;color:#22c55e"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalRecSC').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarRecebimentoSC()">✅ Confirmar Recebimento</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
