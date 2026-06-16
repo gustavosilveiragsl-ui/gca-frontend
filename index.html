@@ -8013,35 +8013,43 @@ function verDesconto(id) {
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
   <title>Autorização de Desconto - ${d.colaborador_nome}</title>
   <style>
+    @page { margin: 0; size: A4; }
     * { margin:0; padding:0; box-sizing:border-box; }
     body {
       font-family: Arial, sans-serif;
       font-size: 13px;
       color: #000;
       background: #fff;
-      position: relative;
-      min-height: 100vh;
     }
     .pagina {
       position: relative;
+      width: 210mm;
       min-height: 297mm;
-      padding: 45mm 20mm 60mm 20mm;
+      padding: 45mm 22mm 60mm 22mm;
       background-image: url(${PAPEL});
-      background-size: 100% 100%;
+      background-size: 210mm 297mm;
       background-repeat: no-repeat;
+      background-position: top left;
     }
     h1 {
       text-align: center;
-      font-size: 16px;
+      font-size: 15px;
       font-weight: bold;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
       letter-spacing: 1px;
     }
-    .corpo { line-height: 1.7; margin-bottom: 16px; }
-    .referente { margin: 16px 0; }
-    .parcelas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 40px; margin: 12px 0 20px 20px; }
-    .parcelas p { font-size: 13px; line-height: 1.8; }
-    .clt { color: #1a237e; margin: 16px 0; line-height: 1.7; }
+    .corpo { line-height: 1.7; margin-bottom: 14px; }
+    .referente { margin: 14px 0; }
+    .parcelas { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 40px; margin: 10px 0 18px 20px; }
+    .parcelas p { font-size: 12px; line-height: 1.8; }
+    .clt { color: #1a237e; margin: 14px 0; line-height: 1.7; }
+    .rodape { margin-top: 28px; }
+    @media print {
+      html, body { width: 210mm; height: 297mm; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .pagina { page-break-after: avoid; }
+    }
+  </style>
     .rodape { margin-top: 32px; }
     .assinatura { margin-top: 48px; border-top: 1px solid #000; width: 60%; margin-left: auto; margin-right: auto; text-align: center; padding-top: 8px; }
     @media print {
@@ -8079,14 +8087,14 @@ function verDesconto(id) {
     ► Parágrafo único transformando em § 1º pelo Dec. lei nº 229, de 28.2-1967.
   </div>
 
-  <p style="margin:20px 0">Declaro total ciência deste desconto.</p>
+  <p style="margin:16px 0">Declaro total ciência deste desconto.</p>
 
-  <p style="text-align:right;margin-right:40px">${d.cidade||'Maricá'} ${dia} de <strong>${mesExt}</strong> de <strong>${ano}</strong></p>
+  <p style="text-align:right;margin-right:40px;margin-top:20px">${d.cidade||'Maricá'} ${dia} de <strong>${mesExt}</strong> de <strong>${ano}</strong></p>
 
   <div class="rodape">
-    <div style="border-top:1px solid #000;padding-top:10px;margin-top:32px">
-      <p><strong>NOME: ${d.colaborador_nome}</strong></p>
-      <p><strong>MATRÍCULA: ${d.matricula||'—'}</strong></p>
+    <div style="border-top:2px solid #000;padding-top:10px;margin-top:40px">
+      <p style="font-size:14px"><strong>NOME: ${d.colaborador_nome}</strong></p>
+      <p style="font-size:14px;margin-top:4px"><strong>MATRÍCULA: ${d.matricula||'—'}</strong></p>
     </div>
   </div>
 </div>
