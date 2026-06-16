@@ -5335,6 +5335,8 @@ async function carregarAssinaturas() {
 let _assPagina = 1;
 const _assPorPagina = 20;
 
+let _assListaFiltrada = [];
+
 function filtrarAssinaturas(busca) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
@@ -5345,23 +5347,29 @@ function filtrarAssinaturas(busca) {
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
   if (filtroSetor)  lista = lista.filter(a => {
     const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
-    return (colab?.setor || '') === filtroSetor;
+    return (colab?.setor || '').trim() === filtroSetor;
   });
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
+  _assListaFiltrada = lista;
   _assPagina = 1;
   renderAssinaturas(lista);
+}
+
+function mudarPaginaAss(delta) {
+  _assPagina += delta;
+  renderAssinaturas(_assListaFiltrada);
 }
 
 function _popularFiltroSetores() {
   const sel = document.getElementById('assFiltroSetor');
   if (!sel) return;
-  const setores = [...new Set(
-    _assinaturas.map(a => {
-      const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
-      return colab?.setor || '';
-    }).filter(Boolean)
-  )].sort();
+  // Normaliza: trim + uppercase para deduplicar variações
+  const setoresRaw = _assinaturas.map(a => {
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    return (colab?.setor || '').trim();
+  }).filter(Boolean);
+  const setores = [...new Set(setoresRaw)].sort();
   const atual = sel.value;
   sel.innerHTML = '<option value="">Todos os setores</option>' +
     setores.map(s => `<option value="${s}" ${s===atual?'selected':''}>${s}</option>`).join('');
@@ -5442,9 +5450,9 @@ function renderPaginacaoAss(total, lista) {
   div.innerHTML = `
     <span>Exibindo ${(_assPagina-1)*_assPorPagina+1}–${Math.min(_assPagina*_assPorPagina,total)} de ${total}</span>
     <div style="display:flex;gap:6px">
-      <button class="row-action" ${_assPagina===1?'disabled':''} onclick="_assPagina--;filtrarAssinaturas()">← Anterior</button>
+      <button class="row-action" ${_assPagina===1?'disabled':''} onclick="mudarPaginaAss(-1)">← Anterior</button>
       <span style="padding:4px 10px;font-weight:600">${_assPagina} / ${totalPaginas}</span>
-      <button class="row-action" ${_assPagina===totalPaginas?'disabled':''} onclick="_assPagina++;filtrarAssinaturas()">Próxima →</button>
+      <button class="row-action" ${_assPagina===totalPaginas?'disabled':''} onclick="mudarPaginaAss(1)">Próxima →</button>
     </div>`;
 
   document.getElementById('assBody').closest('table').parentElement.appendChild(div);
