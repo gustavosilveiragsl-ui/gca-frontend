@@ -2319,6 +2319,24 @@ tbody tr:hover td{background:var(--bg-hover);}
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
             <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
+            <button class="btn btn-ghost" onclick="toggleConfigNR10()">⚙️ Configurações</button>
+          </div>
+        </div>
+
+        <!-- PAINEL CONFIG NR10 -->
+        <div id="nr10PainelConfig" class="card hidden" style="margin-bottom:16px;border:1px solid rgba(59,130,246,.3)">
+          <div class="card-header"><div><div class="card-title">⚙️ Configuração de Alertas — NR10</div><div class="card-sub">Emails enviados automaticamente quando ensaios vencem ou estão próximos do vencimento</div></div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label class="form-label">Emails para receber alertas <span style="color:var(--text-3);font-weight:400;text-transform:none">(separados por vírgula)</span></label>
+              <textarea id="nr10ConfigEmails" class="form-input" rows="3" placeholder="email1@ceneged.com, email2@ceneged.com..." style="resize:vertical"></textarea>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="salvarConfigNR10()">💾 Salvar</button>
+              <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="testarEmailNR10()">📧 Testar Envio</button>
+              <button class="btn btn-ghost" onclick="toggleConfigNR10()">✕ Fechar</button>
+            </div>
+            <div id="nr10ConfigMsg" style="font-size:12px;min-height:16px"></div>
           </div>
         </div>
 
@@ -9504,19 +9522,94 @@ function carregarConfigViaturas() {
   const d = document.getElementById('viatConfigDias');   if(d) d.value = dias;
 }
 
+async function carregarConfigViaturas() {
+  const data = await api('/laudos/config-emails');
+  if (!data?.ok) return;
+  const emails = data.data['emails_alerta_viaturas'] || '';
+  const dias   = data.data['dias_alerta_viaturas'] || '30';
+  const elEmails = document.getElementById('viatConfigEmails');
+  const elDias   = document.getElementById('viatConfigDias');
+  if (elEmails) elEmails.value = emails;
+  if (elDias)   elDias.value   = dias;
+}
+
 async function salvarConfigViaturas() {
   const emails = document.getElementById('viatConfigEmails').value.trim();
   const dias   = document.getElementById('viatConfigDias').value;
   const msg    = document.getElementById('viatConfigMsg');
-  localStorage.setItem('viat_config_emails', emails);
-  localStorage.setItem('viat_config_dias', dias);
-  if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Configurações salvas!'; setTimeout(()=>msg.textContent='',3000); }
+  if (msg) { msg.textContent = '⏳ Salvando...'; msg.style.color = 'var(--text-3)'; }
+  const r1 = await api('/laudos/config-emails', { method:'POST', body: JSON.stringify({ chave:'emails_alerta_viaturas', valor: emails }) });
+  const r2 = await api('/laudos/config-emails', { method:'POST', body: JSON.stringify({ chave:'dias_alerta_viaturas', valor: dias }) });
+  if (r1?.ok && r2?.ok) {
+    if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Configurações salvas!'; setTimeout(()=>msg.textContent='',3000); }
+    toast('Emails salvos!','success');
+  } else {
+    if (msg) { msg.style.color='#ef4444'; msg.textContent='❌ Erro ao salvar'; }
+    toast('Erro ao salvar configurações','error');
+  }
 }
 
 async function testarEmailViaturas() {
   const msg = document.getElementById('viatConfigMsg');
-  if (msg) { msg.style.color='#f59e0b'; msg.textContent='⏳ Envio de emails em desenvolvimento...'; }
-  toast('Funcionalidade de email em breve','info');
+  const emails = document.getElementById('viatConfigEmails').value.trim();
+  if (!emails) { toast('Configure os emails antes de testar','warn'); return; }
+  if (msg) { msg.style.color='#f59e0b'; msg.textContent='⏳ Enviando email de teste...'; }
+  const res = await api('/laudos/testar-alerta', { method:'POST', body: JSON.stringify({ modulo:'viaturas' }) });
+  if (res?.ok) {
+    if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Email de teste enviado para: '+res.enviado_para.join(', '); setTimeout(()=>msg.textContent='',5000); }
+    toast('Email de teste enviado!','success');
+  } else {
+    if (msg) { msg.style.color='#ef4444'; msg.textContent='❌ '+(res?.erro||'Erro ao enviar'); }
+    toast(res?.erro||'Erro ao enviar email','error');
+  }
+}
+
+// ═══════════════════════════════════════════
+// CONFIG NR10 EMAILS
+// ═══════════════════════════════════════════
+function toggleConfigNR10() {
+  const painel = document.getElementById('nr10PainelConfig');
+  if (!painel) return;
+  const isHidden = painel.classList.contains('hidden');
+  if (isHidden) { painel.classList.remove('hidden'); carregarConfigNR10(); }
+  else painel.classList.add('hidden');
+}
+
+async function carregarConfigNR10() {
+  const data = await api('/laudos/config-emails');
+  if (!data?.ok) return;
+  const emails = data.data['emails_alerta_nr10'] || '';
+  const el = document.getElementById('nr10ConfigEmails');
+  if (el) el.value = emails;
+}
+
+async function salvarConfigNR10() {
+  const emails = document.getElementById('nr10ConfigEmails').value.trim();
+  const msg    = document.getElementById('nr10ConfigMsg');
+  if (msg) { msg.textContent = '⏳ Salvando...'; msg.style.color = 'var(--text-3)'; }
+  const res = await api('/laudos/config-emails', { method:'POST', body: JSON.stringify({ chave:'emails_alerta_nr10', valor: emails }) });
+  if (res?.ok) {
+    if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Emails salvos!'; setTimeout(()=>msg.textContent='',3000); }
+    toast('Emails salvos!','success');
+  } else {
+    if (msg) { msg.style.color='#ef4444'; msg.textContent='❌ Erro ao salvar'; }
+    toast('Erro ao salvar','error');
+  }
+}
+
+async function testarEmailNR10() {
+  const emails = document.getElementById('nr10ConfigEmails').value.trim();
+  const msg    = document.getElementById('nr10ConfigMsg');
+  if (!emails) { toast('Configure os emails antes de testar','warn'); return; }
+  if (msg) { msg.style.color='#f59e0b'; msg.textContent='⏳ Enviando email de teste...'; }
+  const res = await api('/laudos/testar-alerta', { method:'POST', body: JSON.stringify({ modulo:'nr10' }) });
+  if (res?.ok) {
+    if (msg) { msg.style.color='#22c55e'; msg.textContent='✅ Email enviado para: '+res.enviado_para.join(', '); setTimeout(()=>msg.textContent='',5000); }
+    toast('Email de teste enviado!','success');
+  } else {
+    if (msg) { msg.style.color='#ef4444'; msg.textContent='❌ '+(res?.erro||'Erro ao enviar'); }
+    toast(res?.erro||'Erro ao enviar email','error');
+  }
 }
 
 // ═══════════════════════════════════════════
