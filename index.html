@@ -967,6 +967,9 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <option value="ASSINADO">Assinados</option>
                 <option value="EXPIRADO">Expirados</option>
               </select>
+              <select id="assFiltroSetor" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
+                <option value="">Todos os setores</option>
+              </select>
               <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarAssinaturas(this.value)">
               <button class="btn btn-ghost" onclick="carregarAssinaturas()">↻ Atualizar</button>
             </div>
@@ -5325,6 +5328,7 @@ async function carregarAssinaturas() {
   const badge = document.getElementById('badgeAssinaturas');
   if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
 
+  _popularFiltroSetores();
   filtrarAssinaturas();
 }
 
@@ -5334,14 +5338,33 @@ const _assPorPagina = 20;
 function filtrarAssinaturas(busca) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
+  const filtroSetor  = document.getElementById('assFiltroSetor')?.value || '';
   const q = (_assQuery || '').toLowerCase();
 
   let lista = _assinaturas;
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
+  if (filtroSetor)  lista = lista.filter(a => {
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    return (colab?.setor || '') === filtroSetor;
+  });
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
   _assPagina = 1;
   renderAssinaturas(lista);
+}
+
+function _popularFiltroSetores() {
+  const sel = document.getElementById('assFiltroSetor');
+  if (!sel) return;
+  const setores = [...new Set(
+    _assinaturas.map(a => {
+      const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+      return colab?.setor || '';
+    }).filter(Boolean)
+  )].sort();
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos os setores</option>' +
+    setores.map(s => `<option value="${s}" ${s===atual?'selected':''}>${s}</option>`).join('');
 }
 
 function renderAssinaturas(lista) {
@@ -5378,8 +5401,12 @@ function renderAssinaturas(lista) {
 
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
-        <button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>
+        ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : ''}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
+      </div>` : a.statusCalc === 'EXPIRADO' ? `
+      <div style="display:flex;gap:6px">
+        <button class="row-action" style="color:var(--accent);border-color:var(--accent)" onclick="regerarLink('${a.id}')">🔄 Regerar</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
         <button class="row-action" onclick="reenviarLink('${a.id}','${a.token||''}')">↺ Reenviar</button>
@@ -5438,6 +5465,22 @@ function formatarTempoRestante(data) {
 }
 
 // ── Reenviar link ──
+async function regerarLink(id) {
+  const atend = _assinaturas.find(a => a.id === id);
+  if (!atend) return;
+  const conf = confirm(`Regerar link para ${atend.nomeColaborador}?\n\nUm novo link será gerado com prazo de 10 dias.`);
+  if (!conf) return;
+  try {
+    const data = await api(`/atendimentos/${id}/regerar-token`, { method: 'POST' });
+    if (data?.ok) {
+      toast('Link regerado com sucesso!', 'success');
+      await carregarAssinaturas();
+    } else {
+      toast(data?.erro || 'Erro ao regerar link', 'error');
+    }
+  } catch { toast('Erro de conexão', 'error'); }
+}
+
 function reenviarLink(id, token) {
   const link = `https://gustavosilveiragsl-ui.github.io/gca-frontend/#/assinar?token=${token}`;
   document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
@@ -5498,7 +5541,7 @@ async function verItensAtendimento(id) {
 
 // ── Ver PDF ──
 function verPdfAtendimento(id) {
-  const atend = (_assinaturasList||[]).find(a => a.id === id);
+  const atend = (_assinaturas||[]).find(a => a.id === id);
   if (atend && atend.pdfUrl) {
     window.open(atend.pdfUrl, '_blank');
   } else {
