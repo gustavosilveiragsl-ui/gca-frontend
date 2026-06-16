@@ -5474,7 +5474,19 @@ async function carregarAssinaturas() {
   const badge = document.getElementById('badgeAssinaturas');
   if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
 
+  _popularFiltroSetores();
   filtrarAssinaturas();
+}
+
+function _popularFiltroSetores() {
+  const sel = document.getElementById('assFiltroSetor');
+  if (!sel) return;
+  const setores = [...new Set((_assinaturas||[]).map(a => {
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    return (colab?.setor || '').trim();
+  }).filter(Boolean))].sort();
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Todos setores</option>' + setores.map(s => '<option value="'+s+'"'+( s===current?' selected':'')+'>'+s+'</option>').join('');
 }
 
 let _assPagina = 1;
@@ -5483,10 +5495,15 @@ const _assPorPagina = 20;
 function filtrarAssinaturas(busca) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
+  const filtroSetor  = document.getElementById('assFiltroSetor')?.value  || '';
   const q = (_assQuery || '').toLowerCase();
 
   let lista = _assinaturas;
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
+  if (filtroSetor)  lista = lista.filter(a => {
+    const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
+    return (colab?.setor || '') === filtroSetor;
+  });
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
   _assPagina = 1;
@@ -5529,6 +5546,11 @@ function renderAssinaturas(lista) {
       <div style="display:flex;gap:6px">
         <button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
+      </div>` : a.statusCalc === 'EXPIRADO' ? `
+      <div style="display:flex;gap:6px">
+        <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarTokenAtendimento('${a.id}')">🔄 Regerar</button>
+        <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
         <button class="row-action" onclick="reenviarLink('${a.id}','${a.token||''}')">↺ Reenviar</button>
@@ -5624,7 +5646,7 @@ async function verItensAtendimento(id) {
         <div><div class="modal-title">${atend.nomeColaborador||'—'}</div><div style="font-size:11px;color:var(--text-3)">${formatarData(atend.data)}</div></div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="max-height:60vh;overflow-y:auto">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr>
             <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
@@ -5647,11 +5669,27 @@ async function verItensAtendimento(id) {
 
 // ── Ver PDF ──
 function verPdfAtendimento(id) {
-  const atend = (_assinaturasList||[]).find(a => a.id === id);
+  const atend = (_assinaturas||[]).find(a => a.id === id);
   if (atend && atend.pdfUrl) {
     window.open(atend.pdfUrl, '_blank');
   } else {
     toast('Comprovante não disponível para este atendimento', 'warning');
+  }
+}
+
+// ── Regerar token ──
+async function regerarTokenAtendimento(id) {
+  const btn = event.target;
+  btn.disabled = true; btn.textContent = '⏳';
+  const res = await api('/atendimentos/' + id + '/regerar-token', { method: 'POST' });
+  if (res?.ok) {
+    toast('Novo link gerado! Reenvie ao colaborador.', 'success');
+    await carregarAssinaturas();
+    const atend = _assinaturas.find(a => a.id === id);
+    if (atend?.token) reenviarLink(id, atend.token);
+  } else {
+    toast(res?.erro || 'Erro ao regerar token', 'error');
+    btn.disabled = false; btn.textContent = '🔄 Regerar';
   }
 }
 
@@ -8272,7 +8310,15 @@ function renderSCItens() {
     </div>`).join('');
 }
 
+function fecharTodosModaisSC() {
+  ['modalSC','modalVerSC','modalRecSC'].forEach(id => {
+    const m = document.getElementById(id);
+    if (m) m.classList.add('hidden');
+  });
+}
+
 function abrirModalSC(id) {
+  fecharTodosModaisSC();
   _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
@@ -8357,6 +8403,7 @@ async function salvarSC() {
 }
 
 function abrirVerSC(id) {
+  fecharTodosModaisSC();
   const sc = _scData.find(x=>x.id===id);
   if (!sc) return;
 
