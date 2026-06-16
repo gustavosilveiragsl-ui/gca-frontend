@@ -3523,7 +3523,7 @@ function onViewLoad(nome) {
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
-  if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); carregarSC(); }
+  if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
   if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); enelAbrirAtendimento(); }
@@ -8174,7 +8174,14 @@ function renderSCItens() {
     </div>`).join('');
 }
 
+function fecharTodosModaisSC() {
+  ['modalSC','modalVerSC','modalRecSC'].forEach(id => {
+    document.getElementById(id)?.classList.add('hidden');
+  });
+}
+
 function abrirModalSC(id) {
+  fecharTodosModaisSC();
   _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
@@ -8233,11 +8240,10 @@ function abrirModalSC(id) {
       document.getElementById('scModalTitulo').textContent = 'Editar SC';
     }
   }
-  document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalSC').classList.remove('hidden');
 }
 
-function fecharModalSC() { document.getElementById('modalSC').classList.add('hidden'); }
+function fecharModalSC() { fecharTodosModaisSC(); }
 
 async function salvarSC() {
   const id = document.getElementById('scEditId').value;
@@ -8259,6 +8265,7 @@ async function salvarSC() {
 }
 
 function abrirVerSC(id) {
+  fecharTodosModaisSC();
   const sc = _scData.find(x=>x.id===id);
   if (!sc) return;
 
