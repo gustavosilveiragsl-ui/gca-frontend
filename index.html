@@ -8353,6 +8353,12 @@ function abrirRecebimentoSC() {
   document.getElementById('recPedido').value     = sc.pedido_compra||'';
   document.getElementById('recFornecedor').value = sc.fornecedor||'';
   document.getElementById('recPdfLink').value    = sc.pdf_nf_url||'';
+  const dropContent = document.getElementById('recNFDropContent');
+  if (dropContent) {
+    dropContent.innerHTML = sc.pdf_nf_url
+      ? `✅ NF já anexada — <a href="${sc.pdf_nf_url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-text)">ver PDF</a> (clique para substituir)`
+      : '📎 Arraste o PDF da NF aqui ou clique para selecionar';
+  }
 
   // Armazéns do usuário
   const selArm = document.getElementById('recArmazem');
@@ -8465,6 +8471,52 @@ function atualizarTotalSC() {
   });
   const totalEl = document.getElementById('recSCTotal');
   if (totalEl) totalEl.textContent = total > 0 ? `Total: ${total.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}` : '';
+}
+
+// ── Upload do PDF da NF via drag & drop ──
+function recNFOnDrop(ev) {
+  ev.preventDefault();
+  const area = document.getElementById('recNFDropArea');
+  area.style.borderColor = 'var(--border)';
+  area.style.background  = 'var(--bg)';
+  const file = ev.dataTransfer.files[0];
+  if (file) recNFOnFileSelected(file);
+}
+
+async function recNFOnFileSelected(file) {
+  if (!file) return;
+  const dropContent = document.getElementById('recNFDropContent');
+  if (file.type !== 'application/pdf') {
+    toast('Apenas arquivos PDF são aceitos', 'warn');
+    return;
+  }
+  const scId = document.getElementById('recSCId').value;
+  if (!scId) { toast('Erro: SC não identificada', 'error'); return; }
+
+  dropContent.innerHTML = '⏳ Enviando "' + file.name + '" para o Google Drive...';
+
+  const formData = new FormData();
+  formData.append('arquivo', file);
+
+  try {
+    const resp = await fetch(`${API}/solicitacoes-compra/${scId}/upload-nf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${GCA.token}` },
+      body: formData
+    });
+    const json = await resp.json();
+    if (json?.ok) {
+      document.getElementById('recPdfLink').value = json.link;
+      dropContent.innerHTML = `✅ NF enviada — <a href="${json.link}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-text)">ver PDF</a> (clique para substituir)`;
+      toast('PDF da NF enviado ao Drive!', 'success');
+    } else {
+      dropContent.innerHTML = '📎 Arraste o PDF da NF aqui ou clique para selecionar';
+      toast(json?.erro || 'Erro ao enviar PDF', 'error');
+    }
+  } catch (err) {
+    dropContent.innerHTML = '📎 Arraste o PDF da NF aqui ou clique para selecionar';
+    toast('Erro de conexão ao enviar PDF', 'error');
+  }
 }
 
 async function confirmarRecebimentoSC() {
@@ -11780,8 +11832,21 @@ document.addEventListener('DOMContentLoaded',()=>{
           <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
           <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
           <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input"></select></div>
-          <div style="grid-column:span 2"><label class="form-label">Link PDF da NF (Google Drive)</label>
-            <input id="recPdfLink" class="form-input" placeholder="https://drive.google.com/..."></div>
+          <div style="grid-column:span 2">
+            <label class="form-label">PDF da NF</label>
+            <input type="hidden" id="recPdfLink">
+            <div id="recNFDropArea"
+                 ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-soft)'"
+                 ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'"
+                 ondrop="recNFOnDrop(event)"
+                 onclick="document.getElementById('recNFFileInput').click()"
+                 style="border:2px dashed var(--border);border-radius:var(--radius-md);padding:16px;text-align:center;cursor:pointer;background:var(--bg);transition:.15s">
+              <div id="recNFDropContent" style="font-size:12px;color:var(--text-3)">
+                📎 Arraste o PDF da NF aqui ou clique para selecionar
+              </div>
+            </div>
+            <input type="file" id="recNFFileInput" accept="application/pdf" style="display:none" onchange="recNFOnFileSelected(this.files[0])">
+          </div>
         </div>
       </div>
 
