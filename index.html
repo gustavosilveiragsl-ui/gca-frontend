@@ -11449,13 +11449,17 @@ async function gerarPDFFichaEPI(colabId) {
     <tr><td><strong>DATA DA MUDANÇA DE FUNÇÃO:</strong></td><td colspan="2"><strong>NOVA FUNÇÃO:</strong></td></tr>
   </table>
 
-  <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin:12px 0 6px;">Termo de Responsabilidade</div>
-  <div class="termo">
-    Recebi, da CENEGED, os EPI's adequados abaixo, os quais desde já me comprometo sempre usar na execução de minhas tarefas, zelando pela sua perfeita guarda e conservação, uso e funcionamento de acordo com as orientações e treinamentos recebidos da CIPA e/ou SESMT, assumindo também o compromisso de devolvê-lo quando solicitado ou em ocasião de rescisão do meu contrato de trabalho.<br><br>
-    Estou ciente e de pleno acordo que o não cumprimento das condições estabelecidas, acarretará, além de aplicações de penas disciplinares, inclusive rescisão de meu contrato laboral, outras sanções previstas em lei, em especial nas constantes na NR06, portaria 3.214 de 08/06/78, do Ministério do Trabalho e Emprego.
+  <div style="border:1px solid #000;padding:10px;margin-top:10px;">
+    <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin-bottom:6px;">Termo de Responsabilidade</div>
+    <div class="termo" style="margin:0;">
+      Recebi, da CENEGED, os EPI's adequados abaixo, os quais desde já me comprometo sempre usar na execução de minhas tarefas, zelando pela sua perfeita guarda e conservação, uso e funcionamento de acordo com as orientações e treinamentos recebidos da CIPA e/ou SESMT, assumindo também o compromisso de devolvê-lo quando solicitado ou em ocasião de rescisão do meu contrato de trabalho.<br><br>
+      Estou ciente e de pleno acordo que o não cumprimento das condições estabelecidas, acarretará, além de aplicações de penas disciplinares, inclusive rescisão de meu contrato laboral, outras sanções previstas em lei, em especial nas constantes na NR06, portaria 3.214 de 08/06/78, do Ministério do Trabalho e Emprego.
+    </div>
   </div>
-  <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin:12px 0 6px;">Ato Faltoso</div>
-  <div class="termo">"Constitui-se ato faltoso do colaborador a recusa injustificada do uso e/ou conservação dos EPI's (Equipamento de Proteção Individual) fornecidos pela empresa". (Conforme previsto na Legislação vigente em seu artigo 158 da CLT).</div>
+  <div style="border:1px solid #000;padding:10px;margin-top:10px;">
+    <div style="text-align:center;font-size:12px;font-weight:700;color:#c00;margin-bottom:6px;">Ato Faltoso</div>
+    <div class="termo" style="margin:0;">"Constitui-se ato faltoso do colaborador a recusa injustificada do uso e/ou conservação dos EPI's (Equipamento de Proteção Individual) fornecidos pela empresa". (Conforme previsto na Legislação vigente em seu artigo 158 da CLT).</div>
+  </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
     <div style="border:1px solid #000;padding:10px;">
       <div style="font-weight:700;font-size:11px;margin-bottom:6px;">Obrigações do Empregador</div>
@@ -11514,12 +11518,13 @@ async function gerarPDFFichaEPI(colabId) {
     <p style="font-size:10px;color:#555;">GCA — Sistema de Almoxarifado</p>
   </div>
 
-  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:60px;">
+  <div style="margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:end;">
     <div style="text-align:center;">
+      <div style="height:45px;"></div>
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">RESPONSÁVEL PELA ENTREGA</div>
     </div>
     <div style="text-align:center;">
-      ${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:45px;margin-bottom:2px;">`:'<div style="height:45px;"></div>'}
+      <div style="height:45px;display:flex;align-items:flex-end;justify-content:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:45px;">`:''}</div>
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">ASSINATURA DO EMPREGADO</div>
     </div>
   </div>
