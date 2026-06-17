@@ -11412,7 +11412,7 @@ async function gerarPDFFichaEPI(colabId) {
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_entrega?fmtData(it.data_entrega):'—'}</td>
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.ca||'—'}</td>
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_devolucao?fmtData(it.data_devolucao):'—'}</td>
-    <td style="text-align:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:28px;max-width:80px;">`:''}</td>
+    <td style="text-align:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:28px;max-width:80px;filter:brightness(0) saturate(100%) invert(20%) sepia(80%) saturate(2500%) hue-rotate(212deg) brightness(95%) contrast(101%);">`:''}</td>
   </tr>`).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -11483,7 +11483,7 @@ async function gerarPDFFichaEPI(colabId) {
   </div>
   <div class="termo" style="margin-top:14px;">E para constar, assino a presente para produção dos efeitos legais.</div>
   <div style="margin-top:20px;"><strong>ASSINATURA:</strong><br>
-    ${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:60px;margin-top:8px;">`:''}<br>
+    ${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:60px;margin-top:8px;filter:brightness(0) saturate(100%) invert(20%) sepia(80%) saturate(2500%) hue-rotate(212deg) brightness(95%) contrast(101%);">`:''}<br>
     <div style="border-top:1px solid #000;width:280px;margin-top:${assinaturaBase64?'4px':'48px'};"></div>
   </div>
   <div style="text-align:center;margin-top:20px;font-size:11px;">${unidadeNome}, ${hoje}</div>
@@ -11524,7 +11524,7 @@ async function gerarPDFFichaEPI(colabId) {
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">RESPONSÁVEL PELA ENTREGA</div>
     </div>
     <div style="text-align:center;">
-      <div style="height:45px;display:flex;align-items:flex-end;justify-content:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:45px;">`:''}</div>
+      <div style="height:45px;display:flex;align-items:flex-end;justify-content:center;">${assinaturaBase64?`<img src="${assinaturaBase64}" style="max-height:45px;filter:brightness(0) saturate(100%) invert(20%) sepia(80%) saturate(2500%) hue-rotate(212deg) brightness(95%) contrast(101%);">`:''}</div>
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">ASSINATURA DO EMPREGADO</div>
     </div>
   </div>
