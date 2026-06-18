@@ -4563,7 +4563,16 @@ async function confirmarItensModal() {
     }
 
     // Adiciona todos os itens aprovados (limpos + com aviso confirmado)
-    const aprovados = [...limpos, ...comAviso].map(r => r.s);
+    // Para itens com troca de tamanho, injeta itemIdAntigo para o backend saber qual fechar
+    const aprovados = [...limpos, ...comAviso].map(r => {
+      const s = r.s;
+      if (r.resTroca?.troca) {
+        s.itemIdAntigo   = r.resTroca.troca.itemIdAntigo;
+        s.nomeItemAntigo = r.resTroca.troca.nomeAntigo;
+        s.trocaTamanho   = true;
+      }
+      return s;
+    });
     adicionarItensAoAtendimento(aprovados);
 
   } catch (err) {
@@ -4688,6 +4697,10 @@ function adicionarItensAoAtendimento(selecionados) {
       seriais:         requerEnsaio ? (ehPar ? ['',''] : ['']) : [],
       serialRetorno:   [],
       seriaisDisponiveis: [],
+      // Troca de tamanho: informa o item antigo para o backend fechar o correto
+      trocaTamanho:    s.trocaTamanho || false,
+      itemIdAntigo:    s.itemIdAntigo  || null,
+      nomeItemAntigo:  s.nomeItemAntigo || null,
     });
   }
   fecharModalItens();
