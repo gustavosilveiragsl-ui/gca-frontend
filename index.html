@@ -6828,20 +6828,70 @@ function limparFormEquipe() {
 // ════════════ DOTAÇÃO ════════════
 let _dotData = [];
 
-function filtrarItensDot(q) {
-  if (q.length < 2) { document.getElementById('dotItemSugestoes').classList.add('hidden'); return; }
-  const lista = (_itens||[]).filter(i => {
-    const s = q.toLowerCase();
-    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
-  }).slice(0,10);
-  mostrarAutocompleteItens('dotItemSugestoes','dotItemBusca', lista, 'selecionarItemDot');
+// Extrai o nome base de um item com variação (remove /35, /36, etc.)
+function _extrairBaseItem(descricao) {
+  return (descricao || '').replace(/\s*\/\s*[A-Z0-9]+\s*$/, '').trim();
 }
 
+function filtrarItensDot(q) {
+  if (q.length < 2) { document.getElementById('dotItemSugestoes').classList.add('hidden'); return; }
+  const s = q.toLowerCase();
+  const lista = (_itens||[]).filter(i =>
+    (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s)
+  ).slice(0, 30);
+
+  // Detectar grupos de variações (itens com mesmo base)
+  const bases = {};
+  lista.forEach(it => {
+    const base = _extrairBaseItem(it.descricao);
+    const temVariacao = base !== it.descricao.trim();
+    if (temVariacao) {
+      if (!bases[base]) bases[base] = [];
+      bases[base].push(it);
+    }
+  });
+
+  // Monta lista final: primeiro os "qualquer tamanho" dos grupos, depois os individuais
+  const sugestoes = document.getElementById('dotItemSugestoes');
+  sugestoes.innerHTML = '';
+
+  // Opções de "qualquer tamanho" para grupos detectados
+  Object.entries(bases).forEach(([base, itensGrupo]) => {
+    if (itensGrupo.length > 1) {
+      const li = document.createElement('div');
+      li.className = 'autocomplete-item';
+      li.style.cssText = 'border-left:3px solid #1e3a8a;padding-left:10px';
+      li.innerHTML = `<strong style="color:#1e3a8a">📦 ${base}</strong><span style="color:var(--text-3);font-size:10px;margin-left:6px">Qualquer tamanho (${itensGrupo.length} opções)</span>`;
+      li.onclick = () => selecionarItemBaseDot(base);
+      sugestoes.appendChild(li);
+    }
+  });
+
+  // Opções individuais (limitado a 10)
+  lista.slice(0, 10).forEach(it => {
+    const li = document.createElement('div');
+    li.className = 'autocomplete-item';
+    li.textContent = it.descricao + (it.codigo ? ` — ${it.codigo}` : '');
+    li.onclick = () => selecionarItemDot(it.id);
+    sugestoes.appendChild(li);
+  });
+
+  sugestoes.classList.toggle('hidden', sugestoes.children.length === 0);
+}
+
+// Seleciona um item específico (com tamanho/id)
 function selecionarItemDot(id) {
   const item = (_itens||[]).find(i => i.id === id);
   if (!item) return;
   document.getElementById('dotItemBusca').value = item.descricao;
   document.getElementById('dotItemId').value    = id;
+  document.getElementById('dotItemSugestoes').classList.add('hidden');
+}
+
+// Seleciona o item base (qualquer tamanho) — item_id fica vazio
+function selecionarItemBaseDot(base) {
+  document.getElementById('dotItemBusca').value = base;
+  document.getElementById('dotItemId').value    = '';   // sem item_id específico
   document.getElementById('dotItemSugestoes').classList.add('hidden');
 }
 
@@ -6890,8 +6940,13 @@ function renderDotacao() {
             <th style="padding:6px"></th>
           </tr></thead>
           <tbody>
-            ${itens.map(d => `<tr>
-              <td style="padding:6px 12px;font-size:11px;color:var(--text-1)">${d.item_base_nome||'—'}</td>
+            ${itens.map(d => {
+              const qualquerTam = !d.item_id;
+              const badge = qualquerTam
+                ? `<span style="font-size:9px;background:#1e3a8a;color:#fff;border-radius:10px;padding:1px 6px;margin-left:5px">qualquer tamanho</span>`
+                : '';
+              return `<tr>
+              <td style="padding:6px 12px;font-size:11px;color:var(--text-1)">${d.item_base_nome||'—'}${badge}</td>
               <td style="padding:6px;font-size:11px;text-align:center">${d.quantidade_maxima||1}</td>
               <td style="padding:6px;font-size:11px;color:var(--text-3)">${d.nivel_minimo||'Todos'}</td>
               <td style="padding:6px;font-size:11px;color:var(--text-3)">${d.grupo||'—'}</td>
@@ -6899,7 +6954,7 @@ function renderDotacao() {
                 <button class="row-action" onclick="editarDotacao('${d.id}')">Editar</button>
                 <button class="row-action" style="color:var(--red)" onclick="excluirDotacao('${d.id}')">✕</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;}).join('')}
           </tbody>
         </table>
       </td>
@@ -6917,17 +6972,26 @@ function toggleDotacaoFuncao(funcao, trEl) {
 }
 
 async function salvarDotacao() {
-  const id     = document.getElementById('dotEditId').value;
-  const itemId = document.getElementById('dotItemId').value;
-  const body   = {
-    funcao:           document.getElementById('dotFuncao').value.trim().toUpperCase(),
-    item_id:          itemId,
-    item_base_nome:   document.getElementById('dotItemBusca').value.trim(),
+  const id       = document.getElementById('dotEditId').value;
+  const itemId   = document.getElementById('dotItemId').value;
+  const itemNome = document.getElementById('dotItemBusca').value.trim();
+
+  if (!itemNome) { toast('Selecione um item', 'warn'); return; }
+
+  // item_base_nome: sempre o nome digitado/selecionado (sem tamanho se for "qualquer tamanho")
+  // item_id: pode ser vazio quando for "qualquer tamanho"
+  const body = {
+    funcao:            document.getElementById('dotFuncao').value.trim().toUpperCase(),
+    item_id:           itemId || null,
+    item_descricao:    itemNome,
+    item_base_nome:    _extrairBaseItem(itemNome),
     quantidade_maxima: Number(document.getElementById('dotQtdMax').value) || 1,
-    nivel_minimo:     document.getElementById('dotNivel').value,
-    grupo:            document.getElementById('dotGrupo').value.trim().toUpperCase() || null,
+    nivel_minimo:      document.getElementById('dotNivel').value,
+    grupo:             document.getElementById('dotGrupo').value.trim().toUpperCase() || null,
   };
-  if (!body.funcao || !itemId) { toast('Função e item são obrigatórios', 'warn'); return; }
+
+  if (!body.funcao) { toast('Informe a função', 'warn'); return; }
+
   const res = await api(id ? `/dotacao/${id}` : '/dotacao', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
@@ -6938,10 +7002,11 @@ async function salvarDotacao() {
 function editarDotacao(id) {
   const d = _dotData.find(x => x.id === id);
   if (!d) return;
-  document.getElementById('dotEditId').value = id;
-  document.getElementById('dotFuncao').value = d.funcao||'';
-  document.getElementById('dotItemBusca').value = d.item_base_nome||'';
-  document.getElementById('dotItemId').value    = d.item_id||'';
+  document.getElementById('dotEditId').value    = id;
+  document.getElementById('dotFuncao').value    = d.funcao||'';
+  // Se item_id é null, era "qualquer tamanho" — mostra só o item_base_nome
+  document.getElementById('dotItemBusca').value = d.item_base_nome || d.item_descricao || '';
+  document.getElementById('dotItemId').value    = d.item_id || '';
   document.getElementById('dotQtdMax').value    = d.quantidade_maxima||1;
   document.getElementById('dotNivel').value     = d.nivel_minimo||'Todos';
   document.getElementById('dotGrupo').value     = d.grupo||'';
