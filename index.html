@@ -7668,6 +7668,71 @@ async function carregarComprovantesColab() {
 // ── DEVOLUÇÃO ──
 let _dadosColabAtual = null;
 
+// ── cache de itens com info de serial/ensaio (carregado junto com _itens) ──
+// it.requer_ensaio, it.possui_serie, it.un_med estão disponíveis em _dadosColabAtual.itens
+// via a rota /consulta/colaborador/:id que já retorna esses campos
+
+function _eParItem(it) {
+  // Itens cuja un_med é PAR ou PR exigem 2 seriais por unidade devolvida/transferida
+  return ['PAR','PR'].includes((it.un_med||'').toUpperCase());
+}
+
+function _temSerial(it) {
+  return it.requer_ensaio && it.possui_serie;
+}
+
+// Dispara ao mudar a quantidade ou destino num item com serial — renderiza seletores de serial
+async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
+  const row = document.querySelector(`.dev-row[data-item-id="${itemId}"]`);
+  if (!row) return;
+  const qtdInput = row.querySelector('.dev-qtd');
+  const destinoSel = row.querySelector('.dev-destino');
+  const serialBox = row.querySelector('.dev-serial-box');
+  if (!serialBox) return;
+
+  const qtd = parseInt(qtdInput?.value) || 0;
+  if (qtd <= 0) { serialBox.innerHTML = ''; return; }
+
+  // Quantos seriais precisamos? Para par: qtd * 2, senão qtd
+  const qtdSeriais = parItem ? qtd * 2 : qtd;
+
+  // Busca seriais disponíveis deste colaborador para este item
+  serialBox.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:4px">Carregando seriais...</div>';
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/seriais-item/${itemId}`);
+  const seriais = res?.seriais || [];
+
+  if (!seriais.length) {
+    serialBox.innerHTML = '<div style="font-size:11px;color:#ef4444;padding:4px">⚠️ Nenhum serial encontrado para este colaborador</div>';
+    return;
+  }
+
+  const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
+  serialBox.innerHTML = `
+    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">🔢 Seriais ${hint}:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      ${seriais.map(s=>`
+        <label style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:11px;background:var(--bg-2)">
+          <input type="checkbox" class="dev-serial-cb" data-item-id="${itemId}" data-serial="${s.serial}" style="accent-color:#a855f7">
+          ${s.serial}
+        </label>`).join('')}
+    </div>
+    <div class="dev-serial-erro" style="font-size:11px;color:#ef4444;margin-top:4px;display:none"></div>`;
+
+  // Listener para limitar seleção ao número correto de seriais
+  row.querySelectorAll('.dev-serial-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = row.querySelectorAll('.dev-serial-cb:checked').length;
+      const erro = row.querySelector('.dev-serial-erro');
+      if (checked > qtdSeriais) {
+        cb.checked = false;
+        if (erro) { erro.textContent = `Selecione exatamente ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
+      } else {
+        if (erro) { erro.style.display='none'; }
+      }
+    });
+  });
+}
+
 function abrirDevolucaoColab() {
   if (!_dadosColabAtual) return;
   const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
@@ -7680,17 +7745,30 @@ function abrirDevolucaoColab() {
   const sel = document.getElementById('devArmazem');
   sel.innerHTML = '<option value="">Selecione...</option>' + (_armazens||[]).map(a=>`<option value="${a.id}" data-nome="${a.nome}">${a.nome}</option>`).join('');
 
-  // Monta lista de itens
-  document.getElementById('devItensLista').innerHTML = itensComSaldo.map(it=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}</div>
+  // Monta lista de itens — com suporte a serial quando requer_ensaio+possui_serie
+  document.getElementById('devItensLista').innerHTML = itensComSaldo.map(it => {
+    const temSer = _temSerial(it);
+    const ePar   = _eParItem(it);
+    const serialAttr = temSer ? `data-tem-serial="1" data-par="${ePar?'1':'0'}"` : '';
+    const serialBox  = temSer ? `<div class="dev-serial-box" style="padding:6px 0 2px 0;width:100%"></div>` : '';
+    const serialHint = temSer
+      ? `<span style="font-size:10px;color:#a855f7;margin-left:4px">${ePar?'🔢 Par (2 seriais/un)':'🔢 Serial obrigatório'}</span>`
+      : '';
+    return `
+    <div class="dev-row" data-item-id="${it.item_id}" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}${serialHint}</div>
       <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
-      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd" style="width:60px;font-size:12px;text-align:center" data-item-id="${it.item_id}" data-item-desc="${it.descricao}">
-      <select class="form-input dev-destino" style="width:120px;font-size:11px">
+      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd" style="width:60px;font-size:12px;text-align:center"
+        data-item-id="${it.item_id}" data-item-desc="${it.descricao}" ${serialAttr}
+        oninput="_atualizarSeriaisDev('${it.item_id}', ${it.saldoEmMaos}, ${ePar})">
+      <select class="form-input dev-destino" style="width:120px;font-size:11px"
+        onchange="_atualizarSeriaisDev('${it.item_id}', ${it.saldoEmMaos}, ${ePar})">
         <option value="ESTOQUE">↩️ Estoque</option>
         <option value="INUTILIZADO">🗑️ Inutilizado</option>
       </select>
-    </div>`).join('');
+      ${serialBox}
+    </div>`;
+  }).join('');
 
   document.getElementById('modalDevolucaoColab').classList.remove('hidden');
 }
@@ -7700,23 +7778,44 @@ function fecharModalDevolucao() {
 }
 
 async function confirmarDevolucao() {
-  const armazem_id = document.getElementById('devArmazem').value;
+  const armazem_id   = document.getElementById('devArmazem').value;
   const nome_armazem = document.getElementById('devArmazem').selectedOptions[0]?.dataset.nome || '';
-  const data    = document.getElementById('devData').value;
-  const motivo  = document.getElementById('devMotivo').value;
-  const obs     = document.getElementById('devObs').value;
+  const data   = document.getElementById('devData').value;
+  const motivo = document.getElementById('devMotivo').value;
+  const obs    = document.getElementById('devObs').value;
 
   if (!armazem_id || !motivo || !data) { toast('Preencha armazém, motivo e data', 'warn'); return; }
 
   const itens = [];
-  document.querySelectorAll('.dev-qtd').forEach((input, idx) => {
-    const qtd = parseInt(input.value) || 0;
-    if (qtd > 0) {
-      const destino = document.querySelectorAll('.dev-destino')[idx]?.value || 'ESTOQUE';
-      itens.push({ item_id: input.dataset.itemId, item_descricao: input.dataset.itemDesc, quantidade: qtd, destino });
+  let erro = null;
+
+  document.querySelectorAll('.dev-row').forEach(row => {
+    const qtdInput = row.querySelector('.dev-qtd');
+    const destSel  = row.querySelector('.dev-destino');
+    const qtd = parseInt(qtdInput?.value) || 0;
+    if (qtd <= 0) return;
+
+    const item_id    = qtdInput.dataset.itemId;
+    const item_descricao = qtdInput.dataset.itemDesc;
+    const destino    = destSel?.value || 'ESTOQUE';
+    const temSerial  = qtdInput.dataset.temSerial === '1';
+    const ePar       = qtdInput.dataset.par === '1';
+
+    let seriais = null;
+    if (temSerial) {
+      const selecionados = [...row.querySelectorAll('.dev-serial-cb:checked')].map(cb => cb.dataset.serial);
+      const qtdNecessaria = ePar ? qtd * 2 : qtd;
+      if (selecionados.length !== qtdNecessaria) {
+        erro = `Item "${item_descricao}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
+        return;
+      }
+      seriais = selecionados;
     }
+
+    itens.push({ item_id, item_descricao, quantidade: qtd, destino, seriais });
   });
 
+  if (erro) { toast(erro, 'warn'); return; }
   if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
 
   const res = await api(`/consulta/colaborador/${_consultaColabAtual}/devolucao`, {
@@ -7730,7 +7829,7 @@ async function confirmarDevolucao() {
       toast('Devolução registrada!', 'success');
     }
     fecharModalDevolucao();
-    abrirConsultaColab(_consultaColabAtual); // Recarrega ficha
+    abrirConsultaColab(_consultaColabAtual);
   } else toast(res?.erro || 'Erro ao registrar', 'error');
 }
 
@@ -7810,22 +7909,99 @@ async function excluirAjuste(itemId) {
 }
 
 // ── TRANSFERÊNCIA ENTRE COLABORADORES ──
+async function _atualizarSeriaisTransf(itemId, parItem) {
+  const row = document.querySelector(`.transf-row[data-item-id="${itemId}"]`);
+  if (!row) return;
+  const qtdInput = row.querySelector('.transf-qtd');
+  const serialBox = row.querySelector('.transf-serial-box');
+  if (!serialBox) return;
+
+  const qtd = parseInt(qtdInput?.value) || 0;
+  if (qtd <= 0) { serialBox.innerHTML = ''; return; }
+
+  const qtdSeriais = parItem ? qtd * 2 : qtd;
+  serialBox.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:4px">Carregando seriais...</div>';
+
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/seriais-item/${itemId}`);
+  const seriais = res?.seriais || [];
+
+  if (!seriais.length) {
+    serialBox.innerHTML = '<div style="font-size:11px;color:#ef4444;padding:4px">⚠️ Nenhum serial encontrado para este colaborador</div>';
+    return;
+  }
+
+  const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
+  serialBox.innerHTML = `
+    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">🔢 Seriais ${hint}:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      ${seriais.map(s=>`
+        <label style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:11px;background:var(--bg-2)">
+          <input type="checkbox" class="transf-serial-cb" data-item-id="${itemId}" data-serial="${s.serial}" style="accent-color:#0ea5e9">
+          ${s.serial}
+        </label>`).join('')}
+    </div>
+    <div class="transf-serial-erro" style="font-size:11px;color:#ef4444;margin-top:4px;display:none"></div>`;
+
+  row.querySelectorAll('.transf-serial-cb').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const checked = row.querySelectorAll('.transf-serial-cb:checked').length;
+      const erro = row.querySelector('.transf-serial-erro');
+      if (checked > qtdSeriais) {
+        cb.checked = false;
+        if (erro) { erro.textContent = `Selecione exatamente ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
+      } else {
+        if (erro) { erro.style.display='none'; }
+      }
+    });
+  });
+}
+
 function abrirTransfColab() {
   if (!_dadosColabAtual) return;
+
+  // Filtra EPIs (não podem ser transferidos) e itens sem saldo
   const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
-  if (!itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
+  const itensTransf   = itensComSaldo.filter(i => i.categoria !== 'EPI');
+  const episBloqueados = itensComSaldo.filter(i => i.categoria === 'EPI');
+
+  if (!itensTransf.length && !itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
+  if (!itensTransf.length) { toast('Todos os itens deste colaborador são EPIs individuais e não podem ser transferidos', 'warn'); return; }
 
   document.getElementById('transfOrigemNome').textContent = `De: ${_dadosColabAtual.colaborador.nome}`;
   document.getElementById('transfDestinoBusca').value = '';
   document.getElementById('transfDestinoId').value = '';
 
-  document.getElementById('transfItensLista').innerHTML = itensComSaldo.map(it=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}</div>
-      <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#0ea5e9">${it.saldoEmMaos}</strong></div>
-      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input transf-qtd" style="width:60px;font-size:12px;text-align:center" data-item-id="${it.item_id}" data-item-nome="${it.descricao}">
-    </div>`).join('');
+  let html = '';
 
+  // Aviso de EPIs bloqueados se houver
+  if (episBloqueados.length) {
+    html += `<div style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-sm);padding:8px;font-size:11px;color:#ef4444">
+      🚫 EPIs individuais (não transferíveis): ${episBloqueados.map(i=>i.descricao).join(', ')}
+    </div>`;
+  }
+
+  html += itensTransf.map(it => {
+    const temSer = _temSerial(it);
+    const ePar   = _eParItem(it);
+    const serialHint = temSer
+      ? `<span style="font-size:10px;color:#0ea5e9;margin-left:4px">${ePar?'🔢 Par (2 seriais/un)':'🔢 Serial obrigatório'}</span>`
+      : '';
+    const serialBox = temSer
+      ? `<div class="transf-serial-box" style="padding:6px 0 2px 0;width:100%"></div>`
+      : '';
+    return `
+    <div class="transf-row" data-item-id="${it.item_id}" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}${serialHint}</div>
+      <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#0ea5e9">${it.saldoEmMaos}</strong></div>
+      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input transf-qtd" style="width:60px;font-size:12px;text-align:center"
+        data-item-id="${it.item_id}" data-item-nome="${it.descricao}"
+        data-tem-serial="${temSer?'1':'0'}" data-par="${ePar?'1':'0'}"
+        oninput="_atualizarSeriaisTransf('${it.item_id}', ${ePar})">
+      ${serialBox}
+    </div>`;
+  }).join('');
+
+  document.getElementById('transfItensLista').innerHTML = html;
   document.getElementById('modalTransfColab').classList.remove('hidden');
 }
 
@@ -7848,11 +8024,33 @@ async function confirmarTransfColab() {
   if (!destId) { toast('Selecione o colaborador destino', 'warn'); return; }
 
   const itens = [];
-  document.querySelectorAll('.transf-qtd').forEach(input => {
-    const qtd = parseInt(input.value) || 0;
-    if (qtd > 0) itens.push({ item_id: input.dataset.itemId, item_nome: input.dataset.itemNome, quantidade: qtd });
+  let erro = null;
+
+  document.querySelectorAll('.transf-row').forEach(row => {
+    const qtdInput = row.querySelector('.transf-qtd');
+    const qtd = parseInt(qtdInput?.value) || 0;
+    if (qtd <= 0) return;
+
+    const item_id   = qtdInput.dataset.itemId;
+    const item_nome = qtdInput.dataset.itemNome;
+    const temSerial = qtdInput.dataset.temSerial === '1';
+    const ePar      = qtdInput.dataset.par === '1';
+
+    let seriais = null;
+    if (temSerial) {
+      const selecionados = [...row.querySelectorAll('.transf-serial-cb:checked')].map(cb => cb.dataset.serial);
+      const qtdNecessaria = ePar ? qtd * 2 : qtd;
+      if (selecionados.length !== qtdNecessaria) {
+        erro = `Item "${item_nome}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
+        return;
+      }
+      seriais = selecionados;
+    }
+
+    itens.push({ item_id, item_nome, quantidade: qtd, seriais });
   });
 
+  if (erro) { toast(erro, 'warn'); return; }
   if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
 
   const res = await api(`/consulta/colaborador/${_consultaColabAtual}/transferencia`, {
