@@ -2931,19 +2931,26 @@ tbody tr:hover td{background:var(--bg-hover);}
         <button class="btn btn-ghost" style="font-size:11px;color:#1e3a8a;border-color:#1e3a8a" onclick="toggleComprovantesColab()">📄 Comprovantes</button>
       </div>
 
-      <!-- SALDO EM MÃOS -->
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Saldo em Mãos por Item</div>
-      <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-        <thead><tr>
-          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total Entregue</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Total Trocado</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:#a855f7;border-bottom:1px solid var(--border)">Em Mãos</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Última Retirada</th>
-        </tr></thead>
-        <tbody id="ccSaldoBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)"><div class="spinner"></div></td></tr></tbody>
-      </table>
-      <div style="font-size:11px;color:var(--text-3)" id="ccSaldoResumo"></div>
+      <!-- SALDO EM MÃOS (colapsável) -->
+      <div style="margin-bottom:8px">
+        <button onclick="toggleSaldoColab()" id="ccBtnSaldo" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:none;border:none;cursor:pointer;padding:0;text-align:left">
+          <span style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">📦 Saldo em Mãos por Item</span>
+          <span id="ccSaldoChevron" style="font-size:12px;color:var(--text-3);transition:transform .2s">▼</span>
+        </button>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="ccSaldoResumo"></div>
+      </div>
+      <div id="secSaldoColab" style="display:none;margin-bottom:16px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Item</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Total Entregue</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Total Trocado</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#a855f7;border-bottom:1px solid var(--border)">Em Mãos</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Última Retirada</th>
+          </tr></thead>
+          <tbody id="ccSaldoBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
 
       <!-- DOTAÇÃO (colapsável) -->
       <div id="secDotacaoColab" style="display:none;margin-top:16px">
@@ -7500,6 +7507,9 @@ async function abrirConsultaColab(id) {
   document.getElementById('secHistoricoColab').style.display = 'none';
   document.getElementById('secDotacaoColab').style.display   = 'none';
   document.getElementById('secComprovantesColab').style.display = 'none';
+  document.getElementById('secSaldoColab').style.display = 'none';
+  const chev = document.getElementById('ccSaldoChevron');
+  if (chev) chev.style.transform = '';
   _comprovantesColabCarregados = false;
 
   const data = await api(`/consulta/colaborador/${id}`);
@@ -7576,6 +7586,14 @@ async function abrirConsultaColab(id) {
 function fecharConsultaColab() {
   document.getElementById('modalConsultaColab').classList.add('hidden');
   _consultaColabAtual = null;
+}
+
+function toggleSaldoColab() {
+  const sec = document.getElementById('secSaldoColab');
+  const chevron = document.getElementById('ccSaldoChevron');
+  const aberto = sec.style.display !== 'none';
+  sec.style.display = aberto ? 'none' : '';
+  if (chevron) chevron.style.transform = aberto ? '' : 'rotate(180deg)';
 }
 
 function toggleHistoricoColab() {
