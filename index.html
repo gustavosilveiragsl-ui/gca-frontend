@@ -2928,6 +2928,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         <button class="btn btn-ghost" style="font-size:11px;color:#f59e0b;border-color:#f59e0b" onclick="abrirAjusteInicial()">⚙️ Ajuste Inicial</button>
         <button class="btn btn-ghost" style="font-size:11px;color:#0ea5e9;border-color:#0ea5e9" onclick="abrirTransfColab()">🔄 Transferir</button>
         <button class="btn btn-ghost" style="font-size:11px" id="ccBtnDotacao" onclick="toggleDotacaoColab()">📋 Dotação</button>
+        <button class="btn btn-ghost" style="font-size:11px;color:#1e3a8a;border-color:#1e3a8a" onclick="toggleComprovantesColab()">📄 Comprovantes</button>
       </div>
 
       <!-- SALDO EM MÃOS -->
@@ -2963,6 +2964,12 @@ tbody tr:hover td{background:var(--bg-hover);}
           </tr></thead>
           <tbody id="ccHistoricoBody"></tbody>
         </table>
+      </div>
+
+      <!-- COMPROVANTES (colapsável) -->
+      <div id="secComprovantesColab" style="display:none;margin-top:16px">
+        <div style="font-size:11px;font-weight:600;color:#1e3a8a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📄 Comprovantes de Devolução e Transferência</div>
+        <div id="ccComprovantesBody" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
 
     </div>
@@ -7492,6 +7499,8 @@ async function abrirConsultaColab(id) {
   document.getElementById('ccSaldoBody').innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
   document.getElementById('secHistoricoColab').style.display = 'none';
   document.getElementById('secDotacaoColab').style.display   = 'none';
+  document.getElementById('secComprovantesColab').style.display = 'none';
+  _comprovantesColabCarregados = false;
 
   const data = await api(`/consulta/colaborador/${id}`);
   if (!data?.ok) { toast('Erro ao carregar ficha', 'error'); return; }
@@ -7577,6 +7586,83 @@ function toggleHistoricoColab() {
 function toggleDotacaoColab() {
   const sec = document.getElementById('secDotacaoColab');
   sec.style.display = sec.style.display === 'none' ? '' : 'none';
+}
+
+let _comprovantesColabCarregados = false;
+
+async function toggleComprovantesColab() {
+  const sec = document.getElementById('secComprovantesColab');
+  const abrindo = sec.style.display === 'none';
+  sec.style.display = abrindo ? '' : 'none';
+  if (abrindo && !_comprovantesColabCarregados) {
+    await carregarComprovantesColab();
+  }
+}
+
+async function carregarComprovantesColab() {
+  const body = document.getElementById('ccComprovantesBody');
+  body.innerHTML = '<div style="text-align:center;padding:16px"><div class="spinner"></div></div>';
+
+  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/historico-comprovantes`);
+  if (!res?.ok) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:16px">Erro ao carregar comprovantes</div>';
+    return;
+  }
+  _comprovantesColabCarregados = true;
+
+  const devolucoes     = res.devolucoes || [];
+  const transferencias = res.transferencias || [];
+
+  if (!devolucoes.length && !transferencias.length) {
+    body.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum comprovante encontrado</div>';
+    return;
+  }
+
+  const cardDevolucao = (d) => {
+    const itensTxt = (d.itens||[]).map(it => `${it.item_descricao} (${it.quantidade})`).join(', ') || '—';
+    const linkBtn = d.pdf_url
+      ? `<a href="${d.pdf_url}" target="_blank" style="font-size:11px;color:#1e3a8a;font-weight:600;text-decoration:none">📄 Ver PDF</a>`
+      : `<span style="font-size:11px;color:var(--text-3)">PDF indisponível</span>`;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:600;color:#a855f7">↩️ Devolução</span>
+        <span style="font-size:11px;color:var(--text-3)">${formatarData(d.data)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-2)">${itensTxt}</div>
+      <div style="font-size:11px;color:var(--text-3)">Destino: ${d.nome_armazem||'—'} · Motivo: ${d.motivo||'—'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span style="font-size:10px;color:var(--text-3)">${d.usuario||'—'}</span>
+        ${linkBtn}
+      </div>
+    </div>`;
+  };
+
+  const cardTransferencia = (t) => {
+    const itensTxt = (t.itens||[]).map(it => `${it.item_nome} (${it.quantidade})`).join(', ') || '—';
+    const linkBtn = t.pdf_url
+      ? `<a href="${t.pdf_url}" target="_blank" style="font-size:11px;color:#1e3a8a;font-weight:600;text-decoration:none">📄 Ver PDF</a>`
+      : `<span style="font-size:11px;color:var(--text-3)">PDF indisponível</span>`;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;font-weight:600;color:#0ea5e9">🔄 Transferência</span>
+        <span style="font-size:11px;color:var(--text-3)">${formatarData(t.data)}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text-2)">${itensTxt}</div>
+      <div style="font-size:11px;color:var(--text-3)">De: ${t.colab_origem_nome||'—'} → Para: ${t.colab_destino_nome||'—'}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+        <span style="font-size:10px;color:var(--text-3)">${t.usuario||'—'}</span>
+        ${linkBtn}
+      </div>
+    </div>`;
+  };
+
+  // Junta tudo e ordena por data/criação mais recente primeiro
+  const todos = [
+    ...devolucoes.map(d => ({ tipo: 'dev', dado: d, criado_em: d.criado_em })),
+    ...transferencias.map(t => ({ tipo: 'trf', dado: t, criado_em: t.criado_em })),
+  ].sort((a,b) => new Date(b.criado_em) - new Date(a.criado_em));
+
+  body.innerHTML = todos.map(x => x.tipo === 'dev' ? cardDevolucao(x.dado) : cardTransferencia(x.dado)).join('');
 }
 
 // ── DEVOLUÇÃO ──
