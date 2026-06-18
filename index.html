@@ -7638,7 +7638,11 @@ async function confirmarDevolucao() {
   });
 
   if (res?.ok) {
-    toast('Devolução registrada!', 'success');
+    if (res.comprovante) {
+      toast(`Devolução registrada! <a href="${res.comprovante}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;text-decoration:underline">Ver comprovante</a>`, 'success');
+    } else {
+      toast('Devolução registrada!', 'success');
+    }
     fecharModalDevolucao();
     abrirConsultaColab(_consultaColabAtual); // Recarrega ficha
   } else toast(res?.erro || 'Erro ao registrar', 'error');
@@ -7770,7 +7774,11 @@ async function confirmarTransfColab() {
   });
 
   if (res?.ok) {
-    toast('Transferência registrada!', 'success');
+    if (res.comprovante) {
+      toast(`Transferência registrada! <a href="${res.comprovante}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;text-decoration:underline">Ver comprovante</a>`, 'success');
+    } else {
+      toast('Transferência registrada!', 'success');
+    }
     document.getElementById('modalTransfColab').classList.add('hidden');
     abrirConsultaColab(_consultaColabAtual);
   } else toast(res?.erro || 'Erro ao transferir', 'error');
