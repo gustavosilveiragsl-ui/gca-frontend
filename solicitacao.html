@@ -516,6 +516,7 @@ let _mIdx   = 0;         // índice atual na fila
 let _mCache = {};        // cache validações { itemId: { troca, dur } }
 
 let _solAtual = null;
+let _listaSolsCache = [];
 
 // ══════════════════════════════════════════
 // API HELPER
@@ -865,7 +866,7 @@ async function adicionarItemConf() {
       document.getElementById('durPrazo').textContent  = resDur.prazoMinDias + ' dias';
       document.getElementById('wDur').style.display    = 'block';
       if (!_mCache[it.id]) _mCache[it.id] = {};
-      _mCache[it.id].dur = resDur;
+      _mCache[it.id].dur = { diasDecorridos: resDur.diasDecorridos, prazoMinDias: resDur.prazoMinDias };
       msgConf('⚠️ Preencha a justificativa acima e clique em Adicionar Item.', 'e');
       return;
     }
@@ -877,6 +878,7 @@ async function adicionarItemConf() {
   const troca = _mCache[it.id]?.troca;
   const just  = document.getElementById('wDur').style.display !== 'none' ? document.getElementById('durJust').value.trim() : null;
 
+  const _durInfo = _mCache[it.id]?.dur || null;
   _itens.push({
     itemId:     it.id,
     nome:       it.descricao,
@@ -887,6 +889,8 @@ async function adicionarItemConf() {
     trocaTamanho: !!troca,
     itemIdAntigo: troca?.itemIdAntigo || null,
     nomeItemAntigo: troca?.nomeAntigo || null,
+    diasDecorridos: _durInfo?.diasDecorridos || null,
+    prazoMinDias:   _durInfo?.prazoMinDias   || null,
   });
 
   renderItens();
@@ -983,9 +987,10 @@ async function carregarSols() {
   const res = await r(url);
   const lista = res.data || [];
   if (!lista.length) { el.innerHTML = '<p style="color:var(--mt);text-align:center;padding:36px;font-size:13px">Nenhuma solicitação encontrada.</p>'; return; }
-  el.innerHTML = lista.map(s => {
+  _listaSolsCache = lista;
+  el.innerHTML = lista.map((s, idx) => {
     let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
-    return `<div class="sol-c ${s.prioridade==='Urgente'?'urg':''}" onclick="abrirDet(${JSON.stringify(JSON.stringify(s))})">
+    return `<div class="sol-c ${s.prioridade==='Urgente'?'urg':''}" onclick="abrirDetIdx(${idx})">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;margin-bottom:7px">
         <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
           <span style="font-size:11px;font-family:monospace;color:var(--az)">${s.id}</span>
@@ -999,8 +1004,11 @@ async function carregarSols() {
   }).join('');
 }
 
-function abrirDet(sJson) {
-  const s = JSON.parse(sJson);
+function abrirDetIdx(idx) {
+  abrirDet(_listaSolsCache[idx]);
+}
+
+function abrirDet(s) {
   _solAtual = s;
   let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
   let imgs  = []; try { imgs  = JSON.parse(s.imagens_json||'[]'); } catch {}

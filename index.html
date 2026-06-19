@@ -5705,10 +5705,10 @@ function renderSolicitacoes() {
     ].filter(Boolean).join(' ');
 
     const _rowBorder = s.status === 'PENDENTE'
-      ? 'outline:2px solid rgba(245,158,11,.45);outline-offset:-1px;background:rgba(245,158,11,.03)'
+      ? 'border-left:4px solid #f59e0b !important;background:rgba(245,158,11,.08) !important'
       : s.status === 'VISUALIZADO'
-      ? 'outline:2px solid rgba(59,130,246,.35);outline-offset:-1px;background:rgba(59,130,246,.02)'
-      : '';
+      ? 'border-left:4px solid #3b82f6 !important;background:rgba(59,130,246,.06) !important'
+      : 'border-left:4px solid transparent';
     return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${s.id}')">
       <td>
         <div class="td-main">${nome}</div>
@@ -5860,7 +5860,7 @@ async function abrirModalSolicitacao(id) {
 
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
-      ${podeAtender ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}');fecharModalSolicitacao()">🤝 Iniciar Atendimento</button>` : ''}
+      ${podeAtender ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}')">🤝 Iniciar Atendimento</button>` : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')">✏️ Editar</button>` : ''}
       ${podeStatus  ? `
         <select class="form-input" id="solNovoStatus" style="width:190px;font-size:11px">${statusOpts}</select>
@@ -5944,9 +5944,9 @@ function renderItemSolicitacao(i) {
   const justificativa = partes[1] || '';
 
   // Detecta fora do prazo: ou pelos campos diretos ou extraindo do texto do motivo
-  const dias  = i.diasDecorridos || null;
-  const prazo = i.prazoMinDias   || null;
-  const foraPrazo = justificativa && dias && prazo && dias < prazo;
+  const dias  = i.diasDecorridos != null ? Number(i.diasDecorridos) : null;
+  const prazo = i.prazoMinDias   != null ? Number(i.prazoMinDias)   : null;
+  const foraPrazo = justificativa && dias != null && prazo != null && dias < prazo;
 
   return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--bg-card)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
