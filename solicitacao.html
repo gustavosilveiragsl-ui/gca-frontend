@@ -1010,7 +1010,9 @@ function abrirDet(sJson) {
   document.getElementById('detSol').textContent   = s.solicitante_nome||'—';
   document.getElementById('detCol').textContent   = s.colaborador_nome||'—';
   document.getElementById('detArm').textContent   = s.nome_armazem||'—';
-  document.getElementById('detData').textContent  = s.data_hora||s.criado_em||'—';
+  // Data formatada
+  const _dh = s.data_hora || s.criado_em || '';
+  document.getElementById('detData').textContent = _dh;
 
   if (s.obs_geral) { document.getElementById('detObsW').style.display='block'; document.getElementById('detObs').textContent=s.obs_geral; }
   else document.getElementById('detObsW').style.display='none';
@@ -1034,15 +1036,27 @@ function abrirDet(sJson) {
     }).join('');
   }
 
-  // Itens
-  document.getElementById('detItens').innerHTML = itens.map(it=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:rgba(0,0,0,.25);border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,.04)">
-      <div>
+  // Itens com justificativa e alerta fora do prazo
+  document.getElementById('detItens').innerHTML = itens.map(it => {
+    const partes = (it.motivo||'').split(' — Justificativa: ');
+    const motivoTxt = partes[0] || '—';
+    const just = partes[1] || '';
+    const dias  = it.diasDecorridos || null;
+    const prazo = it.prazoMinDias   || null;
+    const foraPrazo = just && dias && prazo && Number(dias) < Number(prazo);
+    return `<div style="padding:9px 11px;background:rgba(0,0,0,.25);border-radius:8px;margin-bottom:6px;border:1px solid rgba(255,255,255,.04)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div style="font-weight:600;color:#e2e8f0;font-size:13px">${it.nome||it.descricao||'—'}</div>
-        <div style="font-size:11px;color:var(--mt);margin-top:1px">${it.motivo||'—'}</div>
+        <span style="font-size:16px;font-weight:800;color:var(--az);margin-left:10px;flex-shrink:0">${it.quantidade}</span>
       </div>
-      <span style="font-size:17px;font-weight:800;color:var(--az);margin-left:10px">${it.quantidade}</span>
-    </div>`).join('');
+      <div style="font-size:11px;color:var(--mt);margin-top:2px">${motivoTxt}</div>
+      ${just ? `<div style="font-size:11px;color:#f59e0b;margin-top:3px">💬 Justificativa: ${just}</div>` : ''}
+      ${foraPrazo ? `<div style="margin-top:6px;border:1px solid rgba(245,158,11,.3);border-radius:6px;padding:5px 8px;font-size:11px;background:rgba(245,158,11,.06)">
+        <span style="color:#f59e0b;font-weight:600">⚠️ Fora do prazo</span>
+        <span style="color:rgba(255,255,255,.5);margin-left:8px">Durou ${dias} dias · Estimado: ${prazo} dias</span>
+      </div>` : ''}
+    </div>`;
+  }).join('');
 
   // Imagens — suporta { dataUrl } (fallback base64) e { url } (Drive)
   if (imgs.length) {
@@ -1059,7 +1073,8 @@ function abrirDet(sJson) {
     document.getElementById('detImgsW').style.display = 'none';
   }
 
-  document.getElementById('detCancelW').style.display = ['PENDENTE','VISUALIZADO'].includes(s.status) ? 'block' : 'none';
+  // Solicitante pode cancelar apenas enquanto PENDENTE
+  document.getElementById('detCancelW').style.display = s.status === 'PENDENTE' ? 'block' : 'none';
   document.getElementById('mDet').style.display = 'flex';
 }
 

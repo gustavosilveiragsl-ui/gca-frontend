@@ -5704,14 +5704,27 @@ function renderSolicitacoes() {
       temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600">✍️ Ass. pendente</span>' : '',
     ].filter(Boolean).join(' ');
 
-    return `<tr style="cursor:pointer" onclick="abrirModalSolicitacao('${s.id}')">
+    const _rowBorder = s.status === 'PENDENTE'
+      ? 'outline:2px solid rgba(245,158,11,.45);outline-offset:-1px;background:rgba(245,158,11,.03)'
+      : s.status === 'VISUALIZADO'
+      ? 'outline:2px solid rgba(59,130,246,.35);outline-offset:-1px;background:rgba(59,130,246,.02)'
+      : '';
+    return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${s.id}')">
       <td>
         <div class="td-main">${nome}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${s.id}</div>
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
       <td style="font-size:11px;color:var(--text-2)">${sol}</td>
-      <td>${formatarData(s.data_hora?.split(' ')[0]||s.criado_em?.split('T')[0])}</td>
+      <td>${(() => {
+        // data_hora pode vir como "19/06/2026, 10:30" (pt-BR) ou ISO
+        const dh = s.data_hora || s.criado_em || '';
+        if (dh.includes('/')) { // formato pt-BR: dd/MM/yyyy, HH:mm
+          const partes = dh.split(',')[0].trim().split('/');
+          if (partes.length === 3) return partes[0] + '/' + partes[1] + '/' + partes[2];
+        }
+        return formatarData(dh.split('T')[0]);
+      })()}</td>
       <td>${qtd} ${qtd===1?'item':'itens'}</td>
       <td>${priorTag}</td>
       <td>${statusTag}</td>
@@ -5764,7 +5777,11 @@ async function abrirModalSolicitacao(id) {
   const obs  = s.obs_geral || s.observacao || '';
 
   document.getElementById('solModalTitulo').textContent = s.id;
-  document.getElementById('solModalSub').textContent    = `${nome} • Solicitado por: ${sol} • ${formatarData(s.data_hora?.split(' ')[0]||s.criado_em?.split('T')[0])}`;
+  const _dh = s.data_hora || s.criado_em || '';
+  let _dataFmt = '';
+  if (_dh.includes('/')) { const _p = _dh.split(',')[0].trim().split('/'); _dataFmt = _p.length===3 ? _p[0]+'/'+_p[1]+'/'+_p[2] : _dh; }
+  else _dataFmt = formatarData(_dh.split('T')[0]);
+  document.getElementById('solModalSub').textContent    = `${nome} • Solicitado por: ${sol} • ${_dataFmt}`;
 
   document.getElementById('solModalBody').innerHTML = `
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
@@ -5921,10 +5938,16 @@ function renderItemAtendimento(it, i) {
 }
 
 function renderItemSolicitacao(i) {
+  // Separa motivo da justificativa (formato: "Motivo — Justificativa: texto")
   const partes = (i.motivo||'').split(' — Justificativa: ');
-  const motivoTexto    = partes[0] || '—';
-  const justificativa  = partes[1] || '';
-  const foraPrazo      = i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias;
+  const motivoTexto   = partes[0] || '—';
+  const justificativa = partes[1] || '';
+
+  // Detecta fora do prazo: ou pelos campos diretos ou extraindo do texto do motivo
+  const dias  = i.diasDecorridos || null;
+  const prazo = i.prazoMinDias   || null;
+  const foraPrazo = justificativa && dias && prazo && dias < prazo;
+
   return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--bg-card)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <div style="font-size:12px;font-weight:600;color:var(--text-1)">${i.nome||i.descricao||'—'}</div>
@@ -5938,9 +5961,9 @@ function renderItemSolicitacao(i) {
     ${foraPrazo ? `<div style="margin-top:8px;border:2px solid #f59e0b;border-radius:var(--radius-sm);padding:8px;font-size:11px">
       <div style="color:#f59e0b;font-weight:600;margin-bottom:4px">⚠️ Item fora do prazo de durabilidade</div>
       <div style="display:flex;gap:16px">
-        <span style="color:#ef4444;font-weight:600">Durou: ${i.diasDecorridos} dias</span>
+        <span style="color:#ef4444;font-weight:600">Durou: ${dias} dias</span>
         <span>→</span>
-        <span style="color:#22c55e;font-weight:600">Estimado: ${i.prazoMinDias} dias</span>
+        <span style="color:#22c55e;font-weight:600">Estimado: ${prazo} dias</span>
       </div>
     </div>` : ''}
   </div>`;
@@ -6010,38 +6033,50 @@ async function salvarEdicaoSolicitacao(id) {
   }
 }
 
-function atenderSolicitacao(id) {
+async function atenderSolicitacao(id) {
   const s = _solicitacoes.find(x => x.id === id);
   if (!s) return;
   window._solicitacaoAtendimento = s;
+  fecharModalSolicitacao();
   showView('atendimento');
 
-  // Se já tem colaborador na solicitação, pré-seleciona
-  if (s.colaborador_id || s.colaboradorId) {
-    setTimeout(async () => {
-      iniciarAtendimento();
-      setTimeout(async () => {
-        await selecionarColabAtend(s.colaborador_id || s.colaboradorId);
-        // Pré-carrega itens da solicitação usando adicionarItensAoAtendimento
-        let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
-        if (itens.length && _armazens.length) {
-          const selecionados = itens.map(it => {
-            const itemLocal = (_itens||[]).find(i => i.id === (it.item_id||it.itemId));
-            return {
-              item:    itemLocal || { id: it.item_id||it.itemId, descricao: it.descricao||it.item_descricao, codigo: '', un_med: 'UN', requer_ensaio: false },
-              qtd:     it.quantidade || 1,
-              motivo:  'Entrega inicial',
-              armazem: _armazens[0]?.id || '',
-            };
-          }).filter(s => s.item?.id);
-          if (selecionados.length) {
-            setTimeout(() => adicionarItensAoAtendimento(selecionados), 600);
-          }
-        }
-      }, 500);
-    }, 300);
-  } else {
-    toast(`Solicitação vinculada! Selecione o colaborador e inicie o atendimento.`, 'info', 5000);
+  const colabId = s.colaborador_id || s.colaboradorId;
+  if (!colabId) {
+    toast('Solicitação vinculada! Selecione o colaborador e inicie o atendimento.', 'info', 5000);
+    return;
+  }
+
+  // Aguarda a view de atendimento montar
+  await new Promise(r => setTimeout(r, 350));
+
+  // 1) PRIMEIRO: seleciona e inicia o atendimento com o colaborador
+  await selecionarColabAtend(colabId);
+  await new Promise(r => setTimeout(r, 200));
+  iniciarAtendimento();
+
+  // 2) DEPOIS: carrega os itens automaticamente
+  await new Promise(r => setTimeout(r, 600));
+  let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+  if (!itens.length) return;
+
+  // Determina armazém da solicitação
+  const armId = s.armazem_id || s.armazemId || _armazens[0]?.id || '';
+
+  const selecionados = itens.map(it => {
+    const itemLocal = (_itens||[]).find(i => i.id === (it.itemId||it.item_id));
+    // Motivo: usa o motivo original da solicitação se disponível
+    const motivoSol = (it.motivo||'').split(' — Justificativa:')[0].trim() || 'Entrega inicial';
+    return {
+      item:    itemLocal || { id: it.itemId||it.item_id, descricao: it.nome||it.descricao||it.item_descricao||'—', codigo: '', un_med: 'UN', requer_ensaio: false },
+      qtd:     it.quantidade || 1,
+      motivo:  motivoSol,
+      armazem: armId,
+    };
+  }).filter(x => x.item?.id);
+
+  if (selecionados.length) {
+    adicionarItensAoAtendimento(selecionados);
+    toast(`✅ ${selecionados.length} item(ns) carregado(s) da solicitação.`, 'success', 3000);
   }
 }
 
