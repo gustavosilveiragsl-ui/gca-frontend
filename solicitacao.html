@@ -979,13 +979,17 @@ function abrirDet(sJson) {
       <span style="font-size:17px;font-weight:800;color:var(--az);margin-left:10px">${it.quantidade}</span>
     </div>`).join('');
 
-  // Imagens
+  // Imagens — suporta { dataUrl } (fallback base64) e { url } (Drive)
   if (imgs.length) {
     document.getElementById('detImgsW').style.display = 'block';
-    document.getElementById('detImgs').innerHTML = imgs.map(img=>`
-      <a href="${img.dataUrl}" target="_blank">
-        <img src="${img.dataUrl}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,184,230,.3)">
-      </a>`).join('');
+    document.getElementById('detImgs').innerHTML = imgs.map(img => {
+      const href = img.url || img.dataUrl || '#';
+      const isBase64 = href.startsWith('data:');
+      if (isBase64) {
+        return `<a href="${href}" target="_blank"><img src="${href}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid rgba(0,184,230,.3)"></a>`;
+      }
+      return `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(0,184,230,.08);border:1px solid rgba(0,184,230,.25);border-radius:8px;padding:8px 12px;font-size:12px;color:#00B8E6;text-decoration:none">📷 ${img.nome||'Ver imagem'}</a>`;
+    }).join('');
   } else {
     document.getElementById('detImgsW').style.display = 'none';
   }

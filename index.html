@@ -2681,7 +2681,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div>
                 <label class="form-label">Colaborador *</label>
                 <div style="position:relative">
-                  <input id="lsColBusca" class="form-input" placeholder="Buscar colaborador..." autocomplete="off" oninput="filtrarColLS()">
+                  <input id="lsColBusca" class="form-input" placeholder="Buscar colaborador..." autocomplete="off" oninput="filtrarColLS()" onblur="setTimeout(()=>document.getElementById('lsColLista').classList.add('hidden'),200)">
                   <div id="lsColLista" class="autocomplete-list hidden"></div>
                   <input type="hidden" id="lsColId">
                 </div>
@@ -3502,7 +3502,7 @@ function onViewLoad(nome) {
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
-  if (nome === 'logins-solicitacao') { carregarLS(); carregarArmazensLS(); }
+  if (nome === 'logins-solicitacao') { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
@@ -5792,6 +5792,24 @@ async function abrirModalSolicitacao(id) {
       ${itens.map(i => renderItemSolicitacao(i)).join('')}
     </div>
 
+    ${(() => {
+      let imgs = []; try { imgs = JSON.parse(s.imagens_json || '[]'); } catch {}
+      if (!imgs.length) return '';
+      return `<div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📷 Imagens (${imgs.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        ${imgs.map((img, i) => {
+          const href = img.url || img.dataUrl || '#';
+          const isBase64 = href.startsWith('data:');
+          if (isBase64) {
+            return `<a href="${href}" target="_blank" title="${img.nome||'Imagem '+(i+1)}">
+              <img src="${href}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer">
+            </a>`;
+          }
+          return `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(0,184,230,.06);border:1px solid rgba(0,184,230,.2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--primary);text-decoration:none">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
+        }).join('')}
+      </div>`;
+    })()}
+
     ${historico.length ? `
     <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Histórico</div>
     <div style="display:flex;flex-direction:column;gap:6px">
@@ -7119,15 +7137,23 @@ async function carregarLS() {
   }).join('');
 }
 
-function filtrarColLS() {
+async function filtrarColLS() {
   const q = document.getElementById('lsColBusca').value.trim().toLowerCase();
   const lista = document.getElementById('lsColLista');
   document.getElementById('lsColId').value = '';
   document.getElementById('lsMatricula').value = '';
   if (!q) { lista.classList.add('hidden'); return; }
+
+  // Garante que colaboradores estão carregados
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
+
   const res = (_colaboradores || []).filter(c => (c.nome||'').toLowerCase().includes(q) || (c.matricula||'').toLowerCase().includes(q)).slice(0, 12);
-  lista.innerHTML = res.map(c => `<div class="autocomplete-item" onclick="selColLS('${c.id}','${(c.nome||'').replace(/'/g,"\\'")}','${c.matricula||''}')"><div>${c.nome}</div><div style="font-size:11px;color:var(--text-3)">${c.matricula} · ${c.funcao||''}</div></div>`).join('');
-  lista.classList.toggle('hidden', !res.length);
+  if (!res.length) {
+    lista.innerHTML = '<div class="autocomplete-item" style="color:var(--text-3)">Nenhum resultado</div>';
+    lista.classList.remove('hidden'); return;
+  }
+  lista.innerHTML = res.map(c => `<div class="autocomplete-item" onmousedown="selColLS('${c.id}','${(c.nome||'').replace(/'/g,"\\'")}','${c.matricula||''}')"><div>${c.nome}</div><div style="font-size:11px;color:var(--text-3)">${c.matricula} · ${c.funcao||''}</div></div>`).join('');
+  lista.classList.remove('hidden');
 }
 
 function selColLS(id, nome, mat) {
