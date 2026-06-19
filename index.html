@@ -443,6 +443,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
           <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
+          <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios" onclick="showView('logins-solicitacao',this)"><span class="ni-icon">📋</span> Usuários de Solicitação</button>
           <button class="nav-item" id="menuRecuperacaoSenha" style="display:none" data-view="recuperacao-senha" onclick="showView('recuperacao-senha',this)"><span class="ni-icon">🔑</span> Recuperação de Senha <span class="ni-badge" id="badgeSenha" style="display:none">0</span></button>
         </div>
       </div>
@@ -2669,6 +2670,57 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
         </div>
       </div>
+      <!-- ── USUÁRIOS DE SOLICITAÇÃO ── -->
+      <div class="view" id="view-logins-solicitacao">
+        <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
+          <!-- FORMULÁRIO -->
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Usuário de Solicitação</div><div class="card-sub">Acesso à página de solicitação externa</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <input type="hidden" id="lsEditId">
+              <div>
+                <label class="form-label">Colaborador *</label>
+                <div style="position:relative">
+                  <input id="lsColBusca" class="form-input" placeholder="Buscar colaborador..." autocomplete="off" oninput="filtrarColLS()">
+                  <div id="lsColLista" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="lsColId">
+                </div>
+              </div>
+              <div><label class="form-label">Matrícula</label><input id="lsMatricula" class="form-input" placeholder="Preenchido ao selecionar..." readonly></div>
+              <div><label class="form-label">Senha *</label><input id="lsSenha" class="form-input" type="text" placeholder="Ex: 123456 (6 dígitos CPF)"></div>
+              <div>
+                <label class="form-label">Armazéns Permitidos</label>
+                <div id="lsArmazensLista" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;background:var(--bg)"></div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:4px">Deixe todos desmarcados para liberar todos os armazéns.</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsAtivo" checked style="accent-color:var(--primary)">
+                <label for="lsAtivo" class="form-label" style="margin:0">Acesso ativo</label>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
+                <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
+              </div>
+            </div>
+          </div>
+          <!-- LISTA -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Usuários Cadastrados</div>
+              <button class="btn btn-ghost" onclick="carregarLS()">↻</button>
+            </div>
+            <table><thead><tr>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>Armazéns</th>
+              <th>Status</th>
+              <th></th>
+            </tr></thead>
+            <tbody id="lsBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
       <!-- ── USUÁRIOS ── -->
       <div class="view" id="view-usuarios">
         <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
@@ -3379,7 +3431,7 @@ const VIEW_TITLES = {
   itens:['Itens','/ Cadastro'], armazens:['Armazéns','/ Cadastro'],
   'consulta-itens':          ['Consulta de Itens','/ Detalhes'],
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
-  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'],
+  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'],
 };
 
 function showView(nome, btnEl) {
@@ -3450,6 +3502,7 @@ function onViewLoad(nome) {
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
+  if (nome === 'logins-solicitacao') { carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
   if (nome === 'protheus')           carregarProtheus();
@@ -7036,6 +7089,129 @@ function limparFormDotacao() {
   ['dotEditId','dotItemBusca','dotItemId','dotFuncao','dotGrupo'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('dotQtdMax').value = '1';
   document.getElementById('dotNivel').value  = 'Todos';
+}
+
+// ════════════ LOGINS DE SOLICITAÇÃO ════════════
+let _lsData = [];
+
+async function carregarLS() {
+  const tbody = document.getElementById('lsBody');
+  if (!tbody) return;
+  const res = await api('/logins-solicitacao');
+  _lsData = res?.data || [];
+  if (!_lsData.length) {
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum usuário cadastrado</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = _lsData.map(u => {
+    let arms = [];
+    try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
+    return `<tr>
+      <td class="td-main">${u.nome}</td>
+      <td style="font-size:11px;color:var(--text-3)">${u.matricula}</td>
+      <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
+      <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '✅ Ativo' : '⛔ Inativo'}</span></td>
+      <td style="display:flex;gap:4px">
+        <button class="row-action" onclick="editarLS('${u.colaborador_id}')">Editar</button>
+        <button class="row-action" style="color:var(--red)" onclick="removerLS('${u.colaborador_id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarColLS() {
+  const q = document.getElementById('lsColBusca').value.trim().toLowerCase();
+  const lista = document.getElementById('lsColLista');
+  document.getElementById('lsColId').value = '';
+  document.getElementById('lsMatricula').value = '';
+  if (!q) { lista.classList.add('hidden'); return; }
+  const res = (_colaboradores || []).filter(c => (c.nome||'').toLowerCase().includes(q) || (c.matricula||'').toLowerCase().includes(q)).slice(0, 12);
+  lista.innerHTML = res.map(c => `<div class="autocomplete-item" onclick="selColLS('${c.id}','${(c.nome||'').replace(/'/g,"\\'")}','${c.matricula||''}')"><div>${c.nome}</div><div style="font-size:11px;color:var(--text-3)">${c.matricula} · ${c.funcao||''}</div></div>`).join('');
+  lista.classList.toggle('hidden', !res.length);
+}
+
+function selColLS(id, nome, mat) {
+  document.getElementById('lsColBusca').value = nome;
+  document.getElementById('lsColId').value    = id;
+  document.getElementById('lsMatricula').value = mat;
+  document.getElementById('lsColLista').classList.add('hidden');
+}
+
+function carregarArmazensLS() {
+  const cont = document.getElementById('lsArmazensLista');
+  if (!cont) return;
+  const atual = [];
+  cont.querySelectorAll('input[type=checkbox]:checked').forEach(cb => atual.push(cb.value));
+  cont.innerHTML = (_armazens || []).map(a => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer">
+      <input type="checkbox" value="${a.id}" ${atual.includes(a.id)?'checked':''} style="accent-color:var(--primary)">
+      ${a.nome}
+    </label>`).join('');
+}
+
+async function salvarLS() {
+  const editId = document.getElementById('lsEditId').value;
+  const colId  = document.getElementById('lsColId').value;
+  const nome   = document.getElementById('lsColBusca').value.trim();
+  const mat    = document.getElementById('lsMatricula').value.trim();
+  const senha  = document.getElementById('lsSenha').value.trim();
+  const ativo  = document.getElementById('lsAtivo').checked;
+
+  if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
+  if (!senha) { toast('Informe a senha.', 'warn'); return; }
+
+  const arms = [];
+  document.querySelectorAll('#lsArmazensLista input[type=checkbox]:checked').forEach(cb => arms.push(cb.value));
+
+  if (editId) {
+    // Editar — atualiza senha, ativo, armazéns
+    const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify({ senha, ativo, armazens_permitidos: arms.length ? arms : null }) });
+    if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
+    else toast(res?.erro || 'Erro ao atualizar', 'error');
+  } else {
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null }) });
+    if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
+    else toast(res?.erro || 'Erro ao criar', 'error');
+  }
+}
+
+function editarLS(id) {
+  const u = _lsData.find(x => x.colaborador_id === id);
+  if (!u) return;
+  document.getElementById('lsEditId').value    = id;
+  document.getElementById('lsColBusca').value  = u.nome;
+  document.getElementById('lsColId').value     = id;
+  document.getElementById('lsMatricula').value = u.matricula;
+  document.getElementById('lsSenha').value     = u.senha || '';
+  document.getElementById('lsAtivo').checked   = u.ativo !== false;
+  carregarArmazensLS();
+  // Marcar os armazéns já permitidos
+  let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
+  if (arms.length) {
+    setTimeout(() => {
+      arms.forEach(aid => {
+        const cb = document.querySelector(`#lsArmazensLista input[value="${aid}"]`);
+        if (cb) cb.checked = true;
+      });
+    }, 100);
+  }
+}
+
+async function removerLS(id) {
+  if (!confirm('Remover acesso deste usuário?')) return;
+  const res = await api('/logins-solicitacao/' + id, { method: 'DELETE' });
+  if (res?.ok) { toast('Removido!', 'success'); carregarLS(); }
+  else toast(res?.erro || 'Erro ao remover', 'error');
+}
+
+function limparLS() {
+  document.getElementById('lsEditId').value   = '';
+  document.getElementById('lsColBusca').value = '';
+  document.getElementById('lsColId').value    = '';
+  document.getElementById('lsMatricula').value = '';
+  document.getElementById('lsSenha').value    = '';
+  document.getElementById('lsAtivo').checked  = true;
+  carregarArmazensLS();
 }
 
 // ════════════ USUÁRIOS ════════════
