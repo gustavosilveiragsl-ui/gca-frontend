@@ -148,16 +148,13 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .mfecha{background:rgba(71,85,105,.3);border:1px solid rgba(148,163,184,.15);border-radius:8px;padding:7px 12px;color:#94a3b8;cursor:pointer;font-size:15px;}
 
 /* MODAL ITENS */
-.item-grid{display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto;margin-bottom:14px;}
-.ig-card{background:rgba(0,0,0,.3);border:1.5px solid rgba(148,163,184,.1);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:0;}
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;max-height:320px;overflow-y:auto;margin-bottom:14px;}
+.ig-card{background:rgba(0,0,0,.3);border:1.5px solid rgba(148,163,184,.1);border-radius:10px;padding:10px;cursor:pointer;transition:all .2s;}
 .ig-card:hover{border-color:rgba(0,184,230,.4);background:rgba(0,184,230,.05);}
 .ig-card.sel{border-color:var(--az);background:rgba(0,184,230,.1);}
-.ig-img{width:64px;height:64px;object-fit:cover;flex-shrink:0;display:block;}
-.ig-img-placeholder{width:64px;height:64px;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
-.ig-body{padding:8px 10px;flex:1;min-width:0;}
-.ig-nome{font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ig-nome{font-size:12px;font-weight:600;color:#e2e8f0;margin-bottom:3px;}
 .ig-meta{font-size:10px;color:var(--mt);}
-.ig-saldo{font-size:11px;font-weight:700;color:var(--az);margin-top:3px;}
+.ig-saldo{font-size:11px;font-weight:700;color:var(--az);margin-top:4px;}
 .ig-zero{color:rgba(239,68,68,.7);}
 
 /* MODAL CONFIGURAR ITEM */
@@ -681,29 +678,56 @@ function renderMItensGrid(q) {
   el.innerHTML = itens.map(i => {
     const saldo = (_dados?.saldos||[]).find(s => s.item_id===i.id && s.armazem_id===armId)?.saldo || 0;
     const sel = _mSel.has(i.id);
-    const imgHtml = i.img
-      ? `<img class="ig-img" src="${i.img}" alt="${i.descricao}" onerror="this.parentElement.innerHTML='<div class=\"ig-img-placeholder\">📦</div>'">`
-      : `<div class="ig-img-placeholder">📦</div>`;
     return `<div class="ig-card ${sel?'sel':''}" id="igc_${i.id}" onclick="toggleMItem('${i.id}',${saldo})">
-      ${imgHtml}
-      <div class="ig-body">
-        <div class="ig-nome">${i.descricao}</div>
-        <div class="ig-meta">${i.codigo||''} · ${i.categoria||''}</div>
-        <div class="ig-saldo ${saldo===0?'ig-zero':''}">Saldo: ${saldo}</div>
-      </div>
+      <div class="ig-nome">${i.descricao}</div>
+      <div class="ig-meta">${i.codigo||''} · ${i.categoria||''}</div>
+      <div class="ig-saldo ${saldo===0?'ig-zero':''}">Saldo: ${saldo}</div>
     </div>`;
   }).join('') || '<p style="color:var(--mt);text-align:center;padding:20px;font-size:12px">Nenhum item encontrado</p>';
   atualizarContSel();
 }
 
-function toggleMItem(id, saldo) {
-  if (_mSel.has(id)) { _mSel.delete(id); }
-  else {
-    if (saldo <= 0) { toast('Item sem saldo no armazém.', 'e'); return; }
-    _mSel.add(id);
+async function toggleMItem(id, saldo) {
+  if (_mSel.has(id)) {
+    _mSel.delete(id);
+    const el = document.getElementById('igc_'+id);
+    if (el) el.classList.remove('sel');
+    atualizarContSel();
+    return;
   }
+  if (saldo <= 0) { toast('Item sem saldo no armazém.', 'e'); return; }
+
+  // Consulta saldo livre (desconta reservas pendentes)
+  const armId = document.getElementById('armSel').value;
+  const res = await r(`/solicitacao-auth/saldo-livre?item_id=${id}&armazem_id=${armId}&unidade=${_usr.unidade}`);
+  if (res?.ok) {
+    if (res.saldoLivre <= 0) {
+      const nomes = (res.reservas||[]).map(rv => `• ${rv.solicitante} — ${rv.qtd} un.`).join('\n');
+      toast(`⚠️ Saldo totalmente reservado por solicitações pendentes:\n${nomes}`, 'w');
+      return;
+    }
+    if (res.temAlerta) {
+      // Tem reservas mas ainda sobra saldo — avisa e deixa selecionar
+      const nomes = (res.reservas||[]).map(rv => `• ${rv.solicitante} — ${rv.qtd} un.`).join('\n');
+      const continuar = confirm(
+        `⚠️ Atenção — Estoque com reservas pendentes!\n\n` +
+        `Saldo real: ${res.saldoReal} un.\n` +
+        `Reservado em outras solicitações: ${res.qtdReservada} un.\n` +
+        `Disponível estimado: ${res.saldoLivre} un.\n\n` +
+        `Solicitações pendentes deste item:\n${nomes}\n\n` +
+        `Deseja continuar mesmo assim?`
+      );
+      if (!continuar) return;
+    }
+    // Guarda saldo livre no cache para usar na validação de quantidade
+    if (!_mCache[id]) _mCache[id] = {};
+    _mCache[id].saldoLivre = res.saldoLivre;
+    _mCache[id].saldoReal  = res.saldoReal;
+  }
+
+  _mSel.add(id);
   const el = document.getElementById('igc_'+id);
-  if (el) el.classList.toggle('sel', _mSel.has(id));
+  if (el) el.classList.add('sel');
   atualizarContSel();
 }
 function atualizarContSel() {
@@ -734,22 +758,14 @@ async function abrirConfItem() {
   document.getElementById('confItemMeta').textContent  = (it.codigo||'') + ' · ' + (it.categoria||'');
   document.getElementById('confProg').textContent      = `${_mIdx+1} / ${_mFila.length}`;
 
-  // Mostrar imagem do item se existir
-  let imgEl = document.getElementById('confItemImg');
-  if (!imgEl) {
-    imgEl = document.createElement('img');
-    imgEl.id = 'confItemImg';
-    imgEl.style.cssText = 'width:100%;height:120px;object-fit:cover;border-radius:10px;margin-bottom:14px;display:block;';
-    document.getElementById('confItemNome').parentElement.insertAdjacentElement('afterend', imgEl);
-  }
-  if (it.img) {
-    imgEl.src = it.img;
-    imgEl.style.display = 'block';
-    imgEl.onerror = () => { imgEl.style.display = 'none'; };
-  } else {
-    imgEl.style.display = 'none';
-  }
-  document.getElementById('confSaldoInfo').textContent = `Saldo disponível: ${saldo}`;
+
+  // Usa saldo livre (descontando reservas) se disponível, senão usa saldo bruto
+  const saldoLivre = _mCache[it.id]?.saldoLivre ?? saldo;
+  const saldoReal  = _mCache[it.id]?.saldoReal  ?? saldo;
+  const infoSaldo  = saldoLivre < saldoReal
+    ? `Saldo real: ${saldoReal} · Reservado: ${saldoReal - saldoLivre} · Disponível estimado: ${saldoLivre}`
+    : `Saldo disponível: ${saldo}`;
+  document.getElementById('confSaldoInfo').textContent = infoSaldo;
   document.getElementById('confQtd').value    = '1';
   document.getElementById('confMotivo').value = '';
   document.getElementById('confOutro').value  = '';
@@ -789,7 +805,13 @@ async function adicionarItemConf() {
   const saldo = (_dados?.saldos||[]).find(s => s.item_id===it.id && s.armazem_id===armId)?.saldo || 0;
 
   if (qtd <= 0) { msgConf('Informe a quantidade.', 'e'); return; }
-  if (qtd > saldo) { msgConf(`Saldo insuficiente — disponível: ${saldo}.`, 'e'); return; }
+  const saldoDisp = _mCache[it.id]?.saldoLivre ?? saldo;
+  if (qtd > saldoDisp) {
+    const msg = saldoDisp < saldo
+      ? `Saldo insuficiente — disponível (descontando reservas pendentes): ${saldoDisp}`
+      : `Saldo insuficiente — disponível: ${saldo}`;
+    msgConf(msg, 'e'); return;
+  }
   if (!motiv) { msgConf('Selecione o motivo.', 'e'); return; }
   if (motiv==='Outro' && !outro) { msgConf('Descreva o motivo.', 'e'); return; }
 
