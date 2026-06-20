@@ -85,7 +85,7 @@ input,select,textarea{font-family:var(--font-main);}
 
 /* ── AUTOCOMPLETE ── */
 .ac-wrap{position:relative;}
-.ac-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);max-height:210px;overflow-y:auto;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);max-height:240px;overflow-y:auto;z-index:9000;box-shadow:0 8px 24px rgba(0,0,0,.6);margin-top:4px;}
 .ac-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;}
 .ac-item:last-child{border-bottom:none;}
 .ac-item:hover{background:var(--bg-hover);}
@@ -363,10 +363,10 @@ input,select,textarea{font-family:var(--font-main);}
           </div>
         </div>
         <div class="card-body">
-          <div id="imgDrop" class="img-drop" onclick="document.getElementById('imgInput').click()"
+          <div id="imgDrop" class="img-drop" onclick="if(!document.getElementById('colId').value){toast('Selecione o colaborador primeiro.','warn');return;}document.getElementById('imgInput').click()"
             ondragover="event.preventDefault();this.classList.add('over')"
             ondragleave="this.classList.remove('over')"
-            ondrop="event.preventDefault();this.classList.remove('over');processarImgs(event.dataTransfer.files)">
+            ondrop="event.preventDefault();this.classList.remove('over');if(!document.getElementById('colId').value){toast('Selecione o colaborador primeiro.','warn');return;}processarImgs(event.dataTransfer.files)">
             <div style="font-size:24px;margin-bottom:6px">📸</div>
             <div style="font-size:12px;color:var(--text-2)">Clique ou arraste para adicionar</div>
             <div style="font-size:10px;color:var(--text-3);margin-top:3px" id="imgUrgLabel"></div>
@@ -712,7 +712,8 @@ function renderImgs() {
 // MODAL ITENS — SELEÇÃO
 // ══════════════════════════════════════════
 function abrirModalItens() {
-  if (!document.getElementById('armSel').value){ toast('Selecione o armazém primeiro.','warn'); return; }
+  if (!document.getElementById('colId').value){ toast('Selecione o colaborador primeiro.','warn'); return; }
+  if (!document.getElementById('armSel').value){ toast('Selecione o armazém.','warn'); return; }
   _mSel.clear();
   document.getElementById('mItensBusca').value='';
   document.getElementById('mItens').classList.remove('hidden');
@@ -750,17 +751,27 @@ async function toggleMItem(id, saldo) {
   const armId = document.getElementById('armSel').value;
   const res = await req(`/solicitacao-auth/saldo-livre?item_id=${id}&armazem_id=${armId}&unidade=${_usr.unidade}`);
   if (res?.ok) {
-    if (res.saldoLivre<=0) {
-      const nomes=(res.reservas||[]).map(rv=>`• ${rv.solicitante} — ${rv.qtd} un.`).join('\n');
-      toast(`⚠️ Saldo totalmente reservado em solicitações pendentes.`,'warn'); return;
-    }
-    if (res.temAlerta) {
-      const nomes=(res.reservas||[]).map(rv=>`• ${rv.solicitante} — ${rv.qtd} un.`).join('\n');
-      if (!confirm(`⚠️ Estoque com reservas pendentes!\n\nSaldo real: ${res.saldoReal}\nReservado: ${res.qtdReservada}\nDisponível: ${res.saldoLivre}\n\nSolicitações pendentes:\n${nomes}\n\nDeseja continuar?`)) return;
-    }
-    if (!_mCache[id]) _mCache[id]={};
+    _mCache[id] = _mCache[id] || {};
     _mCache[id].saldoLivre = res.saldoLivre;
     _mCache[id].saldoReal  = res.saldoReal;
+    if (res.saldoLivre <= 0) {
+      // Sem saldo disponível — bloqueia
+      const rvs = (res.reservas||[]).filter(rv => rv.solicitante && rv.solicitante !== '—');
+      const msg = rvs.length
+        ? `⚠️ Saldo esgotado — reservado para:\n${rvs.map(rv=>`• ${rv.solicitante}: ${rv.qtd} un.`).join('\n')}`
+        : '⚠️ Saldo totalmente reservado em solicitações pendentes.';
+      toast(msg, 'warn'); return;
+    }
+    if (res.temAlerta && res.saldoReal > 0) {
+      // Tem reservas mas ainda sobra saldo — avisa somente se reserva é significativa
+      const pctReservado = res.qtdReservada / res.saldoReal;
+      if (pctReservado >= 0.5) {
+        // Reserva >= 50% do saldo — avisa
+        const rvs = (res.reservas||[]).filter(rv => rv.solicitante && rv.solicitante !== '—');
+        const linhas = rvs.map(rv=>`• Reservado para: ${rv.solicitante} — ${rv.qtd} un.`).join('\n');
+        if (!confirm(`⚠️ Estoque com reservas pendentes!\n\nSaldo real: ${res.saldoReal} un.\nReservado: ${res.qtdReservada} un.\nDisponível: ${res.saldoLivre} un.\n\n${linhas}\n\nDeseja continuar mesmo assim?`)) return;
+      }
+    }
   }
   _mSel.add(id);
   document.getElementById('igc_'+id)?.classList.add('sel');
@@ -946,10 +957,21 @@ async function enviar() {
     unidade:      _usr.unidade,
   };
 
-  const res = await req('/solicitacao-auth/solicitacao', {method:'POST',body:payload});
-  btn.disabled=false; btn.textContent='📤 Enviar Solicitação';
+  // Modo edição: faz PATCH na solicitação existente
+  const editId = window._editandoSolId;
+  let res;
+  if (editId) {
+    res = await req('/solicitacao-auth/editar/'+editId, {method:'POST', body: { ...payload, colaborador_id_solicitante: _usr.colaborador_id }});
+  } else {
+    res = await req('/solicitacao-auth/solicitacao', {method:'POST',body:payload});
+  }
+
+  btn.disabled=false; btn.textContent = editId ? '💾 Salvar Edição' : '📤 Enviar Solicitação';
   if (!res.ok){ msg.textContent='❌ Erro: '+(res.erro||'?'); return; }
-  document.getElementById('sucId').textContent = 'ID: '+(res.id||'');
+
+  window._editandoSolId = null;
+  btn.textContent = '📤 Enviar Solicitação';
+  document.getElementById('sucId').textContent = editId ? 'Solicitação editada com sucesso!' : 'ID: '+(res.id||'');
   document.getElementById('pgForm').classList.add('hidden');
   document.getElementById('pgSucesso').classList.remove('hidden');
 }
@@ -962,9 +984,10 @@ function novaSol() {
   document.getElementById('cCol').classList.remove('show');
   document.getElementById('obsGeral').value='';
   if (_arm.length!==1) document.getElementById('armSel').value='';
-  _itens=[]; _imgs=[]; _prio='Normal';
+  _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null;
   setPrio('Normal'); renderItens(); renderImgs();
   document.getElementById('msgForm').textContent='';
+  document.getElementById('btnEnviar').textContent='📤 Enviar Solicitação';
 }
 
 // ══════════════════════════════════════════
@@ -1057,8 +1080,11 @@ function abrirDet(s) {
       <div class="item-det-meta">Motivo: ${motivoTxt}</div>
       ${just?`<div class="item-det-just">💬 Justificativa: ${just}</div>`:''}
       ${foraPrazo?`<div class="item-det-prazo">
-        <span style="color:var(--yellow);font-weight:600">⚠️ Fora do prazo</span>
-        <span style="color:var(--text-3);margin-left:8px">Durou ${dias} dias · Estimado: ${prazo} dias</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span style="background:var(--yellow-soft);color:var(--yellow);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">⚠️ FORA DO PRAZO</span>
+          <span style="color:var(--red);font-size:11px;font-weight:600">Durou: ${dias} dias</span>
+          <span style="color:var(--text-3);font-size:11px">→ Estimado: ${prazo} dias</span>
+        </div>
       </div>`:''}
     </div>`;
   }).join('');
@@ -1078,12 +1104,27 @@ function abrirDet(s) {
   // Footer
   const footer = document.getElementById('detFooter');
   footer.innerHTML = '';
-  if (s.status==='PENDENTE') {
-    const b = document.createElement('button');
-    b.className='btn btn-danger'; b.textContent='❌ Cancelar Solicitação';
-    b.onclick = cancelar;
-    footer.appendChild(b);
+
+  // PENDENTE: pode editar e cancelar
+  if (s.status === 'PENDENTE') {
+    const bEdit = document.createElement('button');
+    bEdit.className='btn btn-ghost'; bEdit.innerHTML='✏️ Editar';
+    bEdit.onclick = () => abrirEdicao(s);
+    footer.appendChild(bEdit);
+
+    const bCanc = document.createElement('button');
+    bCanc.className='btn btn-danger'; bCanc.innerHTML='❌ Cancelar';
+    bCanc.onclick = cancelar;
+    footer.appendChild(bCanc);
   }
+  // VISUALIZADO: pode cancelar (ainda não atendido)
+  else if (s.status === 'VISUALIZADO') {
+    const bCanc = document.createElement('button');
+    bCanc.className='btn btn-danger'; bCanc.innerHTML='❌ Cancelar';
+    bCanc.onclick = cancelar;
+    footer.appendChild(bCanc);
+  }
+
   const bFechar = document.createElement('button');
   bFechar.className='btn btn-ghost'; bFechar.style.marginLeft='auto'; bFechar.textContent='Fechar';
   bFechar.onclick = fecharDet;
@@ -1093,6 +1134,57 @@ function abrirDet(s) {
 }
 
 function fecharDet(){ document.getElementById('mDet').classList.add('hidden'); _solAtual=null; }
+
+async function abrirEdicao(s) {
+  fecharDet();
+  // Muda para aba nova solicitação
+  aba('nova');
+  // Preenche formulário com dados da solicitação original
+  await new Promise(r => setTimeout(r, 100));
+
+  // Colaborador
+  const col = (_dados?.colaboradores||[]).find(c => c.id === (s.colaborador_id || s.colaborador_destino_id));
+  if (col) selCol(col.id, col.nome, col.funcao||'', col.matricula||'');
+  else {
+    document.getElementById('colBusca').value = s.colaborador_nome||'';
+    document.getElementById('colId').value    = s.colaborador_id||'';
+    document.getElementById('colNomeD').textContent = s.colaborador_nome||'';
+    document.getElementById('cCol').classList.add('show');
+  }
+
+  // Armazém
+  const armSel = document.getElementById('armSel');
+  if (s.armazem_id) { armSel.value = s.armazem_id; }
+
+  // Prioridade e observação
+  setPrio(s.prioridade || 'Normal');
+  document.getElementById('obsGeral').value = s.obs_geral || '';
+
+  // Itens
+  let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
+  _itens = itens.map(it => ({
+    itemId: it.itemId || it.item_id, nome: it.nome||it.descricao||'—',
+    quantidade: it.quantidade||1, motivo: it.motivo||'',
+    armId: s.armazem_id||'', nomeArmazem: s.nome_armazem||'',
+    trocaTamanho: it.trocaTamanho||false,
+    itemIdAntigo: it.itemIdAntigo||null, nomeItemAntigo: it.nomeItemAntigo||null,
+    diasDecorridos: it.diasDecorridos||null, prazoMinDias: it.prazoMinDias||null,
+  }));
+  renderItens();
+
+  // Imgs
+  _imgs = [];
+  let imgs = []; try { imgs = JSON.parse(s.imagens_json||'[]'); } catch {}
+  _imgs = imgs.map(img => ({ file: { name: img.nome||'imagem' }, dataUrl: img.url||img.dataUrl||'' }));
+  renderImgs();
+
+  // Guarda o ID da solicitação sendo editada para o envio saber que é um update
+  window._editandoSolId = s.id;
+  const btn = document.getElementById('btnEnviar');
+  btn.textContent = '💾 Salvar Edição';
+
+  toast('Edite os dados e clique em Salvar Edição.', 'info');
+}
 
 async function cancelar() {
   if (!_solAtual||!confirm('Cancelar esta solicitação?')) return;
