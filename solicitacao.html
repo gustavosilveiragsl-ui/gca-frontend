@@ -300,11 +300,10 @@ input,select,textarea{font-family:var(--font-main);}
       <div class="card">
         <div class="card-header"><div class="card-title">🪪 Colaborador que Receberá</div></div>
         <div class="card-body">
-          <div class="form-group ac-wrap">
+          <div class="form-group">
             <label class="form-label">Nome ou matrícula *</label>
             <input class="form-input" id="colBusca" placeholder="Buscar colaborador..." autocomplete="off"
               oninput="filtrarCol()" onblur="setTimeout(()=>document.getElementById('colLista').classList.add('hidden'),200)">
-            <div id="colLista" class="ac-list hidden"></div>
             <input type="hidden" id="colId">
           </div>
           <div class="sel-card" id="cCol">
@@ -666,13 +665,31 @@ function _posicionarAcList(inputEl, listaEl) {
   listaEl.style.width = r.width + 'px';
 }
 
+// Reposiciona a lista se a página for rolada ou redimensionada
+window.addEventListener('scroll', () => {
+  const lista = document.getElementById('colLista');
+  const input = document.getElementById('colBusca');
+  if (lista && !lista.classList.contains('hidden') && input) {
+    _posicionarAcList(input, lista);
+  }
+}, true);
+window.addEventListener('resize', () => {
+  const lista = document.getElementById('colLista');
+  const input = document.getElementById('colBusca');
+  if (lista && !lista.classList.contains('hidden') && input) {
+    _posicionarAcList(input, lista);
+  }
+});
+
 function filtrarCol() {
   const q = document.getElementById('colBusca').value.trim().toLowerCase();
   const lista = document.getElementById('colLista');
   document.getElementById('colId').value = '';
   document.getElementById('cCol').classList.remove('show');
   if (!q) { lista.classList.add('hidden'); return; }
-  _posicionarAcList(document.getElementById('colBusca'), lista);
+  // Posiciona SEMPRE que mostrar (recalcula caso haja scroll)
+  const input = document.getElementById('colBusca');
+  _posicionarAcList(input, lista);
   const res = (_dados?.colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.matricula||'').toLowerCase().includes(q)).slice(0,14);
   if (!res.length) { lista.innerHTML='<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
   lista.innerHTML = res.map(c=>`<div class="ac-item" onmousedown="selCol('${c.id}','${esc(c.nome)}','${esc(c.funcao||'')}','${c.matricula||''}')">
@@ -1236,5 +1253,8 @@ async function cancelar() {
   else toast('Erro: '+(res.erro||'?'),'error');
 }
 </script>
+<!-- Autocomplete flutuante — fora de qualquer container para evitar clipping -->
+<div id="colLista" class="ac-list hidden"></div>
+
 </body>
 </html>
