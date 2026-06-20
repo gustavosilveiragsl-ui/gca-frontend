@@ -85,7 +85,7 @@ input,select,textarea{font-family:var(--font-main);}
 
 /* ── AUTOCOMPLETE ── */
 .ac-wrap{position:relative;}
-.ac-list{position:absolute;top:100%;left:0;right:0;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);max-height:240px;overflow-y:auto;z-index:9000;box-shadow:0 8px 24px rgba(0,0,0,.6);margin-top:4px;}
+.ac-list{position:fixed;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);max-height:240px;overflow-y:auto;z-index:9000;box-shadow:0 8px 24px rgba(0,0,0,.6);}
 .ac-item{padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:12px;}
 .ac-item:last-child{border-bottom:none;}
 .ac-item:hover{background:var(--bg-hover);}
@@ -655,12 +655,20 @@ function aba(a) {
 // ══════════════════════════════════════════
 // AUTOCOMPLETE COLABORADOR
 // ══════════════════════════════════════════
+function _posicionarAcList(inputEl, listaEl) {
+  const r = inputEl.getBoundingClientRect();
+  listaEl.style.top   = (r.bottom + 2) + 'px';
+  listaEl.style.left  = r.left + 'px';
+  listaEl.style.width = r.width + 'px';
+}
+
 function filtrarCol() {
   const q = document.getElementById('colBusca').value.trim().toLowerCase();
   const lista = document.getElementById('colLista');
   document.getElementById('colId').value = '';
   document.getElementById('cCol').classList.remove('show');
   if (!q) { lista.classList.add('hidden'); return; }
+  _posicionarAcList(document.getElementById('colBusca'), lista);
   const res = (_dados?.colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.matricula||'').toLowerCase().includes(q)).slice(0,14);
   if (!res.length) { lista.innerHTML='<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
   lista.innerHTML = res.map(c=>`<div class="ac-item" onmousedown="selCol('${c.id}','${esc(c.nome)}','${esc(c.funcao||'')}','${c.matricula||''}')">
@@ -1066,9 +1074,14 @@ function abrirDet(s) {
   document.getElementById('detItens').innerHTML = itens.map(it=>{
     const partes=(it.motivo||'').split(' — Justificativa: ');
     const motivoTxt=partes[0]||'—', just=partes[1]||'';
-    const dias=it.diasDecorridos!=null?Number(it.diasDecorridos):null;
-    const prazo=it.prazoMinDias!=null?Number(it.prazoMinDias):null;
-    const foraPrazo=just&&dias!=null&&prazo!=null&&dias<prazo;
+
+    // foraPrazo: mostra quando há dados de dias/prazo E dias < prazo
+    // não depende de justificativa — a justificativa é apresentada separadamente
+    const diasNum  = (it.diasDecorridos !== null && it.diasDecorridos !== '' && it.diasDecorridos !== undefined) ? Number(it.diasDecorridos) : null;
+    const prazoNum = (it.prazoMinDias   !== null && it.prazoMinDias   !== '' && it.prazoMinDias   !== undefined) ? Number(it.prazoMinDias)   : null;
+    const foraPrazo = diasNum !== null && prazoNum !== null && !isNaN(diasNum) && !isNaN(prazoNum) && diasNum < prazoNum;
+    const dias  = diasNum;
+    const prazo = prazoNum;
     return `<div class="item-det">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div class="item-det-nome">
