@@ -306,12 +306,15 @@ input,select,textarea{font-family:var(--font-main);}
               oninput="filtrarCol()" onblur="setTimeout(()=>document.getElementById('colLista').classList.add('hidden'),200)">
             <input type="hidden" id="colId">
           </div>
-          <div class="sel-card" id="cCol">
-            <div class="sel-avatar">🪪</div>
-            <div>
-              <div style="font-size:12px;font-weight:600;color:var(--text-1)" id="colNomeD"></div>
-              <div style="font-size:10px;color:var(--text-3)" id="colMetaD"></div>
+          <div class="sel-card" id="cCol" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="sel-avatar">🪪</div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-1)" id="colNomeD"></div>
+                <div style="font-size:10px;color:var(--text-3)" id="colMetaD"></div>
+              </div>
             </div>
+            <button onclick="limparColab()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;padding:4px 8px;cursor:pointer;flex-shrink:0" title="Trocar colaborador">✕ Limpar</button>
           </div>
         </div>
       </div>
@@ -698,7 +701,32 @@ function filtrarCol() {
   </div>`).join('');
   lista.classList.remove('hidden');
 }
+function limparColab() {
+  // Limpa colaborador
+  document.getElementById('colBusca').value = '';
+  document.getElementById('colId').value    = '';
+  document.getElementById('cCol').classList.remove('show');
+  document.getElementById('colLista').classList.add('hidden');
+  // Limpa itens e fotos (pois eram específicos do colaborador anterior)
+  _itens = []; renderItens();
+  _imgs  = []; renderImgs();
+  _idsPermitidos = null;
+  _mSel.clear();
+}
+
 async function selCol(id, nome, funcao, mat) {
+  // Se já havia outro colaborador selecionado, limpa itens e fotos
+  const colIdAnterior = document.getElementById('colId').value;
+  if (colIdAnterior && colIdAnterior !== id && (_itens.length || _imgs.length)) {
+    if (confirm('Ao trocar o colaborador, os itens e fotos adicionados serão removidos. Deseja continuar?')) {
+      _itens = []; renderItens();
+      _imgs  = []; renderImgs();
+      _mSel.clear();
+    } else {
+      return; // cancela a troca
+    }
+  }
+
   document.getElementById('colBusca').value = nome;
   document.getElementById('colId').value    = id;
   document.getElementById('colNomeD').textContent = nome;
