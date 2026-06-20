@@ -135,6 +135,8 @@ input,select,textarea{font-family:var(--font-main);}
 .ig-meta{font-size:10px;color:var(--text-3);}
 .ig-saldo{font-size:11px;font-weight:600;color:var(--accent-text);margin-top:4px;}
 .ig-zero{color:var(--red)!important;}
+.ig-sem-saldo{opacity:.55;}
+.ig-sem-saldo .ig-nome{color:var(--text-3);}
 
 /* ── MODAL CONFIGURAR ITEM ── */
 .alerta-box{padding:10px 12px;border-radius:var(--radius-sm);margin-bottom:10px;}
@@ -426,6 +428,7 @@ input,select,textarea{font-family:var(--font-main);}
       <div class="items-search">
         <input class="form-input" id="mItensBusca" placeholder="🔍 Buscar item..." oninput="filtrarMItens()">
       </div>
+      <div id="mItensInfoFiltro" style="font-size:11px;color:var(--accent-text);margin-bottom:10px;padding:6px 8px;background:var(--accent-soft);border-radius:var(--radius-sm);display:none"></div>
       <div id="mItensGrid" class="items-grid"></div>
       <div style="font-size:11px;color:var(--text-3);margin-bottom:10px" id="mItensCont">0 item(ns) selecionado(s)</div>
     </div>
@@ -551,6 +554,7 @@ let _usr = null, _arm = [], _dados = null;
 let _prio = 'Normal', _itens = [], _imgs = [];
 let _mSel = new Set(), _mFila = [], _mIdx = 0, _mCache = {};
 let _listaSolsCache = [], _solAtual = null;
+let _idsPermitidos = null; // null = sem restrição, Set = itens permitidos
 
 // ══════════════════════════════════════════
 // HELPERS
@@ -677,13 +681,24 @@ function filtrarCol() {
   </div>`).join('');
   lista.classList.remove('hidden');
 }
-function selCol(id, nome, funcao, mat) {
+async function selCol(id, nome, funcao, mat) {
   document.getElementById('colBusca').value = nome;
   document.getElementById('colId').value    = id;
   document.getElementById('colNomeD').textContent = nome;
   document.getElementById('colMetaD').textContent = funcao + (mat?' · Mat. '+mat:'');
   document.getElementById('cCol').classList.add('show');
   document.getElementById('colLista').classList.add('hidden');
+
+  // Buscar itens permitidos para este colaborador
+  _idsPermitidos = null;
+  const res = await req(`/solicitacao-auth/itens-permitidos?colaborador_id=${id}&unidade=${_usr.unidade}`);
+  if (res?.ok && !res.todos && res.ids) {
+    _idsPermitidos = new Set(res.ids);
+    const info = res.isJunior
+      ? `Nível Júnior — ${res.qtdPermitidos} item(ns) disponíveis na dotação`
+      : `${res.qtdPermitidos} item(ns) na dotação da função`;
+    document.getElementById('colMetaD').textContent = funcao + (mat?' · Mat. '+mat:'') + ' · ' + info;
+  }
 }
 function esc(s){ return (s||'').replace(/'/g,"\\'"); }
 
@@ -724,6 +739,14 @@ function abrirModalItens() {
   if (!document.getElementById('armSel').value){ toast('Selecione o armazém.','warn'); return; }
   _mSel.clear();
   document.getElementById('mItensBusca').value='';
+  // Mostrar info do filtro ativo
+  const infoEl = document.getElementById('mItensInfoFiltro');
+  if (_idsPermitidos !== null) {
+    infoEl.textContent = `🗂️ Exibindo apenas itens da dotação do colaborador (${_idsPermitidos.size} item(ns) permitidos)`;
+    infoEl.style.display = 'block';
+  } else {
+    infoEl.style.display = 'none';
+  }
   document.getElementById('mItens').classList.remove('hidden');
   renderMGrid('');
 }
@@ -733,18 +756,25 @@ function filtrarMItens(){ renderMGrid(document.getElementById('mItensBusca').val
 function renderMGrid(q) {
   const armId = document.getElementById('armSel').value;
   let itens = (_dados?.itens||[]);
+
+  // Filtrar por dotação/nível do colaborador
+  if (_idsPermitidos !== null) {
+    itens = itens.filter(i => _idsPermitidos.has(i.id));
+  }
+
   if (q) itens = itens.filter(i=>(i.descricao||'').toLowerCase().includes(q)||(i.codigo||'').toLowerCase().includes(q));
-  itens = itens.slice(0,60);
+  itens = itens.slice(0,80);
   const el = document.getElementById('mItensGrid');
   el.innerHTML = itens.map(i=>{
     const saldo = (_dados?.saldos||[]).find(s=>s.item_id===i.id&&s.armazem_id===armId)?.saldo||0;
     const sel   = _mSel.has(i.id);
-    return `<div class="ig-card ${sel?'sel':''}" id="igc_${i.id}" onclick="toggleMItem('${i.id}',${saldo})">
+    const semSaldo = saldo === 0;
+    return `<div class="ig-card ${sel?'sel':''} ${semSaldo?'ig-sem-saldo':''}" id="igc_${i.id}" onclick="toggleMItem('${i.id}',${saldo})">
       <div class="ig-nome">${i.descricao}</div>
       <div class="ig-meta">${i.codigo||''} · ${i.categoria||''}</div>
-      <div class="ig-saldo ${saldo===0?'ig-zero':''}">Saldo: ${saldo}</div>
+      <div class="ig-saldo ${semSaldo?'ig-zero':''}">Saldo: ${saldo}</div>
     </div>`;
-  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px">Nenhum item encontrado</div>';
+  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px">Nenhum item encontrado na dotação deste colaborador</div>';
   atualizarSel();
 }
 
@@ -992,7 +1022,7 @@ function novaSol() {
   document.getElementById('cCol').classList.remove('show');
   document.getElementById('obsGeral').value='';
   if (_arm.length!==1) document.getElementById('armSel').value='';
-  _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null;
+  _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null; _idsPermitidos=null;
   setPrio('Normal'); renderItens(); renderImgs();
   document.getElementById('msgForm').textContent='';
   document.getElementById('btnEnviar').textContent='📤 Enviar Solicitação';
