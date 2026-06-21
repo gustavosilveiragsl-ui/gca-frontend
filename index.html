@@ -1023,11 +1023,13 @@ tbody tr:hover td{background:var(--bg-hover);}
 
         <!-- ABAS ATIVAS / FINALIZADAS -->
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
-          <button id="solAbaAtivas" class="tab-btn active" onclick="mudarAbaSol('ativas')" style="padding:10px 20px;font-size:12px">
-            🔄 Em Andamento
+          <button id="solAbaAtivas" onclick="mudarAbaSol('ativas')"
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent-text);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Em Andamento
           </button>
-          <button id="solAbaFinalizadas" class="tab-btn" onclick="mudarAbaSol('finalizadas')" style="padding:10px 20px;font-size:12px">
-            ✅ Finalizadas
+          <button id="solAbaFinalizadas" onclick="mudarAbaSol('finalizadas')"
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Finalizadas
           </button>
         </div>
 
@@ -5619,8 +5621,16 @@ let _solAbaAtual    = 'ativas'; // 'ativas' ou 'finalizadas'
 
 function mudarAbaSol(aba) {
   _solAbaAtual = aba;
-  document.getElementById('solAbaAtivas').classList.toggle('active', aba === 'ativas');
-  document.getElementById('solAbaFinalizadas').classList.toggle('active', aba === 'finalizadas');
+  const btnAt = document.getElementById('solAbaAtivas');
+  const btnFn = document.getElementById('solAbaFinalizadas');
+  if (btnAt) {
+    btnAt.style.borderBottom = aba === 'ativas' ? '2px solid var(--accent)' : '2px solid transparent';
+    btnAt.style.color        = aba === 'ativas' ? 'var(--accent-text)' : 'var(--text-3)';
+  }
+  if (btnFn) {
+    btnFn.style.borderBottom = aba === 'finalizadas' ? '2px solid var(--accent)' : '2px solid transparent';
+    btnFn.style.color        = aba === 'finalizadas' ? 'var(--accent-text)' : 'var(--text-3)';
+  }
 
   const statusSel  = document.getElementById('solFiltroStatus');
   const cardSub    = document.getElementById('solCardSub');
@@ -5841,15 +5851,25 @@ async function abrirModalSolicitacao(id) {
   else _dataFmt = formatarData(_dh.split('T')[0]);
   document.getElementById('solModalSub').textContent    = `${nome} • Solicitado por: ${sol} • ${_dataFmt}`;
 
-  // Layout 2 colunas: coluna esquerda (info + itens + imgs) | coluna direita (histórico)
+  // Layout 2 colunas: esquerda (dados + itens) | direita (histórico + imagens)
   let imgs = []; try { imgs = JSON.parse(s.imagens_json || '[]'); } catch {}
 
-  document.getElementById('solModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
+  // Labels amigáveis por status para o histórico
+  const _statusLabel = {
+    'PENDENTE':              '📋 Solicitação aberta',
+    'VISUALIZADO':           '👁️ Visualizado pelo almoxarifado',
+    'ATENDIDO':              '✅ Atendido',
+    'AGUARDANDO TRANSPORTE': '🚛 Aguardando transporte',
+    'EM TRANSITO':           '🚚 Em trânsito',
+    'FINALIZADO':            '🏁 Finalizado',
+    'CANCELADO':             '❌ Cancelado',
+  };
 
-      <!-- COLUNA ESQUERDA -->
+  document.getElementById('solModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start">
+
+      <!-- COLUNA ESQUERDA: DADOS + ITENS -->
       <div>
-        <!-- Dados principais -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
           <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
             <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SOLICITANTE</div>
@@ -5871,41 +5891,53 @@ async function abrirModalSolicitacao(id) {
 
         ${obs ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
 
-        <!-- Itens -->
         <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📦 Itens Solicitados</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:${imgs.length?'12px':'0'}">
+        <div style="display:flex;flex-direction:column;gap:8px">
           ${itens.map(i => renderItemSolicitacao(i)).join('')}
         </div>
+      </div>
 
-        <!-- Imagens -->
+      <!-- COLUNA DIREITA: HISTÓRICO + IMAGENS -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+
+        <!-- Histórico -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;background:var(--bg)">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">📋 Histórico</div>
+          ${historico.length ? `
+            <div style="display:flex;flex-direction:column;gap:8px">
+              ${historico.map(h => {
+                const label = _statusLabel[h.status] || h.status;
+                const dataFmt = h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+                const obsHist = (h.obs||'').trim();
+                return `<div style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card)">
+                  <div style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:6px">${label}</div>
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    <span style="font-size:11px;color:var(--text-2)">${h.usuario||'—'}</span>
+                    <span style="font-size:10px;color:var(--text-3)">·</span>
+                    <span style="font-size:10px;color:var(--text-3)">${dataFmt}</span>
+                  </div>
+                  ${obsHist && !obsHist.startsWith('Atendimento gerado') ? `<div style="font-size:11px;color:var(--text-2);margin-top:5px;padding-top:5px;border-top:1px solid var(--border)">${obsHist}</div>` : ''}
+                </div>`;
+              }).join('')}
+            </div>
+          ` : '<div style="font-size:12px;color:var(--text-3)">Nenhum histórico registrado.</div>'}
+        </div>
+
+        <!-- Imagens (coluna direita, abaixo do histórico) -->
         ${imgs.length ? `
-          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px">📷 Imagens (${imgs.length})</div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
-            ${imgs.map((img, i) => {
-              const href = img.url || img.dataUrl || '#';
-              return href.startsWith('data:')
-                ? `<a href="${href}" target="_blank"><img src="${href}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"></a>`
-                : `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--accent-text);text-decoration:none">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
-            }).join('')}
+          <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;background:var(--bg)">
+            <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">📷 Imagens (${imgs.length})</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px">
+              ${imgs.map((img, i) => {
+                const href = img.url || img.dataUrl || '#';
+                return href.startsWith('data:')
+                  ? `<a href="${href}" target="_blank" title="${img.nome||'Imagem '+(i+1)}"><img src="${href}" style="width:76px;height:76px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border)"></a>`
+                  : `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:7px 10px;font-size:12px;color:var(--accent-text);text-decoration:none">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
+              }).join('')}
+            </div>
           </div>` : ''}
-      </div>
 
-      <!-- COLUNA DIREITA: HISTÓRICO -->
-      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;background:var(--bg)">
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">📋 Histórico</div>
-        ${historico.length ? `
-          <div style="display:flex;flex-direction:column;gap:8px">
-            ${historico.map(h => `
-              <div style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card)">
-                <div style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:4px">${solStatusTag(h.status)}</div>
-                <div style="font-size:11px;color:var(--text-3)">${h.usuario||'—'}</div>
-                <div style="font-size:10px;color:var(--text-3);margin-top:2px">${h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR') : '—'}</div>
-                ${h.obs ? `<div style="font-size:11px;color:var(--text-2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">${h.obs}</div>` : ''}
-              </div>`).join('')}
-          </div>
-        ` : '<div style="font-size:12px;color:var(--text-3)">Nenhum histórico registrado.</div>'}
       </div>
-
     </div>`;
 
   // Botões por status:
