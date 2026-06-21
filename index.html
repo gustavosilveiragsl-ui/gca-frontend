@@ -1021,10 +1021,20 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
         </div>
 
+        <!-- ABAS ATIVAS / FINALIZADAS -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
+          <button id="solAbaAtivas" class="tab-btn active" onclick="mudarAbaSol('ativas')" style="padding:10px 20px;font-size:12px">
+            🔄 Em Andamento
+          </button>
+          <button id="solAbaFinalizadas" class="tab-btn" onclick="mudarAbaSol('finalizadas')" style="padding:10px 20px;font-size:12px">
+            ✅ Finalizadas
+          </button>
+        </div>
+
         <!-- FILTROS + TABELA -->
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Solicitações de Material</div><div class="card-sub">Gerencie e atenda as solicitações feitas pelos supervisores</div></div>
+            <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento</div></div>
             <div class="card-actions">
               <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
               <select class="form-input" id="solFiltroStatus" style="width:140px;font-size:11px" onchange="filtrarSolicitacoes()">
@@ -1034,8 +1044,6 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <option value="ATENDIDO">Atendido</option>
                 <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
                 <option value="EM TRANSITO">Em Trânsito</option>
-                <option value="FINALIZADO">Finalizado</option>
-                <option value="CANCELADO">Cancelado</option>
               </select>
               <select class="form-input" id="solFiltroPrioridade" style="width:120px;font-size:11px" onchange="filtrarSolicitacoes()">
                 <option value="">Todas prioridades</option>
@@ -2864,8 +2872,8 @@ tbody tr:hover td{background:var(--bg-hover);}
 
 
 <!-- MODAL DETALHE SOLICITACAO -->
-<div class="modal-overlay hidden" id="modalSolicitacao">
-  <div class="modal-box" style="max-width:640px;max-height:90vh;overflow-y:auto">
+<div class="modal-overlay hidden" id="modalSolicitacao" style="align-items:flex-start;padding:16px;overflow-y:auto">
+  <div class="modal-box" style="max-width:1100px;width:100%;margin:auto;max-height:none">
     <div class="modal-header">
       <div>
         <div class="modal-title" id="solModalTitulo">Solicitação</div>
@@ -5607,6 +5615,35 @@ let _solicitacoes   = [];
 let _solPagina      = 1;
 const _solPorPagina = 10;
 let _solFiltros     = { status: '', prioridade: '', busca: '' };
+let _solAbaAtual    = 'ativas'; // 'ativas' ou 'finalizadas'
+
+function mudarAbaSol(aba) {
+  _solAbaAtual = aba;
+  document.getElementById('solAbaAtivas').classList.toggle('active', aba === 'ativas');
+  document.getElementById('solAbaFinalizadas').classList.toggle('active', aba === 'finalizadas');
+
+  const statusSel  = document.getElementById('solFiltroStatus');
+  const cardSub    = document.getElementById('solCardSub');
+
+  if (aba === 'ativas') {
+    // Mostra filtros normais sem FINALIZADO/CANCELADO
+    statusSel.innerHTML = `<option value="">Todos os status</option>
+      <option value="PENDENTE">Pendente</option>
+      <option value="VISUALIZADO">Visualizado</option>
+      <option value="ATENDIDO">Atendido</option>
+      <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
+      <option value="EM TRANSITO">Em Trânsito</option>`;
+    cardSub.textContent = 'Solicitações em andamento';
+  } else {
+    // Mostra só FINALIZADAS (sem canceladas antigas)
+    statusSel.innerHTML = `<option value="FINALIZADO">✅ Finalizadas</option>`;
+    cardSub.textContent = 'Solicitações finalizadas';
+  }
+  statusSel.value = '';
+  _solFiltros.status = '';
+  _solPagina = 1;
+  filtrarSolicitacoes();
+}
 
 async function carregarSolicitacoes() {
   const tbody = document.getElementById('solBody');
@@ -5659,7 +5696,28 @@ function renderSolicitacoes() {
   const tbody = document.getElementById('solBody');
   if (!tbody) return;
 
+  const agora = new Date();
+  const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
+
   let lista = _solicitacoes;
+
+  // ── Filtra por aba ──
+  if (_solAbaAtual === 'ativas') {
+    // Aba principal: excluir FINALIZADO e CANCELADO com mais de 5 dias
+    lista = lista.filter(s => {
+      if (s.status === 'FINALIZADO') return false;
+      if (s.status === 'CANCELADO') {
+        // Mantém canceladas recentes (até 5 dias)
+        const dataCanc = new Date(s.atualizado_em || s.criado_em || s.data_hora || 0);
+        return (agora - dataCanc) < CINCO_DIAS_MS;
+      }
+      return true;
+    });
+  } else {
+    // Aba finalizadas: só FINALIZADO
+    lista = lista.filter(s => s.status === 'FINALIZADO');
+  }
+
   const { status, prioridade, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
   if (prioridade) lista = lista.filter(s => s.prioridade === prioridade);
@@ -5783,62 +5841,72 @@ async function abrirModalSolicitacao(id) {
   else _dataFmt = formatarData(_dh.split('T')[0]);
   document.getElementById('solModalSub').textContent    = `${nome} • Solicitado por: ${sol} • ${_dataFmt}`;
 
+  // Layout 2 colunas: coluna esquerda (info + itens + imgs) | coluna direita (histórico)
+  let imgs = []; try { imgs = JSON.parse(s.imagens_json || '[]'); } catch {}
+
   document.getElementById('solModalBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:16px">
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SOLICITANTE</div>
-        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${sol}</div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">COLABORADOR</div>
-        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nome}</div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ARMAZÉM</div>
-        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.nome_armazem||'—'}</div>
-      </div>
-      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">STATUS</div>
-        <div>${solStatusTag(s.status)}</div>
-      </div>
-    </div>
-    ${obs ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:16px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
 
-    <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Itens solicitados</div>
-    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
-      ${itens.map(i => renderItemSolicitacao(i)).join('')}
-    </div>
-
-    ${(() => {
-      let imgs = []; try { imgs = JSON.parse(s.imagens_json || '[]'); } catch {}
-      if (!imgs.length) return '';
-      return `<div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📷 Imagens (${imgs.length})</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-        ${imgs.map((img, i) => {
-          const href = img.url || img.dataUrl || '#';
-          const isBase64 = href.startsWith('data:');
-          if (isBase64) {
-            return `<a href="${href}" target="_blank" title="${img.nome||'Imagem '+(i+1)}">
-              <img src="${href}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:pointer">
-            </a>`;
-          }
-          return `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(0,184,230,.06);border:1px solid rgba(0,184,230,.2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--primary);text-decoration:none">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
-        }).join('')}
-      </div>`;
-    })()}
-
-    ${historico.length ? `
-    <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Histórico</div>
-    <div style="display:flex;flex-direction:column;gap:6px">
-      ${historico.map(h => `
-        <div style="display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:var(--radius-sm);border-left:3px solid var(--border);border:1px solid var(--border)">
-          <div style="flex:1">
-            <div style="font-size:11px;font-weight:600;color:var(--text-1)">${solStatusTag(h.status)}</div>
-            <div style="font-size:11px;color:var(--text-3);margin-top:2px">${h.usuario||'—'} • ${h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR') : '—'}</div>
-            ${h.obs ? `<div style="font-size:11px;color:var(--text-2);margin-top:2px">${h.obs}</div>` : ''}
+      <!-- COLUNA ESQUERDA -->
+      <div>
+        <!-- Dados principais -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SOLICITANTE</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${sol}</div>
           </div>
-        </div>`).join('')}
-    </div>` : ''}`;
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">COLABORADOR</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nome}</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ARMAZÉM</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${s.nome_armazem||'—'}</div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">STATUS</div>
+            <div>${solStatusTag(s.status)}</div>
+          </div>
+        </div>
+
+        ${obs ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
+
+        <!-- Itens -->
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">📦 Itens Solicitados</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:${imgs.length?'12px':'0'}">
+          ${itens.map(i => renderItemSolicitacao(i)).join('')}
+        </div>
+
+        <!-- Imagens -->
+        ${imgs.length ? `
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;margin-top:12px">📷 Imagens (${imgs.length})</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            ${imgs.map((img, i) => {
+              const href = img.url || img.dataUrl || '#';
+              return href.startsWith('data:')
+                ? `<a href="${href}" target="_blank"><img src="${href}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"></a>`
+                : `<a href="${href}" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:7px 12px;font-size:12px;color:var(--accent-text);text-decoration:none">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
+            }).join('')}
+          </div>` : ''}
+      </div>
+
+      <!-- COLUNA DIREITA: HISTÓRICO -->
+      <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;background:var(--bg)">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px">📋 Histórico</div>
+        ${historico.length ? `
+          <div style="display:flex;flex-direction:column;gap:8px">
+            ${historico.map(h => `
+              <div style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card)">
+                <div style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:4px">${solStatusTag(h.status)}</div>
+                <div style="font-size:11px;color:var(--text-3)">${h.usuario||'—'}</div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:2px">${h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR') : '—'}</div>
+                ${h.obs ? `<div style="font-size:11px;color:var(--text-2);margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">${h.obs}</div>` : ''}
+              </div>`).join('')}
+          </div>
+        ` : '<div style="font-size:12px;color:var(--text-3)">Nenhum histórico registrado.</div>'}
+      </div>
+
+    </div>`;
 
   // Botões por status:
   // PENDENTE/VISUALIZADO: Atender + Editar + status(Visualizado/AguardTransporte) + Cancelar
