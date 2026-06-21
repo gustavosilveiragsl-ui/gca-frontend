@@ -5012,9 +5012,11 @@ function imprimirFicha() {
   const colabId = ATEND.colab?.id||'';
   const itensAT = ATEND.itens||[];
   const link    = ATEND.linkGerado||'';
+  // Busca dados da solicitação vinculada (se vier de uma solicitação)
+  const sol = window._solicitacaoAtendimento || null;
   imprimirFichaSeparacao(ATEND.id, colabId, itensAT.map(it=>({
     descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
-  })), link);
+  })), link, sol ? { id: sol.id, solicitanteNome: sol.solicitante_nome, prioridade: sol.prioridade } : null);
 }
 
 // ═══════════════════════════════════════════
@@ -12103,7 +12105,7 @@ const CSS_PDF_BASE = `
 // ═══════════════════════════════════════════
 // PDF 2 — FICHA DE SEPARAÇÃO (após atendimento, com QR)
 // ═══════════════════════════════════════════
-async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirmacao) {
+async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirmacao, solicitacao) {
   const colab   = _colaboradores.find(c=>c.id===colabId)||{};
   const agora   = new Date();
   const hoje    = agora.toLocaleDateString('pt-BR');
@@ -12193,6 +12195,17 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
       <div><strong>Total:</strong> ${(itens||[]).length} tipo(s) · ${(itens||[]).reduce((s,i)=>s+Number(i.quantidade||1),0)} unidade(s)</div>
     </div>
   </div>
+
+  ${solicitacao ? `
+  <!-- Solicitação vinculada -->
+  <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:10px 14px;margin-bottom:16px;">
+    <div style="font-size:8px;font-weight:700;color:${AZUL};text-transform:uppercase;margin-bottom:6px;">Solicitação Vinculada</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px 16px;font-size:12px;">
+      <div><strong>ID:</strong> <span style="font-family:monospace;font-size:11px">${solicitacao.id}</span></div>
+      <div><strong>Solicitante:</strong> ${solicitacao.solicitanteNome||'—'}</div>
+      <div><strong>Prioridade:</strong> <span style="color:${solicitacao.prioridade==='Urgente'?'#dc2626':'#16a34a'};font-weight:700">${solicitacao.prioridade||'Normal'}</span></div>
+    </div>
+  </div>` : ''}
 
   <!-- Tabela de itens -->
   <div style="font-size:8px;font-weight:700;color:${AZUL};text-transform:uppercase;margin-bottom:6px;">Itens Recebidos</div>
