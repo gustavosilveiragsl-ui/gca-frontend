@@ -2,9 +2,19 @@
 <html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>GCA — Solicitação de Material</title>
 <link rel="icon" type="image/png" href="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GCA Solicitação">
+<link rel="apple-touch-icon" href="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="GCA Solicitação">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* ── TOKENS IDÊNTICOS AO SISTEMA PRINCIPAL ── */
@@ -1279,6 +1289,15 @@ async function cancelar() {
   const res = await req('/solicitacao-auth/cancelar/'+_solAtual.id, {method:'POST',body:{colaborador_id:_usr.colaborador_id}});
   if (res.ok){ fecharDet(); carregarSols(); toast('Solicitação cancelada.','success'); }
   else toast('Erro: '+(res.erro||'?'),'error');
+}
+
+// ── Registro do Service Worker (PWA) ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('[GCA PWA] Service Worker registrado:', reg.scope))
+      .catch(err => console.warn('[GCA PWA] SW não registrado:', err));
+  });
 }
 </script>
 <!-- Autocomplete flutuante — fora de qualquer container para evitar clipping -->
