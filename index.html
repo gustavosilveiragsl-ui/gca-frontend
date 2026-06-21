@@ -159,6 +159,11 @@ input,select,textarea{font-family:var(--font-main);}
 /* CARDS/TABELAS */
 .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:16px;overflow:hidden;}
 .card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.card-body{padding:16px;}
+.page-title{font-size:18px;font-weight:700;color:var(--text-1);}
+.page-sub{font-size:12px;color:var(--text-3);margin-top:2px;}
+.form-group{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .card-title{font-size:12px;font-weight:600;color:var(--text-1);}
 .card-sub{font-size:10px;color:var(--text-3);margin-top:2px;}
 .card-actions{display:flex;gap:8px;align-items:center;margin-left:auto;}
@@ -1808,15 +1813,17 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- CADASTRAR MATERIAL -->
       <div class="view" id="view-enel-cadastro">
-        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Cadastrar Material ⚙️</div><div class="card-sub">Materiais para uso com equipes ENEL</div></div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+            <div class="card-header">
+              <div><div class="card-title">Cadastrar Material</div><div class="card-sub">Materiais para uso com equipes ENEL</div></div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
               <input type="hidden" id="enelMatEditId">
-              <div><label class="form-label">Descrição *</label><input id="enelCadDesc" class="form-input" placeholder="Ex: Cabo Flexível 16mm"></div>
-              <div><label class="form-label">Código *</label><input id="enelCadCod" class="form-input" placeholder="Ex: CAB-16MM" style="text-transform:uppercase"></div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Categoria *</label>
+              <div class="form-group"><label class="form-label">Descrição *</label><input id="enelCadDesc" class="form-input" placeholder="Ex: Cabo Flexível 16mm"></div>
+              <div class="form-group"><label class="form-label">Código *</label><input id="enelCadCod" class="form-input" placeholder="Ex: CAB-16MM" style="text-transform:uppercase"></div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Categoria *</label>
                   <select id="enelCadCat" class="form-input">
                     <option value="">Selecione...</option>
                     <option value="Medidores">📟 Medidor</option>
@@ -1827,7 +1834,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                     <option value="Diversos">🔩 Diversos</option>
                   </select>
                 </div>
-                <div><label class="form-label">Unidade *</label>
+                <div class="form-group"><label class="form-label">Unidade *</label>
                   <select id="enelCadUn" class="form-input">
                     <option value="UN">UN - Unidade</option>
                     <option value="PR">PR - Par</option>
@@ -1839,17 +1846,17 @@ tbody tr:hover td{background:var(--bg-hover);}
                   </select>
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Valor Unitário (R$)</label><input id="enelCadValor" class="form-input" type="number" min="0" step="0.01" placeholder="0.00"></div>
-                <div><label class="form-label">Estoque mínimo</label><input id="enelCadMin" class="form-input" type="number" min="0" value="1"></div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Valor Unitário (R$)</label><input id="enelCadValor" class="form-input" type="number" min="0" step="0.01" placeholder="0.00"></div>
+                <div class="form-group"><label class="form-label">Estoque mínimo</label><input id="enelCadMin" class="form-input" type="number" min="0" value="1"></div>
               </div>
-              <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-                <input id="enelCadSerial" type="checkbox" style="width:18px;height:18px;cursor:pointer">
-                <label for="enelCadSerial" style="font-size:12px;color:var(--text-2);cursor:pointer">Possui número de série (medidores)</label>
+              <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-hover)">
+                <input id="enelCadSerial" type="checkbox" style="width:16px;height:16px;cursor:pointer;accent-color:var(--accent)">
+                <label for="enelCadSerial" class="form-label" style="text-transform:none;letter-spacing:0;cursor:pointer;margin:0">Possui número de série (medidores)</label>
               </div>
-              <div id="enelCadMsg" style="font-size:12px;min-height:16px"></div>
+              <div id="enelCadMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
               <div style="display:flex;gap:8px">
-                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarMaterialEnel()">Salvar Material</button>
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarMaterialEnel()">💾 Salvar Material</button>
                 <button class="btn btn-ghost" onclick="limparFormMaterialEnel()">Limpar</button>
               </div>
             </div>
@@ -1873,11 +1880,13 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- ENTRADA ESTOQUE -->
       <div class="view" id="view-enel-entrada">
-        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
-            <div class="card-header"><div><div class="card-title">⤴️ Entrada de Estoque</div></div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
-              <div>
+            <div class="card-header">
+              <div><div class="card-title">Entrada de Estoque</div><div class="card-sub">Registrar recebimento de materiais</div></div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group">
                 <label class="form-label">Material *</label>
                 <div style="position:relative">
                   <input id="enelEntMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelEntMatSug').classList.add('hidden'),200)" autocomplete="off">
@@ -1885,11 +1894,11 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <input type="hidden" id="enelEntMatId">
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Data *</label><input id="enelEntData" class="form-input" type="date"></div>
-                <div><label class="form-label">Quantidade *</label><input id="enelEntQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Data *</label><input id="enelEntData" class="form-input" type="date"></div>
+                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelEntQtd" class="form-input" type="number" min="1" placeholder="0"></div>
               </div>
-              <div><label class="form-label">Motivo *</label>
+              <div class="form-group"><label class="form-label">Motivo *</label>
                 <select id="enelEntMotivo" class="form-input">
                   <option value="">Selecione...</option>
                   <option value="Recebimento do fornecedor">Recebimento do fornecedor</option>
@@ -1907,26 +1916,35 @@ tbody tr:hover td{background:var(--bg-hover);}
                 </div>
                 <div id="enelEntSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
               </div>
-              <div><label class="form-label">Observação</label><input id="enelEntObs" class="form-input" placeholder="Opcional"></div>
-              <div id="enelEntMsg" style="font-size:12px;min-height:16px"></div>
-              <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()">✅ Registrar Entrada</button>
+              <div class="form-group"><label class="form-label">Observação</label><input id="enelEntObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelEntMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()">⤴️ Registrar Entrada</button>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Histórico de Entradas</div></div><div class="card-actions"><input class="form-input" type="date" id="enelEntHistDe" style="width:130px;font-size:11px"><input class="form-input" type="date" id="enelEntHistAte" style="width:130px;font-size:11px"><button class="btn btn-ghost" onclick="carregarHistEntradas()">↻</button></div></div>
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Entradas</div></div>
+              <div class="card-actions">
+                <input class="form-input" type="date" id="enelEntHistDe" style="width:130px;font-size:11px">
+                <input class="form-input" type="date" id="enelEntHistAte" style="width:130px;font-size:11px">
+                <button class="btn btn-ghost" onclick="carregarHistEntradas()">↻ Buscar</button>
+              </div>
+            </div>
             <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
-            <tbody id="enelEntHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+            <tbody id="enelEntHistBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
           </div>
         </div>
       </div>
 
       <!-- SAÍDA ESTOQUE -->
       <div class="view" id="view-enel-saida">
-        <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
-            <div class="card-header"><div><div class="card-title">⤵️ Saída de Estoque</div></div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
-              <div>
+            <div class="card-header">
+              <div><div class="card-title">Saída de Estoque</div><div class="card-sub">Registrar saída de materiais</div></div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group">
                 <label class="form-label">Material *</label>
                 <div style="position:relative">
                   <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
@@ -1934,17 +1952,17 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <input type="hidden" id="enelSaiMatId">
                 </div>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Data *</label><input id="enelSaiData" class="form-input" type="date"></div>
-                <div><label class="form-label">Quantidade *</label><input id="enelSaiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Data *</label><input id="enelSaiData" class="form-input" type="date"></div>
+                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelSaiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
               </div>
-              <div><label class="form-label">Equipe / Destino *</label>
+              <div class="form-group"><label class="form-label">Equipe / Destino *</label>
                 <div style="position:relative">
                   <input id="enelSaiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelSaiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
                   <div id="enelSaiEquipeSug" class="autocomplete-list hidden"></div>
                 </div>
               </div>
-              <div><label class="form-label">Motivo *</label>
+              <div class="form-group"><label class="form-label">Motivo *</label>
                 <select id="enelSaiMotivo" class="form-input">
                   <option value="">Selecione...</option>
                   <option value="Transferência">🔄 Transferência</option>
@@ -1952,21 +1970,22 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <option value="Outro">📦 Outro</option>
                 </select>
               </div>
-              <div><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
-              <div id="enelSaiMsg" style="font-size:12px;min-height:16px"></div>
-              <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()">✅ Registrar Saída</button>
+              <div class="form-group"><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelSaiMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()">⤵️ Registrar Saída</button>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Histórico de Saídas</div></div>
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Saídas</div></div>
               <div class="card-actions">
                 <input class="form-input" type="date" id="enelSaiHistDe" style="width:130px;font-size:11px">
                 <input class="form-input" type="date" id="enelSaiHistAte" style="width:130px;font-size:11px">
-                <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻</button>
+                <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻ Buscar</button>
               </div>
             </div>
             <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
-            <tbody id="enelSaiHistBody"><tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+            <tbody id="enelSaiHistBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -1975,7 +1994,7 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-enel-estoque">
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">🔎 Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
+            <div><div class="card-title">Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
             <div class="card-actions">
               <input class="search-box" placeholder="Buscar material..." oninput="filtrarEstoqueEnel(this.value)">
               <select class="form-input" id="enelEstFiltro" style="width:140px;font-size:11px" onchange="filtrarEstoqueEnel('')">
@@ -1996,18 +2015,18 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- CONSULTA BAIXAS -->
       <div class="view" id="view-enel-baixas">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+        <div class="page-header" style="margin-bottom:16px">
           <div>
-            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Consulta de Baixas 🧮</div>
-            <div style="font-size:12px;color:var(--text-3)" id="baixasResumo">Selecione o período e clique em buscar</div>
+            <div class="page-title">Consulta de Baixas</div>
+            <div class="page-sub" id="baixasResumo">Selecione o período e clique em buscar</div>
           </div>
         </div>
-        <div class="card" style="margin-bottom:12px">
-          <div style="padding:12px;display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
-            <div><label class="form-label">De</label><input class="form-input" type="date" id="baixasHistDe" style="width:140px"></div>
-            <div><label class="form-label">Até</label><input class="form-input" type="date" id="baixasHistAte" style="width:140px"></div>
-            <div><label class="form-label">Tipo</label>
-              <select class="form-input" id="baixasFiltroTipo" style="width:180px;font-size:11px">
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0"><label class="form-label">De</label><input class="form-input" type="date" id="baixasHistDe" style="width:140px"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Até</label><input class="form-input" type="date" id="baixasHistAte" style="width:140px"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Tipo</label>
+              <select class="form-input" id="baixasFiltroTipo" style="width:200px;font-size:11px">
                 <option value="atendimentos">🔶 Atendimentos (padrão)</option>
                 <option value="">Todos os motivos</option>
                 <option value="ATENDIMENTO_ENEL">Atendimento ENEL</option>
@@ -2016,11 +2035,11 @@ tbody tr:hover td{background:var(--bg-hover);}
               </select>
             </div>
             <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
-            <div id="baixasKpis" style="margin-left:auto;display:flex;gap:12px"></div>
+            <div id="baixasKpis" style="margin-left:auto;display:flex;gap:10px"></div>
           </div>
         </div>
         <div id="baixasListaMateriais" style="display:flex;flex-direction:column;gap:8px">
-          <div style="text-align:center;padding:40px;color:var(--text-3)">Selecione o período e clique em 🔍 Buscar</div>
+          <div class="empty-state"><div class="es-icon">🧮</div><div class="es-title">Selecione o período e clique em Buscar</div></div>
         </div>
       </div>
 
@@ -2028,80 +2047,80 @@ tbody tr:hover td{background:var(--bg-hover);}
       <div class="view" id="view-enel-atendimento">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
           <div>
-            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Atendimento ENEL ⚡</div>
-            <div style="font-size:12px;color:var(--text-3)">Entregas por equipe com controle de tempo e seriais</div>
+            <div class="page-title">Atendimento ENEL</div>
+            <div class="page-sub">Entregas por equipe com controle de tempo e seriais</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="enelIniciarAtendimento()">▶️ Iniciar Atendimento</button>
-            <button class="btn btn-ghost" onclick="enelAbrirConsulta()">🔍 Histórico</button>
+            <button class="btn btn-primary" onclick="enelIniciarAtendimento()">▶️ Iniciar Atendimento</button>
+            <button class="btn btn-ghost" onclick="enelAbrirConsulta()">📋 Histórico</button>
           </div>
         </div>
 
         <!-- Área atendimento em andamento -->
         <div id="areaAtendEnelAndamento" style="display:none">
-          <div style="border:2px solid rgba(245,158,11,.6);border-radius:var(--radius-md);padding:20px;background:rgba(245,158,11,.04);margin-bottom:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(245,158,11,.2)">
+          <div class="card" style="margin-bottom:14px">
+            <!-- Cronômetro -->
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,.04)">
               <div>
-                <div style="font-size:16px;font-weight:700;color:#f59e0b">⏱️ Atendimento em Andamento</div>
-                <div style="font-size:11px;color:var(--text-3)">Iniciado às <span id="enelHoraInicio"></span></div>
+                <div style="font-size:13px;font-weight:600;color:var(--yellow)">⏱️ Atendimento em Andamento</div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:2px">Iniciado às <span id="enelHoraInicio"></span></div>
               </div>
               <div style="text-align:right">
-                <div id="enelCronometro" style="font-size:28px;font-weight:800;color:#f59e0b;font-family:var(--font-mono)">00:00:00</div>
+                <div id="enelCronometro" style="font-size:26px;font-weight:800;color:var(--yellow);font-family:var(--font-mono)">00:00:00</div>
                 <div style="font-size:10px;color:var(--text-3)">Tempo decorrido</div>
               </div>
             </div>
 
-            <!-- Equipe e data -->
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
-              <div>
-                <label class="form-label">Equipe *</label>
-                <div style="position:relative">
-                  <input id="enelEquipeBusca" class="form-input" placeholder="Digite o nome/prefixo da equipe..." autocomplete="off"
-                    oninput="enelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('enelEquipeSug').style.display='none',200)">
-                  <div id="enelEquipeSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:200px;overflow-y:auto"></div>
-                  <input type="hidden" id="enelEquipeId">
-                </div>
-              </div>
-              <div>
-                <label class="form-label">Data</label>
-                <input id="enelData" class="form-input" type="date" readonly style="color:var(--text-3)">
-              </div>
-            </div>
-
-
-
-            <!-- Adicionar item -->
-            <div style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
-              <div style="font-size:14px;font-weight:700;margin-bottom:12px">📦 Adicionar Material</div>
-              <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end">
-                <div>
-                  <label class="form-label">Material</label>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <!-- Equipe e data -->
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Equipe *</label>
                   <div style="position:relative">
-                    <input id="enelMatBusca" class="form-input" placeholder="Descrição ou código..." autocomplete="off"
-                      oninput="enelFiltrarMaterial()" onblur="setTimeout(()=>document.getElementById('enelMatSug').style.display='none',200)">
-                    <div id="enelMatSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto"></div>
-                    <input type="hidden" id="enelMatId">
+                    <input id="enelEquipeBusca" class="form-input" placeholder="Digite o nome/prefixo da equipe..." autocomplete="off"
+                      oninput="enelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('enelEquipeSug').style.display='none',200)">
+                    <div id="enelEquipeSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:200px;overflow-y:auto"></div>
+                    <input type="hidden" id="enelEquipeId">
                   </div>
                 </div>
-                <div><label class="form-label">Qtd</label><input id="enelMatQtd" class="form-input" type="number" min="1" placeholder="0"></div>
-<input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
-                <input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
-                <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="padding:10px 14px;align-self:end">+ Add</button>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Data</label>
+                  <input id="enelData" class="form-input" type="date" readonly style="color:var(--text-3)">
+                </div>
               </div>
-            </div>
 
-            <!-- Lista de itens -->
-            <div style="margin-bottom:16px">
-              <div style="font-size:13px;font-weight:700;margin-bottom:8px">Materiais da Entrega</div>
-              <div id="enelListaItens" style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:12px;min-height:80px">
-                <p style="color:var(--text-3);text-align:center;padding:16px;margin:0;font-size:12px">Nenhum item adicionado</p>
+              <!-- Adicionar material -->
+              <div style="background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px">
+                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📦 Adicionar Material</div>
+                <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end">
+                  <div class="form-group" style="margin:0">
+                    <label class="form-label">Material</label>
+                    <div style="position:relative">
+                      <input id="enelMatBusca" class="form-input" placeholder="Descrição ou código..." autocomplete="off"
+                        oninput="enelFiltrarMaterial()" onblur="setTimeout(()=>document.getElementById('enelMatSug').style.display='none',200)">
+                      <div id="enelMatSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto"></div>
+                      <input type="hidden" id="enelMatId">
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin:0"><label class="form-label">Qtd</label><input id="enelMatQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+                  <input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
+                  <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="align-self:end">+ Adicionar</button>
+                </div>
               </div>
-            </div>
 
-            <div id="msgAtendimentoEnel" style="text-align:center;font-size:13px;min-height:18px;margin-bottom:8px"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-primary" style="flex:1;justify-content:center;background:#f59e0b;border-color:#f59e0b;font-size:15px" onclick="enelFinalizarAtendimento()">✓ Finalizar Atendimento</button>
-              <button class="btn btn-ghost" style="flex:1;justify-content:center;font-size:15px;color:#ef4444;border-color:#ef4444" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
+              <!-- Lista de itens -->
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Materiais da Entrega</div>
+                <div id="enelListaItens" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-height:80px">
+                  <div style="color:var(--text-3);text-align:center;padding:16px;font-size:12px">Nenhum item adicionado</div>
+                </div>
+              </div>
+
+              <div id="msgAtendimentoEnel" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="enelFinalizarAtendimento()">✓ Finalizar Atendimento</button>
+                <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
+              </div>
             </div>
           </div>
         </div>
@@ -2109,17 +2128,17 @@ tbody tr:hover td{background:var(--bg-hover);}
         <!-- Histórico -->
         <div id="areaConsultaAtendEnel" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-size:16px;font-weight:700">Histórico de Atendimentos ENEL</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-1)">Histórico de Atendimentos ENEL</div>
             <button class="btn btn-ghost" onclick="enelAbrirAtendimento()">← Voltar</button>
           </div>
-          <div class="card" style="overflow-x:auto">
-            <table id="tbHistAtendEnel" style="width:100%;border-collapse:collapse">
+          <div class="card">
+            <table id="tbHistAtendEnel">
               <thead><tr>
-                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Data/Hora</th>
-                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Equipe</th>
-                <th style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">Itens</th>
-                <th style="padding:10px;text-align:center;font-size:11px;color:var(--text-3)">Tempo</th>
-                <th style="padding:10px;text-align:left;font-size:11px;color:var(--text-3)">Atendente</th>
+                <th>Data/Hora</th>
+                <th>Equipe</th>
+                <th style="text-align:center">Itens</th>
+                <th style="text-align:center">Tempo</th>
+                <th>Atendente</th>
               </tr></thead>
               <tbody id="tbodyHistAtendEnel"></tbody>
             </table>
@@ -2129,36 +2148,38 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- DEVOLUÇÃO ENEL -->
       <div class="view" id="view-enel-devolucao">
-        <div style="max-width:600px;margin:0 auto">
-          <div style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:4px">Devolução ENEL ↩️</div>
-          <div style="font-size:12px;color:var(--text-3);margin-bottom:20px">Bipe os seriais para retornar ao estoque</div>
-          <div style="border:2px solid rgba(245,158,11,.4);border-radius:var(--radius-md);padding:20px;background:rgba(245,158,11,.04)">
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-bottom:16px">
-              <div>
-                <label class="form-label">Equipe (opcional)</label>
-                <div style="position:relative">
-                  <input id="devEnelEquipeBusca" class="form-input" placeholder="Nome/prefixo da equipe..." autocomplete="off"
-                    oninput="devEnelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('devEnelEquipeSug').classList.add('hidden'),200)">
-                  <div id="devEnelEquipeSug" class="autocomplete-list hidden"></div>
-                  <input type="hidden" id="devEnelEquipeId">
+        <div style="max-width:640px">
+          <div class="page-title" style="margin-bottom:4px">Devolução ENEL</div>
+          <div class="page-sub" style="margin-bottom:20px">Bipe os seriais para retornar ao estoque</div>
+          <div class="card">
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Equipe (opcional)</label>
+                  <div style="position:relative">
+                    <input id="devEnelEquipeBusca" class="form-input" placeholder="Nome/prefixo da equipe..." autocomplete="off"
+                      oninput="devEnelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('devEnelEquipeSug').classList.add('hidden'),200)">
+                    <div id="devEnelEquipeSug" class="autocomplete-list hidden"></div>
+                    <input type="hidden" id="devEnelEquipeId">
+                  </div>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Serial</label>
+                  <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
+                    oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){devEnelAddSerial(this.value);this.value=''}},300)">
                 </div>
               </div>
               <div>
-                <label class="form-label">Serial</label>
-                <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
-                  oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){devEnelAddSerial(this.value);this.value=''}},300)">
+                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seriais bipados <span id="devEnelCount" style="color:var(--accent-text)">(0)</span></div>
+                <div id="devEnelListaSeriais" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-height:72px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+                  <div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:8px 0">Nenhum serial ainda</div>
+                </div>
               </div>
-            </div>
-            <div style="margin-bottom:16px">
-              <div style="font-size:12px;font-weight:600;margin-bottom:8px">Seriais bipados <span id="devEnelCount" style="color:var(--accent-text)">(0)</span></div>
-              <div id="devEnelListaSeriais" style="background:rgba(0,0,0,.2);border-radius:var(--radius-md);padding:12px;min-height:70px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
-                <p style="color:var(--text-3);font-size:12px;margin:0;width:100%;text-align:center">Nenhum serial ainda</p>
+              <div id="msgDevEnel" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center;background:var(--green);border-color:var(--green)" onclick="devEnelConfirmar()">↩️ Confirmar Devolução</button>
+                <button class="btn btn-ghost" onclick="devEnelLimpar()">Limpar</button>
               </div>
-            </div>
-            <div id="msgDevEnel" style="text-align:center;font-size:13px;min-height:18px;margin-bottom:8px"></div>
-            <div style="display:flex;gap:8px">
-              <button class="btn btn-primary" style="flex:1;justify-content:center;background:#22c55e;border-color:#22c55e" onclick="devEnelConfirmar()">✓ Confirmar Devolução</button>
-              <button class="btn btn-ghost" onclick="devEnelLimpar()">Limpar</button>
             </div>
           </div>
         </div>
@@ -2166,15 +2187,17 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- TRANSFERÊNCIA DE SERIAIS -->
       <div class="view" id="view-enel-transferencia">
-        <div style="font-size:20px;font-weight:800;color:var(--text-1);margin-bottom:4px">Transferência de Seriais 🔁</div>
-        <div style="font-size:12px;color:var(--text-3);margin-bottom:20px">Transfira seriais de um tipo de material para outro</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+        <div class="page-title" style="margin-bottom:4px">Transferência de Seriais</div>
+        <div class="page-sub" style="margin-bottom:20px">Transfira seriais de um tipo de material para outro</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px">
           <div class="card">
-            <div class="card-header"><div class="card-title" style="color:var(--accent-text)">📋 Passo 1 — Informe os Seriais</div></div>
-            <div style="padding:16px">
-              <label class="form-label">Cole ou digite os seriais (um por linha)</label>
-              <textarea id="trfSerialLista" class="form-input" rows="10" placeholder="Ex:&#10;12345678&#10;87654321" style="font-family:var(--font-mono);resize:vertical"></textarea>
-              <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:10px" onclick="trfVerificarSeriais()">🔍 Verificar Seriais</button>
+            <div class="card-header">
+              <div><div class="card-title">Passo 1 — Informe os Seriais</div></div>
+            </div>
+            <div class="card-body">
+              <div class="form-group"><label class="form-label">Cole ou digite os seriais (um por linha)</label>
+              <textarea id="trfSerialLista" class="form-input" rows="10" placeholder="Ex:&#10;12345678&#10;87654321" style="font-family:var(--font-mono);resize:vertical"></textarea></div>
+              <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px" onclick="trfVerificarSeriais()">🔍 Verificar Seriais</button>
               <div id="trfSerialResultado" style="display:none;margin-top:12px">
                 <div id="trfSerialEncontrados"></div>
                 <div id="trfSerialNaoEncontrados"></div>
@@ -2182,67 +2205,66 @@ tbody tr:hover td{background:var(--bg-hover);}
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><div class="card-title" style="color:var(--accent-text)">🎯 Passo 2 — Selecione o Destino</div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
-              <div>
-                <label class="form-label">Material de Destino * <span style="font-size:10px;color:var(--text-3)">(apenas com serial)</span></label>
-                <select id="trfSerialDestino" class="form-input">
-                  <option value="">— Selecione —</option>
-                </select>
+            <div class="card-header">
+              <div><div class="card-title">Passo 2 — Selecione o Destino</div></div>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group"><label class="form-label">Material de Destino * <span style="font-size:10px;color:var(--text-3);text-transform:none;letter-spacing:0">(apenas com serial)</span></label>
+                <select id="trfSerialDestino" class="form-input"><option value="">— Selecione —</option></select>
               </div>
-              <div>
-                <label class="form-label">Observação</label>
+              <div class="form-group"><label class="form-label">Observação</label>
                 <textarea id="trfSerialObs" class="form-input" rows="3" placeholder="Motivo da transferência..."></textarea>
               </div>
-              <div id="trfSerialResumo" style="display:none;padding:12px;border:1px solid rgba(0,184,230,.3);border-radius:var(--radius-sm);background:rgba(0,184,230,.06)">
-                <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Resumo:</div>
-                <div id="trfSerialResumoTexto" style="font-size:12px"></div>
+              <div id="trfSerialResumo" style="display:none;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-hover)">
+                <div style="font-size:10px;color:var(--text-3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Resumo</div>
+                <div id="trfSerialResumoTexto" style="font-size:12px;color:var(--text-1)"></div>
               </div>
               <button id="btnConfirmarTrfSerial" class="btn btn-primary" style="justify-content:center" disabled onclick="trfConfirmar()">🔁 Confirmar Transferência</button>
-              <div id="msgTransfSerial" style="text-align:center;font-size:12px;min-height:16px"></div>
+              <div id="msgTransfSerial" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
             </div>
           </div>
         </div>
-        <div class="card" style="margin-top:20px">
-          <div class="card-header"><div class="card-title">Histórico de Transferências</div><button class="btn btn-ghost" onclick="carregarHistTrf()">↻</button></div>
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Histórico de Transferências</div></div>
+            <div class="card-actions"><button class="btn btn-ghost" onclick="carregarHistTrf()">↻ Carregar</button></div>
+          </div>
           <table><thead><tr><th>Data</th><th>Serial</th><th>Origem</th><th>Destino</th><th>Usuário</th><th>Obs</th></tr></thead>
-          <tbody id="tbodyHistTrf"><tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Clique ↻ para carregar</td></tr></tbody></table>
+          <tbody id="tbodyHistTrf"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Carregar para ver o histórico</td></tr></tbody></table>
         </div>
       </div>
 
       <!-- CONTROLE DE MEDIDORES -->
       <div class="view" id="view-enel-medidores">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
-          <div>
-            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Controle de Medidores ⚡</div>
-            <div style="font-size:12px;color:var(--text-3)">Gerencie seriais, status e localização dos medidores</div>
-          </div>
+        <div style="margin-bottom:20px">
+          <div class="page-title">Controle de Medidores</div>
+          <div class="page-sub">Gerencie seriais, status e localização dos medidores</div>
         </div>
         <!-- Botões principais -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
-          <button onclick="cmAbrirAba('estoque')" style="background:rgba(0,184,230,.08);border:2px solid rgba(0,184,230,.25);border-radius:var(--radius-md);padding:20px;cursor:pointer;text-align:left">
-            <div style="font-size:28px;margin-bottom:6px">📦</div>
-            <div style="font-size:16px;font-weight:800;color:#00B8E6">Medidores em Estoque</div>
-            <div style="font-size:12px;color:var(--text-3)">Modelos disponíveis e seus seriais</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+          <button onclick="cmAbrirAba('estoque')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">📦</div>
+            <div style="font-size:13px;font-weight:700;color:var(--accent-text);margin-bottom:3px">Medidores em Estoque</div>
+            <div style="font-size:11px;color:var(--text-3)">Modelos disponíveis e seus seriais</div>
           </button>
-          <button onclick="cmAbrirAba('campo')" style="background:rgba(245,158,11,.08);border:2px solid rgba(245,158,11,.25);border-radius:var(--radius-md);padding:20px;cursor:pointer;text-align:left">
-            <div style="font-size:28px;margin-bottom:6px">🚛</div>
-            <div style="font-size:16px;font-weight:800;color:#f59e0b">Medidores em Campo</div>
-            <div style="font-size:12px;color:var(--text-3)">Por equipe com prazos e status</div>
+          <button onclick="cmAbrirAba('campo')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">🚛</div>
+            <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:3px">Medidores em Campo</div>
+            <div style="font-size:11px;color:var(--text-3)">Por equipe com prazos e status</div>
           </button>
         </div>
-        <div style="display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap">
-          <button onclick="cmAbrirAba('instalados')" style="flex:1;min-width:200px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-md);padding:14px 20px;cursor:pointer;display:flex;align-items:center;gap:12px">
-            <span style="font-size:24px">✅</span>
-            <div><div style="font-size:14px;font-weight:700;color:#22c55e">Medidores Instalados</div><div style="font-size:11px;color:var(--text-3)">Histórico de instalações</div></div>
+        <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <button onclick="cmAbrirAba('instalados')" style="flex:1;min-width:200px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+            <span style="font-size:20px">✅</span>
+            <div><div style="font-size:12px;font-weight:700;color:var(--green)">Medidores Instalados</div><div style="font-size:11px;color:var(--text-3)">Histórico de instalações</div></div>
           </button>
-          <div style="flex:2;min-width:280px;background:rgba(0,184,230,.04);border:1px solid rgba(0,184,230,.18);border-radius:var(--radius-md);padding:14px 20px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:24px">🔍</span>
+          <div style="flex:2;min-width:280px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px 18px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:20px">🔍</span>
             <div style="flex:1">
-              <div style="font-size:14px;font-weight:700;color:#00B8E6;margin-bottom:6px">Buscar Serial</div>
+              <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Buscar por Serial</div>
               <div style="display:flex;gap:8px">
                 <input id="cmBuscaSerialInput" class="form-input" placeholder="Número de série..." onkeydown="if(event.key==='Enter')cmBuscarSerial()">
-                <button class="btn btn-ghost" style="color:#00B8E6;border-color:#00B8E6" onclick="cmBuscarSerial()">Buscar</button>
+                <button class="btn btn-ghost" onclick="cmBuscarSerial()">Buscar</button>
               </div>
             </div>
           </div>
@@ -2279,20 +2301,18 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
       <div class="view" id="view-enel-controle">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
           <div>
-            <div style="font-size:20px;font-weight:800;color:var(--text-1)">Controle de Materiais por Equipe 🧵</div>
-            <div style="font-size:12px;color:var(--text-3)">Saldo de materiais por equipe, descontando consumos por OS</div>
+            <div class="page-title">Controle de Materiais por Equipe</div>
+            <div class="page-sub">Saldo de materiais por equipe, descontando consumos por OS</div>
           </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" onclick="carregarControleMateriaisEquipe()">↻ Recarregar</button>
-          </div>
+          <button class="btn btn-ghost" onclick="carregarControleMateriaisEquipe()">↻ Recarregar</button>
         </div>
         <input class="search-box" id="buscaControleEquipe" placeholder="Buscar equipe..." oninput="filtrarControleEquipe()" style="margin-bottom:12px;width:100%">
         <div id="listaEquipesControle" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>
         </div>
-        <div id="sumControleEquipe" style="margin-top:12px;padding:10px;background:rgba(0,184,230,.06);border-radius:var(--radius-sm);font-size:12px;color:var(--text-3)"></div>
+        <div id="sumControleEquipe" style="margin-top:12px;padding:10px 12px;background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-3)"></div>
       </div>
       <!-- ── FICHA EPI ── -->
       <div class="view" id="view-ficha-epi">
