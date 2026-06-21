@@ -6187,17 +6187,17 @@ async function atenderSolicitacao(id) {
   // Aguarda a view montar
   await new Promise(r => setTimeout(r, 350));
 
-  // ── 1. Seleciona colaborador ──
+  // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
+  iniciarAtendimento();
+  await new Promise(r => setTimeout(r, 200));
+
+  // ── 2. Depois seleciona o colaborador ──
   await selecionarColabAtend(colabId);
 
   // Se selecionarColabAtend abriu o modal de pendência (raro, pois já verificamos acima), aborta
   if (!document.getElementById('modalPendencia').classList.contains('hidden')) return;
 
-  await new Promise(r => setTimeout(r, 200));
-
-  // ── 2. Inicia o atendimento ──
-  iniciarAtendimento();
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 400));
 
   // ── 3. Carrega itens da solicitação automaticamente ──
   let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
