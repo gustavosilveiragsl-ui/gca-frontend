@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GCA Sistema</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
   --accent:#6366f1;--accent-hover:#4f46e5;--accent-soft:#1e1b4b;--accent-text:#818cf8;
@@ -957,15 +958,26 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
         </div>
 
+        <!-- ABAS PENDENTES / ASSINADAS -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
+          <button id="assAbaPendentes" onclick="mudarAbaAss('pendentes')"
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent-text);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Pendentes e Expirados
+          </button>
+          <button id="assAbaAssinadas" onclick="mudarAbaAss('assinadas')"
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Assinados
+          </button>
+        </div>
+
         <!-- TABELA -->
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Gestão de Assinaturas</div><div class="card-sub">Gerencie confirmações de recebimento dos atendimentos</div></div>
+            <div><div class="card-title">Gestão de Assinaturas</div><div class="card-sub" id="assCardSub">Pendentes e expirados</div></div>
             <div class="card-actions">
               <select id="assFiltroStatus" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
                 <option value="">Todos os status</option>
                 <option value="PENDENTE">Pendentes</option>
-                <option value="ASSINADO">Assinados</option>
                 <option value="EXPIRADO">Expirados</option>
               </select>
               <select id="assFiltroSetor" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
@@ -3446,7 +3458,7 @@ const VIEW_TITLES = {
 };
 
 function showView(nome, btnEl) {
-  // Para qualquer polling ativo ao trocar de view
+  // Para qualquer polling ativo ao trocar de view (mantido para compatibilidade)
   if (window._autoRefreshTimer) {
     clearInterval(window._autoRefreshTimer);
     window._autoRefreshTimer = null;
@@ -3507,8 +3519,8 @@ function onViewLoad(nome) {
   if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
-  if (nome === 'assinaturas')        { carregarAssinaturas(); window._autoRefreshTimer = setInterval(() => { if(document.getElementById('view-assinaturas')?.style.display !== 'none') carregarAssinaturas(); }, 30000); }
-  if (nome === 'solicitacoes')       { carregarSolicitacoes(); window._autoRefreshTimer = setInterval(() => { if(document.getElementById('view-solicitacoes')?.style.display !== 'none') carregarSolicitacoes(true); }, 30000); }
+  if (nome === 'assinaturas')        { carregarAssinaturas(); _iniciarRealtime(); }
+  if (nome === 'solicitacoes')       { carregarSolicitacoes(); _iniciarRealtime(); }
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
@@ -5297,6 +5309,29 @@ async function carregarItensAtendimento() {
 // ASSINATURAS
 // ═══════════════════════════════════════════
 let _assinaturas = [];
+let _assAbaAtual = 'pendentes'; // 'pendentes' ou 'assinadas'
+
+function mudarAbaAss(aba) {
+  _assAbaAtual = aba;
+  const btnP = document.getElementById('assAbaPendentes');
+  const btnA = document.getElementById('assAbaAssinadas');
+  const sub  = document.getElementById('assCardSub');
+  if (btnP) { btnP.style.borderBottom = aba==='pendentes' ? '2px solid var(--accent)' : '2px solid transparent'; btnP.style.color = aba==='pendentes' ? 'var(--accent-text)' : 'var(--text-3)'; }
+  if (btnA) { btnA.style.borderBottom = aba==='assinadas' ? '2px solid var(--accent)' : '2px solid transparent'; btnA.style.color = aba==='assinadas' ? 'var(--accent-text)' : 'var(--text-3)'; }
+  if (sub)  sub.textContent = aba==='pendentes' ? 'Pendentes e expirados' : 'Assinados';
+  // Ajusta filtro de status
+  const sel = document.getElementById('assFiltroStatus');
+  if (sel) {
+    if (aba === 'assinadas') {
+      sel.innerHTML = '<option value="ASSINADO">Assinados</option>';
+    } else {
+      sel.innerHTML = '<option value="">Todos</option><option value="PENDENTE">Pendentes</option><option value="EXPIRADO">Expirados</option>';
+    }
+    sel.value = '';
+  }
+  _assPagina = 1;
+  filtrarAssinaturas();
+}
 let _assQuery    = '';
 
 async function carregarAssinaturasSilencioso() {
@@ -5312,10 +5347,10 @@ async function carregarAssinaturasSilencioso() {
   });
 }
 
-async function carregarAssinaturas() {
+async function carregarAssinaturas(silencioso = false) {
   const tbody = document.getElementById('assBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  if (!silencioso) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
 
   // Garante colaboradores carregados para buscar setor
   if (!_colaboradores.length) await carregarColaboradoresAtendimento();
@@ -5362,6 +5397,14 @@ function filtrarAssinaturas(busca) {
   const q = (_assQuery || '').toLowerCase();
 
   let lista = _assinaturas;
+
+  // ── Filtra por aba ──
+  if (_assAbaAtual === 'pendentes') {
+    lista = lista.filter(a => a.statusCalc !== 'ASSINADO');
+  } else {
+    lista = lista.filter(a => a.statusCalc === 'ASSINADO');
+  }
+
   if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
   if (filtroSetor)  lista = lista.filter(a => {
     const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
@@ -5440,7 +5483,11 @@ function renderAssinaturas(lista) {
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>`;
 
-    return `<tr>
+    return `<tr style="${
+      a.statusCalc === 'PENDENTE' ? 'border-left:4px solid var(--yellow)!important;background:rgba(251,191,36,.05)!important' :
+      a.statusCalc === 'EXPIRADO' ? 'border-left:4px solid var(--red)!important;background:rgba(248,113,113,.05)!important' :
+      'border-left:4px solid transparent'
+    }">
       <td class="td-main">${a.nomeColaborador||'—'}</td>
       <td style="font-size:11px;color:var(--text-2)">${setor}</td>
       <td>${formatarData(a.data)}</td>
@@ -12455,6 +12502,106 @@ async function gerarPDFFichaEPI(colabId) {
 document.addEventListener('DOMContentLoaded',()=>{
   ['loginUser','loginPass'].forEach(id=>{ const el=document.getElementById(id); if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter') fazerLogin(); }); });
   document.getElementById('forgotUser')?.addEventListener('keydown',e=>{ if(e.key==='Enter') solicitarRecuperacao(); });
+});
+
+
+// ══════════════════════════════════════════════════════
+// SUPABASE REALTIME — Atualizações em tempo real
+// ══════════════════════════════════════════════════════
+const _SUPABASE_URL  = 'https://hyrpvxzcfikdxzsqebnu.supabase.co';
+const _SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cnB2eHpjZmlrZHh6c3FlYm51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAwOTEyMTIsImV4cCI6MjA5NTY2NzIxMn0.8QRb3lr8Bf9UNL0LiE4IifcHoobDWVOsFvax-_GnGzU';
+let _supabaseClient = null;
+let _realtimeCanal  = null;
+
+function _getSupabase() {
+  if (!_supabaseClient && window.supabase) {
+    _supabaseClient = window.supabase.createClient(_SUPABASE_URL, _SUPABASE_ANON);
+  }
+  return _supabaseClient;
+}
+
+// Debounce para não disparar multiplas recargas seguidas
+function _debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+const _recarregarSols = _debounce(() => {
+  const viewSol = document.getElementById('view-solicitacoes');
+  if (viewSol && viewSol.style.display !== 'none') {
+    carregarSolicitacoes(true);
+    // Indicador visual discreto
+    const el = document.getElementById('solUltimaAtt');
+    if (el) el.textContent = '↻ ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  }
+}, 800);
+
+const _recarregarAss = _debounce(() => {
+  const viewAss = document.getElementById('view-assinaturas');
+  if (viewAss && viewAss.style.display !== 'none') {
+    carregarAssinaturas(true);
+  }
+  // Atualiza assinaturas em background para verificação de pendências (usado em outros módulos)
+  carregarAssinaturasSilencioso();
+}, 800);
+
+function _iniciarRealtime() {
+  const sb = _getSupabase();
+  if (!sb) {
+    console.warn('[GCA Realtime] Supabase JS não disponível, usando fallback de 30s');
+    // Fallback: polling se o Supabase JS não carregou
+    if (!window._autoRefreshTimer) {
+      window._autoRefreshTimer = setInterval(() => {
+        _recarregarSols();
+        _recarregarAss();
+      }, 30000);
+    }
+    return;
+  }
+
+  // Remove canal anterior se existir
+  if (_realtimeCanal) {
+    sb.removeChannel(_realtimeCanal);
+    _realtimeCanal = null;
+  }
+
+  _realtimeCanal = sb
+    .channel('gca-realtime')
+    // Solicitações — qualquer mudança (INSERT, UPDATE, DELETE)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table:  'solicitacoes_material',
+    }, () => _recarregarSols())
+    // Atendimentos — mudanças de status (assinatura, conclusão)
+    .on('postgres_changes', {
+      event: '*',
+      schema: 'public',
+      table:  'atendimentos',
+    }, () => _recarregarAss())
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[GCA Realtime] ✅ Conectado — atualizações em tempo real ativas');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.warn('[GCA Realtime] ⚠️ Erro no canal, tentando fallback de polling');
+        window._autoRefreshTimer = setInterval(() => {
+          _recarregarSols();
+          _recarregarAss();
+        }, 30000);
+      }
+    });
+}
+
+// Inicia Realtime quando o usuário loga (GCA.login chama showView)
+// Garante que o Realtime também cobre dashboards e outras views
+document.addEventListener('DOMContentLoaded', () => {
+  // Aguarda o login e a inicialização do sistema antes de conectar
+  const checkLogin = setInterval(() => {
+    if (GCA?.usuario) {
+      clearInterval(checkLogin);
+      _iniciarRealtime();
+    }
+  }, 2000);
 });
 </script>
 <div id="toastContainer"></div>
