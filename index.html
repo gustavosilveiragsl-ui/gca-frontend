@@ -1053,6 +1053,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                 <option value="Normal">Normal</option>
               </select>
               <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
+              <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
           </div>
           <table>
@@ -3445,6 +3446,11 @@ const VIEW_TITLES = {
 };
 
 function showView(nome, btnEl) {
+  // Para qualquer polling ativo ao trocar de view
+  if (window._autoRefreshTimer) {
+    clearInterval(window._autoRefreshTimer);
+    window._autoRefreshTimer = null;
+  }
   // Se sair da tela de atendimento com atendimento ativo, cancela
   const viewAtual = document.querySelector('.view.active')?.id;
   if (viewAtual === 'view-atendimento' && nome !== 'atendimento' && ATEND.ativo) {
@@ -3501,8 +3507,8 @@ function onViewLoad(nome) {
   if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
-  if (nome === 'assinaturas')        carregarAssinaturas();
-  if (nome === 'solicitacoes')       carregarSolicitacoes();
+  if (nome === 'assinaturas')        { carregarAssinaturas(); window._autoRefreshTimer = setInterval(() => { if(document.getElementById('view-assinaturas')?.style.display !== 'none') carregarAssinaturas(); }, 30000); }
+  if (nome === 'solicitacoes')       { carregarSolicitacoes(); window._autoRefreshTimer = setInterval(() => { if(document.getElementById('view-solicitacoes')?.style.display !== 'none') carregarSolicitacoes(true); }, 30000); }
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
@@ -5655,10 +5661,10 @@ function mudarAbaSol(aba) {
   filtrarSolicitacoes();
 }
 
-async function carregarSolicitacoes() {
+async function carregarSolicitacoes(silencioso = false) {
   const tbody = document.getElementById('solBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  if (!silencioso) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
 
   // Carrega assinaturas em paralelo para ter dados de pendência
   const [data] = await Promise.all([
@@ -5672,7 +5678,9 @@ async function carregarSolicitacoes() {
   atualizarKpisSolicitacoes();
   renderSolicitacoes();
 
-  // Badge na sidebar
+  // Atualiza indicador de última atualização
+  const attEl = document.getElementById('solUltimaAtt');
+  if (attEl) attEl.textContent = '↻ ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});  // Badge na sidebar
   const pendentes = _solicitacoes.filter(s => s.status === 'PENDENTE' || s.status === 'VISUALIZADO').length;
   const badge = document.getElementById('badgeSolicitacoes');
   if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
