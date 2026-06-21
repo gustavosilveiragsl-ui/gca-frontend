@@ -12520,36 +12520,72 @@ function _getSupabase() {
   return _supabaseClient;
 }
 
-// Debounce para não disparar multiplas recargas seguidas
+// Debounce para não disparar múltiplas recargas seguidas
 function _debounce(fn, ms) {
   let t;
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
+// ── Helpers: recarrega a view ativa se for a correspondente ──
+function _viewAtiva(id) {
+  const el = document.getElementById('view-' + id);
+  return el && el.style.display !== 'none';
+}
+
 const _recarregarSols = _debounce(() => {
-  const viewSol = document.getElementById('view-solicitacoes');
-  if (viewSol && viewSol.style.display !== 'none') {
+  if (_viewAtiva('solicitacoes')) {
     carregarSolicitacoes(true);
-    // Indicador visual discreto
     const el = document.getElementById('solUltimaAtt');
     if (el) el.textContent = '↻ ' + new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
   }
 }, 800);
 
 const _recarregarAss = _debounce(() => {
-  const viewAss = document.getElementById('view-assinaturas');
-  if (viewAss && viewAss.style.display !== 'none') {
-    carregarAssinaturas(true);
-  }
-  // Atualiza assinaturas em background para verificação de pendências (usado em outros módulos)
-  carregarAssinaturasSilencioso();
+  if (_viewAtiva('assinaturas')) carregarAssinaturas(true);
+  carregarAssinaturasSilencioso(); // sempre atualiza em background para verificar pendências
+}, 800);
+
+const _recarregarColabs = _debounce(() => {
+  // Recarrega array global (usado em atendimento, consulta, etc.)
+  carregarColaboradoresAtendimento();
+  // Se a view de colaboradores estiver aberta, recarrega a tabela
+  if (_viewAtiva('colaboradores')) carregarColaboradores();
+  // Toast discreto para indicar atualização
+  toast('👤 Colaboradores atualizados', 'info', 2500);
+}, 1000);
+
+const _recarregarItens = _debounce(() => {
+  if (_viewAtiva('itens')) carregarItens();
+  // Recarrega cache global de itens usado no atendimento
+  if (_itens.length) carregarItensAtendimento();
+  toast('📦 Itens atualizados', 'info', 2500);
+}, 1000);
+
+const _recarregarArmazens = _debounce(() => {
+  carregarArmazens(); // array global
+  if (_viewAtiva('armazens')) carregarArmazensView();
+  toast('🏭 Armazéns atualizados', 'info', 2500);
+}, 1000);
+
+const _recarregarEquipes = _debounce(() => {
+  if (_viewAtiva('equipes')) carregarEquipesView();
+  toast('👥 Equipes atualizadas', 'info', 2500);
+}, 1000);
+
+const _recarregarDotacao = _debounce(() => {
+  if (_viewAtiva('dotacao')) carregarDotacao();
+  toast('🗂️ Dotação atualizada', 'info', 2500);
+}, 1000);
+
+const _recarregarUsuarios = _debounce(() => {
+  if (_viewAtiva('usuarios')) carregarUsuariosView();
+  if (_viewAtiva('logins-solicitacao')) carregarLS();
 }, 800);
 
 function _iniciarRealtime() {
   const sb = _getSupabase();
   if (!sb) {
     console.warn('[GCA Realtime] Supabase JS não disponível, usando fallback de 30s');
-    // Fallback: polling se o Supabase JS não carregou
     if (!window._autoRefreshTimer) {
       window._autoRefreshTimer = setInterval(() => {
         _recarregarSols();
@@ -12560,30 +12596,26 @@ function _iniciarRealtime() {
   }
 
   // Remove canal anterior se existir
-  if (_realtimeCanal) {
-    sb.removeChannel(_realtimeCanal);
-    _realtimeCanal = null;
-  }
+  if (_realtimeCanal) { sb.removeChannel(_realtimeCanal); _realtimeCanal = null; }
 
   _realtimeCanal = sb
     .channel('gca-realtime')
-    // Solicitações — qualquer mudança (INSERT, UPDATE, DELETE)
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table:  'solicitacoes_material',
-    }, () => _recarregarSols())
-    // Atendimentos — mudanças de status (assinatura, conclusão)
-    .on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table:  'atendimentos',
-    }, () => _recarregarAss())
+    // ── Operacional ──
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_material' }, () => _recarregarSols())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'atendimentos'          }, () => _recarregarAss())
+    // ── Cadastros ──
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'colaboradores'         }, () => _recarregarColabs())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'itens'                 }, () => _recarregarItens())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'armazens'              }, () => _recarregarArmazens())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'equipes'               }, () => _recarregarEquipes())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'catalogo_dotacao'      }, () => _recarregarDotacao())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios'              }, () => _recarregarUsuarios())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'logins_solicitacao'    }, () => _recarregarUsuarios())
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
-        console.log('[GCA Realtime] ✅ Conectado — atualizações em tempo real ativas');
+        console.log('[GCA Realtime] ✅ Conectado — todas as tabelas em tempo real');
       } else if (status === 'CHANNEL_ERROR') {
-        console.warn('[GCA Realtime] ⚠️ Erro no canal, tentando fallback de polling');
+        console.warn('[GCA Realtime] ⚠️ Erro no canal, ativando fallback de 30s');
         window._autoRefreshTimer = setInterval(() => {
           _recarregarSols();
           _recarregarAss();
@@ -12592,10 +12624,8 @@ function _iniciarRealtime() {
     });
 }
 
-// Inicia Realtime quando o usuário loga (GCA.login chama showView)
-// Garante que o Realtime também cobre dashboards e outras views
+// Inicia Realtime quando o usuário loga
 document.addEventListener('DOMContentLoaded', () => {
-  // Aguarda o login e a inicialização do sistema antes de conectar
   const checkLogin = setInterval(() => {
     if (GCA?.usuario) {
       clearInterval(checkLogin);
