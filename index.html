@@ -5954,25 +5954,27 @@ async function abrirModalSolicitacao(id) {
   // FINALIZADO/CANCELADO: só Fechar
   const podeAtender  = ['PENDENTE','VISUALIZADO'].includes(s.status);
   const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status);
-  const podeStatus   = !['FINALIZADO','CANCELADO'].includes(s.status);
   const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status);
 
-  // Opções de status disponíveis por estágio
-  const statusOpts = podeAtender
-    ? `<option value="">Alterar status...</option>
-       <option value="VISUALIZADO">👁️ Visualizado</option>
-       <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>`
-    : `<option value="">Alterar status...</option>
-       <option value="AGUARDANDO TRANSPORTE">🚛 Aguard. Transporte</option>
-       <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
+  // Único ponto manual: ATENDIDO → AGUARDANDO TRANSPORTE ou EM TRANSITO
+  let statusOpts = '';
+  if (s.status === 'ATENDIDO') {
+    statusOpts = `<option value="">Mover para transporte...</option>
+      <option value="AGUARDANDO TRANSPORTE">🚛 Aguardando Transporte</option>
+      <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
+  } else if (s.status === 'AGUARDANDO TRANSPORTE') {
+    statusOpts = `<option value="">Próximo passo...</option>
+      <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
+  }
+  // Nota: PENDENTE→VISUALIZADO, ATENDIDO e FINALIZADO são automáticos
 
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
       ${podeAtender ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}')">🤝 Iniciar Atendimento</button>` : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')">✏️ Editar</button>` : ''}
-      ${podeStatus  ? `
-        <select class="form-input" id="solNovoStatus" style="width:190px;font-size:11px">${statusOpts}</select>
-        <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Atualizar</button>
+      ${statusOpts  ? `
+        <select class="form-input" id="solNovoStatus" style="width:220px;font-size:11px">${statusOpts}</select>
+        <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Confirmar</button>
       ` : ''}
       ${podeCancelar ? `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red)" onclick="cancelarSolicitacao('${id}')">✕ Cancelar</button>` : ''}
       <button class="btn btn-ghost" style="margin-left:auto" onclick="fecharModalSolicitacao()">Fechar</button>
