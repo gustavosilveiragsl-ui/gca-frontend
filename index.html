@@ -12450,24 +12450,24 @@ function filtrarControleEquipe() {
           <div style="font-size:11px;color:var(--text-3)">${itens.length} tipo(s) de material</div>
         </div>
         <div style="display:flex;gap:6px">
-          ${itens.some(i=>i.pendente>0)?'<span style="font-size:10px;color:#f59e0b;font-weight:700;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:4px">⚠️ Pré-baixas pendentes</span>':'<span style="font-size:10px;color:#22c55e;font-weight:700">✅ Em dia</span>'}
+          ${(()=>{const total=itens.reduce((s,i)=>s+(i.entregue||0),0);const saldo=itens.reduce((s,i)=>s+(i.saldoReal||0),0);const sem=itens.filter(i=>(i.saldoReal||0)===0&&(i.entregue||0)>0).length;return sem>0?'<span style="font-size:10px;color:var(--red);font-weight:700;background:var(--red-soft);padding:2px 8px;border-radius:4px">⚠️ '+sem+' item(ns) zerado(s)</span>':'<span style="font-size:10px;color:var(--green);font-weight:700">✅ Em dia</span>';})()}
         </div>
       </div>
       <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:rgba(0,0,0,.1)">
             <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Código</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:#3b82f6">Entregue</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b">Pré-baixa Pend.</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo Atual</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Consumido</th>
           </tr></thead>
           <tbody>${itens.map(it=>`<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-size:12px;font-weight:600">${it.materialDesc}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${it.materialCod||'—'}</td>
             <td style="padding:8px;text-align:center;font-size:12px">${it.entregue||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;font-weight:700;color:#22c55e">${it.saldoReal||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;font-weight:${it.pendente>0?'700':'400'};color:${it.pendente>0?'#f59e0b':'var(--text-3)'}">
-              ${it.pendente>0?it.pendente:'—'}
-            </td>
+            <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:${(it.saldoReal||0)===0?'var(--red)':'#22c55e'}">${it.saldoReal||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;color:var(--text-3)">${it.baixado||0}</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
@@ -13615,36 +13615,59 @@ async function baAguardarConclusao(id) {
   let tentativas = 0;
   _baPollingTimer = setInterval(async () => {
     tentativas++;
-    if (tentativas > 120) { clearInterval(_baPollingTimer); return; } // timeout 2min
+    if (tentativas > 180) { // timeout 3min
+      clearInterval(_baPollingTimer);
+      // Verifica uma última vez e mostra resultado mesmo assim
+      baVerificarResultadoFinal(id);
+      return;
+    }
 
     const res = await api('/importacao-enel/historico?unidade=' + GCA.unidade);
     const imp = (res?.data || []).find(i => i.id === id);
     if (!imp) return;
 
     // Animação da barra
-    const pct = Math.min(90, 50 + tentativas * 2);
+    const pct = Math.min(95, 20 + tentativas * 1.5);
     document.getElementById('ba-progress-bar').style.width = pct + '%';
 
-    if (imp.status === 'CONCLUIDO') {
+    if (imp.status === 'CONCLUIDO' || imp.status === 'ERRO') {
       clearInterval(_baPollingTimer);
-      document.getElementById('ba-progress-bar').style.width = '100%';
-      document.getElementById('ba-progresso').style.display  = 'none';
-      document.getElementById('ba-resultado').style.display   = 'block';
-      document.getElementById('ba-status-titulo').textContent = '✅ Processamento concluído!';
-      document.getElementById('ba-cnt-baixados').textContent  = imp.baixados || 0;
-      document.getElementById('ba-cnt-alertas').textContent   = imp.alertas  || 0;
-      document.getElementById('ba-cnt-nao').textContent       = imp.nao_encontrados || 0;
-      document.getElementById('ba-btn-processar').disabled    = false;
-      toast(`✅ Importação concluída — ${imp.baixados} baixas realizadas`, 'success', 5000);
-      baCarregarHistorico();
-    } else if (imp.status === 'ERRO') {
-      clearInterval(_baPollingTimer);
-      document.getElementById('ba-status-titulo').textContent = '❌ Erro no processamento';
-      document.getElementById('ba-import-msg').textContent    = imp.erro_msg || 'Erro desconhecido';
-      document.getElementById('ba-btn-processar').disabled    = false;
-      toast('Erro na importação: ' + imp.erro_msg, 'error', 8000);
+      baExibirResultado(imp);
     }
-  }, 1000);
+  }, 2000); // a cada 2 segundos
+}
+
+async function baVerificarResultadoFinal(id) {
+  const res = await api('/importacao-enel/historico?unidade=' + GCA.unidade);
+  const imp = (res?.data || []).find(i => i.id === id);
+  if (imp) baExibirResultado(imp);
+}
+
+function baExibirResultado(imp) {
+  document.getElementById('ba-progress-bar').style.width = '100%';
+  document.getElementById('ba-progresso').style.display  = 'none';
+  document.getElementById('ba-resultado').style.display  = 'block';
+  document.getElementById('ba-btn-processar').disabled   = false;
+
+  if (imp.status === 'CONCLUIDO') {
+    document.getElementById('ba-status-titulo').textContent = '✅ Processamento concluído!';
+    document.getElementById('ba-cnt-baixados').textContent  = imp.baixados || 0;
+    document.getElementById('ba-cnt-alertas').textContent   = imp.alertas  || 0;
+    document.getElementById('ba-cnt-nao').textContent       = imp.nao_encontrados || 0;
+    toast(`✅ Importação concluída — ${imp.baixados} baixas realizadas`, 'success', 5000);
+  } else if (imp.status === 'ERRO') {
+    document.getElementById('ba-status-titulo').textContent = '❌ Erro no processamento';
+    document.getElementById('ba-import-msg').textContent    = imp.erro_msg || 'Erro desconhecido';
+    toast('Erro na importação: ' + imp.erro_msg, 'error', 8000);
+  } else {
+    // Status ainda PROCESSANDO mas timeout atingido — mostra o que tem
+    document.getElementById('ba-status-titulo').textContent = '⏳ Ainda processando...';
+    document.getElementById('ba-cnt-baixados').textContent  = imp.baixados || 0;
+    document.getElementById('ba-cnt-alertas').textContent   = imp.alertas  || 0;
+    document.getElementById('ba-cnt-nao').textContent       = imp.nao_encontrados || 0;
+    toast('Processamento pode ainda estar em andamento. Verifique o histórico.', 'warn', 6000);
+  }
+  baCarregarHistorico();
 }
 
 // ── Log detalhado
