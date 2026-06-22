@@ -13588,7 +13588,7 @@ async function baProcessar() {
   if (ate) fd.append('periodo_ate', ate);
 
   try {
-    const res = await fetch(GCA.API + '/importacao-enel/processar', {
+    const res = await fetch(API + '/importacao-enel/processar', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + GCA.token },
       body: fd,
