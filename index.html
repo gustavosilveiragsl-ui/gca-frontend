@@ -413,6 +413,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
           <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
           <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
+          <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
@@ -2365,6 +2366,222 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
       </div>
 
+      <!-- ── BAIXA AUTOMÁTICA ENEL ── -->
+      <div class="view" id="view-enel-baixa-auto">
+        <div style="margin-bottom:16px">
+          <div class="page-title">Baixa Automática ENEL</div>
+          <div class="page-sub">Importe o relatório EORDE e o sistema dá baixa automaticamente nos materiais e medidores</div>
+        </div>
+
+        <!-- Abas internas -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">
+          <button id="ba-aba-importar" onclick="baAba('importar')"
+            style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent-text);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            ⬆️ Importar Relatório
+          </button>
+          <button id="ba-aba-historico" onclick="baAba('historico')"
+            style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            📋 Histórico
+          </button>
+          <button id="ba-aba-codigos" onclick="baAba('codigos')"
+            style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            🗂️ Mapeamento Códigos
+          </button>
+          <button id="ba-aba-equipes" onclick="baAba('equipes')"
+            style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            👥 Mapeamento Equipes
+          </button>
+        </div>
+
+        <!-- ABA: IMPORTAR -->
+        <div id="ba-pane-importar">
+          <div style="display:grid;grid-template-columns:420px 1fr;gap:20px;align-items:start">
+            <!-- Upload -->
+            <div class="card">
+              <div class="card-header"><div class="card-title">📂 Carregar Arquivo EORDE</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+                <div id="ba-dropzone"
+                  style="border:2px dashed var(--border-mid);border-radius:var(--radius-md);padding:28px;text-align:center;cursor:pointer;transition:all .2s"
+                  onclick="document.getElementById('ba-file-input').click()"
+                  ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-soft)'"
+                  ondragleave="this.style.borderColor='var(--border-mid)';this.style.background=''"
+                  ondrop="event.preventDefault();this.style.borderColor='var(--border-mid)';this.style.background='';baArquivoSelecionado(event.dataTransfer.files[0])">
+                  <div style="font-size:32px;margin-bottom:8px">📊</div>
+                  <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">Clique ou arraste o arquivo</div>
+                  <div style="font-size:11px;color:var(--text-3)">Formato: .xlsx ou .xls · Máx. 20 MB</div>
+                  <div id="ba-arquivo-nome" style="margin-top:10px;font-size:11px;color:var(--accent-text);font-weight:600"></div>
+                </div>
+                <input type="file" id="ba-file-input" accept=".xlsx,.xls" style="display:none" onchange="baArquivoSelecionado(this.files[0])">
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label class="form-label">Período De</label>
+                    <input class="form-input" type="date" id="ba-periodo-de">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Período Até</label>
+                    <input class="form-input" type="date" id="ba-periodo-ate">
+                  </div>
+                </div>
+
+                <div id="ba-import-msg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+                <button class="btn btn-primary" id="ba-btn-processar" style="justify-content:center" onclick="baProcessar()" disabled>
+                  ⚡ Processar Relatório
+                </button>
+              </div>
+            </div>
+
+            <!-- Status de processamento -->
+            <div>
+              <div class="card" id="ba-status-card" style="display:none">
+                <div class="card-header">
+                  <div class="card-title" id="ba-status-titulo">Processando...</div>
+                </div>
+                <div class="card-body">
+                  <!-- Progresso -->
+                  <div id="ba-progresso" style="margin-bottom:16px">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-3);margin-bottom:6px">
+                      <span>Processando arquivo...</span>
+                      <span class="spinner" style="width:14px;height:14px"></span>
+                    </div>
+                    <div style="background:var(--border);border-radius:4px;height:4px">
+                      <div id="ba-progress-bar" style="background:var(--accent);height:4px;border-radius:4px;width:0%;transition:width .5s"></div>
+                    </div>
+                  </div>
+
+                  <!-- Resultado -->
+                  <div id="ba-resultado" style="display:none">
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+                      <div style="text-align:center;padding:12px;background:var(--green-soft);border-radius:var(--radius-sm)">
+                        <div style="font-size:22px;font-weight:800;color:var(--green)" id="ba-cnt-baixados">0</div>
+                        <div style="font-size:10px;color:var(--text-3);margin-top:2px">Baixados</div>
+                      </div>
+                      <div style="text-align:center;padding:12px;background:var(--yellow-soft);border-radius:var(--radius-sm)">
+                        <div style="font-size:22px;font-weight:800;color:var(--yellow)" id="ba-cnt-alertas">0</div>
+                        <div style="font-size:10px;color:var(--text-3);margin-top:2px">Alertas</div>
+                      </div>
+                      <div style="text-align:center;padding:12px;background:var(--red-soft);border-radius:var(--radius-sm)">
+                        <div style="font-size:22px;font-weight:800;color:var(--red)" id="ba-cnt-nao">0</div>
+                        <div style="font-size:10px;color:var(--text-3);margin-top:2px">Não encontrados</div>
+                      </div>
+                    </div>
+                    <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="baVerLog(_baImportIdAtual)">📋 Ver Log Detalhado</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Instruções -->
+              <div class="card" id="ba-instrucoes">
+                <div class="card-header"><div class="card-title">ℹ️ Como usar</div></div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--text-2)">
+                  <div style="display:flex;gap:8px"><span style="color:var(--accent-text);font-weight:700">1.</span><span>Baixe o relatório do EORDE no formato <strong>.xlsx</strong></span></div>
+                  <div style="display:flex;gap:8px"><span style="color:var(--accent-text);font-weight:700">2.</span><span>Configure os mapeamentos de <strong>Códigos</strong> e <strong>Equipes</strong> antes da primeira importação</span></div>
+                  <div style="display:flex;gap:8px"><span style="color:var(--accent-text);font-weight:700">3.</span><span>Arraste o arquivo aqui e clique em <strong>Processar</strong></span></div>
+                  <div style="display:flex;gap:8px"><span style="color:var(--accent-text);font-weight:700">4.</span><span>O sistema processa em background — você pode continuar usando o GCA</span></div>
+                  <div style="margin-top:4px;padding:10px;background:var(--yellow-soft);border-radius:var(--radius-sm);color:var(--yellow);font-size:11px">
+                    ⚠️ Apenas OS com resultado <strong>Realizado</strong> são processadas. Medidores: apenas ação <strong>Instalado</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: HISTÓRICO -->
+        <div id="ba-pane-historico" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Histórico de Importações</div></div>
+              <div class="card-actions">
+                <button class="btn btn-ghost" onclick="baCarregarHistorico()">↻ Atualizar</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Arquivo</th><th>Data</th><th style="text-align:center">OS</th>
+                <th style="text-align:center">Seriais</th><th style="text-align:center">Materiais</th>
+                <th style="text-align:center">✅ Baixados</th><th style="text-align:center">⚠️ Alertas</th>
+                <th style="text-align:center">❌ N/E</th><th>Status</th><th></th>
+              </tr></thead>
+              <tbody id="ba-hist-body">
+                <tr><td colspan="10" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Atualizar</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ABA: MAPEAMENTO CÓDIGOS -->
+        <div id="ba-pane-codigos" style="display:none">
+          <div style="display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Novo Mapeamento</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <div class="form-group"><label class="form-label">Código ENEL *</label>
+                  <input class="form-input" id="ba-cod-enel" placeholder="Ex: 6790663"></div>
+                <div class="form-group"><label class="form-label">Descrição ENEL</label>
+                  <input class="form-input" id="ba-desc-enel" placeholder="Ex: CABO CONCENTRICO BIP AL 10MM"></div>
+                <div class="form-group"><label class="form-label">Item GCA *</label>
+                  <div style="position:relative">
+                    <input class="form-input" id="ba-item-busca" placeholder="Buscar item GCA..." autocomplete="off"
+                      oninput="baFiltrarItem(this.value)" onblur="setTimeout(()=>document.getElementById('ba-item-sug').classList.add('hidden'),200)">
+                    <div id="ba-item-sug" class="autocomplete-list hidden"></div>
+                    <input type="hidden" id="ba-item-id">
+                  </div>
+                </div>
+                <div id="ba-cod-msg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+                <button class="btn btn-primary" style="justify-content:center" onclick="baSalvarCodigo()">💾 Salvar Mapeamento</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div><div class="card-title">Mapeamentos Cadastrados</div></div>
+                <div class="card-actions"><button class="btn btn-ghost" onclick="baCarregarCodigos()">↻</button></div>
+              </div>
+              <table>
+                <thead><tr><th>Código ENEL</th><th>Descrição ENEL</th><th>Item GCA</th><th></th></tr></thead>
+                <tbody id="ba-cod-body"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA: MAPEAMENTO EQUIPES -->
+        <div id="ba-pane-equipes" style="display:none">
+          <div style="display:grid;grid-template-columns:400px 1fr;gap:16px;align-items:start">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Novo Mapeamento</div></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+                <div class="form-group"><label class="form-label">Código Equipe ENEL *</label>
+                  <input class="form-input" id="ba-eq-cod-enel" placeholder="Ex: SOC-001"></div>
+                <div class="form-group"><label class="form-label">Nome Equipe ENEL</label>
+                  <input class="form-input" id="ba-eq-nome-enel" placeholder="Como aparece no EORDE"></div>
+                <div class="form-group"><label class="form-label">Equipe GCA *</label>
+                  <div style="position:relative">
+                    <input class="form-input" id="ba-eq-busca" placeholder="Buscar equipe GCA..." autocomplete="off"
+                      oninput="baFiltrarEquipe(this.value)" onblur="setTimeout(()=>document.getElementById('ba-eq-sug').classList.add('hidden'),200)">
+                    <div id="ba-eq-sug" class="autocomplete-list hidden"></div>
+                    <input type="hidden" id="ba-eq-id">
+                    <input type="hidden" id="ba-eq-nome-gca">
+                  </div>
+                </div>
+                <div id="ba-eq-msg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+                <button class="btn btn-primary" style="justify-content:center" onclick="baSalvarEquipe()">💾 Salvar Mapeamento</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header">
+                <div><div class="card-title">Mapeamentos Cadastrados</div></div>
+                <div class="card-actions"><button class="btn btn-ghost" onclick="baCarregarEquipes()">↻</button></div>
+              </div>
+              <table>
+                <thead><tr><th>Código ENEL</th><th>Nome ENEL</th><th>Equipe GCA</th><th></th></tr></thead>
+                <tbody id="ba-eq-body"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
       <div class="view" id="view-enel-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -2996,12 +3213,20 @@ tbody tr:hover td{background:var(--bg-hover);}
           <label class="form-label">Marca *</label>
           <select class="form-input" id="sucataMarcaSel">
             <option value="">Selecione...</option>
-            <option value="NANSEN">NANSEN</option>
-            <option value="LANDIS+GYR">LANDIS+GYR</option>
-            <option value="ITRON">ITRON</option>
-            <option value="ELSTER">ELSTER</option>
-            <option value="ABB">ABB</option>
-            <option value="OUTRAS">OUTRAS</option>
+            <option value="LND - LANDIS+GYR">LND - LANDIS+GYR</option>
+            <option value="NAN - NANSEN">NAN - NANSEN</option>
+            <option value="ELS - ELSTER">ELS - ELSTER</option>
+            <option value="ELT - ELETRA">ELT - ELETRA</option>
+            <option value="FAE - FAE">FAE - FAE</option>
+            <option value="DIS - DISPLAY">DIS - DISPLAY</option>
+            <option value="ELO - ELO">ELO - ELO</option>
+            <option value="SCH - SCHLUMBERGER">SCH - SCHLUMBERGER</option>
+            <option value="COM - COMPLANT">COM - COMPLANT</option>
+            <option value="GNE - G.ELECTRIC">GNE - G.ELECTRIC</option>
+            <option value="ABB - ASEA BROWN BOVERI">ABB - ASEA BROWN BOVERI</option>
+            <option value="099 - CONVERSAO">099 - CONVERSAO</option>
+            <option value="A03 - APREL">A03 - APREL</option>
+            <option value="SAN - SANGAMO">SAN - SANGAMO</option>
           </select>
         </div>
       </div>
@@ -3685,6 +3910,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-transferencia') { if (!_enelMateriais.length) carregarMateriaisEnel(); }
   if (nome === 'enel-medidores')     { /* user clicks tab */ }
   if (nome === 'enel-sucata')         { initSucata(); }
+  if (nome === 'enel-baixa-auto')    { initBaixaAuto(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
@@ -13301,6 +13527,325 @@ function sucataImprimirManifestoById(manId, numManifesto) {
   </body></html>`;
 
   abrirJanelaPDF(html);
+}
+
+// ══════════════════════════════════════════════════════
+// BAIXA AUTOMÁTICA ENEL
+// ══════════════════════════════════════════════════════
+let _baArquivo        = null;
+let _baImportIdAtual  = null;
+let _baPollingTimer   = null;
+
+function initBaixaAuto() {
+  baAba('importar');
+  baCarregarCodigos();
+  baCarregarEquipes();
+  baCarregarHistorico();
+}
+
+// ── Abas internas
+function baAba(aba) {
+  ['importar','historico','codigos','equipes'].forEach(a => {
+    document.getElementById('ba-pane-' + a).style.display   = a === aba ? 'block' : 'none';
+    const btn = document.getElementById('ba-aba-' + a);
+    if (btn) {
+      btn.style.borderBottom = a === aba ? '2px solid var(--accent)' : '2px solid transparent';
+      btn.style.color        = a === aba ? 'var(--accent-text)' : 'var(--text-3)';
+    }
+  });
+  if (aba === 'historico') baCarregarHistorico();
+  if (aba === 'codigos')   baCarregarCodigos();
+  if (aba === 'equipes')   baCarregarEquipes();
+}
+
+// ── Arquivo selecionado
+function baArquivoSelecionado(file) {
+  if (!file) return;
+  _baArquivo = file;
+  document.getElementById('ba-arquivo-nome').textContent = '📎 ' + file.name;
+  document.getElementById('ba-btn-processar').disabled = false;
+  document.getElementById('ba-import-msg').textContent = '';
+}
+
+// ── Processar
+async function baProcessar() {
+  if (!_baArquivo) { document.getElementById('ba-import-msg').textContent = 'Selecione um arquivo.'; return; }
+  const de  = document.getElementById('ba-periodo-de').value;
+  const ate = document.getElementById('ba-periodo-ate').value;
+  const btn = document.getElementById('ba-btn-processar');
+  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  document.getElementById('ba-instrucoes').style.display = 'none';
+  document.getElementById('ba-status-card').style.display = 'block';
+  document.getElementById('ba-progresso').style.display  = 'block';
+  document.getElementById('ba-resultado').style.display   = 'none';
+  document.getElementById('ba-status-titulo').textContent = '⏳ Processando relatório...';
+  document.getElementById('ba-progress-bar').style.width  = '20%';
+
+  const fd = new FormData();
+  fd.append('arquivo', _baArquivo);
+  fd.append('unidade', GCA.unidade);
+  if (de)  fd.append('periodo_de',  de);
+  if (ate) fd.append('periodo_ate', ate);
+
+  try {
+    const res = await fetch(GCA.API + '/importacao-enel/processar', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + GCA.token },
+      body: fd,
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
+
+    _baImportIdAtual = data.importacao_id;
+    document.getElementById('ba-progress-bar').style.width = '50%';
+    btn.textContent = '⚡ Processar Relatório';
+
+    // Polling para aguardar conclusão
+    baAguardarConclusao(_baImportIdAtual);
+  } catch(err) {
+    document.getElementById('ba-import-msg').textContent = '❌ ' + err.message;
+    document.getElementById('ba-status-card').style.display = 'none';
+    document.getElementById('ba-instrucoes').style.display  = 'block';
+    btn.disabled = false; btn.textContent = '⚡ Processar Relatório';
+  }
+}
+
+async function baAguardarConclusao(id) {
+  clearInterval(_baPollingTimer);
+  let tentativas = 0;
+  _baPollingTimer = setInterval(async () => {
+    tentativas++;
+    if (tentativas > 120) { clearInterval(_baPollingTimer); return; } // timeout 2min
+
+    const res = await api('/importacao-enel/historico?unidade=' + GCA.unidade);
+    const imp = (res?.data || []).find(i => i.id === id);
+    if (!imp) return;
+
+    // Animação da barra
+    const pct = Math.min(90, 50 + tentativas * 2);
+    document.getElementById('ba-progress-bar').style.width = pct + '%';
+
+    if (imp.status === 'CONCLUIDO') {
+      clearInterval(_baPollingTimer);
+      document.getElementById('ba-progress-bar').style.width = '100%';
+      document.getElementById('ba-progresso').style.display  = 'none';
+      document.getElementById('ba-resultado').style.display   = 'block';
+      document.getElementById('ba-status-titulo').textContent = '✅ Processamento concluído!';
+      document.getElementById('ba-cnt-baixados').textContent  = imp.baixados || 0;
+      document.getElementById('ba-cnt-alertas').textContent   = imp.alertas  || 0;
+      document.getElementById('ba-cnt-nao').textContent       = imp.nao_encontrados || 0;
+      document.getElementById('ba-btn-processar').disabled    = false;
+      toast(`✅ Importação concluída — ${imp.baixados} baixas realizadas`, 'success', 5000);
+      baCarregarHistorico();
+    } else if (imp.status === 'ERRO') {
+      clearInterval(_baPollingTimer);
+      document.getElementById('ba-status-titulo').textContent = '❌ Erro no processamento';
+      document.getElementById('ba-import-msg').textContent    = imp.erro_msg || 'Erro desconhecido';
+      document.getElementById('ba-btn-processar').disabled    = false;
+      toast('Erro na importação: ' + imp.erro_msg, 'error', 8000);
+    }
+  }, 1000);
+}
+
+// ── Log detalhado
+async function baVerLog(importId) {
+  if (!importId) return;
+  const res = await api('/importacao-enel/historico/' + importId + '/log');
+  const logs = res?.data || [];
+  const statusTag = s => {
+    const m = {
+      'BAIXADO':              '<span style="background:var(--green-soft);color:var(--green);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">✅ Baixado</span>',
+      'SERIAL_NAO_ENCONTRADO':'<span style="background:var(--red-soft);color:var(--red);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">❌ Serial N/E</span>',
+      'EQUIPE_DIVERGENTE':    '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Eq. Divergente</span>',
+      'EQUIPE_NAO_CADASTRADA':'<span style="background:var(--red-soft);color:var(--red);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">❌ Equipe N/C</span>',
+      'SEM_MAPEAMENTO':       '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Sem Mapeamento</span>',
+      'SALDO_ZERADO':         '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Saldo Zerado</span>',
+      'OS_NAO_REALIZADA':     '<span style="background:var(--border);color:var(--text-3);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">— Não Realizada</span>',
+    };
+    return m[s] || `<span style="font-size:10px">${s}</span>`;
+  };
+
+  const html = `
+    <div style="max-height:70vh;overflow-y:auto">
+      <div style="margin-bottom:10px;font-size:12px;color:var(--text-3)">${logs.length} registros</div>
+      <table>
+        <thead><tr><th>TdC</th><th>Equipe</th><th>Tipo</th><th>Referência</th><th style="text-align:center">Qtd</th><th>Status</th><th>Observação</th></tr></thead>
+        <tbody>
+          ${logs.map(l => `<tr>
+            <td style="font-family:var(--font-mono);font-size:10px">${l.codigo_tdc||'—'}</td>
+            <td style="font-size:11px">${l.equipe_nome||'—'}</td>
+            <td>${l.tipo==='SERIAL'?'📟 Serial':'📦 Material'}</td>
+            <td style="font-family:var(--font-mono);font-size:11px">${l.referencia||'—'}${l.descricao?`<div style="font-size:10px;color:var(--text-3)">${l.descricao}</div>`:''}</td>
+            <td style="text-align:center;font-size:11px">${l.quantidade||''}</td>
+            <td>${statusTag(l.status)}</td>
+            <td style="font-size:10px;color:var(--text-3);max-width:200px">${l.obs||''}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+
+  // Abre modal genérico se existir, senão cria uma janela
+  abrirModalGenerico('Log de Importação', html, '1200px');
+}
+
+function abrirModalGenerico(titulo, htmlBody, largura = '800px') {
+  let m = document.getElementById('modalGenerico');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'modalGenerico';
+    m.className = 'modal-overlay';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div class="modal-box" style="max-width:${largura};max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <div class="modal-title">${titulo}</div>
+      <button class="modal-close" onclick="document.getElementById('modalGenerico').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="overflow-y:auto;flex:1">${htmlBody}</div>
+  </div>`;
+  m.classList.remove('hidden');
+}
+
+// ── Histórico
+async function baCarregarHistorico() {
+  const res = await api('/importacao-enel/historico?unidade=' + GCA.unidade);
+  const lista = res?.data || [];
+  const statusTag = s => s === 'CONCLUIDO'
+    ? '<span style="background:var(--green-soft);color:var(--green);font-size:10px;padding:1px 7px;border-radius:4px">✅ Concluído</span>'
+    : s === 'PROCESSANDO'
+    ? '<span style="background:var(--yellow-soft);color:var(--yellow);font-size:10px;padding:1px 7px;border-radius:4px">⏳ Processando</span>'
+    : '<span style="background:var(--red-soft);color:var(--red);font-size:10px;padding:1px 7px;border-radius:4px">❌ Erro</span>';
+
+  document.getElementById('ba-hist-body').innerHTML = lista.length
+    ? lista.map(i => `<tr>
+        <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis">${i.nome_arquivo}</td>
+        <td style="font-size:11px">${new Date(i.importado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</td>
+        <td style="text-align:center">${i.total_os||0}</td>
+        <td style="text-align:center">${i.total_seriais||0}</td>
+        <td style="text-align:center">${i.total_materiais||0}</td>
+        <td style="text-align:center;color:var(--green);font-weight:600">${i.baixados||0}</td>
+        <td style="text-align:center;color:var(--yellow);font-weight:600">${i.alertas||0}</td>
+        <td style="text-align:center;color:var(--red);font-weight:600">${i.nao_encontrados||0}</td>
+        <td>${statusTag(i.status)}</td>
+        <td><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px" onclick="baVerLog('${i.id}')">📋 Log</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="10" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma importação realizada</td></tr>';
+}
+
+// ── Mapeamento Códigos
+async function baCarregarCodigos() {
+  const res = await api('/importacao-enel/mapeamento-codigos?unidade=' + GCA.unidade);
+  const lista = res?.data || [];
+  document.getElementById('ba-cod-body').innerHTML = lista.length
+    ? lista.map(m => `<tr>
+        <td style="font-family:var(--font-mono);font-size:11px">${m.codigo_enel}</td>
+        <td style="font-size:11px;color:var(--text-2)">${m.descricao_enel||'—'}</td>
+        <td style="font-size:11px">${m.itens_enel?.descricao || m.item_id || '—'}</td>
+        <td><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px;color:var(--red)" onclick="baExcluirCodigo('${m.id}')">✕</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhum mapeamento cadastrado</td></tr>';
+}
+
+function baFiltrarItem(q) {
+  const sug = document.getElementById('ba-item-sug');
+  document.getElementById('ba-item-id').value = '';
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  const res = (_itensEnel || _itens || []).filter(i =>
+    (i.descricao||'').toLowerCase().includes(q.toLowerCase()) ||
+    (i.codigo||'').toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 12);
+  if (!res.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = res.map(i => `<div class="ac-item"
+    onmousedown="document.getElementById('ba-item-busca').value='${(i.descricao||'').replace(/'/g,"\\'")}';document.getElementById('ba-item-id').value='${i.id}';document.getElementById('ba-item-sug').classList.add('hidden')">
+    <div class="ac-item-nome">${i.descricao}</div>
+    <div class="ac-item-sub">${i.codigo||''} · ${i.categoria||''}</div>
+  </div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function baSalvarCodigo() {
+  const cod  = document.getElementById('ba-cod-enel').value.trim();
+  const desc = document.getElementById('ba-desc-enel').value.trim();
+  const item = document.getElementById('ba-item-id').value;
+  const msg  = document.getElementById('ba-cod-msg');
+  if (!cod || !item) { msg.textContent = 'Preencha o código ENEL e selecione o item GCA.'; return; }
+  const res = await api('/importacao-enel/mapeamento-codigos', { method:'POST',
+    body: JSON.stringify({ codigo_enel: cod, descricao_enel: desc, item_id: item, unidade: GCA.unidade }) });
+  if (res?.ok) {
+    msg.style.color='var(--green)'; msg.textContent = '✅ Mapeamento salvo!';
+    document.getElementById('ba-cod-enel').value = '';
+    document.getElementById('ba-desc-enel').value = '';
+    document.getElementById('ba-item-busca').value = '';
+    document.getElementById('ba-item-id').value = '';
+    baCarregarCodigos();
+    setTimeout(() => { msg.textContent=''; msg.style.color='var(--red)'; }, 3000);
+  } else { msg.textContent = '❌ ' + (res?.erro||'Erro'); }
+}
+
+async function baExcluirCodigo(id) {
+  if (!confirm('Remover mapeamento?')) return;
+  const res = await api('/importacao-enel/mapeamento-codigos/' + id, { method:'DELETE' });
+  if (res?.ok) baCarregarCodigos();
+  else toast('Erro: ' + (res?.erro||'?'), 'error');
+}
+
+// ── Mapeamento Equipes
+async function baCarregarEquipes() {
+  const res = await api('/importacao-enel/mapeamento-equipes?unidade=' + GCA.unidade);
+  const lista = res?.data || [];
+  document.getElementById('ba-eq-body').innerHTML = lista.length
+    ? lista.map(m => `<tr>
+        <td style="font-family:var(--font-mono);font-size:11px">${m.codigo_equipe_enel}</td>
+        <td style="font-size:11px;color:var(--text-2)">${m.nome_equipe_enel||'—'}</td>
+        <td style="font-size:11px">${m.equipe_nome_gca||'—'}</td>
+        <td><button class="btn btn-ghost" style="font-size:10px;padding:3px 8px;color:var(--red)" onclick="baExcluirEquipe('${m.id}')">✕</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhum mapeamento cadastrado</td></tr>';
+}
+
+function baFiltrarEquipe(q) {
+  const sug = document.getElementById('ba-eq-sug');
+  document.getElementById('ba-eq-id').value = '';
+  document.getElementById('ba-eq-nome-gca').value = '';
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  const res = (_equipes || []).filter(e =>
+    (e.nome||'').toLowerCase().includes(q.toLowerCase()) ||
+    (e.prefixo||e.codigo||'').toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 12);
+  if (!res.length) { sug.classList.add('hidden'); return; }
+  sug.innerHTML = res.map(e => `<div class="ac-item"
+    onmousedown="document.getElementById('ba-eq-busca').value='${(e.nome||'').replace(/'/g,"\\'")}';document.getElementById('ba-eq-id').value='${e.id}';document.getElementById('ba-eq-nome-gca').value='${(e.nome||'').replace(/'/g,"\\'")}';document.getElementById('ba-eq-sug').classList.add('hidden')">
+    <div class="ac-item-nome">${e.nome}</div>
+    <div class="ac-item-sub">${e.prefixo||e.codigo||''}</div>
+  </div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+async function baSalvarEquipe() {
+  const cod      = document.getElementById('ba-eq-cod-enel').value.trim();
+  const nomeEnel = document.getElementById('ba-eq-nome-enel').value.trim();
+  const eqId     = document.getElementById('ba-eq-id').value;
+  const eqNome   = document.getElementById('ba-eq-nome-gca').value;
+  const msg      = document.getElementById('ba-eq-msg');
+  if (!cod || !eqId) { msg.textContent = 'Preencha o código ENEL e selecione a equipe GCA.'; return; }
+  const res = await api('/importacao-enel/mapeamento-equipes', { method:'POST',
+    body: JSON.stringify({ codigo_equipe_enel: cod, nome_equipe_enel: nomeEnel, equipe_id: eqId, equipe_nome_gca: eqNome, unidade: GCA.unidade }) });
+  if (res?.ok) {
+    msg.style.color='var(--green)'; msg.textContent = '✅ Mapeamento salvo!';
+    document.getElementById('ba-eq-cod-enel').value = '';
+    document.getElementById('ba-eq-nome-enel').value = '';
+    document.getElementById('ba-eq-busca').value = '';
+    document.getElementById('ba-eq-id').value = '';
+    baCarregarEquipes();
+    setTimeout(() => { msg.textContent=''; msg.style.color='var(--red)'; }, 3000);
+  } else { msg.textContent = '❌ ' + (res?.erro||'Erro'); }
+}
+
+async function baExcluirEquipe(id) {
+  if (!confirm('Remover mapeamento?')) return;
+  const res = await api('/importacao-enel/mapeamento-equipes/' + id, { method:'DELETE' });
+  if (res?.ok) baCarregarEquipes();
+  else toast('Erro: ' + (res?.erro||'?'), 'error');
 }
 </script>
 <div id="toastContainer"></div>
