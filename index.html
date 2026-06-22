@@ -412,6 +412,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
           <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
           <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
+          <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
@@ -2299,6 +2300,71 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div id="cmMsg" style="font-size:12px;color:var(--text-3);margin-top:8px;min-height:16px"></div>
       </div>
 
+      <!-- ── SUCATA ── -->
+      <div class="view" id="view-enel-sucata">
+        <!-- LISTA DE PALETES -->
+        <div id="sucata-lista">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+            <div>
+              <div class="page-title">Sucata de Medidores</div>
+              <div class="page-sub">Controle de paletes e camadas de medidores destinados à sucata</div>
+            </div>
+            <button class="btn btn-primary" onclick="sucataNovoPalete()">+ Novo Palete</button>
+          </div>
+          <div id="sucata-paletes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+            <div class="empty-state"><div class="es-icon">🗃️</div><div class="es-title">Carregando paletes...</div></div>
+          </div>
+        </div>
+
+        <!-- DETALHE DO PALETE -->
+        <div id="sucata-detalhe" style="display:none">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+            <button class="btn btn-ghost" onclick="sucataVoltarLista()">← Voltar</button>
+            <div style="flex:1">
+              <div class="page-title" id="sucata-det-nome"></div>
+              <div class="page-sub" id="sucata-det-sub"></div>
+            </div>
+            <button class="btn btn-primary" onclick="sucataAbrirReceberModal()" id="btn-receber-sucata">📥 Receber Sucata</button>
+            <button class="btn btn-ghost" onclick="sucataNovasCamada()" id="btn-nova-camada">+ Nova Camada</button>
+            <button class="btn btn-ghost" onclick="sucataGerarManifesto()">📄 Gerar Manifesto</button>
+          </div>
+
+          <!-- Visual do palete (camadas empilhadas) -->
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+            <div id="sucata-visual-palete">
+              <!-- Camadas renderizadas de cima pra baixo visualmente (mais alto número = topo) -->
+            </div>
+
+            <!-- Painel lateral: resumo + manifestos -->
+            <div>
+              <div class="card" style="margin-bottom:12px">
+                <div class="card-header"><div class="card-title">📊 Resumo do Palete</div></div>
+                <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+                  <div style="display:flex;justify-content:space-between;font-size:12px">
+                    <span style="color:var(--text-3)">Total de medidores</span>
+                    <span id="sucata-total-med" style="font-weight:700;color:var(--accent-text)">—</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px">
+                    <span style="color:var(--text-3)">Camadas</span>
+                    <span id="sucata-total-cam" style="font-weight:700;color:var(--text-1)">—</span>
+                  </div>
+                  <div id="sucata-marcas-resumo" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title">📋 Manifestos</div>
+                </div>
+                <div id="sucata-manifestos-lista" class="card-body">
+                  <div style="font-size:12px;color:var(--text-3)">Nenhum manifesto gerado.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
       <div class="view" id="view-enel-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -2907,6 +2973,65 @@ tbody tr:hover td{background:var(--bg-hover);}
 
 
 <!-- MODAL DETALHE SOLICITACAO -->
+<!-- ── MODAL RECEBER SUCATA ── -->
+<div class="modal-overlay hidden" id="modalReceberSucata">
+  <div class="modal-box" style="max-width:600px">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📥 Receber Sucata</div>
+        <div class="modal-sub" id="sucataModalSub">Selecione a camada e bipe os seriais</div>
+      </div>
+      <button class="modal-close" onclick="fecharModalSucata()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Seleção de camada e marca -->
+      <div class="grid-2" style="margin-bottom:14px">
+        <div class="form-group">
+          <label class="form-label">Camada *</label>
+          <select class="form-input" id="sucataCamadaSel">
+            <option value="">Selecione...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Marca *</label>
+          <select class="form-input" id="sucataMarcaSel">
+            <option value="">Selecione...</option>
+            <option value="NANSEN">NANSEN</option>
+            <option value="LANDIS+GYR">LANDIS+GYR</option>
+            <option value="ITRON">ITRON</option>
+            <option value="ELSTER">ELSTER</option>
+            <option value="ABB">ABB</option>
+            <option value="OUTRAS">OUTRAS</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Campo de bipar serial -->
+      <div class="form-group" style="margin-bottom:10px">
+        <label class="form-label">Bipar Serial <span style="color:var(--accent-text)" id="sucataContador">(0 bipados)</span></label>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="sucataSerialInput"
+            placeholder="Bipe ou digite o serial e pressione Enter..."
+            style="font-family:var(--font-mono);text-transform:uppercase"
+            onkeydown="if(event.key==='Enter'){sucataAdicionarSerial(this.value);this.value=''}">
+          <button class="btn btn-ghost" onclick="const i=document.getElementById('sucataSerialInput');sucataAdicionarSerial(i.value);i.value=''">+ Add</button>
+        </div>
+      </div>
+
+      <!-- Lista de seriais bipados -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Seriais Bipados</div>
+      <div id="sucataListaSeriais" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;min-height:100px;max-height:260px;overflow-y:auto;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+        <div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:16px 0">Nenhum serial bipado ainda</div>
+      </div>
+      <div id="sucataSerialMsg" style="font-size:11px;min-height:14px;margin-top:6px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="fecharModalSucata()">Cancelar</button>
+      <button class="btn btn-primary" id="btnConfirmarSucata" onclick="sucataConfirmarLote()" disabled>✅ Confirmar Recebimento</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modalSolicitacao" style="align-items:flex-start;padding:16px;overflow-y:auto">
   <div class="modal-box" style="max-width:1100px;width:100%;margin:auto;max-height:none">
     <div class="modal-header">
@@ -3559,6 +3684,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-devolucao')     { if (!_equipes.length) carregarEquipes(); devEnelRender(); }
   if (nome === 'enel-transferencia') { if (!_enelMateriais.length) carregarMateriaisEnel(); }
   if (nome === 'enel-medidores')     { /* user clicks tab */ }
+  if (nome === 'enel-sucata')         { initSucata(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
@@ -12653,6 +12779,467 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }, 2000);
 });
+
+// ══════════════════════════════════════════════════════
+// MÓDULO SUCATA
+// ══════════════════════════════════════════════════════
+let _sucataPaletes     = [];
+let _sucataPaleteAtual = null;
+let _sucataSeriais     = []; // seriais já validados para confirmar
+let _sucataValidando   = false;
+
+// ── Inicializa a view de sucata
+function initSucata() {
+  carregarPaletes();
+}
+
+// ── Listar paletes
+async function carregarPaletes() {
+  const res = await api(`/sucata/paletes?unidade=${GCA.unidade}`);
+  _sucataPaletes = res?.data || [];
+  renderPaletes();
+}
+
+function renderPaletes() {
+  const el = document.getElementById('sucata-paletes-grid');
+  if (!el) return;
+  if (!_sucataPaletes.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="es-icon">🗃️</div><div class="es-title">Nenhum palete cadastrado</div><div class="es-sub">Clique em "+ Novo Palete" para começar</div></div>';
+    return;
+  }
+  el.innerHTML = _sucataPaletes.map(p => {
+    const statusTag = p.status === 'FECHADO'
+      ? '<span style="background:var(--green-soft);color:var(--green);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">✅ Fechado</span>'
+      : '<span style="background:var(--yellow-soft);color:var(--yellow);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">📂 Aberto</span>';
+    const manifTag = p.manifestos?.length
+      ? `<span style="font-size:10px;color:var(--accent-text)">📋 ${p.manifestos.length} manifesto(s)</span>` : '';
+    return `<div class="card" style="cursor:pointer;transition:border-color .15s" onclick="sucataAbrirPalete('${p.id}')"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div style="font-size:18px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${p.nome}</div>
+          ${statusTag}
+        </div>
+        <div style="display:flex;gap:16px;font-size:12px;color:var(--text-2);margin-bottom:8px">
+          <span>📦 <strong>${p.qtd_medidores}</strong> medidores</span>
+          <span>🧱 <strong>${p.qtd_camadas}</strong> camadas</span>
+        </div>
+        ${manifTag}
+        <div style="font-size:10px;color:var(--text-3);margin-top:6px">Criado em ${new Date(p.criado_em).toLocaleDateString('pt-BR')}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Abrir detalhe do palete
+async function sucataAbrirPalete(id) {
+  const res = await api(`/sucata/paletes/${id}`);
+  if (!res?.ok) { toast('Erro ao carregar palete', 'error'); return; }
+  _sucataPaleteAtual = res.palete;
+  document.getElementById('sucata-lista').style.display   = 'none';
+  document.getElementById('sucata-detalhe').style.display = 'block';
+  renderDetalhePalete();
+}
+
+function sucataVoltarLista() {
+  document.getElementById('sucata-lista').style.display   = 'block';
+  document.getElementById('sucata-detalhe').style.display = 'none';
+  _sucataPaleteAtual = null;
+  carregarPaletes();
+}
+
+function renderDetalhePalete() {
+  const p = _sucataPaleteAtual;
+  if (!p) return;
+  document.getElementById('sucata-det-nome').textContent = p.nome;
+  document.getElementById('sucata-det-sub').textContent  =
+    `${p.status === 'FECHADO' ? '✅ Fechado' : '📂 Aberto'} · ${p.camadas?.length || 0} camadas · ${p.camadas?.reduce((s,c) => s + (c.medidores?.length || 0), 0)} medidores`;
+
+  // Desabilita receber se fechado
+  const btnRec = document.getElementById('btn-receber-sucata');
+  const btnCam = document.getElementById('btn-nova-camada');
+  if (btnRec) btnRec.disabled = p.status === 'FECHADO';
+  if (btnCam) btnCam.disabled = p.status === 'FECHADO';
+
+  // Resumo de marcas
+  const todasMarcas = {};
+  (p.camadas || []).forEach(c => {
+    (c.medidores || []).forEach(m => {
+      todasMarcas[m.marca] = (todasMarcas[m.marca] || 0) + 1;
+    });
+  });
+  const totalMed = Object.values(todasMarcas).reduce((s,v) => s+v, 0);
+  document.getElementById('sucata-total-med').textContent = totalMed;
+  document.getElementById('sucata-total-cam').textContent = p.camadas?.length || 0;
+  document.getElementById('sucata-marcas-resumo').innerHTML = Object.entries(todasMarcas)
+    .sort((a,b) => b[1]-a[1])
+    .map(([marca, qtd]) => `
+      <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-2)">${marca}</span>
+        <span style="font-weight:600;color:var(--accent-text)">${qtd}</span>
+      </div>`).join('') || '<div style="font-size:11px;color:var(--text-3)">Nenhum medidor ainda</div>';
+
+  // Manifestos
+  document.getElementById('sucata-manifestos-lista').innerHTML = p.manifestos?.length
+    ? p.manifestos.map(m => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px">
+          <div>
+            <div style="font-weight:600;color:var(--text-1);font-family:var(--font-mono)">${m.numero_manifesto}</div>
+            <div style="font-size:10px;color:var(--text-3)">${new Date(m.gerado_em).toLocaleDateString('pt-BR')} por ${m.gerado_por||'—'}</div>
+          </div>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="sucataImprimirManifesto('${m.id}')">🖨️ Imprimir</button>
+        </div>`).join('')
+    : '<div style="font-size:12px;color:var(--text-3)">Nenhum manifesto gerado.</div>';
+
+  // Visual do palete — camadas empilhadas (maior número = topo)
+  renderVisualPalete();
+}
+
+function renderVisualPalete() {
+  const p = _sucataPaleteAtual;
+  const el = document.getElementById('sucata-visual-palete');
+  if (!p || !el) return;
+
+  const camadas = [...(p.camadas || [])].sort((a,b) => b.numero - a.numero); // topo primeiro
+
+  if (!camadas.length) {
+    el.innerHTML = `<div class="card"><div class="card-body" style="text-align:center;padding:32px">
+      <div style="font-size:48px;margin-bottom:12px">🗃️</div>
+      <div style="font-size:13px;color:var(--text-3)">Nenhuma camada ainda.<br>Clique em "+ Nova Camada" para começar.</div>
+    </div></div>`;
+    return;
+  }
+
+  el.innerHTML = camadas.map((cam, idx) => {
+    const isTop = idx === 0;
+    const isBot = idx === camadas.length - 1;
+    const meds  = cam.medidores || [];
+    const totalCam = meds.length;
+
+    // Resumo de marcas na camada
+    const marcasCam = {};
+    meds.forEach(m => { marcasCam[m.marca] = (marcasCam[m.marca]||0) + 1; });
+
+    // Cores por posição (mais alta = azul, mais baixa = âmbar)
+    const corBorda = isTop ? 'var(--accent)' : isBot ? 'rgba(251,191,36,.4)' : 'var(--border-mid)';
+    const label    = isTop ? '(topo)' : isBot ? '(base)' : '';
+
+    return `
+    <div style="border:1.5px solid ${corBorda};border-radius:var(--radius-md);margin-bottom:6px;overflow:hidden;
+      ${!isBot ? 'border-bottom-left-radius:0;border-bottom-right-radius:0;margin-bottom:0;border-bottom-color:var(--border)' : ''}">
+
+      <!-- Header da camada -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;
+        background:${isTop ? 'rgba(99,102,241,.06)' : isBot ? 'rgba(251,191,36,.04)' : 'var(--bg-hover)'};"
+        onclick="sucataToggleCamada('cam-body-${cam.id}')" style="cursor:pointer">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--text-3)">CAMADA ${cam.numero} ${label}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text-1)">${totalCam} medidor(es)</span>
+          ${Object.entries(marcasCam).map(([m,q]) =>
+            `<span style="font-size:10px;padding:1px 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent-text)">${m}: ${q}</span>`
+          ).join('')}
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <span id="cam-toggle-${cam.id}" style="font-size:11px;color:var(--text-3)">▼</span>
+        </div>
+      </div>
+
+      <!-- Seriais da camada (colapsável) -->
+      <div id="cam-body-${cam.id}" style="padding:10px 14px;border-top:1px solid var(--border);background:var(--bg)">
+        ${meds.length ? `
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            ${meds.map(m => `
+              <div style="display:flex;align-items:center;gap:5px;background:var(--bg-card);border:1px solid var(--border);
+                border-radius:4px;padding:3px 8px;font-family:var(--font-mono);font-size:10px">
+                <span style="color:var(--text-3)">${m.marca}</span>
+                <span style="color:var(--text-1)">${m.serial}</span>
+                ${p.status !== 'FECHADO' ? `<button onclick="sucataRemoverSerial('${m.serial}')"
+                  style="background:transparent;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:0 2px">✕</button>` : ''}
+              </div>`).join('')}
+          </div>` :
+          `<div style="font-size:11px;color:var(--text-3);text-align:center;padding:8px 0">Camada vazia — receba medidores para esta camada</div>`
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function sucataToggleCamada(bodyId) {
+  const el = document.getElementById(bodyId);
+  if (!el) return;
+  const oculto = el.style.display === 'none';
+  el.style.display = oculto ? 'block' : 'none';
+  const camId = bodyId.replace('cam-body-', '');
+  const tog = document.getElementById('cam-toggle-' + camId);
+  if (tog) tog.textContent = oculto ? '▼' : '▶';
+}
+
+// ── Novo palete
+async function sucataNovoPalete() {
+  if (!confirm('Criar novo palete de sucata?')) return;
+  const res = await api('/sucata/paletes', { method:'POST', body: JSON.stringify({ unidade: GCA.unidade }) });
+  if (res?.ok) { toast(`Palete ${res.nome} criado!`, 'success'); carregarPaletes(); }
+  else toast('Erro: ' + (res?.erro||'?'), 'error');
+}
+
+// ── Nova camada
+async function sucataNovasCamada() {
+  if (!_sucataPaleteAtual) return;
+  const res = await api('/sucata/camadas', { method:'POST', body: JSON.stringify({ palete_id: _sucataPaleteAtual.id }) });
+  if (res?.ok) {
+    toast(`Camada ${res.numero} criada!`, 'success');
+    await recarregarPaleteAtual();
+  } else toast('Erro: ' + (res?.erro||'?'), 'error');
+}
+
+async function recarregarPaleteAtual() {
+  const res = await api(`/sucata/paletes/${_sucataPaleteAtual.id}`);
+  if (res?.ok) { _sucataPaleteAtual = res.palete; renderDetalhePalete(); }
+}
+
+// ── Remover serial
+async function sucataRemoverSerial(serial) {
+  if (!confirm(`Remover serial ${serial} da sucata?`)) return;
+  const res = await api(`/sucata/medidores/${serial}?unidade=${GCA.unidade}`, { method:'DELETE' });
+  if (res?.ok) { toast('Serial removido.', 'success'); await recarregarPaleteAtual(); }
+  else toast('Erro: ' + (res?.erro||'?'), 'error');
+}
+
+// ── Modal Receber Sucata
+function sucataAbrirReceberModal() {
+  if (!_sucataPaleteAtual) return;
+  _sucataSeriais = [];
+  document.getElementById('sucataSerialInput').value = '';
+  document.getElementById('sucataSerialMsg').textContent = '';
+  document.getElementById('sucataListaSeriais').innerHTML = '<div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:16px 0">Nenhum serial bipado ainda</div>';
+  document.getElementById('sucataContador').textContent = '(0 bipados)';
+  document.getElementById('btnConfirmarSucata').disabled = true;
+
+  // Popular select de camadas
+  const sel = document.getElementById('sucataCamadaSel');
+  sel.innerHTML = '<option value="">Selecione...</option>';
+  const camadas = _sucataPaleteAtual.camadas || [];
+  camadas.sort((a,b) => b.numero - a.numero).forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c.id;
+    opt.textContent = `Camada ${c.numero} (${c.medidores?.length || 0} medidores)`;
+    sel.appendChild(opt);
+  });
+
+  document.getElementById('sucataModalSub').textContent = `Palete ${_sucataPaleteAtual.nome}`;
+  document.getElementById('modalReceberSucata').classList.remove('hidden');
+  setTimeout(() => document.getElementById('sucataSerialInput').focus(), 100);
+}
+
+function fecharModalSucata() {
+  document.getElementById('modalReceberSucata').classList.add('hidden');
+  _sucataSeriais = [];
+  _sucataValidando = false;
+}
+
+async function sucataAdicionarSerial(serial) {
+  serial = (serial||'').trim().toUpperCase();
+  if (!serial) return;
+  if (_sucataValidando) return;
+
+  const camadaId = document.getElementById('sucataCamadaSel').value;
+  const marca    = document.getElementById('sucataMarcaSel').value;
+  const msg      = document.getElementById('sucataSerialMsg');
+
+  if (!camadaId) { msg.style.color='var(--red)'; msg.textContent = '⚠️ Selecione a camada.'; return; }
+  if (!marca)    { msg.style.color='var(--red)'; msg.textContent = '⚠️ Selecione a marca.'; return; }
+
+  // Verifica duplicata local
+  if (_sucataSeriais.find(s => s.serial === serial)) {
+    msg.style.color='var(--yellow)'; msg.textContent = `⚠️ Serial ${serial} já foi bipado neste lote.`; return;
+  }
+
+  msg.style.color='var(--text-3)'; msg.textContent = `⏳ Validando ${serial}...`;
+  _sucataValidando = true;
+
+  try {
+    const res = await api('/sucata/validar-serial', {
+      method: 'POST',
+      body: JSON.stringify({ serial, unidade: GCA.unidade }),
+    });
+
+    if (res?.bloqueado) {
+      msg.style.color='var(--red)'; msg.textContent = `🚫 ${res.erro}`;
+      // Flash vermelho no input
+      const inp = document.getElementById('sucataSerialInput');
+      inp.style.borderColor = 'var(--red)';
+      setTimeout(() => { inp.style.borderColor = ''; }, 1500);
+    } else if (!res?.ok) {
+      msg.style.color='var(--red)'; msg.textContent = `❌ ${res?.erro || 'Erro ao validar'}`;
+    } else {
+      // Serial válido
+      _sucataSeriais.push({ serial, marca, camadaId });
+      msg.style.color='var(--green)'; msg.textContent = `✅ ${serial} — ${res.localizacao || ''} — adicionado!`;
+      renderSucataSeriais();
+    }
+  } finally {
+    _sucataValidando = false;
+    document.getElementById('sucataContador').textContent = `(${_sucataSeriais.length} bipado${_sucataSeriais.length!==1?'s':''})`;
+    document.getElementById('btnConfirmarSucata').disabled = _sucataSeriais.length === 0;
+  }
+}
+
+function renderSucataSeriais() {
+  const el = document.getElementById('sucataListaSeriais');
+  if (!_sucataSeriais.length) {
+    el.innerHTML = '<div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:16px 0">Nenhum serial bipado ainda</div>';
+    return;
+  }
+  el.innerHTML = _sucataSeriais.map((s,i) => `
+    <div style="display:flex;align-items:center;gap:5px;background:var(--bg-card);border:1px solid var(--green);
+      border-radius:4px;padding:3px 8px;font-family:var(--font-mono);font-size:10px">
+      <span style="color:var(--text-3)">${s.marca}</span>
+      <span style="color:var(--text-1)">${s.serial}</span>
+      <button onclick="_sucataSeriais.splice(${i},1);renderSucataSeriais();document.getElementById('sucataContador').textContent='('+_sucataSeriais.length+' bipado'+ (_sucataSeriais.length!==1?'s':'')+')';document.getElementById('btnConfirmarSucata').disabled=_sucataSeriais.length===0"
+        style="background:transparent;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:0 2px">✕</button>
+    </div>`).join('');
+}
+
+async function sucataConfirmarLote() {
+  if (!_sucataSeriais.length) return;
+  const camadaId = document.getElementById('sucataCamadaSel').value;
+  const marca    = document.getElementById('sucataMarcaSel').value;
+  const btn      = document.getElementById('btnConfirmarSucata');
+  btn.disabled   = true; btn.textContent = '⏳ Registrando...';
+
+  // Agrupa por camada (pode ter mudado de camada entre bipagens — usa camada de cada item)
+  const payload = {
+    palete_id: _sucataPaleteAtual.id,
+    camada_id: camadaId,
+    seriais:   _sucataSeriais.map(s => s.serial),
+    marca, unidade: GCA.unidade,
+  };
+
+  const res = await api('/sucata/medidores', { method:'POST', body: JSON.stringify(payload) });
+  btn.disabled = false; btn.textContent = '✅ Confirmar Recebimento';
+
+  if (res?.ok) {
+    let msg = `✅ ${res.inseridos} medidor(es) registrado(s)!`;
+    if (res.erros?.length) msg += ` ⚠️ ${res.erros.length} erro(s).`;
+    toast(msg, res.erros?.length ? 'warn' : 'success', 4000);
+    fecharModalSucata();
+    await recarregarPaleteAtual();
+  } else {
+    toast('Erro: ' + (res?.erro||'?'), 'error');
+    btn.disabled = false;
+  }
+}
+
+// ── Gerar Manifesto
+async function sucataGerarManifesto() {
+  if (!_sucataPaleteAtual) return;
+  const obs = prompt('Observação para o manifesto (opcional):') ?? null;
+  if (obs === null) return; // cancelou
+
+  const res = await api('/sucata/manifestos', {
+    method:'POST',
+    body: JSON.stringify({ palete_id: _sucataPaleteAtual.id, obs, unidade: GCA.unidade }),
+  });
+  if (!res?.ok) { toast('Erro: ' + (res?.erro||'?'), 'error'); return; }
+  toast(`Manifesto ${res.numero_manifesto} gerado!`, 'success');
+  await recarregarPaleteAtual();
+  // Imprime imediatamente
+  sucataImprimirManifestoById(res.id, res.numero_manifesto);
+}
+
+function sucataImprimirManifesto(manId) {
+  const man = _sucataPaleteAtual?.manifestos?.find(m => m.id === manId);
+  if (man) sucataImprimirManifestoById(man.id, man.numero_manifesto);
+}
+
+function sucataImprimirManifestoById(manId, numManifesto) {
+  const p = _sucataPaleteAtual;
+  if (!p) return;
+
+  const AZUL = '#1e3a8a';
+  const agora = new Date();
+  const dataFmt = agora.toLocaleDateString('pt-BR');
+  const horaFmt = agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+  // Agrupa todos os medidores por camada e marca
+  let totalMed = 0;
+  const camadasHtml = [...(p.camadas||[])].sort((a,b) => a.numero - b.numero).map(cam => {
+    const meds = cam.medidores || [];
+    totalMed += meds.length;
+    // Agrupa por marca dentro da camada
+    const porMarca = {};
+    meds.forEach(m => { if (!porMarca[m.marca]) porMarca[m.marca] = []; porMarca[m.marca].push(m.serial); });
+    const marcasHtml = Object.entries(porMarca).map(([marca, seriais]) => `
+      <div style="margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;color:${AZUL};margin-bottom:4px">${marca} (${seriais.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">
+          ${seriais.map(s => `<span style="font-family:monospace;font-size:9px;padding:2px 5px;border:1px solid #ddd;border-radius:3px">${s}</span>`).join('')}
+        </div>
+      </div>`).join('');
+    return `
+      <tr style="break-inside:avoid">
+        <td style="padding:8px;vertical-align:top;font-weight:700;font-size:11px;border:1px solid #e5e7eb;background:#f8fafc;white-space:nowrap">
+          Camada ${cam.numero}<br><span style="font-weight:400;font-size:10px;color:#666">${meds.length} medidor(es)</span>
+        </td>
+        <td style="padding:8px;border:1px solid #e5e7eb">${marcasHtml || '<span style="font-size:11px;color:#999">Vazia</span>'}</td>
+      </tr>`;
+  }).join('');
+
+  const scriptTag = '<scr' + 'ipt>window.onload=()=>window.print()</' + 'script>';
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Manifesto ${numManifesto}</title>
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;color:#111;padding:24px;font-size:12px}
+  @media print{body{padding:12px}}</style></head><body>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;margin-bottom:16px;border-bottom:3px solid ${AZUL}">
+    <div>
+      <div style="font-size:18px;font-weight:800;color:${AZUL}">MANIFESTO DE SUCATA</div>
+      <div style="font-size:11px;color:#555;margin-top:2px">GCA — Almoxarifado Ceneged</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#444">
+      <div><strong>Manifesto:</strong> ${numManifesto}</div>
+      <div><strong>Palete:</strong> ${p.nome}</div>
+      <div><strong>Data:</strong> ${dataFmt} ${horaFmt}</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <div style="padding:10px;background:#f1f5f9;border-radius:6px">
+      <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:3px">Palete</div>
+      <div style="font-weight:700">${p.nome}</div>
+    </div>
+    <div style="padding:10px;background:#f1f5f9;border-radius:6px">
+      <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:3px">Total de Medidores</div>
+      <div style="font-weight:700;font-size:18px;color:${AZUL}">${totalMed}</div>
+    </div>
+    <div style="padding:10px;background:#f1f5f9;border-radius:6px">
+      <div style="font-size:9px;color:#64748b;text-transform:uppercase;margin-bottom:3px">Camadas</div>
+      <div style="font-weight:700">${p.camadas?.length || 0}</div>
+    </div>
+  </div>
+
+  <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
+    <thead><tr>
+      <th style="padding:8px;text-align:left;font-size:10px;background:${AZUL};color:white;border:1px solid ${AZUL};width:80px">Camada</th>
+      <th style="padding:8px;text-align:left;font-size:10px;background:${AZUL};color:white;border:1px solid ${AZUL}">Medidores por Marca</th>
+    </tr></thead>
+    <tbody>${camadasHtml}</tbody>
+  </table>
+
+  <div style="margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+    <div style="text-align:center">
+      <div style="border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:6px;height:40px"></div>
+      <div style="font-size:11px;color:#555">Responsável pela Entrega</div>
+    </div>
+    <div style="text-align:center">
+      <div style="border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:6px;height:40px"></div>
+      <div style="font-size:11px;color:#555">Recebido por (ENEL)</div>
+    </div>
+  </div>
+  ${scriptTag}
+  </body></html>`;
+
+  abrirJanelaPDF(html);
+}
 </script>
 <div id="toastContainer"></div>
 
