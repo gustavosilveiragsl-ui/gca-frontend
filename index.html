@@ -3011,10 +3011,10 @@ tbody tr:hover td{background:var(--bg-hover);}
         <label class="form-label">Bipar Serial <span style="color:var(--accent-text)" id="sucataContador">(0 bipados)</span></label>
         <div style="display:flex;gap:8px">
           <input class="form-input" id="sucataSerialInput"
-            placeholder="Bipe ou digite o serial e pressione Enter..."
+            placeholder="Bipe o código de barras — detecta automaticamente..."
             style="font-family:var(--font-mono);text-transform:uppercase"
-            onkeydown="if(event.key==='Enter'){sucataAdicionarSerial(this.value);this.value=''}">
-          <button class="btn btn-ghost" onclick="const i=document.getElementById('sucataSerialInput');sucataAdicionarSerial(i.value);i.value=''">+ Add</button>
+            oninput="sucataOnInput(this)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();const v=this.value.trim();if(v){sucataAdicionarSerial(v);this.value=''}}">
         </div>
       </div>
 
@@ -12818,7 +12818,12 @@ function renderPaletes() {
       <div class="card-body">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
           <div style="font-size:18px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${p.nome}</div>
-          ${statusTag}
+          <div style="display:flex;gap:6px;align-items:center">
+            ${statusTag}
+            ${p.qtd_medidores === 0 ? `<button onclick="event.stopPropagation();sucataExcluirPalete('${p.id}','${p.nome}')"
+              style="background:transparent;border:1px solid rgba(248,113,113,.3);border-radius:var(--radius-sm);color:var(--red);font-size:10px;padding:2px 7px;cursor:pointer"
+              title="Excluir palete">🗑️</button>` : ''}
+          </div>
         </div>
         <div style="display:flex;gap:16px;font-size:12px;color:var(--text-2);margin-bottom:8px">
           <span>📦 <strong>${p.qtd_medidores}</strong> medidores</span>
@@ -12953,8 +12958,11 @@ function renderVisualPalete() {
                 border-radius:4px;padding:3px 8px;font-family:var(--font-mono);font-size:10px">
                 <span style="color:var(--text-3)">${m.marca}</span>
                 <span style="color:var(--text-1)">${m.serial}</span>
-                ${p.status !== 'FECHADO' ? `<button onclick="sucataRemoverSerial('${m.serial}')"
-                  style="background:transparent;border:none;cursor:pointer;color:var(--text-3);font-size:11px;padding:0 2px">✕</button>` : ''}
+                ${p.status !== 'FECHADO' ? `
+                  <button onclick="sucataMoverSerialUI('${m.serial}')"
+                    style="background:transparent;border:none;cursor:pointer;color:var(--accent-text);font-size:11px;padding:0 2px" title="Mover para outra camada">↕</button>
+                  <button onclick="sucataRemoverSerial('${m.serial}')"
+                    style="background:transparent;border:none;cursor:pointer;color:var(--red);font-size:11px;padding:0 2px" title="Remover">✕</button>` : ''}
               </div>`).join('')}
           </div>` :
           `<div style="font-size:11px;color:var(--text-3);text-align:center;padding:8px 0">Camada vazia — receba medidores para esta camada</div>`
@@ -12972,6 +12980,60 @@ function sucataToggleCamada(bodyId) {
   const camId = bodyId.replace('cam-body-', '');
   const tog = document.getElementById('cam-toggle-' + camId);
   if (tog) tog.textContent = oculto ? '▼' : '▶';
+}
+
+// ── Excluir palete
+async function sucataExcluirPalete(id, nome) {
+  if (!confirm(`Excluir o palete ${nome}?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await api(`/sucata/paletes/${id}`, { method: 'DELETE' });
+  if (res?.ok) { toast(`Palete ${nome} excluído.`, 'success'); carregarPaletes(); }
+  else toast('Erro: ' + (res?.erro || '?'), 'error');
+}
+
+// ── Bipar automático por leitor de código de barras
+let _sucataBiparTimer = null;
+function sucataOnInput(inp) {
+  clearTimeout(_sucataBiparTimer);
+  const val = inp.value.trim();
+  if (!val) return;
+  // Leitores completam em < 100ms; aguarda 120ms após último char
+  _sucataBiparTimer = setTimeout(() => {
+    if (inp.value.trim().length >= 4) {
+      sucataAdicionarSerial(inp.value.trim());
+      inp.value = '';
+    }
+  }, 120);
+}
+
+// ── Mover serial para outra camada
+function sucataMoverSerialUI(serial) {
+  const p = _sucataPaleteAtual;
+  if (!p) return;
+  const camadas = p.camadas || [];
+  if (camadas.length < 2) { toast('Precisa de ao menos 2 camadas para mover.', 'warn'); return; }
+
+  let camadaAtual = null;
+  camadas.forEach(c => { if ((c.medidores||[]).find(m => m.serial === serial)) camadaAtual = c.numero; });
+
+  const optsTexto = camadas
+    .filter(c => c.numero !== camadaAtual)
+    .map(c => `${c.numero} — ${(c.medidores||[]).length} medidores`)
+    .join('\n');
+
+  const resp = prompt(`Mover serial ${serial}\n(Camada atual: ${camadaAtual})\n\nDigite o número da camada destino:\n\n${optsTexto}`);
+  if (!resp) return;
+
+  const numDest = parseInt(resp);
+  const camDest = camadas.find(c => c.numero === numDest);
+  if (!camDest) { toast('Camada não encontrada.', 'error'); return; }
+
+  api(`/sucata/medidores/${serial}/mover`, {
+    method: 'POST',
+    body: JSON.stringify({ camada_id_destino: camDest.id, unidade: GCA.unidade }),
+  }).then(res => {
+    if (res?.ok) { toast(`Serial ${serial} movido para Camada ${numDest}.`, 'success'); recarregarPaleteAtual(); }
+    else toast('Erro: ' + (res?.erro||'?'), 'error');
+  });
 }
 
 // ── Novo palete
