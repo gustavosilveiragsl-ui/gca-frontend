@@ -130,6 +130,10 @@ input,select,textarea{font-family:var(--font-main);}
 .btn-ghost:hover{background:var(--bg-hover);color:var(--text-1);}
 .theme-btn{width:32px;height:32px;border-radius:var(--radius-sm);background:transparent;border:1px solid var(--border);color:var(--text-3);font-size:14px;display:flex;align-items:center;justify-content:center;}
 .theme-btn:hover{background:var(--bg-hover);color:var(--text-1);}
+@keyframes themeSpin{0%{transform:scale(1) rotate(0deg)}40%{transform:scale(1.35) rotate(200deg)}100%{transform:scale(1) rotate(360deg)}}
+.theme-btn-anim span{display:inline-block;animation:themeSpin .45s cubic-bezier(.4,0,.2,1)}
+.quick-card-locked{opacity:.45;cursor:not-allowed;pointer-events:none;position:relative;}
+.quick-card-locked::after{content:'🔒';position:absolute;top:8px;right:10px;font-size:12px;opacity:.7;}
 .page-content{padding:24px;flex:1;}
 
 /* VIEWS */
@@ -513,10 +517,10 @@ tbody tr:hover td{background:var(--bg-hover);}
           </div>
         </div>
         <div class="quick-grid">
-          <button class="quick-card" onclick="showView('atendimento')"><div class="qc-icon">🤝</div><div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div></button>
-          <button class="quick-card" onclick="showView('entrada')"><div class="qc-icon">📥</div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
-          <button class="quick-card" onclick="showView('transferencia')"><div class="qc-icon">🔄</div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
-          <button class="quick-card" onclick="showView('indicadores')"><div class="qc-icon">📈</div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
+          <button class="quick-card" data-perm="iniciar_atendimento" onclick="showView('atendimento')"><div class="qc-icon">🤝</div><div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div></button>
+          <button class="quick-card" data-perm="entrada_material" onclick="showView('entrada')"><div class="qc-icon">📥</div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
+          <button class="quick-card" data-perm="transferencia" onclick="showView('transferencia')"><div class="qc-icon">🔄</div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
+          <button class="quick-card" data-perm="ver_indicadores" onclick="showView('indicadores')"><div class="qc-icon">📈</div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
         </div>
         <div class="card">
           <div class="card-header">
@@ -3883,6 +3887,9 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', novo);
   localStorage.setItem('gca_tema', novo);
   atualizarIconeTema(novo);
+  // Animação no botão
+  const btn = document.getElementById('themeIconApp')?.closest('button');
+  if (btn) { btn.classList.add('theme-btn-anim'); btn.addEventListener('animationend', () => btn.classList.remove('theme-btn-anim'), { once: true }); }
 }
 function atualizarIconeTema(tema) {
   const ic = tema === 'dark' ? '☀️' : '🌙';
@@ -4435,18 +4442,84 @@ async function carregarKPIs() {
   document.getElementById('kpiSolicitacoesDelta').textContent = 'em breve';
 }
 
+let _dashAtendimentos = [];
+
 async function carregarDashAtendimentos() {
   const tbody = document.getElementById('dashAtendimentosBody');
   tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const data = await api('/atendimentos');
   if (!data) return;
   const lista = data.atendimentos||[];
+  _dashAtendimentos = lista;
   if (!lista.length) { tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhum atendimento hoje</div></div></td></tr>`; return; }
   tbody.innerHTML = lista.slice(0,20).map(a => {
     let itens=[]; try{itens=JSON.parse(a.itens_json||'[]')}catch{}
     const hora = a.hora_inicio?a.hora_inicio.substring(0,5):'—';
-    return `<tr><td class="td-main">${a.nome_colaborador||'—'}</td><td>${itens.length} ${itens.length===1?'item':'itens'}</td><td class="td-mono">${hora}</td><td>${statusTag(a.status)}</td><td><button class="row-action">Ver</button></td></tr>`;
+    return `<tr><td class="td-main">${a.nome_colaborador||'—'}</td><td>${itens.length} ${itens.length===1?'item':'itens'}</td><td class="td-mono">${hora}</td><td>${statusTag(a.status)}</td><td><button class="row-action" onclick="dashVerAtendimento('${a.id}')">Ver</button></td></tr>`;
   }).join('');
+}
+
+function dashVerAtendimento(id) {
+  const a = _dashAtendimentos.find(x => x.id === id);
+  if (!a) return;
+  let itens = []; try { itens = JSON.parse(a.itens_json||'[]'); } catch {}
+  const horaI = a.hora_inicio ? a.hora_inicio.substring(0,5) : '—';
+  const horaF = a.hora_fim   ? a.hora_fim.substring(0,5)    : '—';
+
+  const itensHtml = itens.length
+    ? itens.map(it => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${it.descricao||it.nome||'—'}</div>
+            ${it.codigo?`<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${it.codigo}</div>`:''}
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:12px">
+            <div style="font-size:13px;font-weight:700;color:var(--accent-text)">${it.quantidade||1} ${it.unidade||'un.'}</div>
+            ${it.seriais?.length?`<div style="font-size:10px;color:var(--text-3)">${it.seriais.join(', ')}</div>`:''}
+          </div>
+        </div>`).join('')
+    : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:12px">Sem itens registrados</div>';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">📋 Detalhes do Atendimento</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${a.data||'—'}</div>
+        </div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <!-- Cabeçalho -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          ${[
+            ['Colaborador', a.nome_colaborador||'—'],
+            ['Status',      statusTag(a.status||'—')],
+            ['Início',      horaI],
+            ['Fim',         horaF],
+            ['Armazém',     a.armazem||'—'],
+            ['Usuário',     a.usuario||a.operador||'—'],
+          ].map(([l,v])=>`<div style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+            <div style="font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">${l}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1);margin-top:2px">${v}</div>
+          </div>`).join('')}
+        </div>
+        <!-- Itens -->
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+            Itens entregues (${itens.length})
+          </div>
+          <div style="max-height:260px;overflow-y:auto">${itensHtml}</div>
+        </div>
+        ${a.observacao?`<div style="font-size:12px;color:var(--text-2);background:var(--bg);border-radius:var(--radius-sm);padding:10px">💬 ${a.observacao}</div>`:''}
+      </div>
+    </div>`;
+  document.querySelector('.modal-overlay.dash-atend')?.remove();
+  modal.classList.add('dash-atend');
+  document.body.appendChild(modal);
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
 }
 
 function filtrarDashAtendimentos(q) {
@@ -8171,6 +8244,13 @@ function aplicarPermissoesMenu() {
   document.querySelectorAll('.nav-item[data-perm]').forEach(btn => {
     const perm = btn.dataset.perm;
     if (!temPermissao(perm)) btn.style.display = 'none';
+  });
+  // Quick cards do dashboard — aparece bloqueado em vez de sumir
+  document.querySelectorAll('.quick-card[data-perm]').forEach(btn => {
+    if (!temPermissao(btn.dataset.perm)) {
+      btn.classList.add('quick-card-locked');
+      btn.removeAttribute('onclick');
+    }
   });
   // Oculta botão de Previsão de Compra na tela de estoque
   const btnPC = document.getElementById('btnPrevisaoCompra');
