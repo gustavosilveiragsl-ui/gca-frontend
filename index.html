@@ -2048,7 +2048,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
 
         <!-- Resumo -->
-        <div id="btdcResumo" style="display:none;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+        <div id="btdcResumo" style="display:none;gap:10px;flex-wrap:wrap;margin-bottom:14px">
           <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
             <div style="font-size:22px;font-weight:800;color:var(--accent-text)" id="btdcCntTdcs">—</div>
             <div style="font-size:11px;color:var(--text-3);margin-top:2px">TdCs processados</div>
@@ -12504,7 +12504,7 @@ async function btdcIniciar() {
   // Carregar equipes no select (apenas uma vez)
   if (!_btdcEquipes.length) {
     const res = await api('/equipes');
-    _btdcEquipes = (res?.data || []).map(e => e.nome).sort();
+    _btdcEquipes = (res?.data || []).map(e => e.nome_equipe).filter(Boolean).sort();
     const sel = document.getElementById('btdcEquipe');
     if (sel) {
       sel.innerHTML = '<option value="">— Todas as equipes —</option>' +
