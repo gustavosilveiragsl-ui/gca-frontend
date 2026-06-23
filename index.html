@@ -3871,6 +3871,8 @@ window.addEventListener('load', async () => {
           try { GCA.usuario.permissoes = JSON.parse(GCA.usuario.permissoes || '{}'); }
           catch { GCA.usuario.permissoes = {}; }
         }
+        // Restaura lista de unidades do usuário (necessário para o seletor de filial)
+        GCA.unidades = GCA.usuario.unidades || [];
       } catch { GCA.usuario = {}; }
       esconderLoading(); iniciarApp();
     } else { esconderLoading(); mostrarTela('login'); }
