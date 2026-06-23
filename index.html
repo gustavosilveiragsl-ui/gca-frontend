@@ -421,6 +421,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-consulta-saidas" data-perm="ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon">📤</span> Consulta Saídas</button>
           <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
         </div>
       </div>
@@ -2069,6 +2070,55 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="es-icon">🧮</div>
             <div class="es-title">Selecione os filtros e clique em Buscar</div>
             <div class="es-sub">Filtre por equipe e/ou período para ver as baixas detalhadas por TdC</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSULTA SAÍDAS DO ESTOQUE -->
+      <div class="view" id="view-enel-consulta-saidas">
+        <div style="margin-bottom:16px">
+          <div class="page-title">Consulta Saídas do Estoque</div>
+          <div class="page-sub">Materiais que saíram do estoque para equipes no período — para relatório semanal</div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0">
+              <label class="form-label">De</label>
+              <input class="form-input" type="date" id="cseDe" style="width:150px">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Até</label>
+              <input class="form-input" type="date" id="cseAte" style="width:150px">
+            </div>
+            <button class="btn btn-primary" onclick="cseBuscar()">🔍 Buscar</button>
+            <button class="btn btn-ghost" onclick="cseLimpar()">Limpar</button>
+          </div>
+        </div>
+
+        <!-- Resumo -->
+        <div id="cseResumo" style="display:none;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--accent-text)" id="cseCntMateriais">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Tipos de material</div>
+          </div>
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--green)" id="cseCntQtd">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Total de unidades</div>
+          </div>
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--yellow)" id="cseCntRegistros">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Movimentações</div>
+          </div>
+        </div>
+
+        <!-- Lista -->
+        <div id="cseLista" style="display:flex;flex-direction:column;gap:10px">
+          <div class="empty-state">
+            <div class="es-icon">📤</div>
+            <div class="es-title">Selecione o período e clique em Buscar</div>
+            <div class="es-sub">Veja o que saiu do estoque para as equipes no período selecionado</div>
           </div>
         </div>
       </div>
@@ -3953,6 +4003,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
+  if (nome === 'enel-consulta-saidas') { cseIniciar(); }
   if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
     if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo();
@@ -12585,6 +12636,100 @@ function btdcLimpar() {
   document.getElementById('btdcAte').value = '';
   document.getElementById('btdcResumo').style.display = 'none';
   document.getElementById('btdcLista').innerHTML = '<div class="empty-state"><div class="es-icon">🧮</div><div class="es-title">Selecione os filtros e clique em Buscar</div><div class="es-sub">Filtre por equipe e/ou período para ver as baixas detalhadas por TdC</div></div>';
+}
+
+// ═══════════════════════════════════════════
+// ENEL — CONSULTA SAÍDAS DO ESTOQUE
+// ═══════════════════════════════════════════
+
+function cseIniciar() {
+  // Preencher datas padrão (semana atual)
+  const hoje = new Date();
+  const seg  = new Date(hoje); seg.setDate(hoje.getDate() - hoje.getDay() + 1);
+  const dom  = new Date(seg);  dom.setDate(seg.getDate() + 6);
+  const de  = document.getElementById('cseDe');
+  const ate = document.getElementById('cseAte');
+  if (de  && !de.value)  de.value  = seg.toISOString().split('T')[0];
+  if (ate && !ate.value) ate.value = dom.toISOString().split('T')[0];
+}
+
+async function cseBuscar() {
+  const de  = document.getElementById('cseDe')?.value  || '';
+  const ate = document.getElementById('cseAte')?.value || '';
+  const lista = document.getElementById('cseLista');
+
+  lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Buscando saídas...</div>';
+  document.getElementById('cseResumo').style.display = 'none';
+
+  const params = new URLSearchParams();
+  if (de)  params.append('de', de);
+  if (ate) params.append('ate', ate);
+
+  const res = await api(`/enel/consulta-saidas-estoque?${params}`);
+  if (!res?.ok) {
+    lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${res?.erro||'Tente novamente'}</div></div>`;
+    return;
+  }
+
+  const materiais = res.data || [];
+  if (!materiais.length) {
+    lista.innerHTML = '<div class="empty-state"><div class="es-icon">🔍</div><div class="es-title">Nenhuma saída no período</div><div class="es-sub">Tente ajustar o período de busca</div></div>';
+    return;
+  }
+
+  // Resumo
+  document.getElementById('cseResumo').style.display = 'flex';
+  document.getElementById('cseCntMateriais').textContent = res.total_materiais || 0;
+  document.getElementById('cseCntQtd').textContent       = res.total_quantidade || 0;
+  document.getElementById('cseCntRegistros').textContent  = res.total_registros || 0;
+
+  // Renderizar por material
+  lista.innerHTML = materiais.map((m, idx) => {
+    const gid = `cse_mat_${idx}`;
+    const equipesHtml = m.equipes.map(eq => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-1)">${eq.equipe}</div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:2px">${eq.movs.length} movimentação(ões)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:800;color:var(--accent-text)">${eq.total}</div>
+          <div style="font-size:10px;color:var(--text-3)">un.</div>
+        </div>
+      </div>
+      ${eq.movs.map(mv => `
+        <div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 12px 5px 24px;background:rgba(0,0,0,.06)">
+          <span style="font-size:10px;color:var(--text-3);white-space:nowrap">${mv.data ? formatarData(mv.data) : '—'}</span>
+          <span style="font-size:10px;color:var(--text-3)">${mv.tipo||''} ${mv.usuario?'· '+mv.usuario:''}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--text-1)">${mv.quantidade} un.</span>
+        </div>`).join('')}
+    `).join('');
+
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:var(--bg-card)"
+           onclick="const el=document.getElementById('${gid}');const arr=this.querySelector('.cse-arr');const open=el.style.display!=='none';el.style.display=open?'none':'';arr.textContent=open?'▶':'▼'">
+        <span class="cse-arr" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text-1)">${m.descricao||'—'}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px;font-family:var(--font-mono)">${m.codigo||'—'} · ${m.equipes.length} equipe(s)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:800;color:var(--green)">${m.total}</div>
+          <div style="font-size:10px;color:var(--text-3)">total un.</div>
+        </div>
+      </div>
+      <div id="${gid}" style="display:none;background:var(--bg)">
+        ${equipesHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cseLimpar() {
+  document.getElementById('cseDe').value  = '';
+  document.getElementById('cseAte').value = '';
+  document.getElementById('cseResumo').style.display = 'none';
+  document.getElementById('cseLista').innerHTML = '<div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Selecione o período e clique em Buscar</div><div class="es-sub">Veja o que saiu do estoque para as equipes no período selecionado</div></div>';
 }
 
 // ═══════════════════════════════════════════
