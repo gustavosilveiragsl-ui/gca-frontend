@@ -403,22 +403,25 @@ tbody tr:hover td{background:var(--bg-hover);}
       <!-- ENEL -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
-          <span class="nav-group-label">Materiais Cliente 💡</span>
+          <span class="nav-group-label">Materiais Cliente</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
+          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px">Operações</div>
           <button class="nav-item" data-view="enel-atendimento" data-perm="atendimento_enel" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
-          <button class="nav-item" data-view="enel-devolucao" data-perm="atendimento_enel" onclick="showView('enel-devolucao',this)"><span class="ni-icon">↩️</span> Devolução Material</button>
-          <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
-          <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
-          <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
-          <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
-          <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
-          <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
-          <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
-          <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Consulta Baixas</button>
           <button class="nav-item" data-view="enel-entrada" data-perm="ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
           <button class="nav-item" data-view="enel-saida" data-perm="ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
+          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Medidores</div>
+          <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
+          <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
+          <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
+          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / ENEL</div>
+          <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
+          <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
+          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
+          <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
+          <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
         </div>
       </div>
 
@@ -2149,44 +2152,6 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
       <!-- DEVOLUÇÃO ENEL -->
-      <div class="view" id="view-enel-devolucao">
-        <div style="max-width:640px">
-          <div class="page-title" style="margin-bottom:4px">Devolução ENEL</div>
-          <div class="page-sub" style="margin-bottom:20px">Bipe os seriais para retornar ao estoque</div>
-          <div class="card">
-            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Equipe (opcional)</label>
-                  <div style="position:relative">
-                    <input id="devEnelEquipeBusca" class="form-input" placeholder="Nome/prefixo da equipe..." autocomplete="off"
-                      oninput="devEnelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('devEnelEquipeSug').classList.add('hidden'),200)">
-                    <div id="devEnelEquipeSug" class="autocomplete-list hidden"></div>
-                    <input type="hidden" id="devEnelEquipeId">
-                  </div>
-                </div>
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Serial</label>
-                  <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
-                    oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){devEnelAddSerial(this.value);this.value=''}},300)">
-                </div>
-              </div>
-              <div>
-                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seriais bipados <span id="devEnelCount" style="color:var(--accent-text)">(0)</span></div>
-                <div id="devEnelListaSeriais" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-height:72px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
-                  <div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:8px 0">Nenhum serial ainda</div>
-                </div>
-              </div>
-              <div id="msgDevEnel" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-primary" style="flex:1;justify-content:center;background:var(--green);border-color:var(--green)" onclick="devEnelConfirmar()">↩️ Confirmar Devolução</button>
-                <button class="btn btn-ghost" onclick="devEnelLimpar()">Limpar</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- TRANSFERÊNCIA DE SERIAIS -->
       <div class="view" id="view-enel-transferencia">
         <div class="page-title" style="margin-bottom:4px">Transferência de Seriais</div>
@@ -2243,7 +2208,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div class="page-sub">Gerencie seriais, status e localização dos medidores</div>
         </div>
         <!-- Botões principais -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <button onclick="cmAbrirAba('estoque')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
             <div style="font-size:24px;margin-bottom:8px">📦</div>
             <div style="font-size:13px;font-weight:700;color:var(--accent-text);margin-bottom:3px">Medidores em Estoque</div>
@@ -2253,6 +2218,11 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div style="font-size:24px;margin-bottom:8px">🚛</div>
             <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:3px">Medidores em Campo</div>
             <div style="font-size:11px;color:var(--text-3)">Por equipe com prazos e status</div>
+          </button>
+          <button onclick="cmAbrirDevolucao()" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+            <div style="font-size:24px;margin-bottom:8px">↩️</div>
+            <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:3px">Devolução</div>
+            <div style="font-size:11px;color:var(--text-3)">Retornar seriais ao estoque</div>
           </button>
         </div>
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
@@ -2285,6 +2255,48 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div id="cmLoading" style="display:none;text-align:center;padding:40px">
           <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
           <p style="color:var(--text-3)">Carregando medidores...</p>
+        </div>
+
+        <!-- Painel de Devolução (integrado) -->
+        <div id="cmDevPanel" style="display:none;max-width:640px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <button class="btn btn-ghost" onclick="cmFecharDevolucao()">← Voltar</button>
+            <div>
+              <div style="font-size:16px;font-weight:700;color:var(--text-1)">↩️ Devolução de Medidores</div>
+              <div style="font-size:12px;color:var(--text-3)">Bipe os seriais para retornar ao estoque</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Equipe (opcional)</label>
+                  <div style="position:relative">
+                    <input id="devEnelEquipeBusca" class="form-input" placeholder="Nome/prefixo da equipe..." autocomplete="off"
+                      oninput="devEnelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('devEnelEquipeSug').classList.add('hidden'),200)">
+                    <div id="devEnelEquipeSug" class="autocomplete-list hidden"></div>
+                    <input type="hidden" id="devEnelEquipeId">
+                  </div>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Serial</label>
+                  <input id="devEnelSerialInput" class="form-input" placeholder="Bipar e Enter..." style="font-family:var(--font-mono);text-transform:uppercase"
+                    oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){devEnelAddSerial(this.value);this.value=''}},300)">
+                </div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Seriais bipados <span id="devEnelCount" style="color:var(--accent-text)">(0)</span></div>
+                <div id="devEnelListaSeriais" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-height:72px;display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start">
+                  <div style="color:var(--text-3);font-size:12px;width:100%;text-align:center;padding:8px 0">Nenhum serial ainda</div>
+                </div>
+              </div>
+              <div id="msgDevEnel" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" style="flex:1;justify-content:center;background:var(--green);border-color:var(--green)" onclick="devEnelConfirmar()">↩️ Confirmar Devolução</button>
+                <button class="btn btn-ghost" onclick="devEnelLimpar()">Limpar</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="cmConteudo" style="display:none">
@@ -12151,6 +12163,7 @@ async function cmAbrirAba(aba) {
   _cmFiltroStatus = 'TODOS';
   document.getElementById('cmLoading').style.display = '';
   document.getElementById('cmConteudo').style.display = 'none';
+  document.getElementById('cmDevPanel').style.display = 'none';
   // Mostra filtros em todas as abas (não só campo)
   const fs = document.getElementById('cmFiltrosStatus');
   if (fs) fs.style.display = 'flex';
@@ -12163,6 +12176,20 @@ async function cmAbrirAba(aba) {
   document.getElementById('cmAbaTitulo').textContent = titulos[aba]||aba;
   cmRenderSumario();
   cmRenderModelos();
+}
+
+function cmAbrirDevolucao() {
+  document.getElementById('cmLoading').style.display = 'none';
+  document.getElementById('cmConteudo').style.display = 'none';
+  document.getElementById('cmFiltrosStatus').style.display = 'none';
+  document.getElementById('cmDevPanel').style.display = '';
+  if (!_equipes.length) carregarEquipes();
+  devEnelRender();
+}
+
+function cmFecharDevolucao() {
+  document.getElementById('cmDevPanel').style.display = 'none';
+  devEnelLimpar();
 }
 
 function cmFiltrarStatus(st) {
