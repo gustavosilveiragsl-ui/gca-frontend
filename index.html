@@ -12398,6 +12398,22 @@ async function cmBuscarSerial() {
       </div>
     </div>
 
+    <!-- Instalação ENEL -->
+    ${med.status_atual === 'INSTALADO' ? `<div style="border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;background:rgba(34,197,94,.04)">
+      <div style="font-size:10px;font-weight:700;color:#22c55e;text-transform:uppercase;margin-bottom:8px">✅ Instalação ENEL</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        ${[
+          ['Código TdC', med.os_instalacao||'—'],
+          ['Tipo de Serviço', med.tipo_tdc||'—'],
+          ['Equipe Instaladora', med.equipe_atual||'—'],
+          ['Data / Hora', med.data_hora_instalacao||(med.data_instalacao?formatarData(med.data_instalacao):'—')],
+        ].map(([l,v])=>`<div style="padding:8px;border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-sm)">
+          <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+        </div>`).join('')}
+      </div>
+    </div>` : ''}
+
     <!-- Histórico -->
     ${hist.length ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px">
       <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:8px">📜 Histórico (${hist.length})</div>
@@ -14152,3 +14168,4 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
