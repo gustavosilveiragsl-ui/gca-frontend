@@ -2020,31 +2020,56 @@ tbody tr:hover td{background:var(--bg-hover);}
 
       <!-- CONSULTA BAIXAS -->
       <div class="view" id="view-enel-baixas">
-        <div class="page-header" style="margin-bottom:16px">
-          <div>
-            <div class="page-title">Consulta de Baixas</div>
-            <div class="page-sub" id="baixasResumo">Selecione o período e clique em buscar</div>
-          </div>
+        <div style="margin-bottom:16px">
+          <div class="page-title">Baixas por TdC</div>
+          <div class="page-sub">Consulte o consumo de materiais por equipe e período, detalhado por TdC</div>
         </div>
+
+        <!-- Filtros -->
         <div class="card" style="margin-bottom:14px">
           <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-            <div class="form-group" style="margin:0"><label class="form-label">De</label><input class="form-input" type="date" id="baixasHistDe" style="width:140px"></div>
-            <div class="form-group" style="margin:0"><label class="form-label">Até</label><input class="form-input" type="date" id="baixasHistAte" style="width:140px"></div>
-            <div class="form-group" style="margin:0"><label class="form-label">Tipo</label>
-              <select class="form-input" id="baixasFiltroTipo" style="width:200px;font-size:11px">
-                <option value="atendimentos">🔶 Atendimentos (padrão)</option>
-                <option value="">Todos os motivos</option>
-                <option value="ATENDIMENTO_ENEL">Atendimento ENEL</option>
-                <option value="Ajuste de inventário">Ajuste de Inventário</option>
-                <option value="Transferência">Transferência</option>
+            <div class="form-group" style="margin:0;flex:1;min-width:200px">
+              <label class="form-label">Equipe</label>
+              <select id="btdcEquipe" class="form-input">
+                <option value="">— Todas as equipes —</option>
               </select>
             </div>
-            <button class="btn btn-primary" onclick="carregarBaixas()">🔍 Buscar</button>
-            <div id="baixasKpis" style="margin-left:auto;display:flex;gap:10px"></div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">De</label>
+              <input class="form-input" type="date" id="btdcDe" style="width:140px">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Até</label>
+              <input class="form-input" type="date" id="btdcAte" style="width:140px">
+            </div>
+            <button class="btn btn-primary" onclick="btdcBuscar()">🔍 Buscar</button>
+            <button class="btn btn-ghost" onclick="btdcLimpar()">Limpar</button>
           </div>
         </div>
-        <div id="baixasListaMateriais" style="display:flex;flex-direction:column;gap:8px">
-          <div class="empty-state"><div class="es-icon">🧮</div><div class="es-title">Selecione o período e clique em Buscar</div></div>
+
+        <!-- Resumo -->
+        <div id="btdcResumo" style="display:none;display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--accent-text)" id="btdcCntTdcs">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">TdCs processados</div>
+          </div>
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--green)" id="btdcCntMateriais">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Tipos de material</div>
+          </div>
+          <div style="flex:1;min-width:130px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;text-align:center">
+            <div style="font-size:22px;font-weight:800;color:var(--yellow)" id="btdcCntRegistros">—</div>
+            <div style="font-size:11px;color:var(--text-3);margin-top:2px">Baixas no período</div>
+          </div>
+        </div>
+
+        <!-- Resultado -->
+        <div id="btdcLista" style="display:flex;flex-direction:column;gap:10px">
+          <div class="empty-state">
+            <div class="es-icon">🧮</div>
+            <div class="es-title">Selecione os filtros e clique em Buscar</div>
+            <div class="es-sub">Filtre por equipe e/ou período para ver as baixas detalhadas por TdC</div>
+          </div>
         </div>
       </div>
 
@@ -3927,7 +3952,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=new Date().toISOString().split('T')[0]; }
-  if (nome === 'enel-baixas')        { if (!_enelMateriais.length) carregarMateriaisEnel(); }
+  if (nome === 'enel-baixas')        { btdcIniciar(); }
   if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
     if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo();
@@ -12462,6 +12487,107 @@ async function cmBuscarSerial() {
 }
 
 // ═══════════════════════════════════════════
+// ENEL — BAIXAS POR TdC
+// ═══════════════════════════════════════════
+let _btdcEquipes = [];
+
+async function btdcIniciar() {
+  // Preencher datas padrão (mês atual)
+  const hoje = new Date();
+  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
+  const ultimoDia   = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
+  const de  = document.getElementById('btdcDe');
+  const ate = document.getElementById('btdcAte');
+  if (de  && !de.value)  de.value  = primeiroDia;
+  if (ate && !ate.value) ate.value = ultimoDia;
+
+  // Carregar equipes no select (apenas uma vez)
+  if (!_btdcEquipes.length) {
+    const res = await api('/equipes');
+    _btdcEquipes = (res?.data || []).map(e => e.nome).sort();
+    const sel = document.getElementById('btdcEquipe');
+    if (sel) {
+      sel.innerHTML = '<option value="">— Todas as equipes —</option>' +
+        _btdcEquipes.map(n => `<option value="${n}">${n}</option>`).join('');
+    }
+  }
+}
+
+async function btdcBuscar() {
+  const equipe = document.getElementById('btdcEquipe')?.value || '';
+  const de     = document.getElementById('btdcDe')?.value || '';
+  const ate    = document.getElementById('btdcAte')?.value || '';
+
+  const lista = document.getElementById('btdcLista');
+  lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Buscando baixas...</div>';
+  document.getElementById('btdcResumo').style.display = 'none';
+
+  const params = new URLSearchParams();
+  if (equipe) params.append('equipe', equipe);
+  if (de)     params.append('de', de);
+  if (ate)    params.append('ate', ate);
+
+  const res = await api(`/enel/baixas-tdc?${params}`);
+  if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${res?.erro||'Tente novamente'}</div></div>`; return; }
+
+  const materiais = res.data || [];
+  if (!materiais.length) {
+    lista.innerHTML = '<div class="empty-state"><div class="es-icon">🔍</div><div class="es-title">Nenhuma baixa encontrada</div><div class="es-sub">Tente ajustar os filtros de período ou equipe</div></div>';
+    return;
+  }
+
+  // Resumo
+  document.getElementById('btdcResumo').style.display = 'flex';
+  document.getElementById('btdcCntTdcs').textContent      = res.total_tdcs || 0;
+  document.getElementById('btdcCntMateriais').textContent  = materiais.length;
+  document.getElementById('btdcCntRegistros').textContent  = res.total_registros || 0;
+
+  // Renderizar materiais
+  lista.innerHTML = materiais.map((m, idx) => {
+    const gid = `btdc_mat_${idx}`;
+    const tdcsHtml = m.tdcs.map(t => `
+      <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text)">TdC ${t.tdc}</span>
+          ${t.usuario && t.usuario !== 'Importação EORDE' ? `<span style="font-size:10px;color:var(--text-3);margin-left:8px">${t.usuario}</span>` : ''}
+        </div>
+        <span style="font-size:11px;color:var(--text-3);white-space:nowrap">${t.data ? formatarData(t.data) : '—'}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text-1);text-align:right;min-width:56px">${t.quantidade} un.</span>
+      </div>`).join('');
+
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+      <!-- Header do material (clicável) -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;background:var(--bg-card)"
+           onclick="const el=document.getElementById('${gid}');const arr=this.querySelector('.btdc-arr');el.style.display=el.style.display==='none'?'':'none';arr.textContent=el.style.display===''?'▼':'▶'">
+        <span class="btdc-arr" style="font-size:11px;color:var(--text-3)">▶</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text-1)">${m.descricao || '—'}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px;font-family:var(--font-mono)">${m.codigo || '—'} · ${m.tdcs.length} TdC(s)</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:800;color:var(--green)">${m.total}</div>
+          <div style="font-size:10px;color:var(--text-3)">total un.</div>
+        </div>
+      </div>
+      <!-- Detalhe por TdC (oculto por padrão) -->
+      <div id="${gid}" style="display:none;padding:0 16px;background:var(--bg)">
+        <div style="padding-bottom:8px">
+          ${tdcsHtml}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function btdcLimpar() {
+  document.getElementById('btdcEquipe').value = '';
+  document.getElementById('btdcDe').value = '';
+  document.getElementById('btdcAte').value = '';
+  document.getElementById('btdcResumo').style.display = 'none';
+  document.getElementById('btdcLista').innerHTML = '<div class="empty-state"><div class="es-icon">🧮</div><div class="es-title">Selecione os filtros e clique em Buscar</div><div class="es-sub">Filtre por equipe e/ou período para ver as baixas detalhadas por TdC</div></div>';
+}
+
+// ═══════════════════════════════════════════
 // ENEL — CONTROLE DE MATERIAIS POR EQUIPE
 // ═══════════════════════════════════════════
 let _controleEquipes = [];
@@ -14195,4 +14321,5 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
