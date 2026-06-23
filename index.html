@@ -4888,6 +4888,9 @@ function filtrarColabMob(q) {
 }
 
 async function selecionarColabAtend(id) {
+  // Garante que _colaboradores esteja carregado antes de buscar (evita race condition)
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
+
   const colab = (_colaboradores || []).find(c => c.id === id);
   if (!colab) return;
   document.getElementById('atendColabSugestoes').classList.add('hidden');
@@ -6774,6 +6777,8 @@ async function atenderSolicitacao(id) {
   await new Promise(r => setTimeout(r, 200));
 
   // ── 2. Depois seleciona o colaborador ──
+  // Garante colaboradores carregados antes (evita race condition com o carregamento da view)
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
   await selecionarColabAtend(colabId);
 
   // Se selecionarColabAtend abriu o modal de pendência (raro, pois já verificamos acima), aborta
