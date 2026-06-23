@@ -4425,10 +4425,11 @@ async function carregarDashboard() {
 }
 
 async function carregarKPIs() {
-  const [colabs, itens, atends] = await Promise.all([
+  const [colabs, itens, atends, sols] = await Promise.all([
     api(`/colaboradores?por_pagina=1`),
     api(`/itens?por_pagina=1`),
     api(`/atendimentos`),
+    api(`/solicitacoes?por_pagina=500`),
   ]);
   if (colabs) { document.getElementById('kpiColaboradores').textContent = (colabs.data||colabs.colaboradores||[]).length||'—'; document.getElementById('kpiColaboradoresDelta').textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade; }
   if (itens)  { document.getElementById('kpiItens').textContent = (itens.data||itens.itens||[]).length||'—'; document.getElementById('kpiItensDelta').textContent = 'tipos cadastrados'; }
@@ -4438,8 +4439,14 @@ async function carregarKPIs() {
     const ass = lista.filter(a=>a.status==='ASSINADO').length;
     document.getElementById('kpiAtendimentosDelta').textContent = `${ass} assinados`;
   }
-  document.getElementById('kpiSolicitacoes').textContent = '—';
-  document.getElementById('kpiSolicitacoesDelta').textContent = 'em breve';
+  if (sols) {
+    const abertas = (sols.data||sols.solicitacoes||[]).filter(s => s.status === 'PENDENTE' || s.status === 'VISUALIZADO').length;
+    document.getElementById('kpiSolicitacoes').textContent = abertas;
+    document.getElementById('kpiSolicitacoesDelta').textContent = abertas === 0 ? 'nenhuma pendente' : abertas === 1 ? '1 aguardando' : `${abertas} aguardando`;
+  } else {
+    document.getElementById('kpiSolicitacoes').textContent = '—';
+    document.getElementById('kpiSolicitacoesDelta').textContent = 'não disponível';
+  }
 }
 
 let _dashAtendimentos = [];
@@ -4465,6 +4472,8 @@ function dashVerAtendimento(id) {
   let itens = []; try { itens = JSON.parse(a.itens_json||'[]'); } catch {}
   const horaI = a.hora_inicio ? a.hora_inicio.substring(0,5) : '—';
   const horaF = a.hora_fim   ? a.hora_fim.substring(0,5)    : '—';
+  // Armazém não é salvo no nível do atendimento — vem do primeiro item
+  const armazem = itens[0]?.nomeArmazem || itens[0]?.nome_armazem || itens[0]?.armazem || '—';
 
   const itensHtml = itens.length
     ? itens.map(it => `
@@ -4499,7 +4508,7 @@ function dashVerAtendimento(id) {
             ['Status',      statusTag(a.status||'—')],
             ['Início',      horaI],
             ['Fim',         horaF],
-            ['Armazém',     a.armazem||'—'],
+            ['Armazém',     armazem],
             ['Usuário',     a.usuario||a.operador||'—'],
           ].map(([l,v])=>`<div style="padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
             <div style="font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">${l}</div>
