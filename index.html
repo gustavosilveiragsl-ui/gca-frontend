@@ -415,6 +415,7 @@ tbody tr:hover td{background:var(--bg-hover);}
         <div class="nav-group-items">
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px">Operações</div>
           <button class="nav-item" data-view="enel-atendimento" data-perm="atendimento_enel" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
+          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> Solicitações ENEL</button>
           <button class="nav-item" data-view="enel-entrada" data-perm="ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
           <button class="nav-item" data-view="enel-saida" data-perm="ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Medidores</div>
@@ -424,7 +425,6 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / ENEL</div>
           <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
-          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> Solicitações ENEL</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
@@ -2147,7 +2147,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             </select>
             <button class="btn btn-ghost" onclick="carregarSolicitacoesEnel()">↻ Atualizar</button>
             <div style="flex:1"></div>
-            <a href="equipe.html" target="_blank" class="btn btn-ghost" style="font-size:11px">↗ Abrir Portal da Equipe</a>
+            <a href="equipe.html" target="_blank" class="btn btn-ghost" style="font-size:11px">↗ Portal da Equipe</a>
           </div>
         </div>
         <div class="card">
@@ -7767,13 +7767,15 @@ async function carregarEquipesView() {
 }
 
 function definirSenhaEquipe(equipeId, nomeEquipe) {
+  document.getElementById('modalSenhaEquipe')?.remove();
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
+  modal.id = 'modalSenhaEquipe';
   modal.innerHTML = `
     <div class="modal-box" style="max-width:420px">
       <div class="modal-header">
         <div class="modal-title">🔑 Definir Senha — ${nomeEquipe}</div>
-        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+        <button class="modal-close" onclick="document.getElementById('modalSenhaEquipe').remove()">×</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
         <div style="font-size:12px;color:var(--text-3)">Esta senha será usada pela equipe para acessar o <strong>Portal da Equipe</strong>. Mínimo 6 caracteres.</div>
@@ -7784,7 +7786,7 @@ function definirSenhaEquipe(equipeId, nomeEquipe) {
         <div id="modalEqErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" style="flex:1" onclick="salvarSenhaEquipe('${equipeId}')">💾 Salvar</button>
-          <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalSenhaEquipe').remove()">Cancelar</button>
         </div>
       </div>
     </div>`;
@@ -7796,11 +7798,11 @@ function definirSenhaEquipe(equipeId, nomeEquipe) {
 async function salvarSenhaEquipe(equipeId) {
   const senha = document.getElementById('modalEqSenha')?.value?.trim();
   const errEl = document.getElementById('modalEqErr');
-  if (!senha || senha.length < 6) { errEl.textContent = 'Senha deve ter ao menos 6 caracteres'; return; }
-  errEl.textContent = '';
+  if (!senha || senha.length < 6) { if(errEl) errEl.textContent = 'Senha deve ter ao menos 6 caracteres'; return; }
+  if(errEl) errEl.textContent = '';
   const res = await api('/equipe-app/set-senha', { method: 'POST', body: JSON.stringify({ equipe_id: equipeId, senha }) });
   if (res?.ok) {
-    document.querySelector('.modal-overlay')?.remove();
+    document.getElementById('modalSenhaEquipe')?.remove();
     toast('✅ Senha definida com sucesso!', 'success');
   } else {
     if (errEl) errEl.textContent = res?.erro || 'Erro ao salvar senha';
@@ -7808,6 +7810,8 @@ async function salvarSenhaEquipe(equipeId) {
 }
 
 // ── SOLICITAÇÕES MATERIAIS ENEL (almoxarifado) ──────────────────────────────
+let _solEnelData = [];
+
 async function carregarSolicitacoesEnel() {
   const el = document.getElementById('solEnelLista');
   if (!el) return;
@@ -7815,36 +7819,65 @@ async function carregarSolicitacoesEnel() {
   const filtro = document.getElementById('solEnelFiltro')?.value || '';
   const url = filtro ? `/equipe-app/admin/solicitacoes?status=${filtro}` : '/equipe-app/admin/solicitacoes';
   const data = await api(url);
-  const lista = data?.data || [];
-  if (!lista.length) {
+  _solEnelData = data?.data || [];
+  if (!_solEnelData.length) {
     el.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma solicitação</div></div></td></tr>`;
     return;
   }
   const statusCor = { PENDENTE:'#fbbf24', APROVADO:'#22c55e', ENTREGUE:'#38bdf8', RECUSADO:'#f87171' };
-  el.innerHTML = lista.map(s => {
+  el.innerHTML = _solEnelData.map(s => {
     let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
     const cor = statusCor[s.status] || '#94a3b8';
-    const resumo = itens.map(it => `${it.descricao} ×${it.quantidade}`).join(', ');
+    const resumo = itens.map(it => `${it.descricao} ×${it.quantidade}`).join(' · ');
+    const acoesPendente = s.status === 'PENDENTE' ? `
+      <button class="row-action" style="color:var(--green)" onclick="atenderSolEnel('${s.id}')">🧰 Atender</button>
+      <button class="row-action" style="color:var(--red)" onclick="recusarSolEnel('${s.id}')">✕ Recusar</button>
+      <button class="row-action" onclick="excluirSolEnel('${s.id}')">🗑</button>` : '';
+    const acoesAprovado = s.status === 'APROVADO' ? `
+      <button class="row-action" style="color:#38bdf8" onclick="atualizarSolEnel('${s.id}','ENTREGUE')">📦 Entregar</button>` : '';
     return `<tr>
       <td class="td-main">${s.equipe}</td>
-      <td style="font-size:11px;color:var(--text-3)">${resumo || '—'}</td>
+      <td style="font-size:11px;color:var(--text-2);max-width:280px">${resumo || '—'}</td>
       <td>${formatarData(s.criado_em?.split('T')[0])}</td>
       <td><span style="font-size:10px;font-weight:700;color:${cor};background:${cor}18;padding:2px 8px;border-radius:10px">${s.status}</span></td>
-      <td style="display:flex;gap:4px">
-        ${s.status==='PENDENTE'?`<button class="row-action" style="color:#22c55e" onclick="atualizarSolEnel('${s.id}','APROVADO')">✓ Aprovar</button><button class="row-action" style="color:var(--red)" onclick="atualizarSolEnel('${s.id}','RECUSADO')">✕ Recusar</button>`:''}
-        ${s.status==='APROVADO'?`<button class="row-action" style="color:#38bdf8" onclick="atualizarSolEnel('${s.id}','ENTREGUE')">📦 Entregar</button>`:''}
-      </td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">${acoesPendente}${acoesAprovado}</td>
     </tr>`;
   }).join('');
 }
 
-async function atualizarSolEnel(id, status) {
-  const obs = status === 'RECUSADO' ? prompt('Motivo da recusa (opcional):') : null;
+async function atenderSolEnel(id) {
+  const sol = _solEnelData.find(s => s.id === id);
+  if (!sol) return;
+  await api(`/equipe-app/admin/solicitacoes/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'APROVADO' }) });
+  showView('enel-atendimento');
+  toast(`📋 Solicitação da ${sol.equipe} — preencha o atendimento`, 'info', 5000);
+  setTimeout(() => {
+    const inp = document.getElementById('atendEnelEquipeBusca');
+    if (inp) { inp.value = sol.equipe; inp.dispatchEvent(new Event('input')); }
+  }, 700);
+  carregarSolicitacoesEnel();
+}
+
+async function recusarSolEnel(id) {
+  const obs = prompt('Motivo da recusa (opcional):') ?? '';
   const res = await api(`/equipe-app/admin/solicitacoes/${id}`, {
-    method: 'PUT', body: JSON.stringify({ status, obs_resposta: obs || null })
+    method: 'PUT', body: JSON.stringify({ status: 'RECUSADO', obs_resposta: obs || null })
   });
-  if (res?.ok) { toast(`Status atualizado: ${status}`, 'success'); carregarSolicitacoesEnel(); }
-  else toast(res?.erro || 'Erro ao atualizar', 'error');
+  if (res?.ok) { toast('Solicitação recusada', 'warn'); carregarSolicitacoesEnel(); }
+  else toast(res?.erro || 'Erro', 'error');
+}
+
+async function excluirSolEnel(id) {
+  if (!confirm('Excluir esta solicitação?')) return;
+  const res = await api(`/equipe-app/admin/solicitacoes/${id}`, { method: 'DELETE' });
+  if (res?.ok) { toast('Excluída', 'success'); carregarSolicitacoesEnel(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+async function atualizarSolEnel(id, status) {
+  const res = await api(`/equipe-app/admin/solicitacoes/${id}`, { method: 'PUT', body: JSON.stringify({ status }) });
+  if (res?.ok) { toast(`Status: ${status}`, 'success'); carregarSolicitacoesEnel(); }
+  else toast(res?.erro || 'Erro', 'error');
 }
 
 async function salvarEquipe() {
