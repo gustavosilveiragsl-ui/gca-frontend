@@ -192,7 +192,7 @@ input,select,textarea{font-family:var(--font-main);}
 
   <!-- Topbar -->
   <div class="topbar">
-    <div class="topbar-logo">GCA</div>
+    <div class="topbar-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" style="height:28px;object-fit:contain;"></div>
     <div class="topbar-equipe" id="topbarEquipe">—</div>
     <div class="topbar-badge" id="topbarUnidade">—</div>
     <button class="btn-sair" onclick="sair()">Sair</button>
@@ -485,38 +485,43 @@ async function carregarCatalogo() {
   if (!itens.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-txt">Nenhum material disponível para solicitar</div></div>`; return; }
 
   _qtds = {};
-  itens.forEach(it => { _qtds[it.codigo_enel] = { qtd: 0, ...it }; });
+  itens.forEach(it => { _qtds[it.codigo] = { qtd: 0, ...it }; });
 
   document.getElementById('obsWrap').classList.remove('hidden');
   el.innerHTML = `<div class="card"><div class="card-body">
     ${itens.map(it => `
       <div class="item-solicitar">
-        <div>
-          <div class="material-name">${it.descricao_enel}</div>
-          <div class="material-cod">${it.codigo_enel}</div>
+        <div style="flex:1;min-width:0">
+          <div class="material-name">${it.descricao}</div>
+          <div class="material-cod">${it.codigo} · Estoque: ${it.saldo} ${it.unidade_med||'un.'}${it.tem_serial?' · 📟 serial':''}</div>
         </div>
-        <div class="qty-ctrl">
-          <button class="qty-btn" onclick="ajustarQtd('${it.codigo_enel}',-1)">−</button>
-          <span class="qty-val" id="qty_${it.codigo_enel}">0</span>
-          <button class="qty-btn" onclick="ajustarQtd('${it.codigo_enel}',+1)">+</button>
+        <div class="qty-ctrl" style="flex-shrink:0;margin-left:10px">
+          <input type="number" min="0" max="${it.saldo}" step="${it.unidade_med==='MT'?10:1}"
+            value="0" id="qty_${it.codigo}"
+            style="width:72px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;font-weight:700;text-align:center;"
+            oninput="setQtd('${it.codigo}',this.value)" placeholder="0">
+          <span style="font-size:10px;color:var(--text-3)">${it.unidade_med||'un.'}</span>
         </div>
       </div>`).join('')}
   </div></div>`;
 }
 
-function ajustarQtd(cod, delta) {
+function setQtd(cod, val) {
   const item = _qtds[cod];
   if (!item) return;
-  item.qtd = Math.max(0, item.qtd + delta);
-  document.getElementById(`qty_${cod}`).textContent = item.qtd;
+  item.qtd = Math.max(0, Math.min(Number(val) || 0, item.saldo));
+  const el = document.getElementById(`qty_${cod}`);
+  if (el) el.value = item.qtd;
 }
 
 async function enviarSolicitacao() {
   const itens = Object.values(_qtds).filter(it => it.qtd > 0).map(it => ({
-    codigo_enel: it.codigo_enel,
-    descricao:   it.descricao_enel,
-    item_id:     it.item_id,
+    codigo:      it.codigo,
+    descricao:   it.descricao,
+    item_id:     it.item_id || it.id_material,
     quantidade:  it.qtd,
+    unidade_med: it.unidade_med,
+    tem_serial:  it.tem_serial || false,
   }));
 
   const errEl = document.getElementById('solErr');
@@ -538,7 +543,7 @@ async function enviarSolicitacao() {
   if (!data?.ok) { errEl.textContent = data?.erro || 'Erro ao enviar'; return; }
 
   // Reset quantidades
-  Object.keys(_qtds).forEach(k => { _qtds[k].qtd = 0; const el = document.getElementById(`qty_${k}`); if(el) el.textContent = '0'; });
+  Object.keys(_qtds).forEach(k => { _qtds[k].qtd = 0; const el = document.getElementById(`qty_${k}`); if(el) el.value = '0'; });
   document.getElementById('solObs').value = '';
   mostrarToast('✅ Solicitação enviada com sucesso!', 'success');
   _carretos.historico = false;
