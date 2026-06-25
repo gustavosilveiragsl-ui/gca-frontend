@@ -424,6 +424,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / ENEL</div>
           <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
+          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> Solicitações ENEL</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
@@ -2125,6 +2126,44 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="es-icon">📤</div>
             <div class="es-title">Selecione o período e clique em Buscar</div>
             <div class="es-sub">Veja o que saiu do estoque para as equipes no período selecionado</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SOLICITAÇÕES MATERIAIS ENEL (do portal das equipes) -->
+      <div class="view" id="view-enel-sol-materiais">
+        <div style="margin-bottom:16px">
+          <div class="page-title">📋 Solicitações de Materiais ENEL</div>
+          <div class="page-sub">Pedidos feitos pelas equipes via Portal da Equipe</div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-body" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <select id="solEnelFiltro" class="form-input" style="width:160px" onchange="carregarSolicitacoesEnel()">
+              <option value="">Todos os status</option>
+              <option value="PENDENTE">⏳ Pendente</option>
+              <option value="APROVADO">✅ Aprovado</option>
+              <option value="ENTREGUE">📦 Entregue</option>
+              <option value="RECUSADO">❌ Recusado</option>
+            </select>
+            <button class="btn btn-ghost" onclick="carregarSolicitacoesEnel()">↻ Atualizar</button>
+            <div style="flex:1"></div>
+            <a href="equipe.html" target="_blank" class="btn btn-ghost" style="font-size:11px">↗ Abrir Portal da Equipe</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr>
+                <th>Equipe</th>
+                <th>Itens solicitados</th>
+                <th>Data</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr></thead>
+              <tbody id="solEnelLista">
+                <tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-3)">Carregando...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -4015,6 +4054,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=new Date().toISOString().split('T')[0]; }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
   if (nome === 'enel-consulta-saidas') { cseIniciar(); }
+  if (nome === 'enel-sol-materiais') { carregarSolicitacoesEnel(); }
   if (nome === 'laudos')             {
     const carregarTudo = () => { if (!_estoqueData.length) carregarEstoque().then(laudosCarregar_); else laudosCarregar_(); };
     if (!_itens.length) carregarItensAtendimento().then(carregarTudo); else carregarTudo();
@@ -7718,8 +7758,93 @@ async function carregarEquipesView() {
     <td style="font-size:11px">${e.nome_equipe||e.nome||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${e.atividades||'—'}</td>
     <td>${e.status==='ativo'?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
-    <td style="display:flex;gap:4px"><button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button><button class="row-action" style="color:var(--red)" onclick="excluirEquipe('${e.id}')">✕</button></td>
+    <td style="display:flex;gap:4px">
+      <button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button>
+      <button class="row-action" style="color:var(--accent-text)" onclick="definirSenhaEquipe('${e.id}','${e.nome_equipe||e.nome||''}')">🔑 Senha</button>
+      <button class="row-action" style="color:var(--red)" onclick="excluirEquipe('${e.id}')">✕</button>
+    </td>
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
+}
+
+function definirSenhaEquipe(equipeId, nomeEquipe) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:420px">
+      <div class="modal-header">
+        <div class="modal-title">🔑 Definir Senha — ${nomeEquipe}</div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;color:var(--text-3)">Esta senha será usada pela equipe para acessar o <strong>Portal da Equipe</strong>. Mínimo 6 caracteres.</div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nova senha</label>
+          <input id="modalEqSenha" class="form-input" type="text" placeholder="Ex: Ceneged@2024" autocomplete="new-password">
+        </div>
+        <div id="modalEqErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarSenhaEquipe('${equipeId}')">💾 Salvar</button>
+          <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  setTimeout(() => document.getElementById('modalEqSenha')?.focus(), 100);
+}
+
+async function salvarSenhaEquipe(equipeId) {
+  const senha = document.getElementById('modalEqSenha')?.value?.trim();
+  const errEl = document.getElementById('modalEqErr');
+  if (!senha || senha.length < 6) { errEl.textContent = 'Senha deve ter ao menos 6 caracteres'; return; }
+  errEl.textContent = '';
+  const res = await api('/equipe-app/set-senha', { method: 'POST', body: JSON.stringify({ equipe_id: equipeId, senha }) });
+  if (res?.ok) {
+    document.querySelector('.modal-overlay')?.remove();
+    toast('✅ Senha definida com sucesso!', 'success');
+  } else {
+    if (errEl) errEl.textContent = res?.erro || 'Erro ao salvar senha';
+  }
+}
+
+// ── SOLICITAÇÕES MATERIAIS ENEL (almoxarifado) ──────────────────────────────
+async function carregarSolicitacoesEnel() {
+  const el = document.getElementById('solEnelLista');
+  if (!el) return;
+  el.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></td></tr>`;
+  const filtro = document.getElementById('solEnelFiltro')?.value || '';
+  const url = filtro ? `/equipe-app/admin/solicitacoes?status=${filtro}` : '/equipe-app/admin/solicitacoes';
+  const data = await api(url);
+  const lista = data?.data || [];
+  if (!lista.length) {
+    el.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma solicitação</div></div></td></tr>`;
+    return;
+  }
+  const statusCor = { PENDENTE:'#fbbf24', APROVADO:'#22c55e', ENTREGUE:'#38bdf8', RECUSADO:'#f87171' };
+  el.innerHTML = lista.map(s => {
+    let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
+    const cor = statusCor[s.status] || '#94a3b8';
+    const resumo = itens.map(it => `${it.descricao} ×${it.quantidade}`).join(', ');
+    return `<tr>
+      <td class="td-main">${s.equipe}</td>
+      <td style="font-size:11px;color:var(--text-3)">${resumo || '—'}</td>
+      <td>${formatarData(s.criado_em?.split('T')[0])}</td>
+      <td><span style="font-size:10px;font-weight:700;color:${cor};background:${cor}18;padding:2px 8px;border-radius:10px">${s.status}</span></td>
+      <td style="display:flex;gap:4px">
+        ${s.status==='PENDENTE'?`<button class="row-action" style="color:#22c55e" onclick="atualizarSolEnel('${s.id}','APROVADO')">✓ Aprovar</button><button class="row-action" style="color:var(--red)" onclick="atualizarSolEnel('${s.id}','RECUSADO')">✕ Recusar</button>`:''}
+        ${s.status==='APROVADO'?`<button class="row-action" style="color:#38bdf8" onclick="atualizarSolEnel('${s.id}','ENTREGUE')">📦 Entregar</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function atualizarSolEnel(id, status) {
+  const obs = status === 'RECUSADO' ? prompt('Motivo da recusa (opcional):') : null;
+  const res = await api(`/equipe-app/admin/solicitacoes/${id}`, {
+    method: 'PUT', body: JSON.stringify({ status, obs_resposta: obs || null })
+  });
+  if (res?.ok) { toast(`Status atualizado: ${status}`, 'success'); carregarSolicitacoesEnel(); }
+  else toast(res?.erro || 'Erro ao atualizar', 'error');
 }
 
 async function salvarEquipe() {
