@@ -5654,8 +5654,15 @@ _GCA · Sistema de Gestão de Almoxarifado · Ceneged_`
   window.open(`https://wa.me/?text=${msg}`, '_blank');
 }
 
-function enviarTablet() {
-  toast('Atendimento enviado ao tablet!', 'success');
+async function enviarTablet() {
+  const id = ATEND.id;
+  if (!id) { toast('Nenhum atendimento ativo', 'warn'); return; }
+  const res = await api(`/atendimentos/${id}/enviar-tablet`, { method: 'POST' });
+  if (res?.ok) {
+    toast('✅ Enviado ao tablet! Aguardando assinatura.', 'success', 4000);
+  } else {
+    toast(res?.erro || 'Erro ao enviar ao tablet', 'error');
+  }
 }
 
 function imprimirFicha() {
