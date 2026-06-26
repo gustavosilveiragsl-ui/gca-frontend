@@ -488,12 +488,16 @@ async function carregarCatalogo() {
   itens.forEach(it => { _qtds[it.codigo] = { qtd: 0, ...it }; });
 
   document.getElementById('obsWrap').classList.remove('hidden');
-  el.innerHTML = `<div class="card"><div class="card-body">
+  el.innerHTML = `
+    <div style="background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--accent-text)">
+      ℹ️ Se algum item não aparecer nesta lista, significa que não há estoque disponível no momento. Contate o almoxarifado.
+    </div>
+    <div class="card"><div class="card-body">
     ${itens.map(it => `
       <div class="item-solicitar">
         <div style="flex:1;min-width:0">
           <div class="material-name">${it.descricao}</div>
-          <div class="material-cod">${it.codigo} · Estoque: ${it.saldo} ${it.unidade_med||'un.'}${it.tem_serial?' · 📟 serial':''}</div>
+          <div class="material-cod">${it.codigo}${it.tem_serial?' · 📟 serial':''}</div>
         </div>
         <div class="qty-ctrl" style="flex-shrink:0;margin-left:10px">
           <input type="number" min="0" max="${it.saldo}" step="${it.unidade_med==='MT'?10:1}"
