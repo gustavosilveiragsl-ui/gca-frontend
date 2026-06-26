@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GCA — Viatura</title>
+<link rel="icon" type="image/png" href="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;-webkit-text-size-adjust:100%;}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:#0a0a0f;color:#f1f5f9;min-height:100vh;-webkit-font-smoothing:antialiased;padding-bottom:32px;}
+
+.topbar{background:#0f0f17;border-bottom:1px solid #1e1e2e;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+.topbar img{height:28px;}
+.topbar-title{font-size:13px;color:#475569;}
+
+.container{max-width:520px;margin:0 auto;padding:20px 16px;}
+
+.placa-badge{display:inline-block;font-size:32px;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:3px;background:#141420;border:2px solid #2a2a3e;border-radius:10px;padding:10px 24px;margin-bottom:8px;}
+.sub{font-size:12px;color:#475569;margin-bottom:24px;}
+
+/* STATUS GERAL */
+.status-geral{border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px;font-weight:600;}
+.st-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);}
+.st-alerta{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);}
+.st-vencido{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);}
+.st-icon{font-size:24px;}
+.st-text strong{display:block;font-size:14px;}
+.st-text span{font-size:12px;color:#94a3b8;font-weight:400;}
+
+/* CARDS */
+.card{background:#0f0f17;border:1px solid #1e1e2e;border-radius:12px;margin-bottom:12px;overflow:hidden;}
+.card-title{font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.6px;padding:14px 16px 0;}
+.laudo-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid #1e1e2e;}
+.laudo-row:last-child{border-bottom:none;}
+.laudo-tipo{font-size:13px;font-weight:600;flex:1;}
+.laudo-venc{font-size:11px;color:#475569;margin-top:2px;}
+.laudo-dias{font-size:13px;font-weight:700;min-width:80px;text-align:right;}
+.dias-ok{color:#22c55e;}
+.dias-alerta{color:#fbbf24;}
+.dias-vencido{color:#f87171;}
+
+.equip-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #1e1e2e;}
+.equip-row:last-child{border-bottom:none;}
+.equip-label{font-size:13px;font-weight:600;}
+.equip-data{font-size:10px;color:#475569;margin-top:2px;}
+.equip-status{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;}
+.equip-tem{background:rgba(34,197,94,.12);color:#22c55e;}
+.equip-nao{background:rgba(248,113,113,.1);color:#f87171;}
+
+.loading{text-align:center;padding:60px 24px;color:#475569;}
+.spinner{width:28px;height:28px;border:2px solid rgba(255,255,255,.1);border-top-color:#0ea5e9;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 16px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.erro{text-align:center;padding:60px 24px;color:#f87171;}
+.erro-icon{font-size:40px;margin-bottom:12px;}
+
+.footer{text-align:center;margin-top:32px;font-size:11px;color:#334155;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA">
+  <span class="topbar-title">Portal de Viaturas — GCA Ceneged</span>
+</div>
+
+<div class="container">
+  <div id="content">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div>Carregando informações da viatura...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://gca-backend-production.up.railway.app';
+
+function getParam(name) {
+  return new URLSearchParams(window.location.search).get(name) || '';
+}
+
+async function carregar() {
+  const placa   = getParam('placa').toUpperCase();
+  const unidade = getParam('unidade') || 'marica';
+  const el = document.getElementById('content');
+
+  if (!placa) {
+    el.innerHTML = `<div class="erro"><div class="erro-icon">🚗</div><div>Placa não informada.</div></div>`;
+    return;
+  }
+
+  document.title = `GCA — ${placa}`;
+
+  const res = await fetch(`${API}/laudos/viaturas/${encodeURIComponent(placa)}/public?unidade=${unidade}`);
+  const data = await res.json();
+
+  if (!data?.ok) {
+    el.innerHTML = `<div class="erro"><div class="erro-icon">❌</div><div>Erro ao carregar dados da viatura.</div></div>`;
+    return;
+  }
+
+  const laudos = data.laudos || [];
+  const equips = data.equipamentos || [];
+  const nomes  = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
+
+  // Status geral
+  const temVencido = laudos.some(l => l.status === 'VENCIDO');
+  const temAlerta  = laudos.some(l => l.status === 'ALERTA');
+  const stClass = temVencido ? 'st-vencido' : temAlerta ? 'st-alerta' : 'st-ok';
+  const stIcon  = temVencido ? '❌' : temAlerta ? '⚠️' : '✅';
+  const stTxt   = temVencido ? 'Laudo(s) Vencido(s)' : temAlerta ? 'Laudos próximos do vencimento' : 'Todos os laudos em dia';
+
+  // Laudos HTML
+  const laudosHtml = laudos.length ? laudos.map(l => {
+    const diasCls = l.status === 'VENCIDO' ? 'dias-vencido' : l.status === 'ALERTA' ? 'dias-alerta' : 'dias-ok';
+    const diasTxt = l.dias < 0 ? `Vencido há ${Math.abs(l.dias)} dias` : `${l.dias} dias restantes`;
+    return `<div class="laudo-row">
+      <div style="flex:1">
+        <div class="laudo-tipo">${l.tipo_laudo}</div>
+        <div class="laudo-venc">Vence: ${new Date(l.data_vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</div>
+      </div>
+      <div class="laudo-dias ${diasCls}">${diasTxt}</div>
+      ${l.link_pdf ? `<a href="${l.link_pdf}" target="_blank" style="font-size:20px;text-decoration:none">📄</a>` : ''}
+    </div>`;
+  }).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Nenhum laudo cadastrado</div>';
+
+  // Equipamentos HTML
+  const equipsHtml = equips.length ? equips.map(eq => `
+    <div class="equip-row">
+      <div>
+        <div class="equip-label">${eq.label || eq.tipo}</div>
+        ${eq.tem && eq.data_entrega ? `<div class="equip-data">Entregue em: ${new Date(eq.data_entrega+'T12:00:00').toLocaleDateString('pt-BR')}</div>` : ''}
+      </div>
+      <span class="equip-status ${eq.tem ? 'equip-tem' : 'equip-nao'}">${eq.tem ? '✅ Tem' : '❌ Não tem'}</span>
+    </div>`).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Sem equipamentos cadastrados</div>';
+
+  el.innerHTML = `
+    <div style="margin-bottom:4px">
+      <div class="placa-badge">${placa}</div>
+    </div>
+    <div class="sub">${nomes[unidade] || unidade} · Atualizado em ${new Date().toLocaleDateString('pt-BR')}</div>
+
+    <div class="status-geral ${stClass}">
+      <span class="st-icon">${stIcon}</span>
+      <div class="st-text">
+        <strong style="color:${temVencido?'#f87171':temAlerta?'#fbbf24':'#22c55e'}">${stTxt}</strong>
+        <span>${laudos.length} laudo(s) cadastrado(s)</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📋 Laudos</div>
+      ${laudosHtml}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ Equipamentos</div>
+      ${equipsHtml}
+    </div>
+
+    <div class="footer">
+      GCA — Sistema de Gestão de Almoxarifado · Ceneged
+    </div>`;
+}
+
+carregar();
+</script>
+</body>
+</html>
