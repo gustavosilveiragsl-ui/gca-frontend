@@ -279,13 +279,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 <div id="loginView" class="hidden">
   <div class="login-card">
     <button class="login-theme-toggle theme-btn" onclick="toggleTheme()"><span id="themeIcon">☀️</span></button>
-    <div class="login-logo" style="flex-direction:column;gap:12px">
-      <img src="https://gustavosilveiragsl-ui.github.io/gca-frontend/logo-ceneged.png" alt="Ceneged" style="height:64px;object-fit:contain">
-      <div style="display:flex;align-items:center;gap:6px;opacity:.5">
-        <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" style="height:18px;object-fit:contain">
-        <span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text-3)">SISTEMA GCA</span>
-      </div>
-    </div>
+    <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA Sistema"></div>
     <div class="login-title">Acesse sua conta</div>
     <div class="login-sub">Sistema de Almoxarifado Industrial</div>
     <div class="form-group">
@@ -327,7 +321,9 @@ tbody tr:hover td{background:var(--bg-hover);}
 <!-- SELEÇÃO DE UNIDADE -->
 <div id="unidadeView" class="hidden">
   <div class="unidade-card">
-    <div class="unidade-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
+    <div class="unidade-logo">
+      <img src="https://gustavosilveiragsl-ui.github.io/gca-frontend/logo-ceneged.png" alt="Ceneged" style="height:52px;object-fit:contain">
+    </div>
     <div class="unidade-title">Selecione a unidade</div>
     <div class="unidade-sub" id="unidadeSub">Você tem acesso a mais de uma filial</div>
     <div class="unidade-options" id="unidadeOptions"></div>
@@ -4158,11 +4154,11 @@ async function solicitarRecuperacao() {
 function mostrarSelecaoUnidade(nome, unidades) {
   mostrarTela('unidade');
   document.getElementById('unidadeSub').textContent = `Olá, ${nome || 'usuário'}! Selecione a filial de acesso.`;
-  const icons = { marica:'🏙️', rio_das_ostras:'🌊' };
   const descs = { marica:'Unidade de Maricá – RJ', rio_das_ostras:'Unidade de Rio das Ostras – RJ' };
+  const pinSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
   document.getElementById('unidadeOptions').innerHTML = unidades.map(u => `
     <button class="unidade-btn" onclick="selecionarUnidade('${u}')">
-      <span class="u-icon">${icons[u]||'🏢'}</span>
+      <span class="u-icon">${pinSvg}</span>
       <div><div class="u-name">${NOMES_UNIDADE[u]||u}</div><div class="u-desc">${descs[u]||''}</div></div>
     </button>`).join('');
 }
