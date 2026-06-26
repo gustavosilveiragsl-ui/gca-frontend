@@ -7828,7 +7828,7 @@ async function carregarSolicitacoesEnel() {
   el.innerHTML = _solEnelData.map(s => {
     let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
     const cor = statusCor[s.status] || '#94a3b8';
-    // Itens empilhados em linhas separadas para melhor legibilidade
+    const isPendente = s.status === 'PENDENTE';
     const itensHtml = itens.map(it =>
       `<div style="display:flex;align-items:center;gap:6px;padding:2px 0">
         <span style="font-size:12px;font-weight:700;color:var(--accent-text);min-width:28px;text-align:right">${it.quantidade}</span>
@@ -7836,16 +7836,25 @@ async function carregarSolicitacoesEnel() {
         <span style="font-size:11px;color:var(--text-2)">${it.descricao}</span>
        </div>`
     ).join('');
-    const acoesPendente = s.status === 'PENDENTE' ? `
+    const acoesPendente = isPendente ? `
       <button class="row-action" style="color:var(--green)" onclick="atenderSolEnel('${s.id}')">🧰 Atender</button>
       <button class="row-action" style="color:var(--red)" onclick="recusarSolEnel('${s.id}')">✕ Recusar</button>
       <button class="row-action" onclick="excluirSolEnel('${s.id}')">🗑</button>` : '';
-    return `<tr>
-      <td class="td-main">${s.equipe}</td>
-      <td style="min-width:200px">${itensHtml || '—'}</td>
-      <td>${formatarData(s.criado_em?.split('T')[0])}</td>
-      <td><span style="font-size:10px;font-weight:700;color:${cor};background:${cor}18;padding:2px 8px;border-radius:10px">${s.status}</span></td>
-      <td style="display:flex;gap:4px;flex-wrap:wrap">${acoesPendente}</td>
+    const rowStyle = isPendente
+      ? 'border-left:3px solid var(--yellow);background:rgba(251,191,36,.04)'
+      : 'border-left:3px solid transparent';
+    return `<tr style="${rowStyle}">
+      <td class="td-main" style="vertical-align:middle">${s.equipe}</td>
+      <td style="min-width:200px;vertical-align:middle">${itensHtml || '—'}</td>
+      <td style="vertical-align:middle;white-space:nowrap">${formatarData(s.criado_em?.split('T')[0])}</td>
+      <td style="vertical-align:middle">
+        <span style="font-size:10px;font-weight:700;color:${cor};background:${cor}18;padding:3px 10px;border-radius:10px;white-space:nowrap">
+          ${isPendente ? '⏳ ' : ''}${s.status}
+        </span>
+      </td>
+      <td style="vertical-align:middle;white-space:nowrap">
+        <div style="display:flex;gap:4px">${acoesPendente}</div>
+      </td>
     </tr>`;
   }).join('');
 }
