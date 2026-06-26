@@ -7838,8 +7838,7 @@ async function carregarSolicitacoesEnel() {
     ).join('');
     const acoesPendente = isPendente ? `
       <button class="row-action" style="color:var(--green)" onclick="atenderSolEnel('${s.id}')">🧰 Atender</button>
-      <button class="row-action" style="color:var(--red)" onclick="recusarSolEnel('${s.id}')">✕ Recusar</button>
-      <button class="row-action" onclick="excluirSolEnel('${s.id}')">🗑</button>` : '';
+      <button class="row-action" style="color:var(--red)" onclick="recusarSolEnel('${s.id}')">✕ Recusar</button>` : '';
     const rowStyle = isPendente
       ? 'border-left:3px solid var(--yellow);background:rgba(251,191,36,.04)'
       : 'border-left:3px solid transparent';
