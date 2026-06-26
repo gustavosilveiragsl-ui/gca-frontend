@@ -2142,7 +2142,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <option value="">Todos os status</option>
               <option value="PENDENTE">⏳ Pendente</option>
               <option value="APROVADO">✅ Aprovado</option>
-              <option value="ENTREGUE">📦 Entregue</option>
+              <option value="ATENDIDO">✅ Atendido</option>
               <option value="RECUSADO">❌ Recusado</option>
             </select>
             <button class="btn btn-ghost" onclick="carregarSolicitacoesEnel()">↻ Atualizar</button>
@@ -7824,7 +7824,7 @@ async function carregarSolicitacoesEnel() {
     el.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma solicitação</div></div></td></tr>`;
     return;
   }
-  const statusCor = { PENDENTE:'#fbbf24', APROVADO:'#22c55e', ENTREGUE:'#38bdf8', RECUSADO:'#f87171' };
+  const statusCor = { PENDENTE:'#fbbf24', APROVADO:'#22c55e', ATENDIDO:'#38bdf8', RECUSADO:'#f87171' };
   el.innerHTML = _solEnelData.map(s => {
     let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
     const cor = statusCor[s.status] || '#94a3b8';
@@ -12348,8 +12348,8 @@ async function enelFinalizarAtendimento() {
     if (window.__ENEL_SOL_PENDENTE__) {
       const solId = window.__ENEL_SOL_PENDENTE__.id;
       window.__ENEL_SOL_PENDENTE__ = null;
-      api(`/equipe-app/admin/solicitacoes/${solId}`, { method:'PUT', body: JSON.stringify({ status:'ENTREGUE' }) });
-      toast('✅ Solicitação marcada como Entregue', 'success', 4000);
+      api(`/equipe-app/admin/solicitacoes/${solId}`, { method:'PUT', body: JSON.stringify({ status:'ATENDIDO' }) });
+      toast('✅ Solicitação marcada como Atendida', 'success', 4000);
     }
   } else enelMsg(res?.erro||'Erro ao finalizar', false);
 }
