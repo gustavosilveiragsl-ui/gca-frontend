@@ -7828,19 +7828,24 @@ async function carregarSolicitacoesEnel() {
   el.innerHTML = _solEnelData.map(s => {
     let itens = []; try { itens = JSON.parse(s.itens_json||'[]'); } catch {}
     const cor = statusCor[s.status] || '#94a3b8';
-    const resumo = itens.map(it => `${it.descricao} ×${it.quantidade}`).join(' · ');
+    // Itens empilhados em linhas separadas para melhor legibilidade
+    const itensHtml = itens.map(it =>
+      `<div style="display:flex;align-items:center;gap:6px;padding:2px 0">
+        <span style="font-size:12px;font-weight:700;color:var(--accent-text);min-width:28px;text-align:right">${it.quantidade}</span>
+        <span style="font-size:10px;color:var(--text-3)">${it.unidade_med||'un.'}</span>
+        <span style="font-size:11px;color:var(--text-2)">${it.descricao}</span>
+       </div>`
+    ).join('');
     const acoesPendente = s.status === 'PENDENTE' ? `
       <button class="row-action" style="color:var(--green)" onclick="atenderSolEnel('${s.id}')">🧰 Atender</button>
       <button class="row-action" style="color:var(--red)" onclick="recusarSolEnel('${s.id}')">✕ Recusar</button>
       <button class="row-action" onclick="excluirSolEnel('${s.id}')">🗑</button>` : '';
-    const acoesAprovado = s.status === 'APROVADO' ? `
-      <button class="row-action" style="color:#38bdf8" onclick="atualizarSolEnel('${s.id}','ENTREGUE')">📦 Entregar</button>` : '';
     return `<tr>
       <td class="td-main">${s.equipe}</td>
-      <td style="font-size:11px;color:var(--text-2);max-width:280px">${resumo || '—'}</td>
+      <td style="min-width:200px">${itensHtml || '—'}</td>
       <td>${formatarData(s.criado_em?.split('T')[0])}</td>
       <td><span style="font-size:10px;font-weight:700;color:${cor};background:${cor}18;padding:2px 8px;border-radius:10px">${s.status}</span></td>
-      <td style="display:flex;gap:4px;flex-wrap:wrap">${acoesPendente}${acoesAprovado}</td>
+      <td style="display:flex;gap:4px;flex-wrap:wrap">${acoesPendente}</td>
     </tr>`;
   }).join('');
 }
@@ -7848,14 +7853,56 @@ async function carregarSolicitacoesEnel() {
 async function atenderSolEnel(id) {
   const sol = _solEnelData.find(s => s.id === id);
   if (!sol) return;
-  await api(`/equipe-app/admin/solicitacoes/${id}`, { method: 'PUT', body: JSON.stringify({ status: 'APROVADO' }) });
+  let itens = []; try { itens = JSON.parse(sol.itens_json||'[]'); } catch {}
+
+  // Guarda a solicitação pendente globalmente para marcar ENTREGUE após finalizar
+  window.__ENEL_SOL_PENDENTE__ = { id: sol.id, equipe: sol.equipe };
+
+  // Garante equipes e materiais carregados antes de navegar
+  if (!_equipes.length)        await carregarEquipes();
+  if (!_enelMateriais.length)  await carregarMateriaisEnel();
+
+  // Navega para o atendimento
   showView('enel-atendimento');
-  toast(`📋 Solicitação da ${sol.equipe} — preencha o atendimento`, 'info', 5000);
+
+  // Aguarda a view renderizar e inicia o atendimento automaticamente
   setTimeout(() => {
-    const inp = document.getElementById('atendEnelEquipeBusca');
-    if (inp) { inp.value = sol.equipe; inp.dispatchEvent(new Event('input')); }
-  }, 700);
-  carregarSolicitacoesEnel();
+    // 1. Inicia o atendimento (cria cronômetro etc.)
+    enelIniciarAtendimento();
+
+    // 2. Pré-seleciona a equipe
+    setTimeout(() => {
+      const equipe = (_equipes||[]).find(e =>
+        (e.nomeEquipe||e.nome_equipe||'').toLowerCase() === sol.equipe.toLowerCase() ||
+        (e.prefixo||'').toLowerCase() === sol.equipe.toLowerCase()
+      );
+      if (equipe) {
+        const nome = equipe.nomeEquipe || equipe.nome_equipe || '';
+        const pref = equipe.prefixo || '';
+        enelSelecionarEquipe(equipe.id, nome, pref);
+      } else {
+        // Tenta por nome parcial como fallback
+        const inp = document.getElementById('enelEquipeBusca');
+        if (inp) inp.value = sol.equipe;
+      }
+
+      // 3. Pré-adiciona os itens da solicitação
+      itens.forEach(it => {
+        // Busca por item_id (GCA) ou código
+        const mat = _enelMateriais.find(m =>
+          m.id === (it.item_id || it.id_material) ||
+          m.codigo === it.codigo ||
+          m.id === it.codigo
+        );
+        if (mat) {
+          _enelAdicionarItemFinal(mat, it.quantidade, 'Atendimento via Solicitação ENEL', '');
+        }
+      });
+
+      enelMsg(`📋 ${itens.length} item(ns) da solicitação da equipe ${sol.equipe} pré-carregados.`, true);
+    }, 300);
+
+  }, 500);
 }
 
 async function recusarSolEnel(id) {
@@ -12297,6 +12344,13 @@ async function enelFinalizarAtendimento() {
     enelRenderItens();
     document.getElementById('areaAtendEnelAndamento').style.display='none';
     carregarEstoqueEnel();
+    // Se veio de uma solicitação, marca como ENTREGUE automaticamente
+    if (window.__ENEL_SOL_PENDENTE__) {
+      const solId = window.__ENEL_SOL_PENDENTE__.id;
+      window.__ENEL_SOL_PENDENTE__ = null;
+      api(`/equipe-app/admin/solicitacoes/${solId}`, { method:'PUT', body: JSON.stringify({ status:'ENTREGUE' }) });
+      toast('✅ Solicitação marcada como Entregue', 'success', 4000);
+    }
   } else enelMsg(res?.erro||'Erro ao finalizar', false);
 }
 
