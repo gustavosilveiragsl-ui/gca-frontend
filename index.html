@@ -1784,6 +1784,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div><div class="card-title">Lançamentos Protheus</div><div class="card-sub">Marque as movimentações já lançadas no Protheus</div></div>
             <div class="card-actions">
               <button class="btn btn-primary" onclick="marcarSelecionadosProtheus(true)" id="btnMarcarLancado">✅ Marcar Lançados</button>
+              <button class="btn btn-ghost" onclick="exportarProtheus()">📥 Excel</button>
               <button class="btn btn-ghost" onclick="marcarSelecionadosProtheus(false)">↩️ Desmarcar</button>
               <select class="form-input" id="prFiltroTipo" style="width:120px;font-size:11px" onchange="carregarProtheus()">
                 <option value="">Todos</option>
@@ -2012,6 +2013,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div><div class="card-title">Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
             <div class="card-actions">
               <input class="search-box" placeholder="Buscar material..." oninput="filtrarEstoqueEnel(this.value)">
+              <button class="btn btn-ghost" onclick="exportarEstoqueEnel()">📥 Excel</button>
               <select class="form-input" id="enelEstFiltro" style="width:140px;font-size:11px" onchange="filtrarEstoqueEnel('')">
                 <option value="">Todos</option>
                 <option value="critico">🔴 Crítico</option>
@@ -2053,6 +2055,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <input class="form-input" type="date" id="btdcAte" style="width:140px">
             </div>
             <button class="btn btn-primary" onclick="btdcBuscar()">🔍 Buscar</button>
+            <button class="btn btn-ghost" onclick="exportarBtdc()">📥 Excel</button>
             <button class="btn btn-ghost" onclick="btdcLimpar()">Limpar</button>
           </div>
         </div>
@@ -2102,6 +2105,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <input class="form-input" type="date" id="cseAte" style="width:150px">
             </div>
             <button class="btn btn-primary" onclick="cseBuscar()">🔍 Buscar</button>
+            <button class="btn btn-ghost" onclick="exportarCse()">📥 Excel</button>
             <button class="btn btn-ghost" onclick="cseLimpar()">Limpar</button>
           </div>
         </div>
@@ -2359,6 +2363,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div style="display:flex;gap:8px">
                 <input id="cmBuscaSerialInput" class="form-input" placeholder="Número de série..." onkeydown="if(event.key==='Enter')cmBuscarSerial()">
                 <button class="btn btn-ghost" onclick="cmBuscarSerial()">Buscar</button>
+                <button class="btn btn-ghost" onclick="exportarMedidores()">📥 Excel</button>
               </div>
             </div>
           </div>
@@ -2445,6 +2450,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               <div class="page-sub">Controle de paletes e camadas de medidores destinados à sucata</div>
             </div>
             <button class="btn btn-primary" onclick="sucataNovoPalete()">+ Novo Palete</button>
+            <button class="btn btn-ghost" onclick="exportarSucata()">📥 Excel</button>
           </div>
           <div id="sucata-paletes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
             <div class="empty-state"><div class="es-icon">🗃️</div><div class="es-title">Carregando paletes...</div></div>
@@ -2724,6 +2730,7 @@ tbody tr:hover td{background:var(--bg-hover);}
             <div class="page-sub">Saldo de materiais por equipe, descontando consumos por OS</div>
           </div>
           <button class="btn btn-ghost" onclick="carregarControleMateriaisEquipe()">↻ Recarregar</button>
+          <button class="btn btn-ghost" onclick="exportarControleEquipes()">📥 Excel</button>
         </div>
         <input class="search-box" id="buscaControleEquipe" placeholder="Buscar equipe..." oninput="filtrarControleEquipe()" style="margin-bottom:12px;width:100%">
         <div id="listaEquipesControle" style="display:flex;flex-direction:column;gap:8px">
@@ -13071,6 +13078,8 @@ async function cmBuscarSerial() {
 // ENEL — BAIXAS POR TdC
 // ═══════════════════════════════════════════
 let _btdcEquipes = [];
+let _btdcUltimoResult = null;
+let _cseUltimoResult  = null;
 
 async function btdcIniciar() {
   // Preencher datas padrão (mês atual)
@@ -13112,6 +13121,7 @@ async function btdcBuscar() {
   if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${res?.erro||'Tente novamente'}</div></div>`; return; }
 
   const materiais = res.data || [];
+  _btdcUltimoResult = materiais;
   if (!materiais.length) {
     lista.innerHTML = '<div class="empty-state"><div class="es-icon">🔍</div><div class="es-title">Nenhuma baixa encontrada</div><div class="es-sub">Tente ajustar os filtros de período ou equipe</div></div>';
     return;
@@ -13202,6 +13212,7 @@ async function cseBuscar() {
   }
 
   const materiais = res.data || [];
+  _cseUltimoResult = materiais;
   if (!materiais.length) {
     lista.innerHTML = '<div class="empty-state"><div class="es-icon">🔍</div><div class="es-title">Nenhuma saída no período</div><div class="es-sub">Tente ajustar o período de busca</div></div>';
     return;
@@ -13260,6 +13271,230 @@ function cseLimpar() {
   document.getElementById('cseAte').value = '';
   document.getElementById('cseResumo').style.display = 'none';
   document.getElementById('cseLista').innerHTML = '<div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Selecione o período e clique em Buscar</div><div class="es-sub">Veja o que saiu do estoque para as equipes no período selecionado</div></div>';
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// EXPORTS EXCEL — SheetJS
+// ═══════════════════════════════════════════════════════════════
+function gcaCarregarSheetJS(cb) {
+  if (window.XLSX) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+function gcaExportarExcel(nomeArquivo, dados, colunas) {
+  gcaCarregarSheetJS(() => {
+    if (!dados?.length) { toast('Nenhum dado para exportar', 'warn'); return; }
+    const rows = [colunas.map(c => c.label)];
+    dados.forEach(d => rows.push(colunas.map(c => d[c.key] ?? '')));
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Estilo: largura automática
+    ws['!cols'] = colunas.map(c => ({ wch: Math.max(c.label.length, 14) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, nomeArquivo.slice(0, 31));
+    XLSX.writeFile(wb, `${nomeArquivo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
+    toast(`✅ ${nomeArquivo}.xlsx gerado!`, 'success', 3000);
+  });
+}
+
+// BAIXAS POR TDC
+function exportarBtdc() {
+  if (!_btdcUltimoResult?.length) { toast('Faça uma busca primeiro', 'warn'); return; }
+  const rows = [];
+  _btdcUltimoResult.forEach(m => {
+    (m.tdcs || []).forEach(t => {
+      rows.push({
+        material: m.descricao || m.material || '',
+        codigo: m.codigo || '',
+        equipe: t.equipe || m.equipe || '',
+        tdc: t.tdc || '',
+        quantidade: t.quantidade || 0,
+        data: t.data ? formatarData(t.data) : '',
+        usuario: t.usuario || '',
+      });
+    });
+  });
+  gcaExportarExcel('Baixas_por_TdC', rows, [
+    { key:'material',   label:'Material' },
+    { key:'codigo',     label:'Código ENEL' },
+    { key:'equipe',     label:'Equipe' },
+    { key:'tdc',        label:'TdC / OS' },
+    { key:'quantidade', label:'Quantidade' },
+    { key:'data',       label:'Data' },
+    { key:'usuario',    label:'Usuário' },
+  ]);
+}
+
+// CONSULTA SAÍDAS DO ESTOQUE
+function exportarCse() {
+  if (!_cseUltimoResult?.length) { toast('Faça uma busca primeiro', 'warn'); return; }
+  const rows = [];
+  _cseUltimoResult.forEach(m => {
+    (m.equipes || []).forEach(eq => {
+      (eq.movs || []).forEach(mov => {
+        rows.push({
+          material: m.descricao || '',
+          codigo: m.codigo || '',
+          equipe: eq.equipe || '',
+          quantidade: mov.quantidade || 0,
+          data: mov.data ? formatarData(mov.data) : '',
+          usuario: mov.usuario || '',
+        });
+      });
+    });
+  });
+  gcaExportarExcel('Consulta_Saidas_Estoque', rows, [
+    { key:'material',   label:'Material' },
+    { key:'codigo',     label:'Código ENEL' },
+    { key:'equipe',     label:'Destino' },
+    { key:'quantidade', label:'Quantidade' },
+    { key:'data',       label:'Data' },
+    { key:'usuario',    label:'Usuário' },
+  ]);
+}
+
+// CONTROLE DE MATERIAIS POR EQUIPE
+function exportarControleEquipes() {
+  if (!_controleEquipes?.length) { toast('Carregue os dados primeiro', 'warn'); return; }
+  const rows = [];
+  _controleEquipes.forEach(eq => {
+    (eq.itens || []).forEach(it => {
+      rows.push({
+        equipe: eq.nomeEquipe || '',
+        material: it.materialDesc || '',
+        codigo: it.materialCod || '',
+        saldo: it.saldoReal ?? 0,
+      });
+    });
+  });
+  gcaExportarExcel('Controle_Materiais_Equipe', rows, [
+    { key:'equipe',   label:'Equipe' },
+    { key:'material', label:'Material' },
+    { key:'codigo',   label:'Código' },
+    { key:'saldo',    label:'Saldo Atual' },
+  ]);
+}
+
+// CONTROLE DE MEDIDORES
+function exportarMedidores() {
+  const dados = (_cmDadosFiltrados?.length ? _cmDadosFiltrados : _cmDados) || [];
+  if (!dados.length) { toast('Carregue os dados primeiro', 'warn'); return; }
+  const rows = dados.map(m => ({
+    serial: m.numero_serie || '',
+    material: m.material_descricao || '',
+    status: m.status_atual || '',
+    equipe: m.equipe_atual || '',
+    localizacao: m.localizacao || '',
+    data_entrega: m.data_entrega_equipe ? formatarData(m.data_entrega_equipe) : '',
+    data_instalacao: m.data_hora_instalacao ? formatarData(m.data_hora_instalacao) : '',
+    dias_restantes: m.dias_restantes ?? '',
+    os: m.os_instalacao || '',
+  }));
+  gcaExportarExcel('Controle_Medidores', rows, [
+    { key:'serial',          label:'Número de Série' },
+    { key:'material',        label:'Modelo' },
+    { key:'status',          label:'Status' },
+    { key:'equipe',          label:'Equipe' },
+    { key:'localizacao',     label:'Localização' },
+    { key:'data_entrega',    label:'Data Entrega Equipe' },
+    { key:'data_instalacao', label:'Data Instalação' },
+    { key:'dias_restantes',  label:'Dias Restantes' },
+    { key:'os',              label:'OS / TdC' },
+  ]);
+}
+
+// SUCATA
+function exportarSucata() {
+  if (!_sucataPaletes?.length) { toast('Nenhum palete de sucata carregado', 'warn'); return; }
+  const rows = [];
+  _sucataPaletes.forEach(p => {
+    (p.camadas || [p]).forEach(cam => {
+      (cam.seriais || []).forEach(s => {
+        rows.push({
+          palete: p.nome || p.id || '',
+          camada: cam.nome || cam.camada || '',
+          serial: typeof s === 'string' ? s : s.serial || s.numero_serie || JSON.stringify(s),
+          material: p.material_descricao || cam.material_descricao || '',
+          data: p.data_criacao ? formatarData(p.data_criacao) : '',
+        });
+      });
+      // fallback se não houver array de seriais mas qtd registrada
+      if (!(cam.seriais?.length)) {
+        rows.push({
+          palete: p.nome || p.id || '',
+          camada: cam.nome || cam.camada || '',
+          serial: `${cam.quantidade || 0} serial(is)`,
+          material: p.material_descricao || '',
+          data: p.data_criacao ? formatarData(p.data_criacao) : '',
+        });
+      }
+    });
+  });
+  gcaExportarExcel('Sucata', rows, [
+    { key:'palete',   label:'Palete' },
+    { key:'camada',   label:'Camada' },
+    { key:'serial',   label:'Serial' },
+    { key:'material', label:'Material' },
+    { key:'data',     label:'Data Criação' },
+  ]);
+}
+
+// LANÇAMENTOS PROTHEUS
+function exportarProtheus() {
+  if (!_prData?.length) { toast('Nenhum lançamento carregado', 'warn'); return; }
+  const rows = _prData.map(m => ({
+    data: m.data ? formatarData(m.data) : '',
+    tipo: m.tipo || '',
+    descricao: m.descricao || m.item_descricao || '',
+    codigo: m.codigo || m.item_codigo || '',
+    quantidade: m.quantidade || 0,
+    armazem: m.armazem || m.armazem_origem || '',
+    armazem_dest: m.armazem_destino || '',
+    usuario: m.usuario || '',
+    status: m.status_protheus || 'PENDENTE',
+  }));
+  gcaExportarExcel('Lancamentos_Protheus', rows, [
+    { key:'data',         label:'Data' },
+    { key:'tipo',         label:'Tipo' },
+    { key:'descricao',    label:'Item' },
+    { key:'codigo',       label:'Código' },
+    { key:'quantidade',   label:'Quantidade' },
+    { key:'armazem',      label:'Armazém Origem' },
+    { key:'armazem_dest', label:'Armazém Destino' },
+    { key:'usuario',      label:'Usuário' },
+    { key:'status',       label:'Status Protheus' },
+  ]);
+}
+
+// CONSULTA DE ESTOQUE ENEL (com filtro de armazém via unidade)
+function exportarEstoqueEnel() {
+  if (!_enelMateriais?.length) { toast('Carregue o estoque primeiro', 'warn'); return; }
+  const filtroStatus = document.getElementById('enelEstFiltro')?.value || '';
+  let lista = _enelMateriais.map(m => {
+    const saldo = _enelSaldos.find(s => s.id_material === m.id);
+    const qtd   = Number(saldo?.saldo || 0);
+    const min   = Number(m.estoque_minimo || 0);
+    const st    = qtd <= 0 ? 'CRÍTICO' : qtd <= min ? 'BAIXO' : 'OK';
+    return { descricao: m.descricao || '', codigo: m.codigo || '', categoria: m.categoria || '',
+             unidade_med: m.unidade_med || 'UN', saldo: qtd, estoque_minimo: min, status: st };
+  });
+  if (filtroStatus) lista = lista.filter(r =>
+    (filtroStatus === 'critico' && r.status === 'CRÍTICO') ||
+    (filtroStatus === 'baixo'   && r.status === 'BAIXO')   ||
+    (filtroStatus === 'ok'      && r.status === 'OK')
+  );
+  gcaExportarExcel('Consulta_Estoque_ENEL', lista, [
+    { key:'descricao',      label:'Material' },
+    { key:'codigo',         label:'Código ENEL' },
+    { key:'categoria',      label:'Categoria' },
+    { key:'unidade_med',    label:'Un. Med.' },
+    { key:'saldo',          label:'Saldo Atual' },
+    { key:'estoque_minimo', label:'Estoque Mínimo' },
+    { key:'status',         label:'Status' },
+  ]);
 }
 
 // ═══════════════════════════════════════════
@@ -15154,5 +15389,6 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
 
