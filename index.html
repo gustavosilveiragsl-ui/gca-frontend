@@ -13381,12 +13381,13 @@ function indRenderEnel(d){
   const el=document.getElementById('indEnelContent'),k=d.kpis;
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">
-      ${indKpi(k.medidoresInstalados,'Medidores Instalados','#22c55e')}${indKpi(k.tdcsComMaterial,'TdCs Executadas','#6366f1')}
+      ${indKpi(k.medidoresInstalados,'Medidores Instalados','#22c55e')}
+      ${indKpi(k.tempoMedioEnelHoras!=null ? k.tempoMedioEnelHoras+'h' : '—','Tempo Médio Atend.','#f59e0b',k.tempoMedioEnelHoras!=null?'da solic. ao atend.':'sem dados')}
       ${indKpi(k.cabosEntregues+'m','Cabo Entregue','#0ea5e9')}${indKpi(k.cabosConsumidos+'m','Cabo Instalado','#f59e0b')}
       ${indKpi(k.totalSaidasEstoque,'Saídas Estoque','#8b5cf6')}${indKpi(k.totalSolEquipes,'Solicitações Equipes','#f87171')}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-      ${indCardChart('🚛 Equipes que mais Retiram','chartEquipeRetira',220)}${indCardChart('📟 Equipes que mais Instalam Medidores','chartEquipeInstala',220)}
+      ${indCardChart('🚛 Equipes que mais Retiram (qtd)','chartEquipeRetira',220)}${indCardChart('📟 Equipes que mais Instalam Medidores','chartEquipeInstala',220)}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       ${indCardChart('📦 Itens mais Retirados do Estoque','chartItemRetirado',220)}${indCardChart('🔌 Equipes que mais Instalam Cabo (m)','chartEquipeCabo',220)}
@@ -13395,6 +13396,16 @@ function indRenderEnel(d){
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📟 Modelos Mais Instalados</div>
         ${indTabela(['Modelo','Instalados'],d.topModeloMedInstala.map(r=>[r.nome,r.total]))}
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📤 Equipes que mais Retiram Medidores</div>
+        ${indTabela(['Equipe','Medidores Retirados'],d.topEquipeRetiraMed.map(r=>[r.nome,r.total]))}
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">🔌 Equipes que mais Retiram Cabo (m)</div>
+        ${indTabela(['Equipe','Metros Retirados'],(d.topEquipeRetiraCabo||[]).map(r=>[r.nome,r.total]))}
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📤 Equipes que mais Solicitam</div>
