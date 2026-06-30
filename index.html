@@ -3032,7 +3032,43 @@ tbody tr:hover td{background:var(--bg-hover);}
           </table>
         </div>
       </div>
-      <div class="view" id="view-indicadores"><div class="empty-state"><div class="es-icon">📈</div><div class="es-title">Indicadores</div><div class="es-sub">Em desenvolvimento</div></div></div>
+      <!-- INDICADORES -->
+      <div class="view" id="view-indicadores">
+        <!-- Filtros -->
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <div class="page-title" style="margin:0">📈 Indicadores</div>
+            <div class="page-sub" style="margin:0">Métricas operacionais do período</div>
+          </div>
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="date" id="indDe"  class="form-input" style="width:145px">
+            <span style="color:var(--text-3);font-size:12px">até</span>
+            <input type="date" id="indAte" class="form-input" style="width:145px">
+            <button class="btn btn-primary" onclick="carregarIndicadores()">🔍 Buscar</button>
+          </div>
+        </div>
+
+        <!-- Abas EPI / ENEL -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px">
+          <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
+          <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
+        </div>
+
+        <div id="indLoading" style="text-align:center;padding:60px;display:none">
+          <div class="spinner" style="margin:0 auto 16px;width:36px;height:36px;border-width:3px"></div>
+          <div style="color:var(--text-3)">Calculando indicadores...</div>
+        </div>
+
+        <!-- EPI -->
+        <div id="indSecEpi">
+          <div id="indEpiContent"><div class="empty-state"><div class="es-icon">📊</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+
+        <!-- ENEL -->
+        <div id="indSecEnel" style="display:none">
+          <div id="indEnelContent"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+      </div>
       <!-- ── ARMAZÉNS ── -->
       <div class="view" id="view-armazens">
         <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
@@ -4025,6 +4061,7 @@ function showView(nome, btnEl) {
 
 function onViewLoad(nome) {
   if (nome === 'home')               carregarDashboard();
+  if (nome === 'indicadores')        indIniciar();
   if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
@@ -13223,6 +13260,157 @@ function cseLimpar() {
   document.getElementById('cseAte').value = '';
   document.getElementById('cseResumo').style.display = 'none';
   document.getElementById('cseLista').innerHTML = '<div class="empty-state"><div class="es-icon">📤</div><div class="es-title">Selecione o período e clique em Buscar</div><div class="es-sub">Veja o que saiu do estoque para as equipes no período selecionado</div></div>';
+}
+
+// ═══════════════════════════════════════════
+// INDICADORES
+// ═══════════════════════════════════════════
+let _indData = null;
+let _indCharts = {};
+
+function indIniciar() {
+  const hoje = new Date();
+  const de = document.getElementById('indDe');
+  const ate = document.getElementById('indAte');
+  if (de && !de.value) de.value = `${hoje.getFullYear()}-01-01`;
+  if (ate && !ate.value) ate.value = hoje.toISOString().split('T')[0];
+  if (!window.Chart) {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    s.onload = () => carregarIndicadores();
+    document.head.appendChild(s);
+  } else { if (!_indData) carregarIndicadores(); else indRenderizarTudo(); }
+}
+
+function indAba(aba) {
+  document.getElementById('indSecEpi').style.display  = aba==='epi'  ? '' : 'none';
+  document.getElementById('indSecEnel').style.display = aba==='enel' ? '' : 'none';
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel');
+  e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
+  n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
+  setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
+}
+
+async function carregarIndicadores() {
+  const de=document.getElementById('indDe')?.value, ate=document.getElementById('indAte')?.value;
+  const loading=document.getElementById('indLoading');
+  if(loading) loading.style.display='';
+  document.getElementById('indEpiContent').style.display='none';
+  document.getElementById('indEnelContent').style.display='none';
+  const data=await api(`/indicadores?de=${de}&ate=${ate}`);
+  if(loading) loading.style.display='none';
+  document.getElementById('indEpiContent').style.display='';
+  document.getElementById('indEnelContent').style.display='';
+  if(!data?.ok){toast('Erro ao carregar indicadores','error');return;}
+  _indData=data; indRenderizarTudo();
+}
+
+function indFmt(seg){if(!seg)return'—';const m=Math.floor(seg/60),s=seg%60;return m>0?`${m}min ${s}s`:`${s}s`;}
+
+function indKpi(valor,label,cor='var(--accent-text)',sub=''){
+  return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;text-align:center">
+    <div style="font-size:28px;font-weight:800;color:${cor}">${valor}</div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:4px;text-transform:uppercase;letter-spacing:.4px">${label}</div>
+    ${sub?`<div style="font-size:10px;color:var(--text-3);margin-top:2px">${sub}</div>`:''}
+  </div>`;
+}
+
+function indDestroyChart(id){if(_indCharts[id]){_indCharts[id].destroy();delete _indCharts[id];}}
+
+function indHBarChart(id,labels,valores,label,cor='#6366f1'){
+  indDestroyChart(id);const ctx=document.getElementById(id)?.getContext('2d');if(!ctx||!window.Chart)return;
+  _indCharts[id]=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label,data:valores,backgroundColor:cor+'cc',borderColor:cor,borderWidth:1,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:800,easing:'easeOutQuart'},plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#64748b',font:{size:10}}},y:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:10}}}}}});
+}
+
+function indLineChart(id,labels,valores,label,cor='#0ea5e9'){
+  indDestroyChart(id);const ctx=document.getElementById(id)?.getContext('2d');if(!ctx||!window.Chart)return;
+  _indCharts[id]=new Chart(ctx,{type:'line',data:{labels,datasets:[{label,data:valores,borderColor:cor,backgroundColor:cor+'22',fill:true,tension:.4,pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:1000},plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#64748b',font:{size:10},maxTicksLimit:10}},y:{grid:{color:'rgba(255,255,255,.05)'},ticks:{color:'#64748b',font:{size:10}}}}}});
+}
+
+function indCardChart(titulo,canvasId,h=220){
+  return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${titulo}</div>
+    <div style="height:${h}px;position:relative"><canvas id="${canvasId}"></canvas></div>
+  </div>`;
+}
+
+function indTabela(cols,linhas,cores=[]){
+  return `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr>${cols.map(c=>`<th style="padding:8px;text-align:left;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">${c}</th>`).join('')}</tr></thead>
+    <tbody>${linhas.map(l=>`<tr style="border-bottom:1px solid var(--border)">${l.map((c,j)=>`<td style="padding:9px 8px;color:${cores[j]||'var(--text-1)'}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function indRenderizarTudo(){if(!_indData)return;indRenderEpi(_indData.epi);indRenderEnel(_indData.enel);}
+
+function indRenderEpi(d){
+  const el=document.getElementById('indEpiContent'),k=d.kpis,pct=k.totalAtend?Math.round((k.assinados/k.totalAtend)*100):0;
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(k.totalAtend,'Atendimentos','var(--accent-text)')}${indKpi(k.assinados,'Assinados','#22c55e',pct+'% do total')}
+      ${indKpi(indFmt(k.tempoMedioSeg),'Tempo Médio','#f59e0b')}${indKpi(k.totalFichas,'Fichas EPI','#8b5cf6')}${indKpi(k.trocasPrecoces,'Trocas Precoces','#f87171')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${indCardChart('📅 Atendimentos por Dia','chartAtendDia',220)}${indCardChart('👤 Top Colaboradores Atendidos','chartTopColabs',220)}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${indCardChart('📦 Itens Mais Entregues','chartItensSaidos',220)}${indCardChart('🏭 Atendimentos por Setor','chartSetores',220)}
+    </div>
+    ${d.trocasPrecocesTabela.length?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">⚠️ Trocas Precoces por Item</div>
+      ${indTabela(['Item','Total','Precoces','% Precoce'],d.trocasPrecocesTabela.slice(0,15).map(r=>[r.item,r.total,r.precoce,`<span style="font-weight:700;color:${r.pct>50?'#f87171':'#fbbf24'}">${r.pct}%</span>`]),['var(--text-1)','var(--text-2)','#f87171',''])}
+    </div>`:''}
+    ${d.topOperadores.length?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">👷 Atendimentos por Operador</div>
+      ${indTabela(['Operador','Atendimentos'],d.topOperadores.map(r=>[r.nome,r.total]))}
+    </div>`:''}`;
+  setTimeout(()=>{
+    const tl=d.atendTimeline||[];
+    indLineChart('chartAtendDia',tl.map(t=>t.data.slice(5)),tl.map(t=>t.total),'Atendimentos');
+    indHBarChart('chartTopColabs',d.topColabs.map(r=>r.nome.split(' ').slice(0,2).join(' ')),d.topColabs.map(r=>r.total),'Atend.','#6366f1');
+    indHBarChart('chartItensSaidos',d.itensMaisSaidos.map(r=>r.nome.substring(0,25)),d.itensMaisSaidos.map(r=>r.total),'Qtd','#0ea5e9');
+    indHBarChart('chartSetores',d.topSetores.map(r=>r.nome.substring(0,15)),d.topSetores.map(r=>r.total),'Atend.','#8b5cf6');
+  },80);
+}
+
+function indRenderEnel(d){
+  const el=document.getElementById('indEnelContent'),k=d.kpis;
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(k.medidoresInstalados,'Medidores Instalados','#22c55e')}${indKpi(k.tdcsComMaterial,'TdCs Executadas','#6366f1')}
+      ${indKpi(k.cabosEntregues+'m','Cabo Entregue','#0ea5e9')}${indKpi(k.cabosConsumidos+'m','Cabo Instalado','#f59e0b')}
+      ${indKpi(k.totalSaidasEstoque,'Saídas Estoque','#8b5cf6')}${indKpi(k.totalSolEquipes,'Solicitações Equipes','#f87171')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${indCardChart('🚛 Equipes que mais Retiram','chartEquipeRetira',220)}${indCardChart('📟 Equipes que mais Instalam Medidores','chartEquipeInstala',220)}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${indCardChart('📦 Itens mais Retirados do Estoque','chartItemRetirado',220)}${indCardChart('🔌 Equipes que mais Instalam Cabo (m)','chartEquipeCabo',220)}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📟 Modelos Mais Instalados</div>
+        ${indTabela(['Modelo','Instalados'],d.topModeloMedInstala.map(r=>[r.nome,r.total]))}
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📤 Equipes que mais Solicitam</div>
+        ${indTabela(['Equipe','Solicitações'],d.topEquipeSolicita.map(r=>[r.nome,r.total]))}
+      </div>
+    </div>
+    ${d.topItemSolicitado.length?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📋 Itens Mais Solicitados pelas Equipes</div>
+      ${indTabela(['Item','Quantidade'],d.topItemSolicitado.map(r=>[r.nome,r.total]))}
+    </div>`:''}`;
+  setTimeout(()=>{
+    indHBarChart('chartEquipeRetira',d.topEquipeRetira.map(r=>r.nome),d.topEquipeRetira.map(r=>r.total),'Qtd','#0ea5e9');
+    indHBarChart('chartEquipeInstala',d.topEquipeInstala.map(r=>r.nome),d.topEquipeInstala.map(r=>r.total),'Medidores','#22c55e');
+    indHBarChart('chartItemRetirado',d.topItemRetirado.map(r=>r.nome.substring(0,22)),d.topItemRetirado.map(r=>r.total),'Qtd','#8b5cf6');
+    indHBarChart('chartEquipeCabo',d.topEquipeCabo.map(r=>r.nome),d.topEquipeCabo.map(r=>r.total),'Metros','#f59e0b');
+  },80);
 }
 
 // ═══════════════════════════════════════════
