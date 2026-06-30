@@ -465,6 +465,12 @@ tbody tr:hover td{background:var(--bg-hover);}
           <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
           <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios" onclick="showView('logins-solicitacao',this)"><span class="ni-icon">📋</span> Usuários de Solicitação</button>
+
+          <!-- Administração — somente admin -->
+          <div id="navAdminGrp" style="display:none">
+            <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px;margin-top:4px">Administração</div>
+            <button class="nav-item" data-view="filiais" onclick="abrirGestaoFiliais(this)"><span class="ni-icon">🏢</span> Gestão de Filiais</button>
+          </div>
           <button class="nav-item" id="menuRecuperacaoSenha" style="display:none" data-view="recuperacao-senha" onclick="showView('recuperacao-senha',this)"><span class="ni-icon">🔑</span> Recuperação de Senha <span class="ni-badge" id="badgeSenha" style="display:none">0</span></button>
         </div>
       </div>
@@ -581,8 +587,7 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
               <div><label class="form-label">Filial(is) *</label>
                 <select id="colabUnidades" class="form-input">
-                  <option value="marica">Somente Maricá</option>
-                  <option value="rio_das_ostras">Somente Rio das Ostras</option>
+                  <!-- filiais carregadas dinamicamente via popularSelectsFiliais() -->
                   <option value="ambas">Ambas as filiais</option>
                 </select>
               </div>
@@ -2174,6 +2179,33 @@ tbody tr:hover td{background:var(--bg-hover);}
         </div>
       </div>
 
+      <!-- GESTÃO DE FILIAIS (admin) -->
+      <div class="view" id="view-filiais">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+          <div>
+            <div class="page-title">🏢 Gestão de Filiais</div>
+            <div class="page-sub">Adicione e gerencie as filiais do sistema</div>
+          </div>
+          <button class="btn btn-primary" style="margin-left:auto" onclick="abrirModalNovaFilial()">+ Nova Filial</button>
+          <button class="btn btn-ghost" onclick="abrirDefinirPin()">🔑 Alterar PIN Admin</button>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr>
+                <th>Nome da Filial</th>
+                <th>Identificador (slug)</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr></thead>
+              <tbody id="filiaisBody">
+                <tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <!-- ATENDIMENTO MATERIAL ENEL -->
       <div class="view" id="view-enel-atendimento">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
@@ -3245,14 +3277,12 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
               <div><label class="form-label">Unidade principal</label>
                 <select id="usrBase" class="form-input">
-                  <option value="marica">Maricá</option>
-                  <option value="rio_das_ostras">Rio das Ostras</option>
+                  <!-- filiais carregadas dinamicamente -->
                 </select>
               </div>
               <div><label class="form-label">Acesso múltiplo</label>
                 <div style="display:flex;gap:12px;margin-top:4px">
-                  <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniMarica" value="marica"> Maricá</label>
-                  <label style="display:flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" id="usrUniRdo" value="rio_das_ostras"> Rio das Ostras</label>
+                  <div id="usrUniChecks" style="display:flex;flex-direction:column;gap:4px"><!-- preenchido dinâmicamente --></div>
                 </div>
               </div>
               <div>
@@ -3928,7 +3958,63 @@ tbody tr:hover td{background:var(--bg-hover);}
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
 const GCA = { token:null, usuario:null, unidade:null, tokenTemp:null, unidades:[] };
-const NOMES_UNIDADE = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
+let _filiais = [
+  { slug:'marica', nome:'Maricá', status:'ativa' },
+  { slug:'rio_das_ostras', nome:'Rio das Ostras', status:'ativa' }
+];
+// NOMES_UNIDADE é gerado dinamicamente a partir de _filiais
+function getNomeUnidade(slug) {
+  return _filiais.find(f=>f.slug===slug)?.nome || slug;
+}
+// Alias para compatibilidade retroativa
+const NOMES_UNIDADE = new Proxy({}, {
+  get(_, slug) { return getNomeUnidade(slug); }
+});
+
+async function carregarFiliais() {
+  const data = await api('/filiais');
+  if (data?.ok && data.data?.length) {
+    _filiais = data.data;
+    popularSelectsFiliais();
+  }
+}
+
+function popularSelectsFiliais() {
+  // Select de filtro por unidade (colaboradores)
+  const selFiltroUni = document.getElementById('filtroUnidadeColab');
+  if (selFiltroUni) {
+    const cur = selFiltroUni.value;
+    selFiltroUni.innerHTML = '<option value="">Todas as filiais</option>' +
+      _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${f.nome}</option>`).join('');
+    if (cur) selFiltroUni.value = cur;
+  }
+  // Select de armazem (criar/editar)
+  ['armUnidade','filtroArmazem','prFiltroArmazem'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    const placeholder = id.includes('filtro')||id.includes('Filtro') ? '<option value="">Todos os armazéns</option>' : '';
+    const extras = el.querySelectorAll('option[data-custom]');
+    el.innerHTML = placeholder + _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${f.nome}</option>`).join('');
+    extras.forEach(e=>el.appendChild(e));
+    if (cur) el.value = cur;
+  });
+  // Select unidade no cadastro de usuário (armazém)
+  const selUsrUni = document.getElementById('usrUnidade');
+  if (selUsrUni) {
+    const cur = selUsrUni.value;
+    selUsrUni.innerHTML = _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${f.nome}</option>`).join('');
+    if (cur) selUsrUni.value = cur;
+  }
+  // Checkboxes de usuário (multi-filial) — recria dinâmico
+  const wrapCheck = document.getElementById('usrUniChecks');
+  if (wrapCheck) {
+    wrapCheck.innerHTML = _filiais.filter(f=>f.status==='ativa').map(f=>
+      `<label style="display:flex;align-items:center;gap:6px;font-size:12px">
+         <input type="checkbox" class="usr-uni-check" value="${f.slug}"> ${f.nome}
+       </label>`).join('');
+  }
+}
 
 // ── INIT ──
 window.addEventListener('load', async () => {
@@ -4069,6 +4155,7 @@ function showView(nome, btnEl) {
 function onViewLoad(nome) {
   if (nome === 'home')               carregarDashboard();
   if (nome === 'indicadores')        indIniciar();
+  if (nome === 'filiais')             carregarTabelaFiliais();
   if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
@@ -4218,6 +4305,10 @@ async function selecionarUnidade(unidade) {
 
 function finalizarLogin(data) {
   GCA.token   = data.token;
+  carregarFiliais();
+  // Mostrar grupo admin somente para admins
+  const navAdm = document.getElementById('navAdminGrp');
+  if (navAdm) navAdm.style.display = data.usuario?.role === 'admin' ? '' : 'none';
   GCA.usuario = data.usuario;
   // Garante que permissoes seja sempre objeto (pode vir como string do backend)
   if (typeof GCA.usuario?.permissoes === 'string') {
@@ -8448,8 +8539,7 @@ async function salvarPermissoes() {
 async function salvarUsuario() {
   const id   = document.getElementById('usrEditId').value;
   const unis = [];
-  if (document.getElementById('usrUniMarica')?.checked) unis.push('marica');
-  if (document.getElementById('usrUniRdo')?.checked)    unis.push('rio_das_ostras');
+  document.querySelectorAll('.usr-uni-check:checked').forEach(cb => unis.push(cb.value));
   const base = document.getElementById('usrBase')?.value || '';
   // Coleta armazéns marcados
   const armazens = [...document.querySelectorAll('#usrArmazensLista input[type=checkbox]:checked')].map(cb => cb.value);
@@ -8502,8 +8592,7 @@ function editarUsuario(id) {
   document.getElementById('usrRole').value     = u.role||'almoxarife';
   if (document.getElementById('usrBase')) document.getElementById('usrBase').value = u.base||'marica';
   let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = []; }
-  document.getElementById('usrUniMarica').checked = unis.includes('marica');
-  document.getElementById('usrUniRdo').checked    = unis.includes('rio_das_ostras');
+  document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = unis.includes(cb.value); });
   let armazens = []; try { armazens = typeof u.armazens==='string' ? JSON.parse(u.armazens||'[]') : (Array.isArray(u.armazens)?u.armazens:[]); } catch { armazens = []; }
   renderArmazensUsuario(armazens);
   document.getElementById('usrNome').closest('.card').scrollIntoView({ behavior:'smooth' });
@@ -8513,7 +8602,7 @@ function limparFormUsuario() {
   ['usrEditId','usrNome','usrUsername','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('usrRole').value = 'almoxarife';
   if (document.getElementById('usrBase')) document.getElementById('usrBase').value = 'marica';
-  document.getElementById('usrUniMarica').checked = false;
+  document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = false; });
   document.getElementById('usrUniRdo').checked    = false;
   renderArmazensUsuario([]);
   document.getElementById('permissoesPanel').style.display = 'none';
@@ -13497,6 +13586,191 @@ function exportarEstoqueEnel() {
   ]);
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// GESTÃO DE FILIAIS
+// ═══════════════════════════════════════════════════════════════
+let _adminPinOk = false; // sessão desbloqueada após verificar PIN
+
+async function abrirGestaoFiliais(btnEl) {
+  // Verifica PIN se ainda não desbloqueado nessa sessão
+  if (!_adminPinOk) {
+    solicitarPinAdmin(async () => {
+      _adminPinOk = true;
+      showView('filiais', btnEl);
+      carregarTabelaFiliais();
+    });
+    return;
+  }
+  showView('filiais', btnEl);
+  carregarTabelaFiliais();
+}
+
+function solicitarPinAdmin(onSuccess) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalPinAdmin';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:360px;text-align:center">
+      <div class="modal-header">
+        <div class="modal-title">🔑 Área Administrativa</div>
+        <button class="modal-close" onclick="document.getElementById('modalPinAdmin').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;color:var(--text-3)">Digite o PIN de administrador para continuar.</div>
+        <input id="pinAdminInput" class="form-input" type="password" placeholder="PIN de acesso" style="text-align:center;letter-spacing:4px;font-size:18px"
+          onkeydown="if(event.key==='Enter')confirmarPinAdmin()">
+        <div id="pinAdminErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <button class="btn btn-primary" onclick="confirmarPinAdmin()">Confirmar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  modal._onSuccess = onSuccess;
+  setTimeout(()=>document.getElementById('pinAdminInput')?.focus(),100);
+}
+
+async function confirmarPinAdmin() {
+  const pin = document.getElementById('pinAdminInput')?.value?.trim();
+  const errEl = document.getElementById('pinAdminErr');
+  if (!pin) return;
+  errEl.textContent = 'Verificando...';
+  const res = await api('/filiais/verificar-pin', { method:'POST', body: JSON.stringify({ pin }) });
+  if (res?.primeiro_acesso) {
+    document.getElementById('modalPinAdmin').remove();
+    abrirDefinirPin(true);
+    return;
+  }
+  if (!res?.ok) { errEl.textContent = res?.erro || 'PIN incorreto'; return; }
+  const modal = document.getElementById('modalPinAdmin');
+  const cb = modal?._onSuccess;
+  modal?.remove();
+  cb?.();
+}
+
+function abrirDefinirPin(primeiroAcesso=false) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalDefinirPin';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:360px">
+      <div class="modal-header">
+        <div class="modal-title">🔑 ${primeiroAcesso?'Definir PIN inicial':'Alterar PIN Admin'}</div>
+        <button class="modal-close" onclick="document.getElementById('modalDefinirPin').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        ${primeiroAcesso?'<div style="font-size:12px;color:var(--yellow)">⚠️ Primeiro acesso — defina um PIN seguro para a área administrativa.</div>':''}
+        <input id="pinNovoInput" class="form-input" type="password" placeholder="Novo PIN (mín. 6 caracteres)" style="text-align:center;letter-spacing:4px;font-size:18px">
+        <input id="pinConfInput" class="form-input" type="password" placeholder="Confirmar PIN" style="text-align:center;letter-spacing:4px;font-size:18px">
+        <div id="pinDefErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <button class="btn btn-primary" onclick="salvarPin(${primeiroAcesso})">Salvar PIN</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+}
+
+async function salvarPin(primeiroAcesso) {
+  const pin  = document.getElementById('pinNovoInput')?.value;
+  const conf = document.getElementById('pinConfInput')?.value;
+  const err  = document.getElementById('pinDefErr');
+  if (!pin || pin.length<6) { err.textContent='PIN deve ter ao menos 6 caracteres'; return; }
+  if (pin !== conf) { err.textContent='PINs não conferem'; return; }
+  const res = await api('/filiais/definir-pin', { method:'POST', body: JSON.stringify({ pin }) });
+  if (res?.ok) {
+    document.getElementById('modalDefinirPin')?.remove();
+    _adminPinOk = true;
+    toast('✅ PIN definido com sucesso!','success');
+    if (primeiroAcesso) { showView('filiais'); carregarTabelaFiliais(); }
+  } else err.textContent = res?.erro||'Erro ao salvar';
+}
+
+async function carregarTabelaFiliais() {
+  const tbody = document.getElementById('filiaisBody');
+  if (!tbody) return;
+  const data = await api('/filiais');
+  const lista = data?.data || [];
+  if (!lista.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">Nenhuma filial</td></tr>'; return; }
+  tbody.innerHTML = lista.map(f=>`<tr>
+    <td class="td-main">${f.nome}</td>
+    <td style="font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${f.slug}</td>
+    <td><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;${f.status==='ativa'?'color:#22c55e;background:rgba(34,197,94,.1)':'color:var(--text-3);background:var(--bg)'}"> ${f.status==='ativa'?'✅ Ativa':'❌ Inativa'}</span></td>
+    <td style="display:flex;gap:6px">
+      <button class="row-action" onclick="editarFilial('${f.id}','${f.nome}','${f.status}')">Editar</button>
+      ${!['fil_marica','fil_rio_das_ostras'].includes(f.id)&&!f.id.startsWith('fil_marica')&&!f.id.startsWith('fil_rio')?`<button class="row-action" style="color:var(--red)" onclick="excluirFilial('${f.id}','${f.nome}')">✕</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalNovaFilial() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalNovaFilial';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:420px">
+      <div class="modal-header">
+        <div class="modal-title">🏢 Nova Filial</div>
+        <button class="modal-close" onclick="document.getElementById('modalNovaFilial').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nome da Filial *</label>
+          <input id="novaFilialNome" class="form-input" placeholder="Ex: Cabo Frio" oninput="autoSlug()">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Identificador (slug) *</label>
+          <input id="novaFilialSlug" class="form-input" placeholder="Ex: cabo_frio" style="font-family:var(--font-mono)">
+          <div style="font-size:10px;color:var(--text-3);margin-top:3px">Apenas letras minúsculas e underscores. Não pode ser alterado depois.</div>
+        </div>
+        <div id="novaFilialErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarNovaFilial()">💾 Criar Filial</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalNovaFilial').remove()">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e=>{ if(e.target===modal) modal.remove(); };
+  setTimeout(()=>document.getElementById('novaFilialNome')?.focus(),100);
+}
+
+function autoSlug() {
+  const nome = document.getElementById('novaFilialNome')?.value||'';
+  document.getElementById('novaFilialSlug').value = nome.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
+}
+
+async function salvarNovaFilial() {
+  const nome = document.getElementById('novaFilialNome')?.value?.trim();
+  const slug = document.getElementById('novaFilialSlug')?.value?.trim();
+  const err  = document.getElementById('novaFilialErr');
+  if (!nome||!slug) { err.textContent='Preencha todos os campos'; return; }
+  const res = await api('/filiais', { method:'POST', body: JSON.stringify({ nome, slug }) });
+  if (res?.ok) {
+    document.getElementById('modalNovaFilial')?.remove();
+    toast(`✅ Filial "${nome}" criada!`, 'success');
+    await carregarFiliais();
+    carregarTabelaFiliais();
+  } else err.textContent = res?.erro||'Erro ao criar';
+}
+
+async function editarFilial(id, nomeAtual, statusAtual) {
+  const novoNome   = prompt('Nome da filial:', nomeAtual);
+  if (novoNome===null) return;
+  const novoStatus = confirm('Filial está ativa? Clique OK para Ativa, Cancelar para Inativa') ? 'ativa' : 'inativa';
+  const res = await api(`/filiais/${id}`, { method:'PUT', body: JSON.stringify({ nome: novoNome, status: novoStatus }) });
+  if (res?.ok) { toast('Filial atualizada','success'); await carregarFiliais(); carregarTabelaFiliais(); }
+  else toast(res?.erro||'Erro','error');
+}
+
+async function excluirFilial(id, nome) {
+  if (!confirm(`Excluir filial "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  const res = await api(`/filiais/${id}`, { method:'DELETE' });
+  if (res?.ok) { toast('Filial removida','success'); await carregarFiliais(); carregarTabelaFiliais(); }
+  else toast(res?.erro||'Erro','error');
+}
+
 // ═══════════════════════════════════════════
 // INDICADORES
 // ═══════════════════════════════════════════
@@ -15389,6 +15663,7 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
 
 
