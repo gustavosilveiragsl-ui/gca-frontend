@@ -10189,18 +10189,9 @@ function abrirVerSC(id) {
   if (sc.observacao) { obs.textContent = `Obs: ${sc.observacao}`; obs.style.display=''; }
   else obs.style.display = 'none';
 
-  // Mostra dados NF se já recebeu
+  // Card NF removido — recebimentos ficam no histórico
   const nfInfo = document.getElementById('verSCNfInfo');
-  if (sc.num_nf || sc.fornecedor) {
-    nfInfo.style.display = '';
-    nfInfo.innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px">
-        ${sc.num_nf?`<div><span style="color:var(--text-3)">NF:</span> <strong>${sc.num_nf}</strong></div>`:''}
-        ${sc.pedido_compra?`<div><span style="color:var(--text-3)">Pedido:</span> <strong>${sc.pedido_compra}</strong></div>`:''}
-        ${sc.fornecedor?`<div><span style="color:var(--text-3)">Fornecedor:</span> <strong>${sc.fornecedor}</strong></div>`:''}
-        ${sc.pdf_nf_url?`<div><a href="${sc.pdf_nf_url}" target="_blank" style="color:var(--accent-text)">📄 Ver NF</a></div>`:''}
-      </div>`;
-  } else nfInfo.style.display = 'none';
+  if (nfInfo) nfInfo.style.display = 'none';
 
   // Tabela de itens (somente visualização)
   const tbody = document.getElementById('verSCItensBody');
@@ -10280,17 +10271,14 @@ function abrirRecebimentoSC() {
   document.getElementById('recSCNumero').textContent = sc.numero_sc||'—';
 
   // Preenche campos NF com dados existentes
-  document.getElementById('recNF').value         = sc.num_nf||'';
-  document.getElementById('recPedido').value     = sc.pedido_compra||'';
-  document.getElementById('recFornecedor').value = sc.fornecedor||'';
-  document.getElementById('recPdfLink').value    = sc.pdf_nf_url||'';
-  _recNFPendingFile = null; // limpa arquivo pendente ao abrir novo modal
+  // Sempre limpo — cada recebimento é operação independente
+  document.getElementById('recNF').value         = '';
+  document.getElementById('recPedido').value     = '';
+  document.getElementById('recFornecedor').value = '';
+  document.getElementById('recPdfLink').value    = '';
+  _recNFPendingFile = null;
   const dropContent = document.getElementById('recNFDropContent');
-  if (dropContent) {
-    dropContent.innerHTML = sc.pdf_nf_url
-      ? `✅ NF já anexada — <a href="${sc.pdf_nf_url}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-text)">ver PDF</a> (clique para substituir)`
-      : '📎 Arraste o PDF da NF aqui ou clique para selecionar';
-  }
+  if (dropContent) dropContent.innerHTML = '📎 Arraste o PDF da NF aqui ou clique para selecionar';
 
   // Armazéns do usuário
   const selArm = document.getElementById('recArmazem');
@@ -10537,10 +10525,26 @@ async function confirmarRecebimentoSC() {
   const novoStatus = totalRec >= totalSol ? 'Recebido Total' : 'Recebido Parcial';
 
   const dataRec = new Date().toISOString();
+
+  // Registra recebimento no histórico — cada recebimento é independente
+  let recebimentos = [];
+  try { recebimentos = JSON.parse(sc.recebimentos_json || '[]'); } catch {}
+  recebimentos.push({
+    data: dataRec,
+    nf: nf||null,
+    pedido: pedido||null,
+    fornecedor: fornecedor||null,
+    pdf_url: pdfLink||null,
+    armazem: armNome||null,
+    usuario: GCA.usuario?.nome||null,
+    itens_recebidos: itens.filter(it => Number(it.qtdRecebida||0) > 0).map(it => ({
+      nome: it.nomeItem||it.nome||'—', qtdRecebida: it.qtdRecebida, qtdSolicitada: it.qtdSolicitada||it.qtd
+    }))
+  });
+
   await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
     status: novoStatus, itens_json: JSON.stringify(itens),
-    num_nf: nf||null, pedido_compra: pedido||null,
-    fornecedor: fornecedor||null, pdf_nf_url: pdfLink||null,
+    recebimentos_json: JSON.stringify(recebimentos),
     data_recebimento: dataRec,
   })});
 
@@ -10684,23 +10688,48 @@ async function carregarHistoricoRecebimentos() {
 
   _recHistData = [];
   scComRec.forEach(sc => {
-    let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
-    itens.filter(it => Number(it.qtdRecebida||0) > 0).forEach(it => {
-      _recHistData.push({
-        sc_numero:  sc.numero_sc,
-        sc_id:      sc.id,
-        item:       it.nomeItem||it.nome||'—',
-        qtd:        it.qtdRecebida,
-        fornecedor: sc.fornecedor||'—',
-        num_nf:     sc.num_nf||'—',
-        pedido:     sc.pedido_compra||'—',
-        data:       sc.data_recebimento||sc.data_abertura,
-        pdf_url:    sc.pdf_nf_url||'',
+    // Usa recebimentos_json (histórico por operação) se disponível
+    let recs = [];
+    try { recs = JSON.parse(sc.recebimentos_json || '[]'); } catch {}
+
+    if (recs.length) {
+      // Cada entrada do histórico = um recebimento real com data própria
+      recs.forEach(rec => {
+        (rec.itens_recebidos || []).forEach(it => {
+          _recHistData.push({
+            sc_numero:  sc.numero_sc,
+            sc_id:      sc.id,
+            item:       it.nome || '—',
+            qtd:        it.qtdRecebida,
+            fornecedor: rec.fornecedor || '—',
+            num_nf:     rec.nf || '—',
+            pedido:     rec.pedido || '—',
+            data:       rec.data,
+            pdf_url:    rec.pdf_url || '',
+          });
+        });
       });
-    });
+    } else {
+      // Fallback para SCs antigas sem recebimentos_json
+      let itens = []; try { itens = JSON.parse(sc.itens_json||'[]'); } catch {}
+      itens.filter(it => Number(it.qtdRecebida||0) > 0).forEach(it => {
+        _recHistData.push({
+          sc_numero:  sc.numero_sc,
+          sc_id:      sc.id,
+          item:       it.nomeItem||it.nome||'—',
+          qtd:        it.qtdRecebida,
+          fornecedor: sc.fornecedor||'—',
+          num_nf:     sc.num_nf||'—',
+          pedido:     sc.pedido_compra||'—',
+          data:       sc.data_recebimento||sc.data_abertura,
+          pdf_url:    sc.pdf_nf_url||'',
+        });
+      });
+    }
   });
 
-  _recHistData.sort((a,b) => (b.data||'').localeCompare(a.data||'')); // mais recente primeiro
+  // Mais recente primeiro
+  _recHistData.sort((a,b) => (b.data||'').localeCompare(a.data||''));
   renderHistoricoRecebimentos(_recHistData);
 }
 
