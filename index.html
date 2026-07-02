@@ -4332,7 +4332,28 @@ async function selecionarUnidade(unidade) {
   } catch { toast('Erro de conexão','error'); }
 }
 
+// Reseta todos os caches de dados da filial — chamado ao trocar de filial
+function resetarCacheDados() {
+  _itens          = [];
+  _armazens       = [];
+  _equipes        = [];
+  _estoqueData    = [];
+  _scData         = [];
+  _enelMateriais  = [];
+  _enelSaldos     = [];
+  _dotData        = [];
+  _controleEquipes= [];
+  _btdcEquipes    = [];
+  _btdcUltimoResult = null;
+  _cseUltimoResult  = null;
+  _indData          = null;
+  // Limpar gráficos de indicadores se existirem
+  Object.values(_indCharts||{}).forEach(c => c?.destroy?.());
+  if (typeof _indCharts !== 'undefined') _indCharts = {};
+}
+
 function finalizarLogin(data) {
+  resetarCacheDados(); // limpa todos os caches da filial anterior
   GCA.token   = data.token;
   carregarFiliais();
   // Mostrar grupo admin somente para admins
@@ -6132,14 +6153,13 @@ function formatarTempo(seg) {
 // Carregar armazéns globalmente
 let _armazens = [];
 async function carregarArmazens() {
-  if (_armazens.length) return;
   const data = await api('/armazens');
   if (data) _armazens = data.data || data.armazens || [];
 }
 
 // Carrega saldos silenciosamente para consistência NR10
 async function carregarSaldosCache() {
-  if (_estoqueData.length) return;
+  if (_estoqueData.length) return; // saldo pode ser recarregado por demanda
   const data = await api('/saldos');
   if (data) _estoqueData = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
 }
