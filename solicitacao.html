@@ -554,6 +554,14 @@ input,select,textarea{font-family:var(--font-main);}
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
+function getNomeFilial(slug) {
+  if (window._filiaisCache) {
+    const f = window._filiaisCache.find(x => x.slug === slug);
+    if (f) return f.nome;
+  }
+  return slug ? slug.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase()) : '—';
+}
+
 const API = 'https://gca-backend-production.up.railway.app';
 
 const MOTIVO_MAP = {
@@ -627,7 +635,7 @@ async function login() {
   const ini = (_usr.nome||'?')[0].toUpperCase();
   document.getElementById('hdrAvatar').textContent = ini;
   document.getElementById('hdrNome').textContent   = _usr.nome;
-  document.getElementById('hdrSub').textContent    = (_usr.unidade==='marica'?'Maricá':'Rio das Ostras') + ' · Ceneged';
+  document.getElementById('hdrSub').textContent    = (getNomeFilial(_usr.unidade)) + ' · Ceneged';
   carregarDados();
 }
 
@@ -987,7 +995,7 @@ function commitItem(it, qtd, motiv, outro, armId, just) {
     motivo: motivoFinal + (just?' — Justificativa: '+just:''),
     armId, nomeArmazem:(_arm.find(a=>a.id===armId)||{}).nome||'',
     trocaTamanho:!!troca, itemIdAntigo:troca?.itemIdAntigo||null, nomeItemAntigo:troca?.nomeAntigo||null,
-    diasDecorridos:durInf?.diasDecorridos||null, prazoMinDias:durInf?.prazoMinDias||null,
+    diasDecorridos:durInf?.diasDecorridos??null, prazoMinDias:durInf?.prazoMinDias??null,
   });
   renderItens();
   document.getElementById('mConf').classList.add('hidden');
@@ -1266,7 +1274,7 @@ async function abrirEdicao(s) {
     armId: s.armazem_id||'', nomeArmazem: s.nome_armazem||'',
     trocaTamanho: it.trocaTamanho||false,
     itemIdAntigo: it.itemIdAntigo||null, nomeItemAntigo: it.nomeItemAntigo||null,
-    diasDecorridos: it.diasDecorridos||null, prazoMinDias: it.prazoMinDias||null,
+    diasDecorridos: it.diasDecorridos??null, prazoMinDias: it.prazoMinDias??null,
   }));
   renderItens();
 
@@ -1305,3 +1313,4 @@ if ('serviceWorker' in navigator) {
 
 </body>
 </html>
+
