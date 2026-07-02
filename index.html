@@ -117,6 +117,8 @@ input,select,textarea{font-family:var(--font-main);}
 .user-name{font-size:11px;font-weight:600;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;}
 .user-role{font-size:10px;color:var(--text-3);}
 .logout-btn{margin-left:auto;padding:4px 8px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;flex-shrink:0;}
+.sidebar-link-btn{width:100%;text-align:left;padding:5px 8px;background:transparent;border:1px solid transparent;border-radius:var(--radius-sm);color:var(--text-3);font-size:11px;cursor:pointer;transition:all .15s;font-family:var(--font-main);}
+.sidebar-link-btn:hover{background:var(--bg-hover);color:var(--text-1);border-color:var(--border);}
 .logout-btn:hover{color:var(--red);border-color:var(--red);}
 
 /* MAIN */
@@ -476,6 +478,15 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
     </div>
+    <!-- Atalhos telas secundárias -->
+    <div style="padding:10px 12px;border-top:1px solid var(--border)">
+      <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Links externos</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button class="sidebar-link-btn" onclick="copiarLink('tablet')">📱 Tablet Assinatura</button>
+        <button class="sidebar-link-btn" onclick="copiarLink('solicitacao')">📋 Solicitação EPI</button>
+        <button class="sidebar-link-btn" onclick="copiarLink('equipe')">⚡ Portal Equipes</button>
+      </div>
+    </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="user-avatar" id="userAvatar">—</div>
@@ -587,8 +598,8 @@ tbody tr:hover td{background:var(--bg-hover);}
               </div>
               <div><label class="form-label">Filial(is) *</label>
                 <select id="colabUnidades" class="form-input">
-                  <!-- filiais carregadas dinamicamente via popularSelectsFiliais() -->
                   <option value="ambas">Ambas as filiais</option>
+                  <!-- filiais individuais carregadas dinamicamente -->
                 </select>
               </div>
               <div style="display:flex;gap:8px">
@@ -3999,6 +4010,15 @@ function popularSelectsFiliais() {
     extras.forEach(e=>el.appendChild(e));
     if (cur) el.value = cur;
   });
+  // Select filial do colaborador (ambas + individuais)
+  const selColabUni = document.getElementById('colabUnidades');
+  if (selColabUni) {
+    const curColab = selColabUni.value;
+    selColabUni.innerHTML = '<option value="ambas">Ambas as filiais</option>' +
+      _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${f.nome}</option>`).join('');
+    if (curColab) selColabUni.value = curColab;
+  }
+
   // Select unidade no cadastro de usuário (armazém)
   const selUsrUni = document.getElementById('usrUnidade');
   if (selUsrUni) {
@@ -4620,24 +4640,80 @@ async function confirmarTrocaUnidade(unidade) {
   if (unidade === GCA.unidade) return;
   document.getElementById('unidadeDropdown')?.remove();
 
-  const badge = document.getElementById('sidebarUnit');
-  badge.textContent = '⏳';
+  // Overlay de carregamento
+  const ov = document.createElement('div');
+  ov.id = 'trocaFilialOverlay';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+  ov.innerHTML = '<div class="spinner" style="width:36px;height:36px;border-width:3px"></div>' +
+    `<div style="color:#f1f5f9;font-size:14px;font-weight:500">Carregando ${getNomeUnidade(unidade)}...</div>`;
+  document.body.appendChild(ov);
 
   try {
-    const res  = await fetch(`${API}/auth/selecionar-unidade`, {
+    const res  = await fetch(\`\${API}/auth/selecionar-unidade\`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token_temp: GCA.token, unidade })
     });
     const data = await res.json();
-    if (!data.ok) { toast('Erro ao trocar filial', 'error'); badge.textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade; return; }
+    if (!data.ok) {
+      ov.remove();
+      toast('Erro ao trocar filial', 'error');
+      return;
+    }
     finalizarLogin(data);
-    toast(`✓ Filial alterada para ${NOMES_UNIDADE[unidade]||unidade}`, 'success', 3000);
+    toast(\`✓ Filial alterada para \${getNomeUnidade(unidade)}\`, 'success', 3000);
   } catch {
     toast('Erro de conexão', 'error');
-    badge.textContent = NOMES_UNIDADE[GCA.unidade]||GCA.unidade;
+  } finally {
+    document.getElementById('trocaFilialOverlay')?.remove();
   }
 }
+
+// ── ATALHOS PARA TELAS SECUNDÁRIAS ──────────────────────────────────────
+const BASE_URL = 'https://gustavosilveiragsl-ui.github.io/gca-frontend';
+const LINKS_EXT = {
+  tablet:      { label:'Tablet Assinatura',  path:'/tablet.html' },
+  solicitacao: { label:'Solicitação de EPI', path:'/solicitacao.html' },
+  equipe:      { label:'Portal das Equipes', path:'/equipe.html' },
+};
+
+function copiarLink(tipo) {
+  const item = LINKS_EXT[tipo];
+  if (!item) return;
+  const url = BASE_URL + item.path;
+  navigator.clipboard?.writeText(url).then(() => {
+    toast(`📋 Link copiado: ${item.label}`, 'success', 3000);
+  }).catch(() => {
+    // fallback para browsers sem clipboard API
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+    toast(`📋 Link copiado: ${item.label}`, 'success', 3000);
+  });
+}
+
+// ── INATIVIDADE — logout automático após 30 min ──────────────────────
+(function iniciarTimerInatividade() {
+  let timer;
+  const MINUTOS = 30;
+  function resetar() {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      if (!GCA.token) return; // já deslogado
+      localStorage.clear();
+      sessionStorage.clear();
+      toast('Sessão encerrada por inatividade. Faça login novamente.', 'warn', 5000);
+      setTimeout(() => location.reload(), 2000);
+    }, MINUTOS * 60 * 1000);
+  }
+  ['mousemove','mousedown','keypress','touchstart','scroll','click'].forEach(ev =>
+    document.addEventListener(ev, resetar, { passive: true })
+  );
+  resetar();
+})();
 
 // ── API HELPER ──
 async function api(path, opts={}) {
@@ -15673,6 +15749,7 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
 
 
