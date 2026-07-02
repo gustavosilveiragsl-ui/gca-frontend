@@ -7557,10 +7557,15 @@ async function carregarEstoque() {
   if (!data) return;
   let todos = (data.data || []).filter(s => s.nome_item && s.nome_item.trim());
 
-  // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
+  // Filtra pelos armazéns permitidos do usuário — só se existirem na filial atual
   const userArmazens = getUserArmazens();
   if (userArmazens.length) {
-    todos = todos.filter(s => userArmazens.includes(s.armazem_id));
+    const idsFilialAtual = new Set(todos.map(s => s.armazem_id));
+    const filtroAtivo = userArmazens.filter(id => idsFilialAtual.has(id));
+    if (filtroAtivo.length) {
+      todos = todos.filter(s => filtroAtivo.includes(s.armazem_id));
+    }
+    // Se nenhum armazém do usuário pertence à filial atual, mostra tudo
   }
 
   _estoqueData = todos;
@@ -10629,10 +10634,14 @@ async function carregarSC() {
   const data = await api('/solicitacoes-compra');
   let lista = data?.data || [];
 
-  // Filtra pelos armazéns permitidos do usuário (se tiver algum definido)
+  // Filtra pelos armazéns do usuário — só se existirem na filial atual
   const userArmazens = getUserArmazens();
   if (userArmazens.length) {
-    lista = lista.filter(sc => !sc.armazem_id || userArmazens.includes(sc.armazem_id));
+    const idsFilialAtual = new Set(lista.map(sc => sc.armazem_id).filter(Boolean));
+    const filtroAtivo = userArmazens.filter(id => idsFilialAtual.has(id));
+    if (filtroAtivo.length) {
+      lista = lista.filter(sc => !sc.armazem_id || filtroAtivo.includes(sc.armazem_id));
+    }
   }
 
   _scData = lista;
