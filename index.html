@@ -4669,44 +4669,66 @@ async function confirmarTrocaUnidade(unidade) {
 }
 
 // ── ATALHOS PARA TELAS SECUNDÁRIAS ──────────────────────────────────────
-const BASE_URL = 'https://gustavosilveiragsl-ui.github.io/gca-frontend';
 const LINKS_EXT = {
-  solicitacao: { label:'Solicitação de EPI', path:'/solicitacao.html' },
-  equipe:      { label:'Portal das Equipes', path:'/equipe.html' },
+  solicitacao: { label:'Solicitação de EPI', url:'https://gustavosilveiragsl-ui.github.io/gca-frontend/solicitacao.html' },
+  equipe:      { label:'Portal das Equipes', url:'https://gustavosilveiragsl-ui.github.io/gca-frontend/equipe.html' },
 };
 
 function copiarLink(tipo) {
   const item = LINKS_EXT[tipo];
   if (!item) return;
-  const url = BASE_URL + item.path;
 
-  // Remove popover anterior
   document.getElementById('linkExtPopover')?.remove();
 
   const popover = document.createElement('div');
   popover.id = 'linkExtPopover';
-  popover.style.cssText = 'position:fixed;bottom:90px;left:16px;width:280px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:fadeUp .2s ease';
-  popover.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px">${item.label}</div>
-    <div style="display:flex;gap:6px;align-items:center">
-      <input readonly value="${url}" style="flex:1;font-size:10px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-family:var(--font-mono);outline:none" onclick="this.select()">
-      <button onclick="navigator.clipboard?.writeText('${url}').then(()=>toast('✅ Link copiado!','success',2000)).catch(()=>toast('Selecione e copie manualmente','warn'));document.getElementById('linkExtPopover').remove()" 
-        style="padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">
-        Copiar
-      </button>
-    </div>
-    <a href="${url}" target="_blank" style="display:block;margin-top:8px;font-size:10px;color:var(--accent-text);text-decoration:none">↗ Abrir em nova aba</a>`;
+  popover.style.cssText = 'position:fixed;bottom:90px;left:16px;width:290px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3);animation:fadeUp .2s ease';
+
+  const titulo = document.createElement('div');
+  titulo.style.cssText = 'font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px';
+  titulo.textContent = item.label;
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center';
+
+  const input = document.createElement('input');
+  input.readOnly = true;
+  input.value = item.url;
+  input.style.cssText = 'flex:1;font-size:10px;padding:6px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-family:var(--font-mono);outline:none;cursor:pointer';
+  input.onclick = function() { this.select(); };
+
+  const btnCopiar = document.createElement('button');
+  btnCopiar.style.cssText = 'padding:6px 10px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap';
+  btnCopiar.textContent = 'Copiar';
+  btnCopiar.onclick = function() {
+    navigator.clipboard.writeText(item.url)
+      .then(() => toast('✅ Link copiado!', 'success', 2000))
+      .catch(() => { input.select(); document.execCommand('copy'); toast('✅ Link copiado!', 'success', 2000); });
+    popover.remove();
+  };
+
+  const link = document.createElement('a');
+  link.href = item.url;
+  link.target = '_blank';
+  link.style.cssText = 'display:block;margin-top:8px;font-size:10px;color:var(--accent-text);text-decoration:none';
+  link.textContent = '↗ Abrir em nova aba';
+
+  row.appendChild(input);
+  row.appendChild(btnCopiar);
+  popover.appendChild(titulo);
+  popover.appendChild(row);
+  popover.appendChild(link);
   document.body.appendChild(popover);
 
-  // Fechar ao clicar fora
+  // Fecha ao clicar fora
   setTimeout(() => {
     document.addEventListener('click', function fechar(e) {
-      if (!popover.contains(e.target)) { popover.remove(); document.removeEventListener('click', fechar); }
+      if (!popover.contains(e.target)) {
+        popover.remove();
+        document.removeEventListener('click', fechar);
+      }
     });
-  }, 10);
-
-  // Tenta copiar automaticamente
-  navigator.clipboard?.writeText(url).catch(()=>{});
+  }, 50);
 }
 
 // ── INATIVIDADE — logout automático após 30 min ──────────────────────
