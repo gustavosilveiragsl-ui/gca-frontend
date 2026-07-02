@@ -10915,7 +10915,7 @@ function validarSerialDuplicado(valor) {
   if (!serial || !itemId) return;
 
   const duplicado = __LAUDOS_NR10__.lista.find(x =>
-    x.serial.toUpperCase() === serial && x.itemId === itemId
+    x.serial && x.serial.toUpperCase() === serial && x.itemId === itemId
   );
 
   if (duplicado) {
