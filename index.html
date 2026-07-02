@@ -4172,7 +4172,7 @@ function onViewLoad(nome) {
   if (nome === 'home')               carregarDashboard();
   if (nome === 'indicadores')        indIniciar();
   if (nome === 'filiais')             carregarTabelaFiliais();
-  if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); }
+  if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); popularSelectsFiliais(); }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        { carregarAssinaturas(); _iniciarRealtime(); }
@@ -8938,6 +8938,8 @@ function limparFormColab() {
   const selFuncao = document.getElementById('colabFuncao');
   if (selFuncao) selFuncao.selectedIndex = 0;
   document.getElementById('colabFormTitulo').textContent = 'Novo Colaborador';
+  // Garante que as filiais estejam carregadas no select
+  popularSelectsFiliais();
 }
 
 // ═══════════════════════════════════════════
@@ -15732,6 +15734,7 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
 
 
