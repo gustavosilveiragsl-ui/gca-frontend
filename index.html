@@ -10547,41 +10547,43 @@ async function confirmarRecebimentoSC() {
   document.getElementById('modalRecSC').classList.add('hidden');
   carregarSC();
 
-  // Perguntar se quer enviar email ao financeiro
+  // Abrir modal de email ao financeiro (sempre opcional)
   const sc_final = _scData.find(x=>x.id===scId);
-  if (pdfLink || sc_final?.pdf_nf_url) {
-    mostrarModalEmailSC(scId, sc_final || {}, pdfLink);
-  } else {
-    if (confirm('Recebimento confirmado! \n\nDeseja enviar email de confirmação ao time financeiro?')) {
-      mostrarModalEmailSC(scId, sc_final || {}, pdfLink);
-    }
-  }
+  mostrarModalEmailSC(scId, sc_final || {}, pdfLink);
 }
 
-function mostrarModalEmailSC(scId, sc, pdfLink) {
+async function mostrarModalEmailSC(scId, sc, pdfLink) {
+  // Busca destinatários configurados
+  const resEmails = await api(`/email-sc/destinatarios?unidade=${GCA.unidade}`);
+  const emails = resEmails?.destinatarios || '';
+
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
   modal.id = 'modalEmailSC';
   modal.innerHTML = `
     <div class="modal-box" style="max-width:500px">
       <div class="modal-header">
-        <div class="modal-title">📧 Enviar ao Financeiro</div>
+        <div class="modal-title">📧 Enviar documentação ao Financeiro</div>
         <button class="modal-close" onclick="document.getElementById('modalEmailSC').remove()">×</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
-        <div style="font-size:12px;color:var(--text-3);background:var(--bg);padding:10px;border-radius:var(--radius-sm)">
-          Será enviado o email de confirmação de recebimento da <strong>SC ${sc.numero_sc||scId}</strong> para o time financeiro.
-          ${pdfLink||sc.pdf_nf_url ? `<br><span style="color:#22c55e">✅ PDF da NF incluído no email</span>` : ''}
+        <div style="font-size:12px;color:var(--text-3);background:var(--bg);padding:10px;border-radius:var(--radius-sm);line-height:1.6">
+          SC <strong>${sc?.numero_sc||scId}</strong> recebida com sucesso.
+          ${pdfLink||sc?.pdf_nf_url ? '<br>✅ PDF da NF disponível' : ''}
+          ${emails ? `<br>📬 Destinatários: <span style="color:var(--text-2)">${emails}</span>` : '<br>⚠️ Nenhum destinatário configurado'}
         </div>
         <div class="form-group" style="margin:0">
           <label class="form-label">Observações (opcional)</label>
-          <textarea id="emailSCObs" class="form-input" rows="4" placeholder="Ex: VEIO FALTANDO BOLETO&#10;ALIMENTAR ARMAZEM 01000" style="resize:vertical;font-family:var(--font-mono);font-size:13px"></textarea>
+          <textarea id="emailSCObs" class="form-input" rows="4"
+            placeholder="Ex: VEIO FALTANDO BOLETO&#10;ALIMENTAR ARMAZEM 01000"
+            style="resize:vertical;font-family:var(--font-mono);font-size:13px"></textarea>
         </div>
         <div id="emailSCErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" style="flex:1" onclick="enviarEmailFinanceiro('${scId}')">📧 Enviar</button>
-          <button class="btn btn-ghost" onclick="document.getElementById('modalEmailSC').remove()">Pular</button>
+          <button class="btn btn-primary" style="flex:1" onclick="enviarEmailFinanceiro('${scId}')" ${!emails?'disabled title="Configure os destinatários primeiro"':''}>📧 Enviar ao Financeiro</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalEmailSC').remove()">Enviarei manualmente</button>
         </div>
+        ${!emails ? `<div style="font-size:11px;color:#f59e0b">Configure os emails do financeiro em Cadastros → Configurações.</div>` : ''}
       </div>
     </div>`;
   document.body.appendChild(modal);
