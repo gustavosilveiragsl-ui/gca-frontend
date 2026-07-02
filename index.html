@@ -10464,6 +10464,7 @@ async function confirmarRecebimentoSC() {
   const valEls = document.querySelectorAll('.rec-valor');
 
   let algumSelecionado = false;
+  const itensDestaOp = []; // só os itens recebidos NESTA operação
 
   // Carrega itens da SC para atualizar
   let itens = []; 
@@ -10488,6 +10489,9 @@ async function confirmarRecebimentoSC() {
     const valorUn  = parseFloat(valEls[i]?.value)||0;
 
     if (qtdRec <= 0) continue;
+
+    // Registra como recebido NESTA operação
+    itensDestaOp.push({ nome: itemNome, qtdRecebida: qtdRec, qtdSolicitada: qtdSol });
 
     // Lança entrada no estoque
     const res = await api('/movimentacoes/entrada', {
@@ -10537,9 +10541,7 @@ async function confirmarRecebimentoSC() {
     pdf_url: pdfLink||null,
     armazem: armNome||null,
     usuario: GCA.usuario?.nome||null,
-    itens_recebidos: itens.filter(it => Number(it.qtdRecebida||0) > 0).map(it => ({
-      nome: it.nomeItem||it.nome||'—', qtdRecebida: it.qtdRecebida, qtdSolicitada: it.qtdSolicitada||it.qtd
-    }))
+    itens_recebidos: itensDestaOp
   });
 
   await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
@@ -10746,7 +10748,7 @@ function renderHistoricoRecebimentos(lista) {
     <td style="text-align:center;font-size:11px;font-weight:600;color:#22c55e">${r.qtd}</td>
     <td style="font-size:11px;color:var(--text-2)">${r.fornecedor}</td>
     <td style="font-size:11px;color:var(--text-2)">${r.num_nf}</td>
-    <td style="font-size:11px">${formatarData(r.data)}</td>
+    <td style="font-size:11px">${r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '—'}</td>
     <td>${r.pdf_url
       ? `<a href="${r.pdf_url}" target="_blank" class="btn btn-ghost" style="font-size:10px;padding:4px 8px">📄 Ver NF</a>`
       : '<span style="font-size:10px;color:var(--text-3)">—</span>'
