@@ -4649,7 +4649,7 @@ async function confirmarTrocaUnidade(unidade) {
   document.body.appendChild(ov);
 
   try {
-    const res  = await fetch(\`\${API}/auth/selecionar-unidade\`, {
+    const res  = await fetch(`${API}/auth/selecionar-unidade`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token_temp: GCA.token, unidade })
@@ -4661,7 +4661,7 @@ async function confirmarTrocaUnidade(unidade) {
       return;
     }
     finalizarLogin(data);
-    toast(\`✓ Filial alterada para \${getNomeUnidade(unidade)}\`, 'success', 3000);
+    toast(`✓ Filial alterada para ${getNomeUnidade(unidade)}`, 'success', 3000);
   } catch {
     toast('Erro de conexão', 'error');
   } finally {
