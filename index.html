@@ -13352,7 +13352,7 @@ async function cmBuscarSerial() {
   if (!med) { toast('Serial não encontrado','warn'); return; }
 
   const stCor = med.bloqueadoGlobal?'#ef4444':med.bloqueadoEquipe?'#ef4444':med.status_atual==='INSTALADO'?'#22c55e':med.status_atual==='EM DIA'?'#22c55e':'#f59e0b';
-  const equipe = med.localizacao&&med.localizacao!=='ESTOQUE' ? med.localizacao.replace('ATENDIMENTO_ENEL - ','') : '—';
+  const equipe = med.equipe_atual || '—';
 
   // Prazo labels
   const prazo50Label = med.diasEstoque !== null && med.status_atual !== 'INSTALADO'
