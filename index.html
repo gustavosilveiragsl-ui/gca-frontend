@@ -10283,6 +10283,7 @@ function abrirRecebimentoSC() {
   document.getElementById('recPedido').value     = sc.pedido_compra||'';
   document.getElementById('recFornecedor').value = sc.fornecedor||'';
   document.getElementById('recPdfLink').value    = sc.pdf_nf_url||'';
+  _recNFPendingFile = null; // limpa arquivo pendente ao abrir novo modal
   const dropContent = document.getElementById('recNFDropContent');
   if (dropContent) {
     dropContent.innerHTML = sc.pdf_nf_url
@@ -10386,10 +10387,19 @@ function toggleEditarValor(btn) {
   }
 }
 
-function atualizarTotalSC() {
+function atualizarTotalSC(changedCheck, changedIdx) {
+  // Se desmarcou, zera o total da linha imediatamente
+  if (changedCheck && !changedCheck.checked && changedIdx !== undefined) {
+    const rowTotal = document.getElementById(`recTotalRow_${changedIdx}`);
+    if (rowTotal) rowTotal.textContent = '';
+  }
   let total = 0;
   document.querySelectorAll('.rec-check').forEach((check, idx) => {
-    if (!check.checked) return;
+    if (!check.checked) {
+      const rowTotal = document.getElementById(`recTotalRow_${idx}`);
+      if (rowTotal) rowTotal.textContent = '';
+      return;
+    }
     const qtdEl   = document.querySelectorAll('.rec-qtd')[idx];
     const valorEl = document.querySelectorAll('.rec-valor')[idx];
     const qtd   = parseFloat(qtdEl?.value)||0;
@@ -10413,21 +10423,22 @@ function recNFOnDrop(ev) {
   if (file) recNFOnFileSelected(file);
 }
 
-async function recNFOnFileSelected(file) {
+function recNFOnFileSelected(file) {
   if (!file) return;
   const dropContent = document.getElementById('recNFDropContent');
   if (file.type !== 'application/pdf') {
     toast('Apenas arquivos PDF são aceitos', 'warn');
     return;
   }
-  const scId = document.getElementById('recSCId').value;
-  if (!scId) { toast('Erro: SC não identificada', 'error'); return; }
+  // Armazena localmente — só faz upload ao confirmar recebimento
+  _recNFPendingFile = file;
+  dropContent.innerHTML = `📄 <strong>${file.name}</strong> selecionado — será enviado ao confirmar`;
+}
 
-  dropContent.innerHTML = '⏳ Enviando "' + file.name + '" para o Google Drive...';
-
+async function _uploadNFPendente(scId) {
+  if (!_recNFPendingFile) return null;
   const formData = new FormData();
-  formData.append('arquivo', file);
-
+  formData.append('arquivo', _recNFPendingFile);
   try {
     const resp = await fetch(`${API}/solicitacoes-compra/${scId}/upload-nf`, {
       method: 'POST',
@@ -10435,18 +10446,10 @@ async function recNFOnFileSelected(file) {
       body: formData
     });
     const json = await resp.json();
-    if (json?.ok) {
-      document.getElementById('recPdfLink').value = json.link;
-      dropContent.innerHTML = `✅ NF enviada — <a href="${json.link}" target="_blank" onclick="event.stopPropagation()" style="color:var(--accent-text)">ver PDF</a> (clique para substituir)`;
-      toast('PDF da NF enviado ao Drive!', 'success');
-    } else {
-      dropContent.innerHTML = '📎 Arraste o PDF da NF aqui ou clique para selecionar';
-      toast(json?.erro || 'Erro ao enviar PDF', 'error');
-    }
-  } catch (err) {
-    dropContent.innerHTML = '📎 Arraste o PDF da NF aqui ou clique para selecionar';
-    toast('Erro de conexão ao enviar PDF', 'error');
-  }
+    if (json?.ok) { _recNFPendingFile = null; return json.link; }
+    toast(json?.erro||'Erro ao enviar PDF', 'error');
+    return null;
+  } catch { toast('Erro ao enviar PDF ao Drive', 'error'); return null; }
 }
 
 async function confirmarRecebimentoSC() {
@@ -10455,7 +10458,13 @@ async function confirmarRecebimentoSC() {
   const nf        = document.getElementById('recNF').value.trim();
   const pedido    = document.getElementById('recPedido').value.trim();
   const fornecedor= document.getElementById('recFornecedor').value.trim();
-  const pdfLink   = document.getElementById('recPdfLink').value.trim();
+  // Upload do PDF pendente antes de confirmar (se houver arquivo selecionado)
+  let pdfLink = document.getElementById('recPdfLink').value.trim();
+  if (_recNFPendingFile) {
+    const scIdForUpload = document.getElementById('recSCId').value;
+    const uploaded = await _uploadNFPendente(scIdForUpload);
+    if (uploaded) pdfLink = uploaded;
+  }
   const armId     = document.getElementById('recArmazem').value;
   const armNome   = document.getElementById('recArmazem').selectedOptions[0]?.dataset.nome||'';
 
@@ -10526,10 +10535,12 @@ async function confirmarRecebimentoSC() {
   const totalRec = itens.reduce((s,it)=>s+Number(it.qtdRecebida||0),0);
   const novoStatus = totalRec >= totalSol ? 'Recebido Total' : 'Recebido Parcial';
 
+  const dataRec = new Date().toISOString();
   await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
     status: novoStatus, itens_json: JSON.stringify(itens),
     num_nf: nf||null, pedido_compra: pedido||null,
     fornecedor: fornecedor||null, pdf_nf_url: pdfLink||null,
+    data_recebimento: dataRec,
   })});
 
   toast('Recebimento registrado!', 'success');
@@ -10538,6 +10549,7 @@ async function confirmarRecebimentoSC() {
 }
 
 let _recHistData = [];
+let _recNFPendingFile = null; // PDF aguardando upload até confirmar
 
 function filtrarHistoricoRecebimentos() {
   const q = (document.getElementById('recHistBusca')?.value||'').toLowerCase();
@@ -10573,13 +10585,13 @@ async function carregarHistoricoRecebimentos() {
         fornecedor: sc.fornecedor||'—',
         num_nf:     sc.num_nf||'—',
         pedido:     sc.pedido_compra||'—',
-        data:       sc.data_abertura,
+        data:       sc.data_recebimento||sc.data_abertura,
         pdf_url:    sc.pdf_nf_url||'',
       });
     });
   });
 
-  _recHistData.sort((a,b) => (b.data||'').localeCompare(a.data||''));
+  _recHistData.sort((a,b) => (b.data||'').localeCompare(a.data||'')); // mais recente primeiro
   renderHistoricoRecebimentos(_recHistData);
 }
 
