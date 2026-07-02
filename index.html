@@ -6699,7 +6699,7 @@ function renderSolicitacoes() {
 
     // Tags de alerta
     const temTroca     = itens.some(i => i.trocaTamanho);
-    const temForaPrazo = itens.some(i => i.diasDecorridos && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
+    const temForaPrazo = itens.some(i => i.diasDecorridos != null && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
     const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && a.statusCalc === 'PENDENTE');
     const tags = [
       temTroca     ? '<span style="color:#a855f7;font-size:10px;font-weight:600">👕 Troca tamanho</span>' : '',
@@ -15794,6 +15794,7 @@ async function baExcluirEquipe(id) {
 </div>
 </body>
 </html>
+
 
 
 
