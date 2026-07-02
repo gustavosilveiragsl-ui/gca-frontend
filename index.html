@@ -4232,6 +4232,9 @@ async function fazerLogin() {
     if (data.selecionar_unidade) {
       GCA.tokenTemp = data.token_temp;
       GCA.unidades  = data.unidades || [];
+      // Carrega filiais antes de mostrar a seleção para garantir descrições corretas
+      const filiaisData = await fetch(`${API}/filiais`).then(r=>r.json()).catch(()=>null);
+      if (filiaisData?.ok && filiaisData.data?.length) _filiais = filiaisData.data;
       mostrarSelecaoUnidade(data.usuario?.nome || data.nome, data.unidades);
       return;
     }
