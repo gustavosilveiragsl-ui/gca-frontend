@@ -11078,7 +11078,7 @@ function laudosRender_() {
               <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center">
-                <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${x.itemId}','${x.itemNome.replace(/'/g,&quot;'&quot;)}')">+ Cadastrar Serial</button>
+                <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${x.itemId}',this.dataset.nome)" data-nome="${(x.itemNome||'').replace(/"/g,'&quot;')}">+ Cadastrar Serial</button>
               </td>
             </tr>`;
           }
