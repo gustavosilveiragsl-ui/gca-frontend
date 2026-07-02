@@ -4285,7 +4285,9 @@ async function solicitarRecuperacao() {
 function mostrarSelecaoUnidade(nome, unidades) {
   mostrarTela('unidade');
   document.getElementById('unidadeSub').textContent = `Olá, ${nome || 'usuário'}! Selecione a filial de acesso.`;
-  const descs = { marica:'Unidade de Maricá – RJ', rio_das_ostras:'Unidade de Rio das Ostras – RJ' };
+  // Descrição dinâmica: usa _filiais para qualquer filial futura
+  const descs = {};
+  _filiais.forEach(f => { descs[f.slug] = `Unidade de ${f.nome}`; });
   const pinSvg = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
   document.getElementById('unidadeOptions').innerHTML = unidades.map(u => `
     <button class="unidade-btn" onclick="selecionarUnidade('${u}')">
@@ -13765,7 +13767,12 @@ async function editarFilial(id, nomeAtual, statusAtual) {
 }
 
 async function excluirFilial(id, nome) {
-  if (!confirm(`Excluir filial "${nome}"? Esta ação não pode ser desfeita.`)) return;
+  const confirmou = confirm(
+    `⚠️ Excluir filial "${nome}"?\n\n` +
+    `Os dados cadastrados nessa filial (colaboradores, atendimentos, etc.) NÃO serão excluídos do banco — eles ficam preservados.\n\n` +
+    `Recomendamos INATIVAR em vez de excluir. Deseja prosseguir com a exclusão?`
+  );
+  if (!confirmou) return;
   const res = await api(`/filiais/${id}`, { method:'DELETE' });
   if (res?.ok) { toast('Filial removida','success'); await carregarFiliais(); carregarTabelaFiliais(); }
   else toast(res?.erro||'Erro','error');
