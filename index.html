@@ -4175,7 +4175,12 @@ function onViewLoad(nome) {
   if (nome === 'home')               carregarDashboard();
   if (nome === 'indicadores')        indIniciar();
   if (nome === 'filiais')             carregarTabelaFiliais();
-  if (nome === 'colaboradores')      { carregarColaboradores(); carregarFuncoesDotacao(); popularSelectsFiliais(); }
+  if (nome === 'colaboradores')      {
+    carregarColaboradores();
+    carregarFuncoesDotacao();
+    // Garante filiais atualizadas (inclusive filiais novas como Piauí)
+    carregarFiliais().then(() => popularSelectsFiliais());
+  }
   if (nome === 'itens')              carregarItens();
   if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        { carregarAssinaturas(); _iniciarRealtime(); }
@@ -4842,8 +4847,6 @@ let _colaboradores=[];
 async function carregarFuncoesDotacao() {
   const sel = document.getElementById('colabFuncao');
   if (!sel) return;
-  // Já populado — não recarrega
-  if (sel.options.length > 1 && sel.options[0].value === '') return;
   const data = await api('/dotacao');
   const dotacao = data?.data || data?.dotacao || [];
   const funcoes = [...new Set(dotacao.map(d => d.funcao).filter(Boolean))].sort();
