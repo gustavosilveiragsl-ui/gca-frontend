@@ -7182,7 +7182,8 @@ function initMovDateFields() {
   });
 }
 
-function populateArmazens(selectId, all = true) {
+async function populateArmazens(selectId, all = true) {
+  await carregarArmazens(); // sempre fresh — garante armazéns recém-criados
   const sel = document.getElementById(selectId);
   if (!sel) return;
   const opts = (_armazens||[]).map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
@@ -7931,7 +7932,7 @@ async function salvarArmazem() {
   const res = await api(id ? `/armazens/${id}` : '/armazens', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
-  if (res?.ok) { toast('Armazém salvo!', 'success'); limparFormArmazem(); carregarArmazensView(); }
+  if (res?.ok) { toast('Armazém salvo!', 'success'); limparFormArmazem(); _armazens = []; carregarArmazensView(); }
   else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
