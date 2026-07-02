@@ -1751,6 +1751,7 @@ tbody tr:hover td{background:var(--bg-hover);}
                   <option value="Cancelado">❌ Cancelado</option>
                 </select>
                 <button class="btn btn-primary" onclick="abrirModalSC()">+ Nova SC</button>
+                <button class="btn btn-ghost" onclick="abrirConfigEmailSC()" title="Configurar emails do financeiro">⚙️ Emails</button>
                 <button class="btn btn-ghost" onclick="carregarSC()">↻</button>
               </div>
             </div>
@@ -10552,7 +10553,56 @@ async function confirmarRecebimentoSC() {
   mostrarModalEmailSC(scId, sc_final || {}, pdfLink);
 }
 
-async function mostrarModalEmailSC(scId, sc, pdfLink) {
+async function abrirConfigEmailSC() {
+  const res = await api(`/email-sc/destinatarios?unidade=${GCA.unidade}`);
+  const emails = res?.destinatarios || '';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalConfigEmailSC';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ Emails do Financeiro — ${getNomeUnidade(GCA.unidade)}</div>
+        <button class="modal-close" onclick="document.getElementById('modalConfigEmailSC').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="font-size:12px;color:var(--text-3)">
+          Endereços que receberão o email de confirmação de recebimento.<br>
+          Separe múltiplos emails com vírgula.
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Destinatários (filial: ${getNomeUnidade(GCA.unidade)})</label>
+          <textarea id="configEmailSCInput" class="form-input" rows="3"
+            placeholder="financeiro@ceneged.com.br, diretor@ceneged.com.br"
+            style="font-family:var(--font-mono);font-size:12px">${emails}</textarea>
+        </div>
+        <div id="configEmailSCErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="salvarConfigEmailSC()">💾 Salvar</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalConfigEmailSC').remove()">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  setTimeout(() => document.getElementById('configEmailSCInput')?.focus(), 100);
+}
+
+async function salvarConfigEmailSC() {
+  const val = document.getElementById('configEmailSCInput')?.value?.trim();
+  const err = document.getElementById('configEmailSCErr');
+  const res = await api('/email-sc/destinatarios', { method:'PUT',
+    body: JSON.stringify({ unidade: GCA.unidade, destinatarios: val }) });
+  if (res?.ok) {
+    document.getElementById('modalConfigEmailSC')?.remove();
+    toast('✅ Destinatários salvos!', 'success');
+  } else {
+    if (err) err.textContent = res?.erro || 'Erro ao salvar';
+  }
+}
+
+
   // Busca destinatários configurados
   const resEmails = await api(`/email-sc/destinatarios?unidade=${GCA.unidade}`);
   const emails = resEmails?.destinatarios || '';
