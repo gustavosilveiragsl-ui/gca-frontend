@@ -4548,9 +4548,15 @@ function iniciarApp() {
   mostrarTela('app');
   aplicarPermissoesMenu();
 
-  // Lê a hash da URL para ir à tela certa (ex: ao recarregar ou colar link)
+  // Lê a hash da URL — só navega se o usuário tiver acesso à view
   const hashView = window.location.hash.replace('#/', '').split('?')[0];
-  const viewInicial = hashView && document.getElementById('view-' + hashView) ? hashView : 'home';
+  let viewInicial = 'home';
+  if (hashView && document.getElementById('view-' + hashView)) {
+    // Verifica se o nav-item correspondente está visível (tem permissão)
+    const navItem = document.querySelector(`.nav-item[onclick*="${hashView}"]`);
+    const temAcesso = !navItem || navItem.style.display !== 'none';
+    viewInicial = temAcesso ? hashView : 'home';
+  }
   showView(viewInicial);
 
   // Botão voltar/avançar do navegador
@@ -4609,8 +4615,8 @@ function fazerLogout() {
   localStorage.removeItem('gca_token');
   localStorage.removeItem('gca_usuario');
   localStorage.removeItem('gca_unidade');
-  // Recarrega a página para limpar todo o estado em memória
-  // (permissões, cache de dados, DOM do usuário anterior)
+  // Limpa hash e recarrega — evita novo usuário cair na view do usuário anterior
+  window.location.hash = '';
   location.reload();
 }
 
