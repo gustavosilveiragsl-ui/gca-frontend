@@ -4717,7 +4717,10 @@ function copiarLink(tipo) {
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (!GCA.token) return; // já deslogado
-      localStorage.clear();
+      // Remove só as chaves do GCA — não afeta portais externos (tablet, equipes, solicitações)
+      localStorage.removeItem('gca_token');
+      localStorage.removeItem('gca_usuario');
+      localStorage.removeItem('gca_unidade');
       sessionStorage.clear();
       toast('Sessão encerrada por inatividade. Faça login novamente.', 'warn', 5000);
       setTimeout(() => location.reload(), 2000);
