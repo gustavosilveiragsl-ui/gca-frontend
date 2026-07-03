@@ -297,8 +297,11 @@ input[type=number]{-moz-appearance:textfield;}
   <div class="topbar">
     <div class="topbar-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" style="height:28px;object-fit:contain;"></div>
     <div class="topbar-equipe" id="topbarEquipe">—</div>
-    <div class="topbar-badge" id="topbarUnidade">—</div>
-    <button class="btn-sair" onclick="sair()">Sair</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="atualizarTudo()" id="btnAtualizar" style="background:none;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.7);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer">↻ Atualizar</button>
+      <div class="topbar-badge" id="topbarUnidade">—</div>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
   </div>
 
   <!-- Tabs -->
@@ -719,6 +722,18 @@ function mostrarToast(msg, tipo='info', ms=3000) {
     abrirApp();
   }
 })();
+async function atualizarTudo() {
+  const btn = document.getElementById('btnAtualizar');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    await Promise.all([carregarMedidores(), carregarMateriais()]);
+    if (btn) btn.textContent = '✓ Atualizado';
+    setTimeout(() => { if(btn){btn.textContent='↻ Atualizar';btn.disabled=false;} }, 2000);
+  } catch {
+    if (btn) { btn.textContent = '↻ Atualizar'; btn.disabled = false; }
+  }
+}
+
 </script>
 </body>
 </html>
