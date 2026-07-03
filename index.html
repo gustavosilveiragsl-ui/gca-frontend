@@ -3288,9 +3288,9 @@ tbody tr:hover td{background:var(--bg-hover);}
                 </select>
               </div>
               <div><label class="form-label">Unidade principal</label>
-                <select id="usrBase" class="form-input">
-                  <!-- filiais carregadas dinamicamente -->
-                </select>
+                <input type="hidden" id="usrBase">
+                <div id="usrBaseDisplay" class="form-input" style="background:var(--bg);cursor:default;color:var(--text-2);font-size:13px">—</div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:2px">Filial do usuário logado — preenchida automaticamente.</div>
               </div>
               <div><label class="form-label">Acesso múltiplo</label>
                 <div style="display:flex;gap:12px;margin-top:4px">
@@ -8691,7 +8691,12 @@ function editarUsuario(id) {
   document.getElementById('usrUsername').value = u.username||'';
   document.getElementById('usrSenha').value    = '';
   document.getElementById('usrRole').value     = u.role||'almoxarife';
-  if (document.getElementById('usrBase')) document.getElementById('usrBase').value = u.base||'marica';
+  if (document.getElementById('usrBase')) {
+    const base = u.base || GCA.unidade || '';
+    document.getElementById('usrBase').value = base;
+    const disp = document.getElementById('usrBaseDisplay');
+    if (disp) disp.textContent = getNomeUnidade(base) || base || '—';
+  }
   let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = []; }
   document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = unis.includes(cb.value); });
   let armazens = []; try { armazens = typeof u.armazens==='string' ? JSON.parse(u.armazens||'[]') : (Array.isArray(u.armazens)?u.armazens:[]); } catch { armazens = []; }
@@ -8702,7 +8707,15 @@ function editarUsuario(id) {
 function limparFormUsuario() {
   ['usrEditId','usrNome','usrUsername','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('usrRole').value = 'almoxarife';
-  if (document.getElementById('usrBase')) document.getElementById('usrBase').value = 'marica';
+  if (document.getElementById('usrBase')) {
+    document.getElementById('usrBase').value = GCA.unidade || '';
+    const disp = document.getElementById('usrBaseDisplay');
+    if (disp) disp.textContent = getNomeUnidade(GCA.unidade) || GCA.unidade || '—';
+  }
+  // Marca automaticamente a filial atual nos checkboxes de acesso múltiplo
+  document.querySelectorAll('.usr-uni-check').forEach(cb => {
+    cb.checked = cb.value === GCA.unidade;
+  });
   document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = false; });
   document.getElementById('usrUniRdo').checked    = false;
   renderArmazensUsuario([]);
