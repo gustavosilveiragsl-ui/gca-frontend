@@ -730,7 +730,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <span id="atendDataDisplay">—</span>
         </div>
         <div style="margin-left:auto;display:flex;gap:8px">
-          <button class="btn btn-ghost" style="font-size:11px;color:var(--red);border-color:var(--red)" onclick="cancelarAtendimento()">✕ Cancelar</button>
+          <button class="btn btn-ghost" style="font-size:11px;color:var(--red);border-color:var(--red)" data-perm-btn="cancelar_atendimento" onclick="cancelarAtendimento()">✕ Cancelar</button>
           <button class="btn btn-primary" id="btnConcluirAtendimento" onclick="concluirAtendimento()" disabled>Concluir Atendimento</button>
         </div>
       </div>
@@ -4609,11 +4609,9 @@ function fazerLogout() {
   localStorage.removeItem('gca_token');
   localStorage.removeItem('gca_usuario');
   localStorage.removeItem('gca_unidade');
-  GCA.token = GCA.usuario = GCA.unidade = null;
-  mostrarTela('login');
-  document.getElementById('loginUser').value = '';
-  document.getElementById('loginPass').value = '';
-  document.getElementById('loginError').classList.add('hidden');
+  // Recarrega a página para limpar todo o estado em memória
+  // (permissões, cache de dados, DOM do usuário anterior)
+  location.reload();
 }
 
 function trocarUnidade() {
@@ -5157,6 +5155,7 @@ function iniciarAtendimento() {
 }
 
 function cancelarAtendimento() {
+  if (!temPermissao('cancelar_atendimento')) { toast('Sem permissão para cancelar atendimento', 'warn'); return; }
   if (!confirm('Cancelar o atendimento em andamento?')) return;
   resetarAtendimento();
 }
@@ -5974,6 +5973,7 @@ async function selecionarColabMob(id) {
 }
 
 async function executarMobilizacao() {
+  if (!temPermissao('mobilizar_colaborador')) { toast('Sem permissão para mobilizar colaborador', 'warn'); return; }
   if (!_mobColab || !window._mobItensPendentes) return;
 
   const itens    = window._mobItensPendentes;
@@ -6521,6 +6521,7 @@ function fecharModalCancelar() {
 }
 
 async function confirmarCancelarAtendimento() {
+  if (!temPermissao('cancelar_atendimento')) { toast('Sem permissão para cancelar atendimento', 'warn'); return; }
   if (!_cancelarId) return;
   const btn = document.getElementById('btnConfirmarCancelar');
   btn.disabled = true;
@@ -8633,7 +8634,12 @@ async function salvarPermissoes() {
   const res = await api(`/usuarios/${_usrEditandoId}`, {
     method:'PUT', body: JSON.stringify({ permissoes: JSON.stringify(_usrPermissoes) })
   });
-  if (res?.ok) { toast('Permissões salvas!', 'success'); carregarUsuariosView(); }
+  if (res?.ok) {
+    toast('Permissões salvas!', 'success');
+    document.getElementById('permissoesPanel').style.display = 'none';
+    _usrEditandoId = null;
+    carregarUsuariosView();
+  }
   else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
@@ -8777,10 +8783,13 @@ const PERMISSOES_SCHEMA = {
 // Aplica permissões no menu — oculta itens que o usuário não tem acesso
 function aplicarPermissoesMenu() {
   if (GCA.usuario?.role === 'admin') return; // admin vê tudo
+
+  // Oculta itens de menu sem permissão
   document.querySelectorAll('.nav-item[data-perm]').forEach(btn => {
     const perm = btn.dataset.perm;
     if (!temPermissao(perm)) btn.style.display = 'none';
   });
+
   // Quick cards do dashboard — aparece bloqueado em vez de sumir
   document.querySelectorAll('.quick-card[data-perm]').forEach(btn => {
     if (!temPermissao(btn.dataset.perm)) {
@@ -8788,9 +8797,18 @@ function aplicarPermissoesMenu() {
       btn.removeAttribute('onclick');
     }
   });
+
+  // Oculta/desabilita botões de ação dentro das telas
+  document.querySelectorAll('[data-perm-btn]').forEach(btn => {
+    if (!temPermissao(btn.dataset.permBtn)) {
+      btn.style.display = 'none';
+    }
+  });
+
   // Oculta botão de Previsão de Compra na tela de estoque
   const btnPC = document.getElementById('btnPrevisaoCompra');
   if (btnPC && !temPermissao('previsao_compra')) btnPC.style.display = 'none';
+
   // Oculta grupos inteiros que ficaram sem nenhum item visível
   document.querySelectorAll('.nav-group').forEach(grupo => {
     const items = grupo.querySelectorAll('.nav-item[data-perm]');
@@ -11320,6 +11338,7 @@ function abrirEditarLaudo(idAtivo) {
 }
 
 async function salvarLaudo() {
+  if (!temPermissao('inserir_laudo')) { toast('Sem permissão para inserir laudos', 'warn'); return; }
   const id = document.getElementById('laudoIdAtivo').value;
   const body = {
     lote_laudo: document.getElementById('laudoLote').value.trim(),
