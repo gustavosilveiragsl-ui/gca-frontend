@@ -15215,17 +15215,49 @@ async function sucataConfirmarLote() {
 // ── Gerar Manifesto
 async function sucataGerarManifesto() {
   if (!_sucataPaleteAtual) return;
-  const obs = prompt('Observação para o manifesto (opcional):') ?? null;
-  if (obs === null) return; // cancelou
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalManifesto';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:400px">
+      <div class="modal-header">
+        <div class="modal-title">📋 Gerar Manifesto</div>
+        <button class="modal-close" onclick="document.getElementById('modalManifesto').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Nº do Manifesto * <span style="font-size:10px;color:var(--text-3)">(fornecido pela concessionária)</span></label>
+          <input id="manifestoNumero" class="form-input" placeholder="Ex: MTR-2024-001234" style="font-family:var(--font-mono)">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label class="form-label">Observação (opcional)</label>
+          <input id="manifestoObs" class="form-input" placeholder="Observação sobre o manifesto">
+        </div>
+        <div id="manifestoErr" style="font-size:11px;color:var(--red);min-height:14px"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="sucataConfirmarManifesto()">📋 Gerar</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalManifesto').remove()">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+  setTimeout(() => document.getElementById('manifestoNumero')?.focus(), 100);
+}
 
+async function sucataConfirmarManifesto() {
+  const num = document.getElementById('manifestoNumero')?.value?.trim();
+  const obs = document.getElementById('manifestoObs')?.value?.trim() || null;
+  const err = document.getElementById('manifestoErr');
+  if (!num) { if(err) err.textContent = 'Informe o número do manifesto'; return; }
+  document.getElementById('modalManifesto')?.remove();
   const res = await api('/sucata/manifestos', {
     method:'POST',
-    body: JSON.stringify({ palete_id: _sucataPaleteAtual.id, obs, unidade: GCA.unidade }),
+    body: JSON.stringify({ palete_id: _sucataPaleteAtual.id, numero_manifesto: num, obs, unidade: GCA.unidade }),
   });
   if (!res?.ok) { toast('Erro: ' + (res?.erro||'?'), 'error'); return; }
   toast(`Manifesto ${res.numero_manifesto} gerado!`, 'success');
   await recarregarPaleteAtual();
-  // Imprime imediatamente
   sucataImprimirManifestoById(res.id, res.numero_manifesto);
 }
 
