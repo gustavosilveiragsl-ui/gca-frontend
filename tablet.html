@@ -125,9 +125,7 @@ canvas{display:block;}
     <div class="setup-title">Tablet de Assinaturas</div>
     <div class="setup-sub">Selecione a filial deste tablet para iniciar</div>
     <select class="setup-select" id="setupUnidade">
-      <option value="">Selecione a filial...</option>
-      <option value="marica">📍 Maricá</option>
-      <option value="rio_das_ostras">📍 Rio das Ostras</option>
+      <option value="">Carregando filiais...</option>
     </select>
     <button class="setup-btn" onclick="confirmarSetup()">Confirmar</button>
   </div>
@@ -212,7 +210,31 @@ canvas{display:block;}
 
 <script>
 const API      = 'https://gca-backend-production.up.railway.app';
-const NOMES    = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
+let NOMES      = {};
+
+async function carregarFiliais() {
+  try {
+    const res = await fetch(`${API}/filiais`);
+    const data = await res.json();
+    const filiais = data?.data || [];
+    const sel = document.getElementById('setupUnidade');
+    sel.innerHTML = '<option value="">Selecione a filial...</option>';
+    filiais.forEach(f => {
+      NOMES[f.id] = f.nome;
+      const opt = document.createElement('option');
+      opt.value = f.id;
+      opt.textContent = '📍 ' + f.nome;
+      sel.appendChild(opt);
+    });
+  } catch(e) {
+    // Fallback hardcoded
+    NOMES = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
+    const sel = document.getElementById('setupUnidade');
+    sel.innerHTML = `<option value="">Selecione a filial...</option>
+      <option value="marica">📍 Maricá</option>
+      <option value="rio_das_ostras">📍 Rio das Ostras</option>`;
+  }
+}
 let _unidade   = '';
 let _pendentes = [];
 let _atual     = null; // atendimento em assinatura
@@ -222,6 +244,12 @@ let _ctx       = null;
 let _drawing   = false;
 
 // ── SETUP ──────────────────────────────────────────────────
+// Carrega filiais ao abrir setup
+(function() {
+  const u = localStorage.getItem('tablet_unidade');
+  if (!u) carregarFiliais();
+})();
+
 function confirmarSetup() {
   const u = document.getElementById('setupUnidade').value;
   if (!u) return alert('Selecione a filial.');
