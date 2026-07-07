@@ -491,11 +491,6 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
     </div>
-    <!-- Atalhos telas secundárias -->
-    <div style="padding:10px 12px;border-top:1px solid var(--border)">
-      <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Links externos</div>
-      <button class="sidebar-link-btn" onclick="copiarLink('solicitacao')">📋 Solicitação de EPI</button>
-    </div>
     <div class="sidebar-footer">
       <div class="sidebar-user">
         <div class="user-avatar" id="userAvatar">—</div>
@@ -4134,6 +4129,8 @@ const VIEW_TITLES = {
 };
 
 function showView(nome, btnEl) {
+  // Gera cards de links externos ao abrir a view
+  if (nome === 'links-externos') setTimeout(gerarLinksExternos, 0);
   // Para qualquer polling ativo ao trocar de view (mantido para compatibilidade)
   if (window._autoRefreshTimer) {
     clearInterval(window._autoRefreshTimer);
