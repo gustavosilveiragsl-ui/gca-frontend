@@ -7,6 +7,15 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>GCA Sistema</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#6366f1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GCA">
+<meta property="og:title" content="GCA Sistema">
+<meta property="og:image" content="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -469,6 +478,7 @@ tbody tr:hover td{background:var(--bg-hover);}
           <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
           <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
+          <button class="nav-item" data-view="links-externos" data-perm="gerenciar_usuarios" onclick="showView('links-externos',this)"><span class="ni-icon">🔗</span> Links Externos</button>
           <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios" onclick="showView('logins-solicitacao',this)"><span class="ni-icon">📋</span> Usuários de Solicitação</button>
 
           <!-- Administração — somente admin -->
@@ -3269,6 +3279,13 @@ tbody tr:hover td{background:var(--bg-hover);}
       </div>
 
       <!-- ── USUÁRIOS ── -->
+      <div class="view" id="view-links-externos">
+        <div class="view-header"><div class="view-title">🔗 Links Externos</div><div class="view-sub">Links para portais e dispositivos externos — clique para copiar</div></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px" id="linksExternosGrid">
+          <!-- gerado dinamicamente -->
+        </div>
+      </div>
+
       <div class="view" id="view-usuarios">
         <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
           <div class="card">
@@ -8787,6 +8804,68 @@ const PERMISSOES_SCHEMA = {
 };
 
 // Aplica permissões no menu — oculta itens que o usuário não tem acesso
+function gerarLinksExternos() {
+  const base = 'https://app.gcasistema.com.br';
+  const unidade = GCA.unidade || 'marica';
+  const slug = unidade === 'rio_das_ostras' ? 'riodasostras' : unidade;
+
+  const links = [
+    {
+      titulo: '📟 Tablet de Assinatura',
+      desc: 'Tela fixa instalada no tablet da recepção',
+      url: `${base}/tablet.html`,
+      cor: '#6366f1'
+    },
+    {
+      titulo: '👥 Portal das Equipes',
+      desc: 'Link para as equipes consultarem seus materiais',
+      url: `${base}/equipe.html`,
+      cor: '#0ea5e9'
+    },
+    {
+      titulo: '📝 Solicitação de Materiais',
+      desc: 'Link para colaboradores solicitarem materiais',
+      url: `${base}/solicitacao.html`,
+      cor: '#10b981'
+    },
+    {
+      titulo: '✅ Confirmação de Assinatura',
+      desc: 'Link enviado por e-mail para confirmar atendimento',
+      url: `${base}/confirmacao.html`,
+      cor: '#f59e0b'
+    },
+  ];
+
+  const grid = document.getElementById('linksExternosGrid');
+  if (!grid) return;
+  grid.innerHTML = links.map(l => `
+    <div class="card" style="border-top:3px solid ${l.cor}">
+      <div class="card-header">
+        <div>
+          <div class="card-title">${l.titulo}</div>
+          <div class="card-sub">${l.desc}</div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text-2);word-break:break-all">${l.url}</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="copiarLink('${l.url}', this)">📋 Copiar link</button>
+          <a href="${l.url}" target="_blank" class="btn btn-ghost">↗ Abrir</a>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function copiarLink(url, btn) {
+  navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    btn.style.background = '#10b981';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  });
+}
+
 function aplicarPermissoesMenu() {
   if (GCA.usuario?.role === 'admin') return; // admin vê tudo
 
