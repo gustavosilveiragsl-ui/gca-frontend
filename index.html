@@ -280,6 +280,18 @@ tbody tr:hover td{background:var(--bg-hover);}
 .toast-info{background:#1e40af;border-color:#3b82f6;color:#dbeafe;}
 .toast-warn{background:#92400e;border-color:#f59e0b;color:#fef3c7;}
 </style>
+<script>
+// Registra Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/gca-frontend/sw.js')
+    .then(r => console.log('[SW] registrado'))
+    .catch(e => console.warn('[SW] erro:', e));
+}
+// Força reload se página veio do bfcache (botão voltar)
+window.addEventListener('pageshow', function(e) {
+  if (e.persisted) window.location.reload();
+});
+</script>
 </head>
 <body>
 
