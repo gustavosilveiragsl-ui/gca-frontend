@@ -1,67 +1,44 @@
-// GCA Solicitação — Service Worker
-const CACHE_NAME = 'gca-sol-v1';
+// GCA Service Worker — garante HTML sempre atualizado
+const CACHE = 'gca-v1';
+const HTML_FILES = ['/', '/index.html', '/gca-frontend/', '/gca-frontend/index.html'];
 
-// Arquivos para cache offline (shell do app)
-const CACHE_URLS = [
-  '/gca-frontend/solicitacao.html',
-  '/gca-frontend/manifest.json',
-  'https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap',
-];
-
-// Instala e faz cache dos arquivos essenciais
-self.addEventListener('install', event => {
+self.addEventListener('install', e => {
   self.skipWaiting();
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(CACHE_URLS).catch(() => {
-        // Ignora erros de cache (ex: fontes externas bloqueadas)
-      });
-    })
-  );
 });
 
-// Ativa e limpa caches antigos
-self.addEventListener('activate', event => {
-  event.waitUntil(
+self.addEventListener('activate', e => {
+  e.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
 
-// Estratégia: Network First para API, Cache First para assets
-self.addEventListener('fetch', event => {
-  const url = new URL(event.request.url);
-
-  // Requisições para o backend Railway — sempre network (sem cache)
-  if (url.hostname.includes('railway.app')) {
-    return; // deixa o browser tratar normalmente
-  }
-
-  // Para o HTML principal — Network First (sempre tenta buscar atualizado)
-  if (url.pathname.endsWith('solicitacao.html')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request))
+self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+  // HTML sempre busca na rede (network-first)
+  const isHtml = e.request.mode === 'navigate' || 
+                 url.pathname.endsWith('.html') ||
+                 url.pathname === '/' ||
+                 url.pathname.endsWith('/gca-frontend/');
+  if (isHtml) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-store' })
+        .catch(() => caches.match(e.request))
     );
     return;
   }
-
-  // Para outros assets — Cache First
-  event.respondWith(
-    caches.match(event.request).then(cached => {
-      return cached || fetch(event.request).then(response => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+  // Demais recursos: cache-first
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
-        return response;
+        return res;
       });
-    }).catch(() => caches.match('/gca-frontend/solicitacao.html'))
+    })
   );
 });
