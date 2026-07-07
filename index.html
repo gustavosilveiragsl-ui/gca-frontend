@@ -8840,7 +8840,7 @@ function gerarLinksExternos() {
       <div style="padding:12px 16px;display:flex;flex-direction:column;gap:8px">
         <div style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text-2);word-break:break-all">${l.url}</div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" style="flex:1" onclick="copiarLink('${l.url}', this)">📋 Copiar link</button>
+          <button class="btn btn-primary" style="flex:1" onclick="copiarLinkExterno('${l.url}', this)">📋 Copiar link</button>
           <a href="${l.url}" target="_blank" class="btn btn-ghost">↗ Abrir</a>
         </div>
       </div>
@@ -8848,8 +8848,20 @@ function gerarLinksExternos() {
   `).join('');
 }
 
-function copiarLink(url, btn) {
+function copiarLinkExterno(url, btn) {
   navigator.clipboard.writeText(url).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    btn.style.background = '#10b981';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
+  }).catch(() => {
+    // Fallback para browsers sem clipboard API
+    const el = document.createElement('textarea');
+    el.value = url;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
     const orig = btn.textContent;
     btn.textContent = '✓ Copiado!';
     btn.style.background = '#10b981';
