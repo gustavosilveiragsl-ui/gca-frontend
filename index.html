@@ -4193,9 +4193,7 @@ function showView(nome, btnEl) {
   document.getElementById('topbarTitle').textContent = info[0];
   document.getElementById('topbarCrumb').textContent = info[1];
   // Atualiza a URL sem recarregar a página
-  if (window.location.hash !== '#/' + nome) {
-    history.pushState(null, '', '#/' + nome);
-  }
+  // URL limpa — sem hash
   onViewLoad(nome);
 }
 
@@ -4642,7 +4640,7 @@ function fazerLogout() {
   localStorage.removeItem('gca_usuario');
   localStorage.removeItem('gca_unidade');
   // Limpa hash e recarrega — evita novo usuário cair na view do usuário anterior
-  window.location.hash = '';
+  history.replaceState(null, '', window.location.pathname);
   location.reload();
 }
 
