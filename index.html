@@ -492,6 +492,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon">👥</span> Colaboradores</button>
           <button class="nav-item" data-view="itens" data-perm="cadastrar_itens" onclick="showView('itens',this)"><span class="ni-icon">📦</span> Itens</button>
           <button class="nav-item" data-view="armazens" data-perm="cadastrar_armazens" onclick="showView('armazens',this)"><span class="ni-icon">🏭</span> Armazéns</button>
+          <button class="nav-item" data-view="catalogo-armazem" data-perm="cadastrar_armazens" onclick="showView('catalogo-armazem',this)"><span class="ni-icon">📋</span> Catálogo por Armazém</button>
           <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
           <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
@@ -3143,6 +3144,41 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
+      <div class="view" id="view-catalogo-armazem">
+        <div class="view-header">
+          <div class="view-title">📋 Catálogo por Armazém</div>
+          <div class="view-sub">Defina quais itens cada armazém trabalha e o estoque mínimo de cada um</div>
+        </div>
+
+        <!-- Seletor de armazém -->
+        <div class="card" style="margin-bottom:16px">
+          <div style="padding:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-label">Armazém</label>
+              <select id="catArmSelect" class="form-input" onchange="catCarregarArmazem()">
+                <option value="">Selecione um armazém...</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="catRestringir" onchange="catToggleRestricao()" style="width:16px;height:16px;cursor:pointer">
+              <label for="catRestringir" class="form-label" style="margin:0;cursor:pointer">Restringir itens deste armazém</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid de itens -->
+        <div id="catGrid" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <div style="font-size:13px;color:var(--text-2)" id="catInfoTexto">—</div>
+            <div style="display:flex;gap:8px">
+              <input class="search-box" type="text" placeholder="Buscar item..." style="width:220px" oninput="catFiltrar(this.value)">
+              <button class="btn btn-primary" onclick="catSalvar()">💾 Salvar</button>
+            </div>
+          </div>
+          <div id="catItensGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px"></div>
+        </div>
+      </div>
+
       <div class="view" id="view-armazens">
         <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
@@ -4148,6 +4184,7 @@ const VIEW_TITLES = {
 function showView(nome, btnEl) {
   // Gera cards de links externos ao abrir a view
   if (nome === 'links-externos') setTimeout(gerarLinksExternos, 0);
+  if (nome === 'catalogo-armazem') setTimeout(catInit, 0);
   // Para qualquer polling ativo ao trocar de view (mantido para compatibilidade)
   if (window._autoRefreshTimer) {
     clearInterval(window._autoRefreshTimer);
@@ -8899,6 +8936,126 @@ function copiarLinkExterno(url, btn) {
     btn.style.background = '#10b981';
     setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
   });
+}
+
+// ═══════════════════════════════════════════════
+// CATÁLOGO POR ARMAZÉM
+// ═══════════════════════════════════════════════
+let _catArmazens = [];
+let _catItens    = [];
+let _catAtual    = [];    // item_ids no catálogo do armazém selecionado
+let _catMinimos  = {};    // item_id → estoque_minimo
+let _catRestrito = false; // se o armazém tem restrição ativa
+
+async function catInit() {
+  const [ra, ri] = await Promise.all([api('/armazens'), api('/itens?limit=2000')]);
+  _catArmazens = ra?.data || [];
+  _catItens    = ri?.data || [];
+  const sel = document.getElementById('catArmSelect');
+  sel.innerHTML = '<option value="">Selecione um armazém...</option>';
+  _catArmazens.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id; o.textContent = a.nome;
+    sel.appendChild(o);
+  });
+}
+
+async function catCarregarArmazem() {
+  const armId = document.getElementById('catArmSelect').value;
+  if (!armId) { document.getElementById('catGrid').style.display='none'; return; }
+
+  const [rc, rm] = await Promise.all([
+    api(`/saldos/catalogo?armazem_id=${armId}`),
+    api(`/saldos/estoque-minimo?armazem_id=${armId}`)
+  ]);
+
+  const catalogoIds = new Set((rc?.data||[]).map(c => c.item_id));
+  _catRestrito = catalogoIds.size > 0;
+  _catAtual    = [...catalogoIds];
+  _catMinimos  = {};
+  (rm?.data||[]).forEach(m => { _catMinimos[m.item_id] = m.estoque_minimo; });
+
+  document.getElementById('catRestringir').checked = _catRestrito;
+  document.getElementById('catGrid').style.display = '';
+  catRenderizar();
+}
+
+function catToggleRestricao() {
+  _catRestrito = document.getElementById('catRestringir').checked;
+  if (!_catRestrito) _catAtual = [];
+  catRenderizar();
+}
+
+function catRenderizar(filtro='') {
+  const armNome = _catArmazens.find(a=>a.id===document.getElementById('catArmSelect').value)?.nome||'';
+  const total = _catItens.length;
+  const selecionados = _catRestrito ? _catAtual.length : total;
+  document.getElementById('catInfoTexto').textContent = _catRestrito
+    ? `${selecionados} de ${total} itens neste armazém`
+    : `Todos os ${total} itens (sem restrição)`;
+
+  const itFilt = filtro ? _catItens.filter(i =>
+    i.descricao.toLowerCase().includes(filtro.toLowerCase()) ||
+    (i.codigo||'').toLowerCase().includes(filtro.toLowerCase())
+  ) : _catItens;
+
+  const grid = document.getElementById('catItensGrid');
+  grid.innerHTML = itFilt.map(it => {
+    const checked = !_catRestrito || _catAtual.includes(it.id);
+    const minVal  = _catMinimos[it.id] ?? it.estoque_min ?? 0;
+    const disabled = !_catRestrito ? 'disabled' : '';
+    return `<div class="card" style="padding:12px;display:flex;gap:10px;align-items:center">
+      <input type="checkbox" ${checked?'checked':''} ${disabled}
+        onchange="catToggleItem('${it.id}',this.checked)"
+        style="width:16px;height:16px;flex-shrink:0;cursor:${_catRestrito?'pointer':'default'}">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.descricao}</div>
+        <div style="font-size:11px;color:var(--text-3)">${it.codigo||''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0">
+        <label style="font-size:9px;color:var(--text-3);text-transform:uppercase">Mín.</label>
+        <input type="number" min="0" value="${minVal}"
+          onchange="catSetMinimo('${it.id}',this.value)"
+          style="width:52px;text-align:center;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 4px;background:var(--bg);color:var(--text-1)">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function catFiltrar(v) { catRenderizar(v); }
+
+function catToggleItem(itemId, checked) {
+  if (checked) { if (!_catAtual.includes(itemId)) _catAtual.push(itemId); }
+  else { _catAtual = _catAtual.filter(i => i !== itemId); }
+}
+
+function catSetMinimo(itemId, val) {
+  _catMinimos[itemId] = Number(val);
+}
+
+async function catSalvar() {
+  const armId = document.getElementById('catArmSelect').value;
+  if (!armId) return;
+
+  const btn = document.querySelector('[onclick="catSalvar()"]');
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Salvando...'; }
+
+  const itemIds = _catRestrito ? _catAtual : [];
+
+  // Montar array de mínimos (só itens visíveis no catálogo ou todos se sem restrição)
+  const minimos = Object.entries(_catMinimos)
+    .filter(([id]) => !_catRestrito || _catAtual.includes(id))
+    .map(([item_id, estoque_minimo]) => ({ item_id, estoque_minimo: Number(estoque_minimo) }));
+
+  const [rc, rm] = await Promise.all([
+    api('/saldos/catalogo', { method:'POST', body: JSON.stringify({ armazem_id:armId, item_ids:itemIds }) }),
+    api('/saldos/estoque-minimo', { method:'POST', body: JSON.stringify({ armazem_id:armId, minimos }) }),
+  ]);
+
+  if (btn) { btn.disabled=false; btn.textContent='💾 Salvar'; }
+
+  if (rc?.ok && rm?.ok) toast('Catálogo salvo com sucesso!', 'success');
+  else toast('Erro ao salvar: ' + (rc?.erro||rm?.erro||'?'), 'error');
 }
 
 function aplicarPermissoesMenu() {
