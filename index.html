@@ -282,11 +282,15 @@ tbody tr:hover td{background:var(--bg-hover);}
 .toast-warn{background:#92400e;border-color:#f59e0b;color:#fef3c7;}
 </style>
 <script>
-// Registra Service Worker
+// Remove todos os Service Workers registrados (causavam cache stale)
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/gca-frontend/sw.js')
-    .then(r => console.log('[SW] registrado'))
-    .catch(e => console.warn('[SW] erro:', e));
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+  // Limpar todos os caches do SW
+  if (window.caches) {
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+  }
 }
 // Força reload se página veio do bfcache (botão voltar)
 window.addEventListener('pageshow', function(e) {
