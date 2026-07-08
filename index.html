@@ -6008,6 +6008,8 @@ async function selecionarColabMob(id) {
 }
 
 async function executarMobilizacao() {
+  if (window._processing_executarMobilizacao) return; window._processing_executarMobilizacao = true;
+  try {
   if (!temPermissao('mobilizar_colaborador')) { toast('Sem permissão para mobilizar colaborador', 'warn'); return; }
   if (!_mobColab || !window._mobItensPendentes) return;
 
@@ -6074,7 +6076,8 @@ async function executarMobilizacao() {
       }
     }, 800);
   }, 400);
-}
+
+  } finally { window._processing_executarMobilizacao = false; }}
 
 // ═══════════════════════════════════════════
 // CONSULTA DO DIA
@@ -7298,10 +7301,18 @@ async function registrarEntrada() {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
   }
 
+  // Proteção contra duplo clique
+  const btn = document.querySelector('[onclick="registrarEntrada()"]');
+  if (btn?.disabled) return;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
+
   const res = await api('/movimentacoes/entrada', {
     method: 'POST',
     body: JSON.stringify({ item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs })
   });
+
+  // Reabilitar botão independente do resultado
+  if (btn) { btn.disabled = false; btn.textContent = '✓ Registrar Entrada'; }
 
   if (res?.ok) {
     toast('Entrada registrada com sucesso!', 'success');
@@ -7404,6 +7415,8 @@ async function verificarSaldoSaida() {
 }
 
 async function registrarSaida() {
+  if (window._processing_registrarSaida) return; window._processing_registrarSaida = true;
+  try {
   const itemId   = _saiItemSel?.id;
   const armazem  = document.getElementById('saiArmazem')?.value;
   const data     = document.getElementById('saiData')?.value;
@@ -7429,7 +7442,8 @@ async function registrarSaida() {
     console.log('res completo:', res);
     toast(res?.erro || 'Erro ao registrar saída', 'error');
   }
-}
+
+  } finally { window._processing_registrarSaida = false; }}
 
 async function carregarUltimasTransferencias() {
   const tbody = document.getElementById('trfHistoricoBody');
@@ -7525,6 +7539,8 @@ async function verificarSaldoTrf() {
 }
 
 async function registrarTransferencia() {
+  if (window._processing_registrarTransferencia) return; window._processing_registrarTransferencia = true;
+  try {
   const itemId  = _trfItemSel?.id;
   const origem  = document.getElementById('trfOrigem')?.value;
   const destino = document.getElementById('trfDestino')?.value;
@@ -7550,7 +7566,8 @@ async function registrarTransferencia() {
   } else {
     toast(res?.erro || 'Erro ao transferir', 'error');
   }
-}
+
+  } finally { window._processing_registrarTransferencia = false; }}
 
 function limparTransferencia() {
   _trfItemSel = null;
