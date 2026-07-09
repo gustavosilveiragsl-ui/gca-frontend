@@ -1405,31 +1405,36 @@ window.addEventListener('pageshow', function(e) {
       <div class="view" id="view-estoque">
 
         <!-- KPIs -->
-        <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px">
-          <div class="kpi-card">
+        <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px;gap:8px">
+          <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Críticos</span></div>
-            <div class="kpi-value" id="estKpiCritico" style="color:#ef4444">—</div>
-            <div class="kpi-delta down">abaixo do mínimo</div>
+            <div class="kpi-value" id="estKpiCritico" style="color:#ef4444;font-size:22px">—</div>
+            <div class="kpi-delta down" style="font-size:10px">abaixo do mínimo</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Baixos</span></div>
-            <div class="kpi-value" id="estKpiBaixo" style="color:#f59e0b">—</div>
-            <div class="kpi-delta warn">atenção necessária</div>
+            <div class="kpi-value" id="estKpiBaixo" style="color:#f59e0b;font-size:22px">—</div>
+            <div class="kpi-delta warn" style="font-size:10px">atenção necessária</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">OK</span></div>
-            <div class="kpi-value" id="estKpiOk" style="color:#22c55e">—</div>
-            <div class="kpi-delta up">nível adequado</div>
+            <div class="kpi-value" id="estKpiOk" style="color:#22c55e;font-size:22px">—</div>
+            <div class="kpi-delta up" style="font-size:10px">nível adequado</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">Zerados</span></div>
+            <div class="kpi-value" id="estKpiZerado" style="color:#94a3b8;font-size:22px">—</div>
+            <div class="kpi-delta" style="font-size:10px">sem estoque</div>
+          </div>
+          <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Total itens</span></div>
-            <div class="kpi-value" id="estKpiTotal">—</div>
-            <div class="kpi-delta">em estoque</div>
+            <div class="kpi-value" id="estKpiTotal" style="font-size:22px">—</div>
+            <div class="kpi-delta" style="font-size:10px">em estoque</div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Valor total</span></div>
-            <div class="kpi-value" id="estKpiValor" style="font-size:18px">—</div>
-            <div class="kpi-delta up">estoque valorizado</div>
+            <div class="kpi-value" id="estKpiValor" style="font-size:14px;font-weight:700">—</div>
+            <div class="kpi-delta up" style="font-size:10px">estoque valorizado</div>
           </div>
         </div>
 
@@ -1451,17 +1456,16 @@ window.addEventListener('pageshow', function(e) {
               <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
             </div>
           </div>
-          <table>
+          <table style="table-layout:fixed;width:100%">
             <thead>
               <tr>
-                <th>Status</th>
+                <th style="width:80px">Status</th>
                 <th>Item</th>
-                <th>Código</th>
-                <th>Categoria</th>
-                <th style="text-align:center">Saldo</th>
-                <th style="text-align:center">Mínimo</th>
-                <th style="text-align:right">Valor Un.</th>
-                <th style="text-align:right">Valor Total</th>
+                <th style="width:130px">Código</th>
+                <th style="width:90px;text-align:center">Saldo</th>
+                <th style="width:75px;text-align:center">Mínimo</th>
+                <th style="width:100px;text-align:right">Valor Un.</th>
+                <th style="width:110px;text-align:right">Valor Total</th>
               </tr>
             </thead>
             <tbody id="estBody">
@@ -7735,6 +7739,7 @@ function renderEstoque() {
   document.getElementById('estKpiCritico').textContent = all.filter(s => getStatus(s) === 'critico').length;
   document.getElementById('estKpiBaixo').textContent   = all.filter(s => getStatus(s) === 'baixo').length;
   document.getElementById('estKpiOk').textContent      = all.filter(s => getStatus(s) === 'ok').length;
+  document.getElementById('estKpiZerado').textContent  = all.filter(s => getStatus(s) === 'zerado').length;
   document.getElementById('estKpiTotal').textContent   = all.filter(s => s.saldo > 0).length;
   const valorTotal = all.reduce((acc, s) => {
     const item = (_itens||[]).find(i => i.id === s.item_id);
@@ -7774,9 +7779,8 @@ function renderEstoque() {
 
     return `<tr>
       <td>${statusTag}</td>
-      <td class="td-main">${s.nome_item||'—'}${scTag}</td>
-      <td class="td-mono">${s.codigo_item||'—'}</td>
-      <td style="font-size:11px;color:var(--text-3)">${item?.categoria||'—'}</td>
+      <td class="td-main" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.nome_item||'—'}${scTag}</td>
+      <td class="td-mono" style="font-size:11px">${s.codigo_item||'—'}</td>
       <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
       <td style="text-align:center;color:var(--text-3);font-size:11px">${min||'—'}</td>
       <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
