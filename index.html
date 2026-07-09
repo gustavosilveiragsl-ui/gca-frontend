@@ -1971,7 +1971,7 @@ window.addEventListener('pageshow', function(e) {
               <div id="enelEntSeriaisBox" style="display:none">
                 <label class="form-label">Seriais <span id="enelEntSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
                 <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <input id="enelEntSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}">
+                  <input id="enelEntSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}" onpaste="event.preventDefault();addSerialEntEnel((event.clipboardData||window.clipboardData).getData('text'));this.value=''">
                   <button class="btn btn-ghost" onclick="const i=document.getElementById('enelEntSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
                 </div>
                 <div id="enelEntSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
@@ -4292,7 +4292,7 @@ function onViewLoad(nome) {
   if (nome === 'logins-solicitacao') { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
-  if (nome === 'protheus')           carregarProtheus();
+  if (nome === 'protheus')           { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarProtheus(); }
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
   if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); enelAbrirAtendimento(); }
   if (nome === 'enel-devolucao')     { if (!_equipes.length) carregarEquipes(); devEnelRender(); }
@@ -5401,14 +5401,16 @@ function limparColaboradorAtend() {
 // ═══════════════════════════════════════════
 let _itensModal = [];
 let _itensSelecionadosModal = {}; // { itemId: { item, qtd, motivo, armazem } }
+let _modalItensMostrarTodos = false;
 
 async function abrirModalItens() {
   if (!ATEND.colab) return;
 
-  // Garante que armazéns e itens estejam carregados
+  // Garante que armazéns, itens e dotação estejam carregados
   await Promise.all([
     _armazens.length ? Promise.resolve() : carregarArmazens(),
     _itens.length    ? Promise.resolve() : carregarItensAtendimento(),
+    (_dotData && _dotData.length) ? Promise.resolve() : carregarDotacaoSilencioso(),
   ]);
 
   document.getElementById('modalItens').classList.remove('hidden');
@@ -5420,7 +5422,56 @@ async function abrirModalItens() {
   const sel  = document.getElementById('modalItensFiltroCategoria');
   sel.innerHTML = '<option value="">Todas categorias</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
 
-  renderModalItens(_itens || []);
+  // Filtra por dotação da função do colaborador (padrão), com opção de ver todos
+  _modalItensMostrarTodos = false;
+  renderModalItensComFiltroDotacao();
+}
+
+// Carrega dotação sem depender da tela de Dotação estar aberta
+async function carregarDotacaoSilencioso() {
+  const data = await api('/dotacao');
+  _dotData = data?.data || data?.dotacao || [];
+}
+
+// Retorna a lista de itens permitidos pela dotação da função do colaborador atual
+function itensDaDotacaoDoColaborador() {
+  const funcao = (ATEND.colab?.funcao || '').trim().toUpperCase();
+  if (!funcao) return _itens || [];
+  const bases = (_dotData || [])
+    .filter(d => (d.funcao||'').trim().toUpperCase() === funcao)
+    .map(d => (d.item_base_nome || d.item_descricao || '').trim().toUpperCase())
+    .filter(Boolean);
+  if (!bases.length) return _itens || []; // sem dotação cadastrada: não bloqueia, mostra tudo
+  return (_itens || []).filter(it => {
+    const desc = (it.descricao||'').toUpperCase();
+    return bases.some(b => desc.startsWith(b) || desc.includes(b));
+  });
+}
+
+function renderModalItensComFiltroDotacao() {
+  const lista = _modalItensMostrarTodos ? (_itens||[]) : itensDaDotacaoDoColaborador();
+  renderModalItens(lista);
+  atualizarAvisoFiltroDotacao(lista.length);
+}
+
+function atualizarAvisoFiltroDotacao(qtdFiltrada) {
+  let aviso = document.getElementById('modalItensAvisoDotacao');
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'modalItensAvisoDotacao';
+    aviso.style.cssText = 'font-size:12px;color:var(--text-2);padding:8px 12px;background:var(--bg);border-radius:8px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;gap:8px';
+    const grid = document.getElementById('modalItensGrid');
+    grid?.parentNode?.insertBefore(aviso, grid);
+  }
+  const funcao = ATEND.colab?.funcao || '—';
+  aviso.innerHTML = _modalItensMostrarTodos
+    ? `<span>📋 Mostrando <strong>todos os itens</strong> do sistema</span><button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="toggleMostrarTodosItens()">Ver só da função</button>`
+    : `<span>🎯 Mostrando <strong>${qtdFiltrada} item(ns)</strong> da dotação de <strong>${funcao}</strong></span><button class="btn btn-ghost" style="font-size:11px;padding:3px 10px" onclick="toggleMostrarTodosItens()">Ver todos os itens</button>`;
+}
+
+function toggleMostrarTodosItens() {
+  _modalItensMostrarTodos = !_modalItensMostrarTodos;
+  renderModalItensComFiltroDotacao();
 }
 
 function fecharModalItens() {
@@ -5429,7 +5480,7 @@ function fecharModalItens() {
 
 function filtrarModalItens(q) {
   const cat = document.getElementById('modalItensFiltroCategoria').value;
-  let lista = _itens || [];
+  let lista = _modalItensMostrarTodos ? (_itens || []) : itensDaDotacaoDoColaborador();
   if (q)   lista = lista.filter(i => (i.descricao||'').toLowerCase().includes(q.toLowerCase()) || (i.codigo||'').toLowerCase().includes(q.toLowerCase()));
   if (cat) lista = lista.filter(i => i.categoria === cat);
   renderModalItens(lista);
@@ -11025,6 +11076,11 @@ async function _uploadNFPendente(scId) {
 }
 
 async function confirmarRecebimentoSC() {
+  const btnRecSC = document.querySelector('[onclick="confirmarRecebimentoSC()"]');
+  if (btnRecSC?.disabled) return;
+  if (btnRecSC) { btnRecSC.disabled = true; btnRecSC.textContent = '⏳ Processando...'; }
+  try {
+
   const scId      = document.getElementById('recSCId').value;
   const sc        = _scData.find(x=>x.id===scId);
   const nf        = document.getElementById('recNF').value.trim();
@@ -11140,6 +11196,9 @@ async function confirmarRecebimentoSC() {
   // Abrir modal de email ao financeiro (sempre opcional)
   const sc_final = _scData.find(x=>x.id===scId);
   mostrarModalEmailSC(scId, sc_final || {}, pdfLink);
+  } finally {
+    if (btnRecSC) { btnRecSC.disabled = false; btnRecSC.textContent = '✅ Confirmar Recebimento'; }
+  }
 }
 
 async function abrirConfigEmailSC() {
@@ -11468,6 +11527,8 @@ async function carregarProtheus() {
     const nomeItem = m.descricao || m.item_descricao || m.nome_item || '—';
     const armazem  = m.nomeArmazem || m.nome_armazem || '—';
     const colab    = m.nomeColaborador || m.colaborador_nome || '—';
+    const colabObj = _colaboradores?.find(c => c.id === (m.colaboradorId || m.colaborador_id));
+    const matric   = colabObj?.matricula || m.matricula || '';
     const data     = m.data || m.criadoEm?.split('T')[0];
     return `<tr>
       <td><input type="checkbox" class="pr-check" data-id="${m.id}" ${_prSelecionados.has(m.id)?'checked':''}
@@ -11476,7 +11537,7 @@ async function carregarProtheus() {
       <td class="td-main" style="max-width:200px">${nomeItem}<div style="font-size:9px;color:var(--text-3);font-family:var(--font-mono)">${m.codigo||m.codigo_item||''}</div></td>
       <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
       <td style="text-align:center;font-weight:600">${m.quantidade}</td>
-      <td style="font-size:11px;color:var(--text-3)">${colab}</td>
+      <td style="font-size:11px;color:var(--text-3)">${colab}${matric?`<div style="font-size:9px;color:var(--text-4,#94a3b8);font-family:var(--font-mono)">Mat: ${matric}</div>`:''}</td>
       <td style="font-size:11px">${formatarData(data)}</td>
       <td>${stTag}</td>
     </tr>`;
@@ -12814,10 +12875,76 @@ async function abrirFichaEPI(colabId, nome, matricula, funcao) {
       <td style="padding:10px;text-align:center">${situacao}</td>
     </tr>`;
   }).join('');
+
+  // Guarda dados para geração do PDF (cada linha com sua própria assinatura)
+  window._fichaEpiAtual = {
+    nome, matricula, funcao,
+    admissao: colab?.data_admissao ? formatarData(colab.data_admissao) : '—',
+    itens: lista,
+  };
 }
 
 function gerarPdfFicha() {
-  toast('PDF da ficha EPI em desenvolvimento','info');
+  const f = window._fichaEpiAtual;
+  if (!f || !f.itens?.length) { toast('Nenhum registro para gerar PDF', 'warn'); return; }
+
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<title>Ficha EPI — ${f.nome}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:32px}
+  h2{font-size:16px;margin:0 0 4px}
+  .sub{color:#666;font-size:11px;margin-bottom:16px}
+  .dados{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:#f3f4f6;padding:12px;border-radius:6px;margin-bottom:20px;font-size:11px}
+  .dados b{display:block;font-size:9px;color:#666;text-transform:uppercase;margin-bottom:2px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#f3f4f6;padding:6px 8px;text-align:left;font-size:10px;color:#555;border:1px solid #e5e7eb}
+  td{padding:6px 8px;border:1px solid #e5e7eb;font-size:10px;vertical-align:middle}
+  .assin-img{max-height:32px;max-width:90px}
+  .sit-uso{color:#16a34a;font-weight:600}
+  .sit-dev{color:#888}
+  @media print{button{display:none}}
+</style>
+</head><body>
+<button onclick="window.print()" style="margin-bottom:16px;padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Salvar PDF</button>
+<h2>FICHA DE CONTROLE DE EPI</h2>
+<div class="sub">Emitido em: ${dataHoje}</div>
+
+<div class="dados">
+  <div><b>Colaborador</b>${f.nome}</div>
+  <div><b>Matrícula</b>${f.matricula||'—'}</div>
+  <div><b>Função</b>${f.funcao||'—'}</div>
+  <div><b>Admissão</b>${f.admissao||'—'}</div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Item</th><th style="text-align:center">Qtd</th><th style="text-align:center">Data Entrega</th>
+      <th style="text-align:center">CA</th><th style="text-align:center">Devolução</th>
+      <th style="text-align:center">Situação</th><th style="text-align:center">Assinatura</th>
+    </tr>
+  </thead>
+  <tbody>
+    ${f.itens.map(r => `
+      <tr>
+        <td>${r.nome_item||'—'}</td>
+        <td style="text-align:center">${r.quantidade||1}</td>
+        <td style="text-align:center">${formatarData(r.data_entrega)}</td>
+        <td style="text-align:center">${r.ca||'—'}</td>
+        <td style="text-align:center">${r.data_devolucao?formatarData(r.data_devolucao):'—'}</td>
+        <td style="text-align:center" class="${r.data_devolucao?'sit-dev':'sit-uso'}">${r.data_devolucao?'Devolvido':'Em uso'}</td>
+        <td style="text-align:center">${r.assinatura?`<img class="assin-img" src="${r.assinatura}">`:'—'}</td>
+      </tr>
+    `).join('')}
+  </tbody>
+</table>
+
+<div style="margin-top:32px;font-size:9px;color:#999;text-align:center">Documento gerado pelo GCA Sistema em ${dataHoje}. Cada assinatura corresponde exclusivamente ao atendimento daquela linha.</div>
+</body></html>`);
+  win.document.close();
 }
 
 // ═══════════════════════════════════════════
@@ -12922,13 +13049,27 @@ function selecionarMatEntEnel(id, texto, temSerial) {
   atualizarCountSeriais();
 }
 
-function addSerialEntEnel(serial) {
-  const s = serial.trim().toUpperCase();
-  if (!s) return;
-  if (_entSeriaisAtual.includes(s)) { toast('Serial duplicado: '+s,'warn'); return; }
-  _entSeriaisAtual.push(s);
+function addSerialEntEnel(serialOuTexto) {
+  const bruto = (serialOuTexto || '').trim();
+  if (!bruto) return;
+  // Suporta colar vários seriais de uma vez (separados por linha, vírgula, tab ou espaço)
+  const partes = bruto.split(/[\n\r\t,; ]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+
+  let adicionados = 0, duplicados = 0;
+  partes.forEach(s => {
+    if (_entSeriaisAtual.includes(s)) { duplicados++; return; }
+    _entSeriaisAtual.push(s);
+    adicionados++;
+  });
+
   renderSeriaisEnt();
   atualizarCountSeriais();
+
+  if (partes.length > 1) {
+    toast(`${adicionados} serial(is) adicionado(s)${duplicados?`, ${duplicados} duplicado(s) ignorado(s)`:''}`, adicionados?'success':'warn');
+  } else if (duplicados) {
+    toast('Serial duplicado: '+partes[0], 'warn');
+  }
 }
 
 function renderSeriaisEnt() {
