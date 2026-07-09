@@ -477,6 +477,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
           <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
           <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
+          <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon">📦</span> Resíduos por Armazém</button>
           <button class="nav-item" data-view="recuperados" data-perm="ver_recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
           <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
         </div>
@@ -3012,7 +3013,28 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
       <!-- ── DESCARTE ── -->
-      <div class="view" id="view-descarte">
+            <div class="view" id="view-residuos-armazem">
+        <div class="view-header">
+          <div class="view-title">📦 Resíduos por Armazém</div>
+          <div class="view-sub">Materiais descartados/trocados acumulados em cada armazém</div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div style="padding:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-label">Filtrar por Armazém</label>
+              <select id="raArmSelect" class="form-input" onchange="raCarregar()">
+                <option value="">Todos os armazéns</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="raGerarPDF()">🖨️ Gerar Relação</button>
+          </div>
+        </div>
+
+        <div id="raTabela"></div>
+      </div>
+
+<div class="view" id="view-descarte">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
@@ -4185,6 +4207,7 @@ function showView(nome, btnEl) {
   // Gera cards de links externos ao abrir a view
   if (nome === 'links-externos') setTimeout(gerarLinksExternos, 0);
   if (nome === 'catalogo-armazem') setTimeout(catInit, 0);
+  if (nome === 'residuos-armazem') setTimeout(raInit, 0);
   // Para qualquer polling ativo ao trocar de view (mantido para compatibilidade)
   if (window._autoRefreshTimer) {
     clearInterval(window._autoRefreshTimer);
@@ -8937,6 +8960,162 @@ function copiarLinkExterno(url, btn) {
     btn.style.background = '#10b981';
     setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2000);
   });
+}
+
+// ═══════════════════════════════════════════════
+// RESÍDUOS POR ARMAZÉM
+// ═══════════════════════════════════════════════
+let _raArmazens = [];
+let _raDados    = [];
+
+async function raInit() {
+  const r = await api('/armazens');
+  _raArmazens = r?.data || [];
+  const sel = document.getElementById('raArmSelect');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Todos os armazéns</option>';
+  _raArmazens.forEach(a => {
+    const o = document.createElement('option');
+    o.value = a.id; o.textContent = a.nome;
+    sel.appendChild(o);
+  });
+  await raCarregar();
+}
+
+async function raCarregar() {
+  const armId = document.getElementById('raArmSelect')?.value || '';
+  const url = '/laudos/residuos-armazem' + (armId ? `?armazem_id=${armId}` : '');
+  const r = await api(url);
+  _raDados = r?.data || [];
+  raRenderizar();
+}
+
+function raRenderizar() {
+  const tabela = document.getElementById('raTabela');
+  if (!tabela) return;
+
+  if (!_raDados.length) {
+    tabela.innerHTML = '<div class="card" style="padding:32px;text-align:center;color:var(--text-3)">Nenhum resíduo acumulado</div>';
+    return;
+  }
+
+  // Agrupar por armazém
+  const grupos = {};
+  _raDados.forEach(r => {
+    const key = r.armazem_id;
+    if (!grupos[key]) grupos[key] = { nome: r.nome_armazem, itens: [] };
+    grupos[key].itens.push(r);
+  });
+
+  tabela.innerHTML = Object.values(grupos).map(g => `
+    <div class="card" style="margin-bottom:16px">
+      <div class="card-header">
+        <div class="card-title">📍 ${g.nome}</div>
+        <div class="card-sub">${g.itens.length} tipo(s) de material</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:var(--bg)">
+              <th style="padding:8px 12px;text-align:left;color:var(--text-3);font-weight:500">Item</th>
+              <th style="padding:8px 12px;text-align:left;color:var(--text-3);font-weight:500">Código</th>
+              <th style="padding:8px 12px;text-align:center;color:var(--text-3);font-weight:500">Qtd Resíduo</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${g.itens.map(it => `
+              <tr style="border-top:1px solid var(--border)">
+                <td style="padding:8px 12px;color:var(--text-1)">${it.nome_item}</td>
+                <td style="padding:8px 12px;color:var(--text-3);font-family:var(--font-mono);font-size:11px">${it.codigo_item||'—'}</td>
+                <td style="padding:8px 12px;text-align:center">
+                  <span style="background:rgba(239,68,68,.15);color:#ef4444;padding:3px 12px;border-radius:20px;font-weight:600">${it.saldo_residuo}</span>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function raGerarPDF() {
+  const armId   = document.getElementById('raArmSelect')?.value;
+  const armNome = armId ? (_raArmazens.find(a=>a.id===armId)?.nome || 'Armazém') : 'Todos os Armazéns';
+  const dados   = _raDados;
+
+  if (!dados.length) { toast('Nenhum resíduo para gerar documento', 'warn'); return; }
+
+  // Agrupar por armazém
+  const grupos = {};
+  dados.forEach(r => {
+    if (!grupos[r.armazem_id]) grupos[r.armazem_id] = { nome: r.nome_armazem, itens: [] };
+    grupos[r.armazem_id].itens.push(r);
+  });
+
+  const dataHoje = new Date().toLocaleDateString('pt-BR');
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<title>Relação de Resíduos — ${armNome}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:32px}
+  h2{font-size:16px;margin:0 0 4px}
+  .sub{color:#666;font-size:11px;margin-bottom:24px}
+  table{width:100%;border-collapse:collapse;margin-bottom:24px}
+  th{background:#f3f4f6;padding:7px 10px;text-align:left;font-size:11px;color:#555;border:1px solid #e5e7eb}
+  td{padding:7px 10px;border:1px solid #e5e7eb}
+  .qtd{text-align:center;font-weight:700;color:#dc2626}
+  .arm-title{font-size:13px;font-weight:700;margin:20px 0 8px;color:#1e3a5f}
+  .assinatura-section{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .assin-box{border-top:2px solid #111;padding-top:8px;font-size:11px;color:#555}
+  .footer{margin-top:32px;font-size:10px;color:#999;text-align:center}
+  @media print{button{display:none}}
+</style>
+</head><body>
+<button onclick="window.print()" style="margin-bottom:20px;padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Salvar PDF</button>
+<h2>RELAÇÃO DE RESÍDUOS — ${armNome.toUpperCase()}</h2>
+<div class="sub">Data de emissão: ${dataHoje} &nbsp;|&nbsp; Filial: ${GCA.unidade?.toUpperCase()?.replace('_',' ')}</div>
+
+${Object.values(grupos).map(g => `
+<div class="arm-title">📍 ${g.nome}</div>
+<table>
+  <thead>
+    <tr><th>Item</th><th>Código</th><th style="text-align:center">Quantidade</th><th>Observação</th></tr>
+  </thead>
+  <tbody>
+    ${g.itens.map(it => `
+      <tr>
+        <td>${it.nome_item}</td>
+        <td style="font-family:monospace">${it.codigo_item||'—'}</td>
+        <td class="qtd">${it.saldo_residuo}</td>
+        <td></td>
+      </tr>
+    `).join('')}
+    <tr style="background:#fef2f2">
+      <td colspan="2"><strong>TOTAL de itens</strong></td>
+      <td class="qtd"><strong>${g.itens.reduce((s,i)=>s+Number(i.saldo_residuo),0)}</strong></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+`).join('')}
+
+<div class="assinatura-section">
+  <div class="assin-box">
+    Responsável pelo Armazém<br><br>
+    Nome: ___________________________<br><br>
+    Data: _____ / _____ / _______
+  </div>
+  <div class="assin-box">
+    Responsável pelo Transporte<br><br>
+    Nome: ___________________________<br><br>
+    Data: _____ / _____ / _______
+  </div>
+</div>
+<div class="footer">Documento gerado pelo GCA Sistema em ${dataHoje}</div>
+</body></html>`);
+  win.document.close();
 }
 
 // ═══════════════════════════════════════════════
