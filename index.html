@@ -9003,7 +9003,7 @@ function raRenderizar() {
   const grupos = {};
   _raDados.forEach(r => {
     const key = r.armazem_id;
-    if (!grupos[key]) grupos[key] = { nome: r.nome_armazem, itens: [] };
+    if (!grupos[key]) grupos[key] = { armId: r.armazem_id, nome: r.nome_armazem, itens: [] };
     grupos[key].itens.push(r);
   });
 
@@ -9039,14 +9039,41 @@ function raRenderizar() {
   `).join('');
 }
 
+async function raRegistrarColeta(armId, armNome) {
+  if (!confirm(`Confirmar coleta de TODOS os resíduos de "${armNome}"?\n\nIsto vai zerar o saldo de resíduos deste armazém.`)) return;
+
+  const itensDoArm = _raDados.filter(r => r.armazem_id === armId);
+  const itens = itensDoArm.map(it => ({ item_id: it.item_id, quantidade: it.saldo_residuo }));
+
+  const res = await api('/laudos/residuos-armazem/baixar', {
+    method: 'POST',
+    body: JSON.stringify({ armazem_id: armId, itens })
+  });
+
+  if (res?.ok) {
+    toast(`Coleta de "${armNome}" registrada!`, 'success');
+    await raCarregar();
+  } else {
+    toast('Erro ao registrar coleta: ' + (res?.erro||'?'), 'error');
+  }
+}
+
+function raGerarPDFArmazem(armId, armNome) {
+  const dados = _raDados.filter(r => r.armazem_id === armId);
+  if (!dados.length) { toast('Sem resíduos neste armazém', 'warn'); return; }
+  _raGerarPDFDados(dados, armNome);
+}
+
 async function raGerarPDF() {
   const armId   = document.getElementById('raArmSelect')?.value;
   const armNome = armId ? (_raArmazens.find(a=>a.id===armId)?.nome || 'Armazém') : 'Todos os Armazéns';
   const dados   = _raDados;
 
   if (!dados.length) { toast('Nenhum resíduo para gerar documento', 'warn'); return; }
+  _raGerarPDFDados(dados, armNome);
+}
 
-  // Agrupar por armazém
+function _raGerarPDFDados(dados, titulo) {
   const grupos = {};
   dados.forEach(r => {
     if (!grupos[r.armazem_id]) grupos[r.armazem_id] = { nome: r.nome_armazem, itens: [] };
