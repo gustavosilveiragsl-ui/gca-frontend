@@ -9039,22 +9039,72 @@ function raRenderizar() {
   `).join('');
 }
 
-async function raRegistrarColeta(armId, armNome) {
-  if (!confirm(`Confirmar coleta de TODOS os resíduos de "${armNome}"?\n\nIsto vai zerar o saldo de resíduos deste armazém.`)) return;
-
+function raRegistrarColeta(armId, armNome) {
   const itensDoArm = _raDados.filter(r => r.armazem_id === armId);
-  const itens = itensDoArm.map(it => ({ item_id: it.item_id, quantidade: it.saldo_residuo }));
+  if (!itensDoArm.length) { toast('Sem resíduos neste armazém', 'warn'); return; }
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalColeta';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-header">
+        <div class="modal-title">✅ Registrar Coleta — ${armNome}</div>
+        <button class="modal-close" onclick="document.getElementById('modalColeta').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--text-2);margin-bottom:16px">
+          Informe a quantidade coletada de cada item. Deixe 0 se não coletou.
+        </p>
+        <div style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto">
+          ${itensDoArm.map(it => `
+            <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:var(--text-1)">${it.nome_item}</div>
+                <div style="font-size:11px;color:var(--text-3)">Saldo pendente: <strong style="color:#ef4444">${it.saldo_residuo}</strong></div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                <label style="font-size:11px;color:var(--text-3)">Coletei:</label>
+                <input type="number" min="0" max="${it.saldo_residuo}" value="${it.saldo_residuo}"
+                  id="coleta_${it.item_id}"
+                  style="width:64px;text-align:center;font-size:14px;font-weight:600;border:1px solid var(--border);border-radius:6px;padding:4px 6px;background:var(--bg2);color:var(--text-1)">
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <button class="btn btn-primary" style="flex:1" onclick="raConfirmarColeta('${armId}')">✅ Confirmar Coleta</button>
+          <button class="btn btn-ghost" onclick="document.getElementById('modalColeta').remove()">Cancelar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  modal.onclick = e => { if(e.target===modal) modal.remove(); };
+}
+
+async function raConfirmarColeta(armId) {
+  const itensDoArm = _raDados.filter(r => r.armazem_id === armId);
+  const itens = itensDoArm
+    .map(it => ({
+      item_id: it.item_id,
+      quantidade: Number(document.getElementById(`coleta_${it.item_id}`)?.value || 0)
+    }))
+    .filter(it => it.quantidade > 0);
+
+  if (!itens.length) { toast('Nenhuma quantidade informada', 'warn'); return; }
 
   const res = await api('/laudos/residuos-armazem/baixar', {
     method: 'POST',
     body: JSON.stringify({ armazem_id: armId, itens })
   });
 
+  document.getElementById('modalColeta')?.remove();
+
   if (res?.ok) {
-    toast(`Coleta de "${armNome}" registrada!`, 'success');
+    toast('Coleta registrada com sucesso!', 'success');
     await raCarregar();
   } else {
-    toast('Erro ao registrar coleta: ' + (res?.erro||'?'), 'error');
+    toast('Erro ao registrar: ' + (res?.erro||'?'), 'error');
   }
 }
 
