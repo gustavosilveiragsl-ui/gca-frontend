@@ -4559,7 +4559,7 @@ function iniciarCanvasAssinatura() {
   if (!canvas) return;
   _assinCanvas = canvas;
   _assinCtx = canvas.getContext('2d');
-  _assinCtx.strokeStyle = '#1a237e';
+  _assinCtx.strokeStyle = '#1a1a1a';
   _assinCtx.lineWidth = 2.5;
   _assinCtx.lineCap = 'round';
 
@@ -15294,7 +15294,7 @@ async function gerarPDFFichaEPI(colabId) {
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_entrega?fmtData(it.data_entrega):'—'}</td>
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.ca||'—'}</td>
     <td style="text-align:center;font-family:monospace;font-size:11px;">${it.data_devolucao?fmtData(it.data_devolucao):'—'}</td>
-    <td style="text-align:center;">${it.assinatura?`<img src="${it.assinatura}" style="max-height:28px;max-width:80px;">`:''}</td>
+    <td style="text-align:center;">${it.assinatura?`<img src="${it.assinatura}" style="max-height:28px;max-width:80px;filter:brightness(0) saturate(100%) invert(15%) sepia(90%) saturate(5000%) hue-rotate(217deg) brightness(92%) contrast(125%);">`:''}</td>
   </tr>`).join('');
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8">
@@ -15365,7 +15365,7 @@ async function gerarPDFFichaEPI(colabId) {
   </div>
   <div class="termo" style="margin-top:14px;">E para constar, assino a presente para produção dos efeitos legais.</div>
   <div style="margin-top:20px;"><strong>ASSINATURA:</strong><br>
-    ${assinaturaPrincipal?`<img src="${assinaturaPrincipal}" style="max-height:60px;margin-top:8px;">`:''}<br>
+    ${assinaturaPrincipal?`<img src="${assinaturaPrincipal}" style="max-height:60px;margin-top:8px;filter:brightness(0) saturate(100%) invert(15%) sepia(90%) saturate(5000%) hue-rotate(217deg) brightness(92%) contrast(125%);">`:''}<br>
     <div style="border-top:1px solid #000;width:280px;margin-top:${assinaturaPrincipal?'4px':'48px'};"></div>
   </div>
   <div style="text-align:center;margin-top:20px;font-size:11px;">${cidadeRodape}, ${hoje}</div>
@@ -15406,7 +15406,7 @@ async function gerarPDFFichaEPI(colabId) {
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">RESPONSÁVEL PELA ENTREGA</div>
     </div>
     <div style="text-align:center;">
-      <div style="height:45px;display:flex;align-items:flex-end;justify-content:center;">${assinaturaPrincipal?`<img src="${assinaturaPrincipal}" style="max-height:45px;">`:''}</div>
+      <div style="height:45px;display:flex;align-items:flex-end;justify-content:center;">${assinaturaPrincipal?`<img src="${assinaturaPrincipal}" style="max-height:45px;filter:brightness(0) saturate(100%) invert(15%) sepia(90%) saturate(5000%) hue-rotate(217deg) brightness(92%) contrast(125%);">`:''}</div>
       <div style="border-top:1px solid #000;padding-top:6px;font-size:11px;">ASSINATURA DO EMPREGADO</div>
     </div>
   </div>
