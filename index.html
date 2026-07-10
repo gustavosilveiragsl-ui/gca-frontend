@@ -6503,7 +6503,7 @@ function renderAssinaturas(lista) {
 
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
-        ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : ''}
+        ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarPdfAtendimento('${a.id}',this)">🔄 Gerar Comprovante</button>`}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
@@ -6653,6 +6653,19 @@ function verPdfAtendimento(id) {
     window.open(atend.pdfUrl, '_blank');
   } else {
     toast('Comprovante não disponível para este atendimento', 'warning');
+  }
+}
+
+async function regerarPdfAtendimento(id, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  const res = await api(`/atendimentos/${id}/regerar-pdf`, { method: 'POST' });
+  if (res?.ok && res.pdf_url) {
+    toast('Comprovante gerado com sucesso!', 'success');
+    window.open(res.pdf_url, '_blank');
+    carregarAssinaturas();
+  } else {
+    toast('Erro ao gerar comprovante: ' + (res?.erro || 'verifique a conexão com o Drive'), 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Gerar Comprovante'; }
   }
 }
 
