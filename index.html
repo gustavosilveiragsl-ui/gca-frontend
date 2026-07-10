@@ -1456,12 +1456,13 @@ window.addEventListener('pageshow', function(e) {
               <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
             </div>
           </div>
-          <table style="table-layout:fixed;width:100%">
+          <table style="table-layout:fixed;width:100%" id="estTabela">
             <thead>
               <tr>
                 <th style="width:80px">Status</th>
                 <th>Item</th>
                 <th style="width:130px">Código</th>
+                <th id="estThArmazem" style="width:140px;display:none">Armazém</th>
                 <th style="width:90px;text-align:center">Saldo</th>
                 <th style="width:75px;text-align:center">Mínimo</th>
                 <th style="width:100px;text-align:right">Valor Un.</th>
@@ -7834,12 +7835,18 @@ function renderEstoque() {
       <td>${statusTag}</td>
       <td class="td-main" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.nome_item||'—'}${scTag}</td>
       <td class="td-mono" style="font-size:11px">${s.codigo_item||'—'}</td>
+      <td class="td-armazem-col" style="display:none;font-size:11px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.nome_armazem||'—'}</td>
       <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
       <td style="text-align:center;color:var(--text-3);font-size:11px">${min||'—'}</td>
       <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
       <td style="text-align:right;font-size:11px;font-weight:600;color:var(--text-1)">${valorTot}</td>
     </tr>`;
   }).join('');
+
+  // Mostra coluna Armazém somente quando "Todos" está selecionado (sem filtro de armazém)
+  const mostrarColArmazem = !_estArmazem;
+  document.getElementById('estThArmazem').style.display = mostrarColArmazem ? '' : 'none';
+  document.querySelectorAll('.td-armazem-col').forEach(td => { td.style.display = mostrarColArmazem ? '' : 'none'; });
 
   // Paginação
   const totalPag = Math.ceil(total / _estPorPag);
