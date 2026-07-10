@@ -4816,6 +4816,8 @@ function copiarLink(tipo) {
     clearTimeout(timer);
     timer = setTimeout(() => {
       if (!GCA.token) return; // já deslogado
+      // Avisa o backend para liberar a sessão (senão a trava de login único persiste por até 12h)
+      api('/auth/logout', { method: 'POST' }).catch(() => {});
       // Remove só as chaves do GCA — não afeta portais externos (tablet, equipes, solicitações)
       localStorage.removeItem('gca_token');
       localStorage.removeItem('gca_usuario');
