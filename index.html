@@ -12849,17 +12849,16 @@ async function abrirFichaEPI(colabId, nome, matricula, funcao) {
   document.getElementById('fichaModalMatricula').textContent = matricula;
   document.getElementById('fichaModalFuncao').textContent    = funcao;
 
-  // Admissão do colaborador
-  const colab = _colaboradores.find(c=>c.id===colabId);
-  document.getElementById('fichaModalAdmissao').textContent = colab?.data_admissao ? formatarData(colab.data_admissao) : '—';
-
   // Loading
+  document.getElementById('fichaModalAdmissao').textContent = '—';
   document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
   document.getElementById('modalFichaEPI').classList.remove('hidden');
 
-  // Busca registros
+  // Busca registros + dados confiáveis do colaborador (inclui admissão) direto do backend
   const data = await api(`/ficha-epi/${colabId}`);
   const lista = data?.data || [];
+  const colabBackend = data?.colaborador;
+  document.getElementById('fichaModalAdmissao').textContent = colabBackend?.data_admissao ? formatarData(colabBackend.data_admissao) : '—';
 
   if (!lista.length) {
     document.getElementById('fichaModalBody').innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum registro encontrado</td></tr>';
