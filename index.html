@@ -3025,14 +3025,11 @@ window.addEventListener('pageshow', function(e) {
         </div>
 
         <div class="card" style="margin-bottom:16px">
-          <div style="padding:16px;display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
-            <div style="flex:1;min-width:200px">
-              <label class="form-label">Filtrar por Armazém</label>
-              <select id="raArmSelect" class="form-input" onchange="raCarregar()">
-                <option value="">Todos os armazéns</option>
-              </select>
-            </div>
-            <button class="btn btn-primary" onclick="raGerarPDF()">🖨️ Gerar Relação</button>
+          <div style="padding:16px">
+            <label class="form-label">Filtrar por Armazém</label>
+            <select id="raArmSelect" class="form-input" onchange="raCarregar()">
+              <option value="">Todos os armazéns</option>
+            </select>
           </div>
         </div>
 
@@ -9217,7 +9214,7 @@ function _raGerarPDFDados(dados, titulo) {
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head>
 <meta charset="UTF-8">
-<title>Relação de Resíduos — ${armNome}</title>
+<title>Relação de Resíduos — ${titulo}</title>
 <style>
   body{font-family:Arial,sans-serif;font-size:12px;color:#111;margin:32px}
   h2{font-size:16px;margin:0 0 4px}
@@ -9234,8 +9231,8 @@ function _raGerarPDFDados(dados, titulo) {
 </style>
 </head><body>
 <button onclick="window.print()" style="margin-bottom:20px;padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px">🖨️ Imprimir / Salvar PDF</button>
-<h2>RELAÇÃO DE RESÍDUOS — ${armNome.toUpperCase()}</h2>
-<div class="sub">Data de emissão: ${dataHoje} &nbsp;|&nbsp; Filial: ${GCA.unidade?.toUpperCase()?.replace('_',' ')}</div>
+<h2>RELAÇÃO DE RESÍDUOS — ${titulo.toUpperCase()}</h2>
+<div class="sub">Data de emissão: ${dataHoje} &nbsp;|&nbsp; Filial: ${(GCA.unidade||'').toUpperCase().replace('_',' ')}</div>
 
 ${Object.values(grupos).map(g => `
 <div class="arm-title">📍 ${g.nome}</div>
