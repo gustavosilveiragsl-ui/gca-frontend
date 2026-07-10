@@ -4785,6 +4785,8 @@ async function confirmarTrocaUnidade(unidade) {
       return;
     }
     finalizarLogin(data);
+    // Garante que os dados do dashboard já estejam prontos antes de esconder o overlay
+    await carregarDashboard();
     toast(`✓ Filial alterada para ${getNomeUnidade(unidade)}`, 'success', 3000);
   } catch {
     toast('Erro de conexão', 'error');
