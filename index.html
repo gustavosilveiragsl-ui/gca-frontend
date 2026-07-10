@@ -9087,8 +9087,14 @@ function raRenderizar() {
   tabela.innerHTML = Object.values(grupos).map(g => `
     <div class="card" style="margin-bottom:16px">
       <div class="card-header">
-        <div class="card-title">📍 ${g.nome}</div>
-        <div class="card-sub">${g.itens.length} tipo(s) de material</div>
+        <div>
+          <div class="card-title">📍 ${g.nome}</div>
+          <div class="card-sub">${g.itens.length} tipo(s) · Total: ${g.itens.reduce((s,i)=>s+Number(i.saldo_residuo),0)} itens</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="font-size:12px" onclick="raGerarPDFArmazem('${g.armId}','${g.nome}')">🖨️ PDF</button>
+          <button class="btn btn-primary" style="font-size:12px;background:#10b981" onclick="raRegistrarColeta('${g.armId}','${g.nome}')">✅ Registrar Coleta</button>
+        </div>
       </div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:13px">
