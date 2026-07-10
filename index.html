@@ -5536,7 +5536,7 @@ function toggleItemModal(itemId) {
 function filtrarModalItensAtual() {
   const q   = document.getElementById('modalItensBusca').value;
   const cat = document.getElementById('modalItensFiltroCategoria').value;
-  let lista = _itens || [];
+  let lista = _modalItensMostrarTodos ? (_itens || []) : itensDaDotacaoDoColaborador();
   if (q)   lista = lista.filter(i => (i.descricao||'').toLowerCase().includes(q.toLowerCase()));
   if (cat) lista = lista.filter(i => i.categoria === cat);
   return lista;
@@ -5553,17 +5553,20 @@ function renderItensSelecionadosModal() {
   const armazensUsuario = (() => {
     const userArmazens = GCA.usuario?.armazens;
     const arr = Array.isArray(userArmazens) ? userArmazens : (typeof userArmazens === 'string' ? JSON.parse(userArmazens || '[]') : []);
-    return arr.length ? _armazens.filter(a => arr.includes(a.id)) : _armazens;
+    const filtrado = arr.length ? _armazens.filter(a => arr.includes(a.id)) : _armazens;
+    return filtrado.length ? filtrado : _armazens; // nunca fica vazio, mesmo se IDs estiverem desatualizados
   })();
   const armazensOpts = armazensUsuario.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
   const motivosOpts  = ['Entrega inicial','Troca desgaste','Troca recuperação','Troca por dano','Perda','Roubo'].map(m => `<option value="${m}">${m}</option>`).join('');
 
-  container.innerHTML = selecionados.map(s => `
+  container.innerHTML = selecionados.map(s => {
+    const armazensOptsSel = armazensUsuario.map(a => `<option value="${a.id}" ${a.id===s.armazem?'selected':''}>${a.nome}</option>`).join('');
+    return `
     <div class="item-sel-row" id="selrow-${s.item.id}">
       <div class="item-sel-nome">${s.item.descricao}</div>
       ${armazensUsuario.length === 1
         ? `<span style="font-size:11px;color:var(--text-2);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${armazensUsuario[0].nome}</span>`
-        : `<select class="form-input" style="width:140px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','armazem',this.value)">${armazensOpts}</select>`
+        : `<select class="form-input" style="width:140px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','armazem',this.value)">${armazensOptsSel}</select>`
       }
       <input type="number" class="form-input" style="width:70px;font-size:11px;text-align:center" min="1" value="${s.qtd}" onchange="atualizarItemModal('${s.item.id}','qtd',this.value)" placeholder="Qtd">
       <select class="form-input" style="width:160px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','motivo',this.value);mostrarCampoRecuperacao('${s.item.id}',this.value)">
@@ -5576,7 +5579,8 @@ function renderItensSelecionadosModal() {
         <option value="Manutenção">Manutenção</option>
       </select>
       <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="toggleItemModal('${s.item.id}')">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function atualizarItemModal(itemId, campo, valor) {
@@ -5959,27 +5963,35 @@ async function concluirAtendimento() {
     return;
   }
 
-  // Gera token de assinatura
-  const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
-  if (resToken?.ok) {
-    ATEND.tokenGerado = resToken.token;
-    ATEND.linkGerado  = `https://app.gcasistema.com.br/#/assinar?token=${resToken.token}`;
+  // Atendimento já foi salvo com sucesso no passo acima.
+  // As etapas abaixo (token, seriais) não devem travar a tela se falharem.
+  try {
+    // Gera token de assinatura
+    const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
+    if (resToken?.ok) {
+      ATEND.tokenGerado = resToken.token;
+      ATEND.linkGerado  = `https://app.gcasistema.com.br/#/assinar?token=${resToken.token}`;
+    }
+
+    // Atualiza seriais de itens com ensaio NR10
+    const itensComSerial = ATEND.itens.filter(it => it.requerEnsaio && it.seriais?.length);
+    if (itensComSerial.length) {
+      await api('/ensaios/atualizar-seriais', {
+        method: 'POST',
+        body: JSON.stringify({
+          itens:            itensComSerial,
+          colaborador_id:   ATEND.colab.id,
+          nome_colaborador: ATEND.colab.nome,
+        })
+      });
+    }
+  } catch (posErr) {
+    console.error('[concluirAtendimento] erro pós-salvamento (não crítico):', posErr);
+  } finally {
+    document.getElementById('overlayProcessando').style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = 'Concluir Atendimento'; }
   }
 
-  // Atualiza seriais de itens com ensaio NR10
-  const itensComSerial = ATEND.itens.filter(it => it.requerEnsaio && it.seriais?.length);
-  if (itensComSerial.length) {
-    await api('/ensaios/atualizar-seriais', {
-      method: 'POST',
-      body: JSON.stringify({
-        itens:            itensComSerial,
-        colaborador_id:   ATEND.colab.id,
-        nome_colaborador: ATEND.colab.nome,
-      })
-    });
-  }
-
-  document.getElementById('overlayProcessando').style.display = 'none';
   abrirModalFinalizado(registro);
   toast('Atendimento registrado com sucesso!', 'success');
 }
