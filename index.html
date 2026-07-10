@@ -12832,9 +12832,14 @@ function filtrarFichaEPI() {
 
 async function abrirFichaEPI(colabId, nome, matricula, funcao) {
   window.fichaEPIColaboradorAtual = colabId;
-  // Preenche header
-  const unidadeNome = GCA.unidade === 'marica' ? 'FILIAL MARICÁ' : 'FILIAL RIO DAS OSTRAS';
-  const cnpj = GCA.unidade === 'marica' ? '07.698.801/0006-26' : '07.698.801/0007-07';
+  // Busca filial dinamicamente (nome + CNPJ do banco, funciona para qualquer filial)
+  if (!window._filiaisCache) {
+    const rf = await api('/filiais');
+    window._filiaisCache = rf?.data || [];
+  }
+  const filialAtual = (window._filiaisCache||[]).find(f => f.id === GCA.filialId || f.slug === GCA.unidade) || {};
+  const unidadeNome = filialAtual.nome ? `FILIAL ${filialAtual.nome.toUpperCase()}` : (GCA.unidade||'').toUpperCase();
+  const cnpj = filialAtual.cnpj || '—';
   document.getElementById('fichaEmpresa').textContent = 'CENEGED ENERGIA POSITIVA';
   document.getElementById('fichaCNPJ').textContent    = cnpj;
   document.getElementById('fichaFilial').textContent  = unidadeNome;
