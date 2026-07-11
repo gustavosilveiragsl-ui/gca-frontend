@@ -5967,14 +5967,20 @@ async function concluirAtendimento() {
     return;
   }
 
-  // Atendimento já foi salvo com sucesso no passo acima.
-  // As etapas abaixo (token, seriais) não devem travar a tela se falharem.
+  // Atendimento já foi salvo com sucesso no passo acima (estoque já baixado).
+  // O token de assinatura é CRÍTICO — sem ele o atendimento não pode ser assinado.
+  // Tenta gerar com retry automático antes de admitir falha.
+  let tokenOk = false;
   try {
-    // Gera token de assinatura
-    const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
-    if (resToken?.ok) {
-      ATEND.tokenGerado = resToken.token;
-      ATEND.linkGerado  = `https://app.gcasistema.com.br/#/assinar?token=${resToken.token}`;
+    for (let tentativa = 1; tentativa <= 3 && !tokenOk; tentativa++) {
+      const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
+      if (resToken?.ok) {
+        ATEND.tokenGerado = resToken.token;
+        ATEND.linkGerado  = `https://app.gcasistema.com.br/#/assinar?token=${resToken.token}`;
+        tokenOk = true;
+      } else if (tentativa < 3) {
+        await new Promise(r => setTimeout(r, 1500)); // aguarda antes de tentar de novo
+      }
     }
 
     // Atualiza seriais de itens com ensaio NR10
@@ -5990,32 +5996,60 @@ async function concluirAtendimento() {
       });
     }
   } catch (posErr) {
-    console.error('[concluirAtendimento] erro pós-salvamento (não crítico):', posErr);
+    console.error('[concluirAtendimento] erro pós-salvamento:', posErr);
   } finally {
     document.getElementById('overlayProcessando').style.display = 'none';
     if (btn) { btn.disabled = false; btn.textContent = 'Concluir Atendimento'; }
   }
 
-  abrirModalFinalizado(registro);
-  toast('Atendimento registrado com sucesso!', 'success');
+  if (tokenOk) {
+    abrirModalFinalizado(registro);
+    toast('Atendimento registrado com sucesso!', 'success');
+  } else {
+    // Token falhou mesmo após 3 tentativas — avisa claramente, não mascara como sucesso
+    abrirModalFinalizado(registro, { tokenFalhou: true });
+    toast('⚠️ Atendimento salvo, mas o link de assinatura falhou. Gere novamente na tela de Assinaturas.', 'error', 8000);
+  }
 }
 
 // ═══════════════════════════════════════════
 // MODAL FINALIZADO
 // ═══════════════════════════════════════════
-function abrirModalFinalizado(registro) {
+function abrirModalFinalizado(registro, opts = {}) {
   document.getElementById('finalizadoNome').textContent  = registro.nomeColaborador;
   document.getElementById('finalizadoResumo').textContent = `${registro.qtdItens} ${registro.qtdItens===1?'item':'itens'} • ${registro.data}`;
 
-  // QR Code
   const qrDiv = document.getElementById('finalizadoQR');
-  if (ATEND.linkGerado) {
+
+  if (opts.tokenFalhou) {
+    document.getElementById('finalizadoTitulo').textContent = '⚠️ Atendimento salvo — link pendente';
+    qrDiv.innerHTML = `
+      <div style="text-align:center;padding:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px">
+        <div style="color:#dc2626;font-size:13px;font-weight:600;margin-bottom:10px">
+          O estoque já foi baixado, mas o link de assinatura não foi gerado.
+        </div>
+        <button class="btn btn-primary" onclick="regerarTokenModalFinalizado('${registro.id}')">🔄 Tentar Gerar Link Novamente</button>
+      </div>`;
+  } else if (ATEND.linkGerado) {
     qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(ATEND.linkGerado)}" style="width:160px;height:160px">`;
   } else {
     qrDiv.textContent = 'Link não disponível';
   }
 
   document.getElementById('modalFinalizado').classList.remove('hidden');
+}
+
+async function regerarTokenModalFinalizado(atendId) {
+  const res = await api(`/atendimentos/${atendId}/regerar-token`, { method: 'POST' });
+  if (res?.ok) {
+    ATEND.tokenGerado = res.token;
+    ATEND.linkGerado  = res.link;
+    document.getElementById('finalizadoTitulo').textContent = '✓ Atendimento Registrado';
+    document.getElementById('finalizadoQR').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(res.link)}" style="width:160px;height:160px">`;
+    toast('Link gerado com sucesso!', 'success');
+  } else {
+    toast('Ainda não foi possível gerar o link: ' + (res?.erro || 'tente novamente em instantes'), 'error');
+  }
 }
 
 function fecharModalFinalizado() {
