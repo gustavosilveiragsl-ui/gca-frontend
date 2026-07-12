@@ -10627,8 +10627,19 @@ async function carregarDescontos() {
     <td style="font-size:11px;text-align:center">${d.parcelas||1}x</td>
     <td style="font-size:11px;color:var(--text-3)">${d.cidade||'—'}</td>
     <td>${formatarData(d.data)}</td>
-    <td><button class="row-action" onclick="verDesconto('${d.id}')">Ver</button></td>
+    <td><button class="row-action" onclick="verDesconto('${d.id}')">Ver</button> <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirDesconto('${d.id}','${(d.colaborador_nome||'').replace(/'/g,"\\'")}')">🗑️</button></td>
   </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum desconto</div></div></td></tr>`;
+}
+
+async function excluirDesconto(id, nome) {
+  if (!confirm(`Excluir o desconto de "${nome||id}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await api(`/descontos/${id}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast('Desconto excluído com sucesso!', 'success');
+    carregarDescontos();
+  } else {
+    toast('Erro ao excluir: ' + (res?.erro||'?'), 'error');
+  }
 }
 function verDesconto(id) {
   var d = (_descData||[]).find(function(x){return x.id===id;});
@@ -11540,9 +11551,21 @@ function renderSC(lista) {
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="abrirVerSC('${sc.id}')">Ver</button>
         <button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirSC('${sc.id}','${(sc.numero_sc||'').replace(/'/g,"\\'")}')">🗑️</button>
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
+}
+
+async function excluirSC(id, numero) {
+  if (!confirm(`Excluir a Solicitação de Compra "${numero||id}"?\n\nEsta ação não pode ser desfeita.`)) return;
+  const res = await api(`/solicitacoes-compra/${id}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast('SC excluída com sucesso!', 'success');
+    carregarSC();
+  } else {
+    toast('Erro ao excluir: ' + (res?.erro||'?'), 'error');
+  }
 }
 
 // ════════════ PROTHEUS ════════════
