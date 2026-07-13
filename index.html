@@ -6885,7 +6885,7 @@ function renderSolicitacoes() {
   if (!tbody) return;
 
   const agora = new Date();
-  const CINCO_DIAS_MS = 5 * 24 * 60 * 60 * 1000;
+  const PRAZO_CANCELADO_MS = 24 * 60 * 60 * 1000; // 24h
 
   let lista = _solicitacoes;
 
@@ -6897,7 +6897,7 @@ function renderSolicitacoes() {
       if (s.status === 'CANCELADO') {
         // Mantém canceladas recentes (até 5 dias)
         const dataCanc = new Date(s.atualizado_em || s.criado_em || s.data_hora || 0);
-        return (agora - dataCanc) < CINCO_DIAS_MS;
+        return (agora - dataCanc) < PRAZO_CANCELADO_MS;
       }
       return true;
     });
