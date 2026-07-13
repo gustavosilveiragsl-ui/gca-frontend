@@ -1102,6 +1102,10 @@ window.addEventListener('pageshow', function(e) {
             style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
             Finalizadas
           </button>
+          <button id="solAbaHistorico" onclick="mudarAbaSol('historico')"
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Histórico Completo
+          </button>
         </div>
 
         <!-- FILTROS + TABELA -->
@@ -6790,6 +6794,7 @@ function mudarAbaSol(aba) {
   _solAbaAtual = aba;
   const btnAt = document.getElementById('solAbaAtivas');
   const btnFn = document.getElementById('solAbaFinalizadas');
+  const btnHi = document.getElementById('solAbaHistorico');
   if (btnAt) {
     btnAt.style.borderBottom = aba === 'ativas' ? '2px solid var(--accent)' : '2px solid transparent';
     btnAt.style.color        = aba === 'ativas' ? 'var(--accent-text)' : 'var(--text-3)';
@@ -6797,6 +6802,10 @@ function mudarAbaSol(aba) {
   if (btnFn) {
     btnFn.style.borderBottom = aba === 'finalizadas' ? '2px solid var(--accent)' : '2px solid transparent';
     btnFn.style.color        = aba === 'finalizadas' ? 'var(--accent-text)' : 'var(--text-3)';
+  }
+  if (btnHi) {
+    btnHi.style.borderBottom = aba === 'historico' ? '2px solid var(--accent)' : '2px solid transparent';
+    btnHi.style.color        = aba === 'historico' ? 'var(--accent-text)' : 'var(--text-3)';
   }
 
   const statusSel  = document.getElementById('solFiltroStatus');
@@ -6892,10 +6901,11 @@ function renderSolicitacoes() {
       }
       return true;
     });
-  } else {
+  } else if (_solAbaAtual === 'finalizadas') {
     // Aba finalizadas: só FINALIZADO
     lista = lista.filter(s => s.status === 'FINALIZADO');
   }
+  // Aba 'historico': mostra TUDO, sem filtro de tempo nem status — busca completa
 
   const { status, prioridade, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
