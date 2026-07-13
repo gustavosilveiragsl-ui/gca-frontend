@@ -7972,12 +7972,14 @@ async function buscarMovimentacoes() {
   const arm  = document.getElementById('movFiltroArmazem')?.value || '';
   const ini  = document.getElementById('movFiltroInicio')?.value || '';
   const fim  = document.getElementById('movFiltroFim')?.value || '';
+  const busca = document.getElementById('movBusca')?.value.trim() || '';
 
   let url = `/movimentacoes?pagina=${_movPagina}&por_pagina=${_movPorPag}`;
-  if (tipo) url += `&tipo=${tipo}`;
-  if (arm)  url += `&armazem=${arm}`;
-  if (ini)  url += `&data_inicio=${ini}`;
-  if (fim)  url += `&data_fim=${fim}`;
+  if (tipo)  url += `&tipo=${tipo}`;
+  if (arm)   url += `&armazem=${arm}`;
+  if (ini)   url += `&data_inicio=${ini}`;
+  if (fim)   url += `&data_fim=${fim}`;
+  if (busca) url += `&q=${encodeURIComponent(busca)}`;
 
   const data = await api(url);
   if (!data) return;
