@@ -497,7 +497,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon">🚐</span> Equipes</button>
           <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon">🗂️</span> Dotação por Função</button>
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon">🔐</span> Usuários</button>
-          <button class="nav-item" data-view="links-externos" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('links-externos',this)"><span class="ni-icon">🔗</span> Links Externos</button>
+          <button class="nav-item" data-view="links-externos" data-perm="ver_links_externos" onclick="showView('links-externos',this)"><span class="ni-icon">🔗</span> Links Externos</button>
           <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('logins-solicitacao',this)"><span class="ni-icon">📋</span> Usuários de Solicitação</button>
 
           <!-- Administração — somente admin -->
@@ -9013,6 +9013,7 @@ const PERMISSOES_SCHEMA = {
     cadastrar_armazens:'Cadastrar armazéns', cadastrar_equipes:'Cadastrar equipes',
     cadastrar_dotacao:'Cadastrar dotação', catalogo_armazem:'Catálogo por Armazém',
     gerenciar_usuarios:'Gerenciar usuários', gerenciar_usuarios_solicitacao:'Usuários de Solicitação',
+    ver_links_externos:'Links Externos',
     aprovar_recuperacao:'Aprovar recuperação de senha'
   }}
 };
@@ -9505,7 +9506,7 @@ const PERFIS_PERMISSOES = {
     ver_assinaturas:true, reenviar_link:true,
     ver_solicitacoes:true, atender_solicitacao:true,
     ver_estoque:true, entrada_material:true, saida_material:true, transferencia:true, ver_movimentacoes:true,
-    gerenciar_usuarios_solicitacao:true,
+    gerenciar_usuarios_solicitacao:true, ver_links_externos:true,
   },
   gestor: {
     iniciar_atendimento:true, mobilizar_colaborador:true, consulta_dia:true,
@@ -9514,7 +9515,7 @@ const PERFIS_PERMISSOES = {
     ver_estoque:true, entrada_material:true, saida_material:true, transferencia:true, ver_movimentacoes:true,
     consulta_itens:true, consulta_colaboradores:true, consulta_dotacao:true,
     cadastrar_itens:true, cadastrar_colaboradores:true, cadastrar_armazens:true, cadastrar_dotacao:true,
-    catalogo_armazem:true, gerenciar_usuarios_solicitacao:true,
+    catalogo_armazem:true, gerenciar_usuarios_solicitacao:true, ver_links_externos:true,
     ficha_epi:true, ver_laudos:true, ver_laudos_viatura:true, ver_descarte:true, ver_indicadores:true,
   },
   supervisor: {
