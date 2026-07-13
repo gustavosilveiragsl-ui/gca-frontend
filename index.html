@@ -477,7 +477,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
           <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
           <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
-          <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon">📦</span> Resíduos por Solicitante</button>
+          <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon">📦</span> Resíduos por Base</button>
           <button class="nav-item" data-view="recuperados" data-perm="ver_recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
           <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
         </div>
@@ -3020,15 +3020,15 @@ window.addEventListener('pageshow', function(e) {
       <!-- ── DESCARTE ── -->
             <div class="view" id="view-residuos-armazem">
         <div class="view-header">
-          <div class="view-title">📦 Resíduos por Solicitante</div>
-          <div class="view-sub">Materiais descartados/trocados acumulados por cidade do colaborador solicitante</div>
+          <div class="view-title">📦 Resíduos por Base</div>
+          <div class="view-sub">Materiais descartados/trocados acumulados por base do colaborador solicitante</div>
         </div>
 
         <div class="card" style="margin-bottom:16px">
           <div style="padding:16px">
-            <label class="form-label">Filtrar por Cidade</label>
+            <label class="form-label">Filtrar por Base</label>
             <select id="raArmSelect" class="form-input" onchange="raCarregar()">
-              <option value="">Todas as cidades</option>
+              <option value="">Todas as bases</option>
             </select>
           </div>
         </div>
@@ -9118,7 +9118,7 @@ async function raInit() {
   ];
   const sel = document.getElementById('raArmSelect');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Todas as cidades</option>';
+  sel.innerHTML = '<option value="">Todas as bases</option>';
   _raArmazens.forEach(a => {
     const o = document.createElement('option');
     o.value = a.id; o.textContent = a.nome;
