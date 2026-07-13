@@ -1531,11 +1531,12 @@ window.addEventListener('pageshow', function(e) {
                 <th>Armazém</th>
                 <th style="text-align:center">Qtd</th>
                 <th>Motivo / Colaborador</th>
+                <th>Usuário</th>
                 <th>Data</th>
               </tr>
             </thead>
             <tbody id="movBody">
-              <tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>
+              <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
             </tbody>
           </table>
           <div id="movPaginacao"></div>
@@ -8007,7 +8008,7 @@ function renderMovimentacoes(total, totalPags) {
   const lista  = _movData;
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:20px"><div class="es-icon">📋</div><div class="es-title">Nenhuma movimentação encontrada</div></div></td></tr>`;
     document.getElementById('movPaginacao').innerHTML = '';
     return;
   }
@@ -8040,6 +8041,7 @@ function renderMovimentacoes(total, totalPags) {
         <div style="font-size:11px;color:var(--text-2)">${motivo}</div>
         ${colab !== '—' ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${colab}</div>` : ''}
       </td>
+      <td style="font-size:11px;color:var(--text-2)">${usuario}</td>
       <td style="font-size:11px;color:var(--text-2)">${formatarData(data)}</td>
     </tr>`;
   }).join('');
