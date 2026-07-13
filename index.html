@@ -4764,6 +4764,16 @@ async function confirmarTrocaUnidade(unidade) {
   if (unidade === GCA.unidade) return;
   document.getElementById('unidadeDropdown')?.remove();
 
+  // Zera todos os caches em memória — senão telas que só recarregam "se vazio"
+  // continuam mostrando dados da filial anterior (colaboradores, itens, etc.)
+  _colaboradores = [];
+  _itens = [];
+  _armazens = [];
+  _dotData = [];
+  _descData = [];
+  _scData = [];
+  _equipes = [];
+
   // Overlay de carregamento
   const ov = document.createElement('div');
   ov.id = 'trocaFilialOverlay';
