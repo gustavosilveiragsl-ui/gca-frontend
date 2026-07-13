@@ -477,7 +477,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
           <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
           <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
-          <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon">📦</span> Resíduos por Armazém</button>
+          <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon">📦</span> Resíduos por Solicitante</button>
           <button class="nav-item" data-view="recuperados" data-perm="ver_recuperados" onclick="showView('recuperados',this)"><span class="ni-icon">♻️</span> Recuperados</button>
           <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon">📈</span> Indicadores</button>
         </div>
@@ -3020,15 +3020,15 @@ window.addEventListener('pageshow', function(e) {
       <!-- ── DESCARTE ── -->
             <div class="view" id="view-residuos-armazem">
         <div class="view-header">
-          <div class="view-title">📦 Resíduos por Armazém</div>
-          <div class="view-sub">Materiais descartados/trocados acumulados em cada armazém</div>
+          <div class="view-title">📦 Resíduos por Solicitante</div>
+          <div class="view-sub">Materiais descartados/trocados acumulados por cidade do colaborador solicitante</div>
         </div>
 
         <div class="card" style="margin-bottom:16px">
           <div style="padding:16px">
-            <label class="form-label">Filtrar por Armazém</label>
+            <label class="form-label">Filtrar por Cidade</label>
             <select id="raArmSelect" class="form-input" onchange="raCarregar()">
-              <option value="">Todos os armazéns</option>
+              <option value="">Todas as cidades</option>
             </select>
           </div>
         </div>
@@ -9106,11 +9106,19 @@ let _raArmazens = [];
 let _raDados    = [];
 
 async function raInit() {
-  const r = await api('/armazens');
-  _raArmazens = r?.data || [];
+  // Cidades conhecidas do Piauí (mesma lista usada no backend para extrair do setor)
+  _raArmazens = [
+    {id:'SAO RAIMUNDO NONATO', nome:'São Raimundo Nonato'}, {id:'CAMPO MAIOR', nome:'Campo Maior'},
+    {id:'BOM JESUS', nome:'Bom Jesus'}, {id:'AGUA BRANCA', nome:'Água Branca'},
+    {id:'FRONTEIRAS', nome:'Fronteiras'}, {id:'ESPERANTINA', nome:'Esperantina'},
+    {id:'PIRIPIRI', nome:'Piripiri'}, {id:'PARNAIBA', nome:'Parnaíba'},
+    {id:'FLORIANO', nome:'Floriano'}, {id:'CORRENTE', nome:'Corrente'},
+    {id:'VALENCA', nome:'Valença'}, {id:'OEIRAS', nome:'Oeiras'},
+    {id:'URUCUI', nome:'Urucuí'}, {id:'PICOS', nome:'Picos'}, {id:'TERESINA', nome:'Teresina'},
+  ];
   const sel = document.getElementById('raArmSelect');
   if (!sel) return;
-  sel.innerHTML = '<option value="">Todos os armazéns</option>';
+  sel.innerHTML = '<option value="">Todas as cidades</option>';
   _raArmazens.forEach(a => {
     const o = document.createElement('option');
     o.value = a.id; o.textContent = a.nome;
@@ -9120,11 +9128,15 @@ async function raInit() {
 }
 
 async function raCarregar() {
-  const armId = document.getElementById('raArmSelect')?.value || '';
-  const url = '/laudos/residuos-armazem' + (armId ? `?armazem_id=${armId}` : '');
+  const cidade = document.getElementById('raArmSelect')?.value || '';
+  const url = '/laudos/residuos-solicitante' + (cidade ? `?cidade=${encodeURIComponent(cidade)}` : '');
   const r = await api(url);
   _raDados = r?.data || [];
   raRenderizar();
+}
+
+function nomeCidade(id) {
+  return _raArmazens.find(a => a.id === id)?.nome || id;
 }
 
 function raRenderizar() {
@@ -9136,11 +9148,11 @@ function raRenderizar() {
     return;
   }
 
-  // Agrupar por armazém
+  // Agrupar por cidade do solicitante
   const grupos = {};
   _raDados.forEach(r => {
-    const key = r.armazem_id;
-    if (!grupos[key]) grupos[key] = { armId: r.armazem_id, nome: r.nome_armazem, itens: [] };
+    const key = r.cidade;
+    if (!grupos[key]) grupos[key] = { cidade: r.cidade, nome: nomeCidade(r.cidade), itens: [] };
     grupos[key].itens.push(r);
   });
 
@@ -9152,8 +9164,8 @@ function raRenderizar() {
           <div class="card-sub">${g.itens.length} tipo(s) · Total: ${g.itens.reduce((s,i)=>s+Number(i.saldo_residuo),0)} itens</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-ghost" style="font-size:12px" onclick="raGerarPDFArmazem('${g.armId}','${g.nome}')">🖨️ PDF</button>
-          <button class="btn btn-primary" style="font-size:12px;background:#10b981" onclick="raRegistrarColeta('${g.armId}','${g.nome}')">✅ Registrar Coleta</button>
+          <button class="btn btn-ghost" style="font-size:12px" onclick="raGerarPDFArmazem('${g.cidade}','${g.nome}')">🖨️ PDF</button>
+          <button class="btn btn-primary" style="font-size:12px;background:#10b981" onclick="raRegistrarColeta('${g.cidade}','${g.nome}')">✅ Registrar Coleta</button>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -9182,9 +9194,9 @@ function raRenderizar() {
   `).join('');
 }
 
-function raRegistrarColeta(armId, armNome) {
-  const itensDoArm = _raDados.filter(r => r.armazem_id === armId);
-  if (!itensDoArm.length) { toast('Sem resíduos neste armazém', 'warn'); return; }
+function raRegistrarColeta(cidade, cidadeNome) {
+  const itensDaCidade = _raDados.filter(r => r.cidade === cidade);
+  if (!itensDaCidade.length) { toast('Sem resíduos nesta cidade', 'warn'); return; }
 
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
@@ -9192,7 +9204,7 @@ function raRegistrarColeta(armId, armNome) {
   modal.innerHTML = `
     <div class="modal-box" style="max-width:520px">
       <div class="modal-header">
-        <div class="modal-title">✅ Registrar Coleta — ${armNome}</div>
+        <div class="modal-title">✅ Registrar Coleta — ${cidadeNome}</div>
         <button class="modal-close" onclick="document.getElementById('modalColeta').remove()">×</button>
       </div>
       <div class="modal-body">
@@ -9200,7 +9212,7 @@ function raRegistrarColeta(armId, armNome) {
           Informe a quantidade coletada de cada item. Deixe 0 se não coletou.
         </p>
         <div style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto">
-          ${itensDoArm.map(it => `
+          ${itensDaCidade.map(it => `
             <div style="display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border)">
               <div style="flex:1;min-width:0">
                 <div style="font-size:13px;font-weight:500;color:var(--text-1)">${it.nome_item}</div>
@@ -9216,7 +9228,7 @@ function raRegistrarColeta(armId, armNome) {
           `).join('')}
         </div>
         <div style="display:flex;gap:8px;margin-top:16px">
-          <button class="btn btn-primary" style="flex:1" onclick="raConfirmarColeta('${armId}')">✅ Confirmar Coleta</button>
+          <button class="btn btn-primary" style="flex:1" onclick="raConfirmarColeta('${cidade}')">✅ Confirmar Coleta</button>
           <button class="btn btn-ghost" onclick="document.getElementById('modalColeta').remove()">Cancelar</button>
         </div>
       </div>
@@ -9225,9 +9237,9 @@ function raRegistrarColeta(armId, armNome) {
   modal.onclick = e => { if(e.target===modal) modal.remove(); };
 }
 
-async function raConfirmarColeta(armId) {
-  const itensDoArm = _raDados.filter(r => r.armazem_id === armId);
-  const itens = itensDoArm
+async function raConfirmarColeta(cidade) {
+  const itensDaCidade = _raDados.filter(r => r.cidade === cidade);
+  const itens = itensDaCidade
     .map(it => ({
       item_id: it.item_id,
       quantidade: Number(document.getElementById(`coleta_${it.item_id}`)?.value || 0)
@@ -9236,9 +9248,9 @@ async function raConfirmarColeta(armId) {
 
   if (!itens.length) { toast('Nenhuma quantidade informada', 'warn'); return; }
 
-  const res = await api('/laudos/residuos-armazem/baixar', {
+  const res = await api('/laudos/residuos-solicitante/baixar', {
     method: 'POST',
-    body: JSON.stringify({ armazem_id: armId, itens })
+    body: JSON.stringify({ cidade, itens })
   });
 
   document.getElementById('modalColeta')?.remove();
@@ -9251,26 +9263,26 @@ async function raConfirmarColeta(armId) {
   }
 }
 
-function raGerarPDFArmazem(armId, armNome) {
-  const dados = _raDados.filter(r => r.armazem_id === armId);
-  if (!dados.length) { toast('Sem resíduos neste armazém', 'warn'); return; }
-  _raGerarPDFDados(dados, armNome);
+function raGerarPDFArmazem(cidade, cidadeNome) {
+  const dados = _raDados.filter(r => r.cidade === cidade);
+  if (!dados.length) { toast('Sem resíduos nesta cidade', 'warn'); return; }
+  _raGerarPDFDados(dados, cidadeNome);
 }
 
 async function raGerarPDF() {
-  const armId   = document.getElementById('raArmSelect')?.value;
-  const armNome = armId ? (_raArmazens.find(a=>a.id===armId)?.nome || 'Armazém') : 'Todos os Armazéns';
-  const dados   = _raDados;
+  const cidade     = document.getElementById('raArmSelect')?.value;
+  const cidadeNome = cidade ? nomeCidade(cidade) : 'Todas as Cidades';
+  const dados      = _raDados;
 
   if (!dados.length) { toast('Nenhum resíduo para gerar documento', 'warn'); return; }
-  _raGerarPDFDados(dados, armNome);
+  _raGerarPDFDados(dados, cidadeNome);
 }
 
 function _raGerarPDFDados(dados, titulo) {
   const grupos = {};
   dados.forEach(r => {
-    if (!grupos[r.armazem_id]) grupos[r.armazem_id] = { nome: r.nome_armazem, itens: [] };
-    grupos[r.armazem_id].itens.push(r);
+    if (!grupos[r.cidade]) grupos[r.cidade] = { nome: nomeCidade(r.cidade), itens: [] };
+    grupos[r.cidade].itens.push(r);
   });
 
   const dataHoje = new Date().toLocaleDateString('pt-BR');
@@ -9323,7 +9335,7 @@ ${Object.values(grupos).map(g => `
 
 <div class="assinatura-section">
   <div class="assin-box">
-    Responsável pelo Armazém<br><br>
+    Responsável pelo Recebimento (Cidade)<br><br>
     Nome: ___________________________<br><br>
     Data: _____ / _____ / _______
   </div>
