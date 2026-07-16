@@ -6664,6 +6664,11 @@ function reenviarLink(id, token) {
     codigo: it.codigo || '', ca: it.ca || '',
   }));
 
+  // Dados da solicitação vinculada (se houver) — para a ficha de separação mostrar certo
+  window._solicitacaoAtendimento = atend?.solicitacao
+    ? { id: atend.solicitacao.id, solicitante_nome: atend.solicitacao.solicitanteNome, prioridade: atend.solicitacao.prioridade }
+    : null;
+
   document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
   document.getElementById('finalizadoNome').textContent    = atend?.nomeColaborador || '—';
   document.getElementById('finalizadoResumo').textContent  = 'Escaneie ou compartilhe o link abaixo';
