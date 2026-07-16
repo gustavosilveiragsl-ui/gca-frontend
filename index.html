@@ -6568,7 +6568,6 @@ function renderAssinaturas(lista) {
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
         ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarPdfAtendimento('${a.id}',this)">🔄 Gerar Comprovante</button>`}
-        <button class="row-action" onclick="reimprimirFichaSeparacao('${a.id}')">🖨️ Ficha</button>
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
@@ -6654,13 +6653,23 @@ async function regerarLink(id) {
 
 function reenviarLink(id, token) {
   const link = `https://app.gcasistema.com.br/#/assinar?token=${token}`;
+  const atend = (_assinaturas||[]).find(a => a.id === id);
+
+  // Recarrega ATEND com os dados REAIS deste atendimento — nunca deixa lixo de outro atendimento
+  ATEND.id         = id;
+  ATEND.linkGerado = link;
+  ATEND.colab      = atend ? { id: atend.colaboradorId, nome: atend.nomeColaborador } : null;
+  ATEND.itens      = (atend?.itens || []).map(it => ({
+    descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
+    codigo: it.codigo || '', ca: it.ca || '',
+  }));
+
   document.getElementById('finalizadoTitulo').textContent  = 'Reenviar Link';
-  document.getElementById('finalizadoNome').textContent    = '—';
+  document.getElementById('finalizadoNome').textContent    = atend?.nomeColaborador || '—';
   document.getElementById('finalizadoResumo').textContent  = 'Escaneie ou compartilhe o link abaixo';
   document.getElementById('btnNovoAtendimento').style.display = 'none';
   const qrDiv = document.getElementById('finalizadoQR');
   qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}" style="width:160px;height:160px">`;
-  ATEND.linkGerado = link;
   document.getElementById('modalFinalizado').classList.remove('hidden');
 }
 
@@ -6721,17 +6730,6 @@ function verPdfAtendimento(id) {
   }
 }
 
-function reimprimirFichaSeparacao(id) {
-  const atend = (_assinaturas||[]).find(a => a.id === id);
-  if (!atend) { toast('Atendimento não encontrado', 'error'); return; }
-
-  const link = atend.token ? `https://app.gcasistema.com.br/#/assinar?token=${atend.token}` : '';
-  const itensFormatados = (atend.itens || []).map(it => ({
-    descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
-  }));
-
-  imprimirFichaSeparacao(atend.id, atend.colaboradorId, itensFormatados, link, null);
-}
 
 async function regerarPdfAtendimento(id, btn) {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
