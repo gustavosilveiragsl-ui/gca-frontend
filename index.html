@@ -6568,6 +6568,7 @@ function renderAssinaturas(lista) {
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
         ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarPdfAtendimento('${a.id}',this)">🔄 Gerar Comprovante</button>`}
+        <button class="row-action" onclick="reimprimirFichaSeparacao('${a.id}')">🖨️ Ficha</button>
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${(a.nomeColaborador||'').replace(/"/g,'&quot;')}">Cancelar</button>
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
@@ -6718,6 +6719,18 @@ function verPdfAtendimento(id) {
   } else {
     toast('Comprovante não disponível para este atendimento', 'warning');
   }
+}
+
+function reimprimirFichaSeparacao(id) {
+  const atend = (_assinaturas||[]).find(a => a.id === id);
+  if (!atend) { toast('Atendimento não encontrado', 'error'); return; }
+
+  const link = atend.token ? `https://app.gcasistema.com.br/#/assinar?token=${atend.token}` : '';
+  const itensFormatados = (atend.itens || []).map(it => ({
+    descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
+  }));
+
+  imprimirFichaSeparacao(atend.id, atend.colaboradorId, itensFormatados, link, null);
 }
 
 async function regerarPdfAtendimento(id, btn) {
