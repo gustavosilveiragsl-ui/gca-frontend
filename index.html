@@ -1127,6 +1127,9 @@ window.addEventListener('pageshow', function(e) {
                 <option value="Urgente">Urgente</option>
                 <option value="Normal">Normal</option>
               </select>
+              <select class="form-input" id="solFiltroArmazem" style="width:170px;font-size:11px" onchange="filtrarSolicitacoes()">
+                <option value="">Todos os armazéns</option>
+              </select>
               <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
               <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
@@ -6803,7 +6806,7 @@ async function confirmarCancelarAtendimento() {
 let _solicitacoes   = [];
 let _solPagina      = 1;
 const _solPorPagina = 10;
-let _solFiltros     = { status: '', prioridade: '', busca: '' };
+let _solFiltros     = { status: '', prioridade: '', armazem: '', busca: '' };
 let _solAbaAtual    = 'ativas'; // 'ativas' ou 'finalizadas'
 
 function mudarAbaSol(aba) {
@@ -6861,6 +6864,21 @@ async function carregarSolicitacoes(silencioso = false) {
 
   _solicitacoes = data.solicitacoes || data.data || [];
   _solPagina = 1;
+
+  // Popula filtro de armazém (uma vez só, com os armazéns realmente usados nas solicitações)
+  const selArm = document.getElementById('solFiltroArmazem');
+  if (selArm && selArm.options.length <= 1) {
+    const armazensUnicos = [...new Map(
+      _solicitacoes.filter(s => s.armazem_id && s.nome_armazem).map(s => [s.armazem_id, s.nome_armazem])
+    ).entries()];
+    armazensUnicos.sort((a,b) => a[1].localeCompare(b[1]));
+    armazensUnicos.forEach(([id, nome]) => {
+      const o = document.createElement('option');
+      o.value = id; o.textContent = nome;
+      selArm.appendChild(o);
+    });
+  }
+
   atualizarKpisSolicitacoes();
   renderSolicitacoes();
 
@@ -6890,6 +6908,7 @@ function filtrarSolicitacoes(campo, valor) {
   } else {
     _solFiltros.status     = document.getElementById('solFiltroStatus')?.value || '';
     _solFiltros.prioridade = document.getElementById('solFiltroPrioridade')?.value || '';
+    _solFiltros.armazem    = document.getElementById('solFiltroArmazem')?.value || '';
     _solFiltros.busca      = document.getElementById('solBusca')?.value || '';
   }
   _solPagina = 1;
@@ -6923,9 +6942,10 @@ function renderSolicitacoes() {
   }
   // Aba 'historico': mostra TUDO, sem filtro de tempo nem status — busca completa
 
-  const { status, prioridade, busca } = _solFiltros;
+  const { status, prioridade, armazem, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
   if (prioridade) lista = lista.filter(s => s.prioridade === prioridade);
+  if (armazem)    lista = lista.filter(s => s.armazem_id === armazem);
   if (busca) {
     const q = busca.toLowerCase();
     lista = lista.filter(s =>
@@ -6976,6 +6996,7 @@ function renderSolicitacoes() {
       <td>
         <div class="td-main">${nome}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${s.id}</div>
+        ${s.nome_armazem ? `<div style="font-size:10px;color:var(--accent-text);margin-top:2px">📦 ${s.nome_armazem}</div>` : ''}
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
       <td style="font-size:11px;color:var(--text-2)">${sol}</td>
@@ -9136,16 +9157,13 @@ let _raArmazens = [];
 let _raDados    = [];
 
 async function raInit() {
-  // Cidades conhecidas do Piauí (mesma lista usada no backend para extrair do setor)
-  _raArmazens = [
-    {id:'SAO RAIMUNDO NONATO', nome:'São Raimundo Nonato'}, {id:'CAMPO MAIOR', nome:'Campo Maior'},
-    {id:'BOM JESUS', nome:'Bom Jesus'}, {id:'AGUA BRANCA', nome:'Água Branca'},
-    {id:'FRONTEIRAS', nome:'Fronteiras'}, {id:'ESPERANTINA', nome:'Esperantina'},
-    {id:'PIRIPIRI', nome:'Piripiri'}, {id:'PARNAIBA', nome:'Parnaíba'},
-    {id:'FLORIANO', nome:'Floriano'}, {id:'CORRENTE', nome:'Corrente'},
-    {id:'VALENCA', nome:'Valença'}, {id:'OEIRAS', nome:'Oeiras'},
-    {id:'URUCUI', nome:'Urucuí'}, {id:'PICOS', nome:'Picos'}, {id:'TERESINA', nome:'Teresina'},
-  ];
+  // Busca os armazéns reais da filial atual — mesma lógica usada no backend
+  // para identificar a "base" do colaborador (funciona para qualquer filial)
+  const r = await api('/armazens');
+  const armazens = r?.data || [];
+  const semAcento = s => (s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  _raArmazens = armazens.map(a => ({ id: semAcento(a.nome), nome: a.nome }));
+
   const sel = document.getElementById('raArmSelect');
   if (!sel) return;
   sel.innerHTML = '<option value="">Todas as bases</option>';
