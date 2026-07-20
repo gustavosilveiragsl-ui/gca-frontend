@@ -1017,6 +1017,11 @@ window.addEventListener('pageshow', function(e) {
           </div>
         </div>
 
+        <div id="assAvisoHistorico" style="display:none;align-items:center;justify-content:space-between;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 14px;margin-bottom:14px;font-size:12px;color:var(--text-2)">
+          <span>Mostrando assinados dos últimos 60 dias</span>
+          <button class="btn btn-ghost" style="font-size:11px;padding:4px 12px" onclick="toggleAssHistoricoCompleto()">📜 Ver histórico completo</button>
+        </div>
+
         <!-- ABAS PENDENTES / ASSINADAS -->
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
           <button id="assAbaPendentes" onclick="mudarAbaAss('pendentes')"
@@ -6411,6 +6416,12 @@ async function carregarItensAtendimento() {
 // ASSINATURAS
 // ═══════════════════════════════════════════
 let _assinaturas = [];
+let _assVerTudo = false;
+
+function toggleAssHistoricoCompleto() {
+  _assVerTudo = !_assVerTudo;
+  carregarAssinaturas();
+}
 let _assAbaAtual = 'pendentes'; // 'pendentes' ou 'assinadas'
 
 function mudarAbaAss(aba) {
@@ -6457,8 +6468,19 @@ async function carregarAssinaturas(silencioso = false) {
   // Garante colaboradores carregados para buscar setor
   if (!_colaboradores.length) await carregarColaboradoresAtendimento();
 
-  const data = await api('/atendimentos/pendentes');
+  const url = '/atendimentos/pendentes' + (_assVerTudo ? '?todos=true' : '');
+  const data = await api(url);
   if (!data) return;
+
+  // Aviso de que está limitado aos últimos 60 dias (assinados), com opção de ver tudo
+  const aviso = document.getElementById('assAvisoHistorico');
+  if (aviso) {
+    aviso.style.display = 'flex';
+    aviso.querySelector('span').textContent = data.limitado
+      ? `Mostrando assinados dos últimos ${data.diasAssinado || 60} dias (pendentes/expirados sempre completos)`
+      : 'Mostrando histórico completo de assinados';
+    aviso.querySelector('button').textContent = data.limitado ? '📜 Ver histórico completo' : '⚡ Voltar ao modo rápido';
+  }
 
   const agora = new Date();
   const hoje  = agora.toISOString().split('T')[0];
