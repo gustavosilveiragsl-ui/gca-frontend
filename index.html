@@ -9898,6 +9898,17 @@ function renderConsultaColabs() {
 async function abrirConsultaColab(id) {
   _consultaColabAtual = id;
   document.getElementById('modalConsultaColab').classList.remove('hidden');
+
+  // Limpa TUDO (cabeçalho + KPIs + tabela) antes de buscar — evita mostrar dado do colaborador anterior
+  document.getElementById('ccNome').textContent    = 'Carregando...';
+  document.getElementById('ccSub').textContent     = '';
+  document.getElementById('ccFuncao').textContent  = '—';
+  document.getElementById('ccSetor').textContent   = '—';
+  document.getElementById('ccStatus').innerHTML    = '—';
+  document.getElementById('ccTotalAtend').textContent  = '—';
+  document.getElementById('ccTotalTipos').textContent  = '—';
+  document.getElementById('ccItemTop').textContent     = '—';
+  document.getElementById('ccItensEmMaos').textContent = '—';
   document.getElementById('ccSaldoBody').innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center"><div class="spinner"></div></td></tr>';
   document.getElementById('secHistoricoColab').style.display = 'none';
   document.getElementById('secDotacaoColab').style.display   = 'none';
