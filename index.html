@@ -4781,6 +4781,8 @@ async function confirmarTrocaUnidade(unidade) {
   _descData = [];
   _scData = [];
   _equipes = [];
+  _raDados = [];
+  _raArmazens = [];
 
   // Overlay de carregamento
   const ov = document.createElement('div');
@@ -9157,22 +9159,20 @@ let _raArmazens = [];
 let _raDados    = [];
 
 async function raInit() {
-  // Busca os armazéns reais da filial atual — mesma lógica usada no backend
-  // para identificar a "base" do colaborador (funciona para qualquer filial)
-  const r = await api('/armazens');
-  const armazens = r?.data || [];
-  const semAcento = s => (s||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  _raArmazens = armazens.map(a => ({ id: semAcento(a.nome), nome: a.nome }));
+  await raCarregar(); // busca tudo (sem filtro) primeiro
 
+  // Popula o filtro com as cidades/bases que realmente aparecem nos dados
   const sel = document.getElementById('raArmSelect');
   if (!sel) return;
+  const cidadesUnicas = [...new Set(_raDados.map(r => r.cidade))].sort();
+  const valorAtual = sel.value;
   sel.innerHTML = '<option value="">Todas as bases</option>';
-  _raArmazens.forEach(a => {
+  cidadesUnicas.forEach(cid => {
     const o = document.createElement('option');
-    o.value = a.id; o.textContent = a.nome;
+    o.value = cid; o.textContent = nomeCidade(cid);
     sel.appendChild(o);
   });
-  await raCarregar();
+  if (valorAtual) sel.value = valorAtual;
 }
 
 async function raCarregar() {
@@ -9184,7 +9184,8 @@ async function raCarregar() {
 }
 
 function nomeCidade(id) {
-  return _raArmazens.find(a => a.id === id)?.nome || id;
+  // Deixa com Iniciais Maiúsculas pra ficar mais legível (ex: "BOM JESUS" -> "Bom Jesus")
+  return (id || '').toLowerCase().replace(/(^|\s)\S/g, l => l.toUpperCase());
 }
 
 function raRenderizar() {
