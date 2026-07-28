@@ -7961,6 +7961,7 @@ function renderEstoque() {
                     : status === 'baixo'   ? '<span style="color:#f59e0b;font-size:11px;font-weight:700">🟡 Baixo</span>'
                     : status === 'zerado'  ? '<span style="color:var(--text-3);font-size:11px;font-weight:700">⬜ Zerado</span>'
                     :                        '<span style="color:#22c55e;font-size:11px;font-weight:700">🟢 OK</span>';
+    const item     = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn  = Number(item?.valor_un || 0);
     const valorTot = (s.saldo * valorUn).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const vUn      = valorUn.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -8181,6 +8182,7 @@ function calcularPrevisao() {
     const sugestao    = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
     if (sugestao === 0) return null;
 
+    const item       = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn    = Number(item?.valor_un || 0);
     return { nome: s.nome_item, codigo: s.codigo_item, armazem: s.nome_armazem,
              saldo: s.saldo, min, mediaMensal, saidUlt90, diasAteZerar,
