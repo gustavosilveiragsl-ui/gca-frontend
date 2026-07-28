@@ -10933,8 +10933,9 @@ function fecharTodosModaisSC() {
   });
 }
 
-function abrirModalSC(id) {
+async function abrirModalSC(id) {
   fecharTodosModaisSC();
+  if (!_armazens.length) await carregarArmazens(); // evita esconder o campo por engano quando a lista ainda não carregou
   _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
