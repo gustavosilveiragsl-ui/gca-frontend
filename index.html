@@ -11693,7 +11693,8 @@ async function carregarProtheus() {
   const fim     = document.getElementById('prFiltroFim')?.value||'';
 
   let url = `/movimentacoes?pagina=${_prPagina}&por_pagina=${_prPorPag}`;
-  if (tipo)   url += `&tipo=${tipo}`;
+  if (tipo)    url += `&tipo=${tipo}`;
+  if (status)  url += `&status_protheus=${encodeURIComponent(status)}`;
   if (armazem) url += `&armazem=${armazem}`;
   if (inicio) url += `&data_inicio=${inicio}`;
   if (fim)    url += `&data_fim=${fim}`;
@@ -11705,9 +11706,8 @@ async function carregarProtheus() {
   const total = data.total || 0;
   const totalPags = data.totalPaginas || 1;
 
-  // Filtra status localmente (campo não estava no backend originalmente)
+  // Status já vem filtrado do backend — não precisa mais filtrar localmente
   let lista = _prData;
-  if (status) lista = lista.filter(m => (m.status_protheus||'PENDENTE') === status);
 
   // KPIs
   document.getElementById('prKpiPend').textContent = _prData.filter(m=>(m.status_protheus||'PENDENTE')==='PENDENTE').length;
