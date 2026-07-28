@@ -15118,28 +15118,24 @@ async function carregarIndForaPrazo() {
   const content = document.getElementById('indForaPrazoContent');
   content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando...</div></div>';
 
-  const data = await api('/indicadores/fora-prazo');
+  const de = document.getElementById('indDe')?.value || '';
+  const ate = document.getElementById('indAte')?.value || '';
+  let url = '/indicadores/fora-prazo';
+  if (de || ate) url += `?de=${de}&ate=${ate}`;
+
+  const data = await api(url);
   if (!data?.ok) { content.innerHTML = '<div class="empty-state"><div class="es-title">Erro ao carregar</div></div>'; return; }
   _indForaPrazoData = data;
   indRenderizarForaPrazo();
 }
 
 function indRankTabela(titulo, icone, lista) {
-  if (!lista.length) return `<div class="card" style="padding:16px"><div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">${icone} ${titulo}</div><div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div></div>`;
-  return `<div class="card" style="padding:16px">
-    <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">${icone} ${titulo}</div>
-    <table style="width:100%;border-collapse:collapse">
-      <thead><tr>
-        <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px 0">Nome</th>
-        <th style="text-align:center;font-size:10px;color:var(--text-3);padding:4px 0">Casos</th>
-        <th style="text-align:right;font-size:10px;color:var(--text-3);padding:4px 0">Prejuízo</th>
-      </tr></thead>
-      <tbody>${lista.map(r => `<tr style="border-top:1px solid var(--border)">
-        <td style="padding:6px 0;font-size:12px;color:var(--text-1)">${r.nome}</td>
-        <td style="padding:6px 0;text-align:center;font-weight:700;color:#f59e0b">${r.total}</td>
-        <td style="padding:6px 0;text-align:right;font-size:11px;color:#ef4444">${r.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-      </tr>`).join('')}</tbody>
-    </table>
+  return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${icone} ${titulo}</div>
+    ${!lista.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' :
+      indTabela(['Nome','Casos','Prejuízo'],
+        lista.map(r => [r.nome, r.total, r.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})]),
+        ['var(--text-1)','#f59e0b','#ef4444'])}
   </div>`;
 }
 
@@ -15148,17 +15144,12 @@ function indRenderizarForaPrazo() {
   if (!d) return;
   const content = document.getElementById('indForaPrazoContent');
 
-  const kpiCard = (label, valor, cor) => `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center">
-    <div style="font-size:10px;color:var(--text-3);text-transform:uppercase">${label}</div>
-    <div style="font-size:20px;font-weight:700;color:${cor}">${valor}</div>
-  </div>`;
-
   content.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-      ${kpiCard('Casos fora do prazo', d.kpis.totalCasos, '#f59e0b')}
-      ${kpiCard('Colaboradores envolvidos', d.kpis.colaboradoresEnvolvidos, 'var(--text-1)')}
-      ${kpiCard('Itens distintos', d.kpis.itensDistintos, 'var(--text-1)')}
-      ${kpiCard('Prejuízo total estimado', d.kpis.prejuizoTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}), '#ef4444')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(d.kpis.totalCasos,'Casos Fora do Prazo','#f59e0b')}
+      ${indKpi(d.kpis.colaboradoresEnvolvidos,'Colaboradores Envolvidos','var(--accent-text)')}
+      ${indKpi(d.kpis.itensDistintos,'Itens Distintos','#8b5cf6')}
+      ${indKpi(d.kpis.prejuizoTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Prejuízo Total Estimado','#ef4444')}
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
@@ -15167,47 +15158,44 @@ function indRenderizarForaPrazo() {
       ${indRankTabela('Solicitante que mais justifica (portal)', '📱', d.rankSolicitante)}
     </div>
 
-    <div class="card" style="padding:16px;margin-bottom:20px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">🔥 Casos Mais Críticos (maior prejuízo)</div>
-      ${!d.maisCriticos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' : `
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px">Item</th>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px">Colaborador</th>
-          <th style="text-align:center;font-size:10px;color:var(--text-3);padding:4px">Durou / Deveria</th>
-          <th style="text-align:right;font-size:10px;color:var(--text-3);padding:4px">Prejuízo</th>
-        </tr></thead>
-        <tbody>${d.maisCriticos.map(c => `<tr style="border-top:1px solid var(--border)">
-          <td style="padding:6px 4px;font-size:12px">${c.itemNome}</td>
-          <td style="padding:6px 4px;font-size:12px;color:var(--text-2)">${c.colaboradorNome}</td>
-          <td style="padding:6px 4px;text-align:center;font-size:11px"><span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span></td>
-          <td style="padding:6px 4px;text-align:right;font-weight:700;color:#ef4444">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-        </tr>`).join('')}</tbody>
-      </table>`}
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">🔥 Casos Mais Críticos (maior prejuízo)</div>
+      ${!d.maisCriticos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' :
+        indTabela(['Item','Colaborador','Durou / Deveria','Prejuízo'],
+          d.maisCriticos.map(c => [
+            c.itemNome, c.colaboradorNome,
+            `<span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span>`,
+            `<span style="font-weight:700">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
+          ]),
+          ['var(--text-1)','var(--text-2)','','#ef4444'])}
     </div>
 
-    <div class="card" style="padding:16px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">📋 Relação Completa — Solicitações Fora do Prazo</div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📋 Relação Completa — Solicitações Fora do Prazo</div>
       ${!d.casos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' : `
-      <div style="max-height:500px;overflow-y:auto">
-      <table style="width:100%;border-collapse:collapse">
+      <div style="max-height:520px;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+        <colgroup>
+          <col style="width:90px"><col style="width:120px"><col style="width:120px">
+          <col style="width:150px"><col style="width:90px"><col><col style="width:90px">
+        </colgroup>
         <thead style="position:sticky;top:0;background:var(--bg-card)"><tr>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Data</th>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Solicitante</th>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Colaborador</th>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Item</th>
-          <th style="text-align:center;font-size:10px;color:var(--text-3);padding:6px 4px">Durou/Deveria</th>
-          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Justificativa</th>
-          <th style="text-align:right;font-size:10px;color:var(--text-3);padding:6px 4px">Prejuízo</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Data</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Solicitante</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Colaborador</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+          <th style="text-align:center;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Durou/Deveria</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Justificativa</th>
+          <th style="text-align:right;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Prejuízo</th>
         </tr></thead>
-        <tbody>${d.casos.map(c => `<tr style="border-top:1px solid var(--border)">
-          <td style="padding:6px 4px;font-size:11px;color:var(--text-3)">${formatarData((c.data||'').split('T')[0]||(c.data||'').split(',')[0])}</td>
-          <td style="padding:6px 4px;font-size:11px">${c.solicitanteNome}</td>
-          <td style="padding:6px 4px;font-size:11px;color:var(--text-2)">${c.colaboradorNome}</td>
-          <td style="padding:6px 4px;font-size:11px">${c.itemNome}</td>
-          <td style="padding:6px 4px;text-align:center;font-size:11px"><span style="color:#ef4444">${c.diasDecorridos}d</span>/<span style="color:#22c55e">${c.prazoMinDias}d</span></td>
-          <td style="padding:6px 4px;font-size:10px;color:var(--yellow);max-width:220px">${c.justificativa || '<span style="color:var(--text-3)">—</span>'}</td>
-          <td style="padding:6px 4px;text-align:right;font-size:11px;font-weight:700;color:#ef4444">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        <tbody>${d.casos.map(c => `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:9px 8px;font-size:11px;color:var(--text-3);vertical-align:top">${c.data ? formatarData(c.data.split('T')[0]) : '—'}</td>
+          <td style="padding:9px 8px;vertical-align:top">${c.solicitanteNome}</td>
+          <td style="padding:9px 8px;color:var(--text-2);vertical-align:top">${c.colaboradorNome}</td>
+          <td style="padding:9px 8px;vertical-align:top">${c.itemNome}</td>
+          <td style="padding:9px 8px;text-align:center;vertical-align:top"><span style="color:#ef4444">${c.diasDecorridos}d</span>/<span style="color:#22c55e">${c.prazoMinDias}d</span></td>
+          <td style="padding:9px 8px;font-size:11px;color:var(--yellow);white-space:normal;word-break:break-word;vertical-align:top">${c.justificativa || '<span style="color:var(--text-3)">—</span>'}</td>
+          <td style="padding:9px 8px;text-align:right;font-weight:700;color:#ef4444;vertical-align:top">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
         </tr>`).join('')}</tbody>
       </table>
       </div>`}
@@ -15227,6 +15215,8 @@ async function carregarIndicadores() {
   document.getElementById('indEnelContent').style.display='';
   if(!data?.ok){toast('Erro ao carregar indicadores','error');return;}
   _indData=data; indRenderizarTudo();
+  _indForaPrazoData = null; // força recarregar com o novo período na próxima vez que abrir a aba
+  if (document.getElementById('indSecForaPrazo').style.display !== 'none') carregarIndForaPrazo();
 }
 
 function indFmt(seg){if(!seg)return'—';const m=Math.floor(seg/60),s=seg%60;return m>0?`${m}min ${s}s`:`${s}s`;}
