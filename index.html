@@ -6495,7 +6495,7 @@ async function carregarAssinaturas(silencioso = false) {
   // KPIs
   const pendentes = _assinaturas.filter(a => a.statusCalc === 'PENDENTE').length;
   const expirados = _assinaturas.filter(a => a.statusCalc === 'EXPIRADO').length;
-  const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && a.data === hoje).length;
+  const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && (a.assinadoEm||'').slice(0,10) === hoje).length;
 
   document.getElementById('assKpiPendentes').textContent = pendentes;
   document.getElementById('assKpiExpirados').textContent = expirados;
