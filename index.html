@@ -10956,6 +10956,7 @@ async function abrirModalSC(id) {
     : (_armazens || []);
   const scArmazemRow = document.getElementById('scArmazemRow');
   const scArmazem    = document.getElementById('scArmazem');
+  console.log('[DIAG SC] _armazens.length=', _armazens.length, '| userArmazens=', userArmazens, '| armazensDisponiveis.length=', armazensDisponiveis.length, '| scArmazemRow encontrado?', !!scArmazemRow);
   if (armazensDisponiveis.length <= 1) {
     // Só um armazém — esconde o select, valor fixo
     if (scArmazemRow) scArmazemRow.style.display = 'none';
