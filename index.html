@@ -12918,13 +12918,24 @@ function renderRecuperados() {
     (r.serial||'').toLowerCase().includes(q)
   );
 
-  tbody.innerHTML = lista.length ? lista.map(r => `<tr>
-    <td class="td-main">${r.item||'—'}</td>
+  tbody.innerHTML = lista.length ? lista.map(r => {
+    const semSerial = r.tipo === 'sem_serial';
+    return `<tr>
+    <td class="td-main">${r.item||'—'}${semSerial ? ` <span style="font-size:9px;color:var(--text-3)">(${r.quantidade||1}x, sem serial)</span>` : ''}</td>
     <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${r.serial||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${r.dt_ult_mov_raw ? r.dt_ult_mov_raw.replace('T',' ').slice(0,16) : '—'}</td>
     <td style="font-size:11px;color:var(--text-2)">${r.motivo||'Aguardando Laudo'}</td>
     <td>
       <div style="display:flex;gap:6px">
+        ${semSerial ? `
+        <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 10px"
+          onclick="abrirModalRecuperarSemSerial('${r.id_ativo}','${(r.item||'').replace(/'/g,"\\'")}','${r.origem_armazem_id||''}')">
+          ✅ Recuperar
+        </button>
+        <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 10px"
+          onclick="confirmarInutilizarSemSerial('${r.id_ativo}','${(r.item||'').replace(/'/g,"\\'")}')">
+          🗑️ Inutilizar
+        </button>` : `
         <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 10px"
           onclick="abrirModalRecuperar('${r.id_ativo}','${(r.serial||'').replace(/'/g,"\\'")}','${(r.item||'').replace(/'/g,"\\'")}')">
           ✅ Recuperar
@@ -12932,11 +12943,43 @@ function renderRecuperados() {
         <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 10px"
           onclick="abrirModalReprovar('${r.id_ativo}','${(r.serial||'').replace(/'/g,"\\'")}','${(r.item||'').replace(/'/g,"\\'")}')">
           ❌ Reprovar
-        </button>
+        </button>`}
       </div>
     </td>
-  </tr>`).join('')
+  </tr>`;
+  }).join('')
   : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum item aguardando recuperação</div></div></td></tr>`;
+}
+
+function abrirModalRecuperarSemSerial(id, item, origemArmazemId) {
+  document.getElementById('recupIdAtivo').value         = id;
+  document.getElementById('recupSerialAtual').value     = '';
+  document.getElementById('recupSerialAtualDisplay').textContent = '(item sem serial)';
+  document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupSerialNovo').parentElement.style.display = 'none'; // esconde campo de serial novo
+  document.getElementById('recupItemInfo').textContent  = item;
+
+  const selArm = document.getElementById('recupArmazem');
+  let armazensUser = _armazens;
+  if (GCA.usuario?.role !== 'admin') {
+    let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens||'[]'); } catch {}
+    if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
+  }
+  selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}" ${a.id===origemArmazemId?'selected':''}>${a.nome}</option>`).join('');
+
+  document.getElementById('modalRecuperar').dataset.semSerialId = id;
+  document.getElementById('modalRecuperar').classList.remove('hidden');
+}
+
+async function confirmarInutilizarSemSerial(id, item) {
+  if (!confirm(`Inutilizar "${item}"? A quantidade vai para o descarte deste material.`)) return;
+  const res = await api('/laudos/recuperados/sem-serial/inutilizar', {
+    method: 'POST', body: JSON.stringify({ id })
+  });
+  if (res?.ok) {
+    toast('Item inutilizado e enviado ao descarte!', 'success');
+    carregarRecuperados();
+  } else toast(res?.erro || 'Erro ao inutilizar', 'error');
 }
 
 function abrirModalRecuperar(idAtivo, serial, item) {
@@ -12944,7 +12987,9 @@ function abrirModalRecuperar(idAtivo, serial, item) {
   document.getElementById('recupSerialAtual').value     = serial;
   document.getElementById('recupSerialAtualDisplay').textContent = serial;
   document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupSerialNovo').parentElement.style.display = '';
   document.getElementById('recupItemInfo').textContent  = item;
+  delete document.getElementById('modalRecuperar').dataset.semSerialId;
 
   // Armazéns do usuário
   const selArm = document.getElementById('recupArmazem');
@@ -12959,11 +13004,27 @@ function abrirModalRecuperar(idAtivo, serial, item) {
 }
 
 async function confirmarRecuperacao() {
+  const modal      = document.getElementById('modalRecuperar');
   const idAtivo    = document.getElementById('recupIdAtivo').value;
-  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
   const armazemId  = document.getElementById('recupArmazem').value;
-
   if (!armazemId) { toast('Selecione o armazém destino','warn'); return; }
+
+  // Item SEM serial usa rota diferente
+  if (modal.dataset.semSerialId) {
+    const res = await api('/laudos/recuperados/sem-serial/recuperar', {
+      method: 'POST',
+      body: JSON.stringify({ id: modal.dataset.semSerialId, armazem_id: armazemId })
+    });
+    if (res?.ok) {
+      toast('Item recuperado e devolvido ao estoque!','success');
+      delete modal.dataset.semSerialId;
+      modal.classList.add('hidden');
+      carregarRecuperados();
+    } else toast(res?.erro||'Erro ao recuperar','error');
+    return;
+  }
+
+  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
 
   const res = await api('/laudos/recuperados/recuperar', {
     method: 'POST',
