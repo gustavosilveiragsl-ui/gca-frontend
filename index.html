@@ -8153,7 +8153,7 @@ async function abrirPrevisaoCompra() {
   calcularPrevisao();
 }
 
-function calcularPrevisao() {
+async function calcularPrevisao() {
   const armId = document.getElementById('previsaoArmazem')?.value || '';
   const body  = document.getElementById('previsaoBody');
   if (!body) return;
@@ -8165,6 +8165,23 @@ function calcularPrevisao() {
     const id = m.itemId || m.item_id;
     if (!id) return;
     saidasPorItem[id] = (saidasPorItem[id] || 0) + Number(m.quantidade || 0);
+  });
+
+  // Busca SCs em aberto (ainda não totalmente recebidas) para descontar do que já está a caminho.
+  // Só desconta quando a SC tem armazém vinculado — SCs antigas sem esse vínculo ficam de fora
+  // por segurança (não dá pra saber pra qual armazém aquilo vai).
+  const scResp = await api('/solicitacoes-compra');
+  const scAbertas = (scResp?.data || scResp?.solicitacoes || []).filter(sc => sc.status !== 'Recebido Total' && sc.status !== 'Cancelado');
+  const jaACaminhoMap = {}; // `itemId__armazemId` → quantidade já solicitada e a caminho
+  scAbertas.forEach(sc => {
+    if (!sc.armazem_id) return;
+    let itensSC = []; try { itensSC = JSON.parse(sc.itens_json || '[]'); } catch {}
+    itensSC.forEach(it => {
+      const qtdPendente = Number(it.qtd || it.qtdSolicitada || 0) - Number(it.qtdRecebida || 0);
+      if (qtdPendente <= 0) return;
+      const key = `${it.itemId}__${sc.armazem_id}`;
+      jaACaminhoMap[key] = (jaACaminhoMap[key] || 0) + qtdPendente;
+    });
   });
 
   // Filtra estoque pelo armazém selecionado
@@ -8179,14 +8196,16 @@ function calcularPrevisao() {
     const mediaMensal = Math.ceil(saidUlt90 / 3);
     const mediaDiaria = saidUlt90 / 90;
     const diasAteZerar = mediaDiaria > 0 ? Math.floor(s.saldo / mediaDiaria) : null;
-    const sugestao    = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
+    const sugestaoBruta = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
+    const jaACaminho  = jaACaminhoMap[`${s.item_id}__${s.armazem_id}`] || 0;
+    const sugestao    = Math.max(sugestaoBruta - jaACaminho, 0);
     if (sugestao === 0) return null;
 
     const item       = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn    = Number(item?.valor_un || 0);
     return { nome: s.nome_item, codigo: s.codigo_item, armazem: s.nome_armazem,
              saldo: s.saldo, min, mediaMensal, saidUlt90, diasAteZerar,
-             sugestao, valorUn, valorTotal: valorUn * sugestao,
+             sugestao, jaACaminho, valorUn, valorTotal: valorUn * sugestao,
              status: s.saldo <= 0 ? 'critico' : 'baixo' };
   }).filter(Boolean).sort((a, b) => a.saldo - b.saldo);
 
@@ -8226,6 +8245,7 @@ function calcularPrevisao() {
         <td style="padding:8px;border-bottom:1px solid var(--border)">
           <div style="font-size:12px;font-weight:600;color:var(--text-1)">${a.nome}</div>
           <div style="font-size:10px;color:var(--text-3)">${a.codigo||'—'} • ${a.status==='critico'?'<span style="color:#ef4444">🔴 Crítico</span>':'<span style="color:#f59e0b">🟡 Baixo</span>'}</div>
+          ${a.jaACaminho > 0 ? `<div style="font-size:9px;color:#3b82f6;margin-top:2px">🛒 ${a.jaACaminho} já a caminho (SC em aberto)</div>` : ''}
         </td>
         <td style="padding:8px;text-align:center;font-weight:700;color:#ef4444;border-bottom:1px solid var(--border)">${a.saldo}</td>
         <td style="padding:8px;text-align:center;color:var(--text-3);font-size:11px;border-bottom:1px solid var(--border)">${a.min}</td>
@@ -10942,7 +10962,7 @@ function abrirModalSC(id) {
   } else {
     if (scArmazemRow) scArmazemRow.style.display = '';
     if (scArmazem) {
-      scArmazem.innerHTML = '<option value="">Todos os armazéns</option>' +
+      scArmazem.innerHTML = '<option value="">Selecione o armazém...</option>' +
         armazensDisponiveis.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
     }
   }
@@ -10990,6 +11010,7 @@ async function salvarSC() {
     armazem_id:   document.getElementById('scArmazem')?.value || null,
   };
   if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
+  if (!body.armazem_id) { toast('Selecione o armazém — necessário para calcular a previsão de compras corretamente', 'warn'); return; }
   const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
