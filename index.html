@@ -3163,6 +3163,7 @@ window.addEventListener('pageshow', function(e) {
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px">
           <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
+          <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⏰ Fora do Prazo</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -3178,6 +3179,11 @@ window.addEventListener('pageshow', function(e) {
         <!-- ENEL -->
         <div id="indSecEnel" style="display:none">
           <div id="indEnelContent"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+
+        <!-- FORA DO PRAZO -->
+        <div id="indSecForaPrazo" style="display:none">
+          <div id="indForaPrazoContent"><div class="empty-state"><div class="es-icon">⏰</div><div class="es-title">Carregando...</div></div></div>
         </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
@@ -15095,12 +15101,118 @@ function indIniciar() {
 }
 
 function indAba(aba) {
-  document.getElementById('indSecEpi').style.display  = aba==='epi'  ? '' : 'none';
-  document.getElementById('indSecEnel').style.display = aba==='enel' ? '' : 'none';
-  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel');
+  document.getElementById('indSecEpi').style.display       = aba==='epi'      ? '' : 'none';
+  document.getElementById('indSecEnel').style.display      = aba==='enel'     ? '' : 'none';
+  document.getElementById('indSecForaPrazo').style.display = aba==='foraprazo'? '' : 'none';
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), f=document.getElementById('indTabForaPrazo');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
+  f.style.color=aba==='foraprazo'?'var(--accent-text)':'var(--text-3)'; f.style.borderBottomColor=aba==='foraprazo'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
+  if (aba === 'foraprazo' && !_indForaPrazoData) carregarIndForaPrazo();
+}
+
+let _indForaPrazoData = null;
+
+async function carregarIndForaPrazo() {
+  const content = document.getElementById('indForaPrazoContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando...</div></div>';
+
+  const data = await api('/indicadores/fora-prazo');
+  if (!data?.ok) { content.innerHTML = '<div class="empty-state"><div class="es-title">Erro ao carregar</div></div>'; return; }
+  _indForaPrazoData = data;
+  indRenderizarForaPrazo();
+}
+
+function indRankTabela(titulo, icone, lista) {
+  if (!lista.length) return `<div class="card" style="padding:16px"><div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">${icone} ${titulo}</div><div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div></div>`;
+  return `<div class="card" style="padding:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">${icone} ${titulo}</div>
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px 0">Nome</th>
+        <th style="text-align:center;font-size:10px;color:var(--text-3);padding:4px 0">Casos</th>
+        <th style="text-align:right;font-size:10px;color:var(--text-3);padding:4px 0">Prejuízo</th>
+      </tr></thead>
+      <tbody>${lista.map(r => `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:6px 0;font-size:12px;color:var(--text-1)">${r.nome}</td>
+        <td style="padding:6px 0;text-align:center;font-weight:700;color:#f59e0b">${r.total}</td>
+        <td style="padding:6px 0;text-align:right;font-size:11px;color:#ef4444">${r.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>`;
+}
+
+function indRenderizarForaPrazo() {
+  const d = _indForaPrazoData;
+  if (!d) return;
+  const content = document.getElementById('indForaPrazoContent');
+
+  const kpiCard = (label, valor, cor) => `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center">
+    <div style="font-size:10px;color:var(--text-3);text-transform:uppercase">${label}</div>
+    <div style="font-size:20px;font-weight:700;color:${cor}">${valor}</div>
+  </div>`;
+
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+      ${kpiCard('Casos fora do prazo', d.kpis.totalCasos, '#f59e0b')}
+      ${kpiCard('Colaboradores envolvidos', d.kpis.colaboradoresEnvolvidos, 'var(--text-1)')}
+      ${kpiCard('Itens distintos', d.kpis.itensDistintos, 'var(--text-1)')}
+      ${kpiCard('Prejuízo total estimado', d.kpis.prejuizoTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}), '#ef4444')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      ${indRankTabela('Colaborador com mais trocas fora do prazo', '👤', d.rankColaborador)}
+      ${indRankTabela('Item mais trocado fora do prazo', '📦', d.rankItem)}
+      ${indRankTabela('Solicitante que mais justifica (portal)', '📱', d.rankSolicitante)}
+    </div>
+
+    <div class="card" style="padding:16px;margin-bottom:20px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">🔥 Casos Mais Críticos (maior prejuízo)</div>
+      ${!d.maisCriticos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' : `
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px">Item</th>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:4px">Colaborador</th>
+          <th style="text-align:center;font-size:10px;color:var(--text-3);padding:4px">Durou / Deveria</th>
+          <th style="text-align:right;font-size:10px;color:var(--text-3);padding:4px">Prejuízo</th>
+        </tr></thead>
+        <tbody>${d.maisCriticos.map(c => `<tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px 4px;font-size:12px">${c.itemNome}</td>
+          <td style="padding:6px 4px;font-size:12px;color:var(--text-2)">${c.colaboradorNome}</td>
+          <td style="padding:6px 4px;text-align:center;font-size:11px"><span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span></td>
+          <td style="padding:6px 4px;text-align:right;font-weight:700;color:#ef4444">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        </tr>`).join('')}</tbody>
+      </table>`}
+    </div>
+
+    <div class="card" style="padding:16px">
+      <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;margin-bottom:10px">📋 Relação Completa — Solicitações Fora do Prazo</div>
+      ${!d.casos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' : `
+      <div style="max-height:500px;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead style="position:sticky;top:0;background:var(--bg-card)"><tr>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Data</th>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Solicitante</th>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Colaborador</th>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Item</th>
+          <th style="text-align:center;font-size:10px;color:var(--text-3);padding:6px 4px">Durou/Deveria</th>
+          <th style="text-align:left;font-size:10px;color:var(--text-3);padding:6px 4px">Justificativa</th>
+          <th style="text-align:right;font-size:10px;color:var(--text-3);padding:6px 4px">Prejuízo</th>
+        </tr></thead>
+        <tbody>${d.casos.map(c => `<tr style="border-top:1px solid var(--border)">
+          <td style="padding:6px 4px;font-size:11px;color:var(--text-3)">${formatarData((c.data||'').split('T')[0]||(c.data||'').split(',')[0])}</td>
+          <td style="padding:6px 4px;font-size:11px">${c.solicitanteNome}</td>
+          <td style="padding:6px 4px;font-size:11px;color:var(--text-2)">${c.colaboradorNome}</td>
+          <td style="padding:6px 4px;font-size:11px">${c.itemNome}</td>
+          <td style="padding:6px 4px;text-align:center;font-size:11px"><span style="color:#ef4444">${c.diasDecorridos}d</span>/<span style="color:#22c55e">${c.prazoMinDias}d</span></td>
+          <td style="padding:6px 4px;font-size:10px;color:var(--yellow);max-width:220px">${c.justificativa || '<span style="color:var(--text-3)">—</span>'}</td>
+          <td style="padding:6px 4px;text-align:right;font-size:11px;font-weight:700;color:#ef4444">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      </div>`}
+    </div>
+  `;
 }
 
 async function carregarIndicadores() {
