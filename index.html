@@ -15176,8 +15176,8 @@ function indRenderizarForaPrazo() {
       <div style="max-height:520px;overflow-y:auto">
       <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
         <colgroup>
-          <col style="width:90px"><col style="width:120px"><col style="width:120px">
-          <col style="width:150px"><col style="width:90px"><col><col style="width:90px">
+          <col style="width:85px"><col style="width:140px"><col style="width:140px">
+          <col style="width:170px"><col style="width:90px"><col style="width:220px"><col style="width:100px">
         </colgroup>
         <thead style="position:sticky;top:0;background:var(--bg-card)"><tr>
           <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Data</th>
@@ -15190,9 +15190,9 @@ function indRenderizarForaPrazo() {
         </tr></thead>
         <tbody>${d.casos.map(c => `<tr style="border-bottom:1px solid var(--border)">
           <td style="padding:9px 8px;font-size:11px;color:var(--text-3);vertical-align:top">${c.data ? formatarData(c.data.split('T')[0]) : '—'}</td>
-          <td style="padding:9px 8px;vertical-align:top">${c.solicitanteNome}</td>
-          <td style="padding:9px 8px;color:var(--text-2);vertical-align:top">${c.colaboradorNome}</td>
-          <td style="padding:9px 8px;vertical-align:top">${c.itemNome}</td>
+          <td style="padding:9px 8px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.solicitanteNome}">${c.solicitanteNome}</td>
+          <td style="padding:9px 8px;color:var(--text-2);vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.colaboradorNome}">${c.colaboradorNome}</td>
+          <td style="padding:9px 8px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.itemNome}">${c.itemNome}</td>
           <td style="padding:9px 8px;text-align:center;vertical-align:top"><span style="color:#ef4444">${c.diasDecorridos}d</span>/<span style="color:#22c55e">${c.prazoMinDias}d</span></td>
           <td style="padding:9px 8px;font-size:11px;color:var(--yellow);white-space:normal;word-break:break-word;vertical-align:top">${c.justificativa || '<span style="color:var(--text-3)">—</span>'}</td>
           <td style="padding:9px 8px;text-align:right;font-weight:700;color:#ef4444;vertical-align:top">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
