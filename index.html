@@ -1798,8 +1798,8 @@ window.addEventListener('pageshow', function(e) {
               </div>
             </div>
             <table>
-              <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Status</th><th></th></tr></thead>
-              <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+              <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Armazém</th><th>Itens</th><th>Status</th><th></th></tr></thead>
+              <tbody id="scBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -11641,6 +11641,7 @@ function filtrarSC() {
 async function carregarSC() {
   const tbody = document.getElementById('scBody');
   if (!tbody) return;
+  if (!_armazens.length) await carregarArmazens();
   const data = await api('/solicitacoes-compra');
   let lista = data?.data || [];
 
@@ -11671,10 +11672,12 @@ function renderSC(lista) {
   tbody.innerHTML = lista.length ? lista.map(sc=>{
     let itens=[]; try{itens=JSON.parse(sc.itens_json||'[]');}catch{}
     const itensStr = itens.slice(0,2).map(i=>i.nome||i.descricao||'').join(', ') + (itens.length>2?`… +${itens.length-2}`:'');
+    const nomeArm = (_armazens||[]).find(a=>a.id===sc.armazem_id)?.nome || (sc.armazem_id ? '—' : '⚠️ Sem armazém');
     return `<tr>
       <td class="td-main td-mono">${sc.numero_sc||'—'}</td>
       <td>${formatarData(sc.data_abertura)}</td>
       <td style="font-size:11px">${sc.comprador||'—'}</td>
+      <td style="font-size:11px;color:${sc.armazem_id?'var(--text-2)':'#f59e0b'}">${nomeArm}</td>
       <td style="font-size:10px;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itens.map(i=>i.nome||i.descricao||'').join(', ')}">${itensStr||'—'}</td>
       <td>${stTag(sc.status)}</td>
       <td style="display:flex;gap:4px">
@@ -11683,7 +11686,7 @@ function renderSC(lista) {
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirSC('${sc.id}','${(sc.numero_sc||'').replace(/'/g,"\\'")}')">🗑️</button>
       </td>
     </tr>`;
-  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
+  }).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
 }
 
 async function excluirSC(id, numero) {
