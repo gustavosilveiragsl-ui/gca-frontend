@@ -1472,7 +1472,7 @@ window.addEventListener('pageshow', function(e) {
             <thead>
               <tr>
                 <th style="width:70px">Status</th>
-                <th style="width:34%">Item</th>
+                <th style="width:34%;cursor:pointer;user-select:none" onclick="toggleOrdemEstoque()" title="Clique para ordenar A-Z / Z-A">Item <span id="estOrdemIcone" style="font-size:9px;color:var(--text-3)"></span></th>
                 <th style="width:110px">Código</th>
                 <th id="estThArmazem" style="width:170px;display:none">Armazém</th>
                 <th style="width:80px;text-align:center">Saldo</th>
@@ -7871,6 +7871,12 @@ function renderHistoricoMov(tbody, lista) {
 // ═══════════════════════════════════════════
 let _estoqueData  = [];
 let _estArmazem   = '';
+let _estOrdemNome = null; // null | 'asc' | 'desc'
+
+function toggleOrdemEstoque() {
+  _estOrdemNome = _estOrdemNome === 'asc' ? 'desc' : _estOrdemNome === 'desc' ? null : 'asc';
+  renderEstoque();
+}
 let _estPagina    = 1;
 const _estPorPag  = 50;
 
@@ -7918,6 +7924,9 @@ function selecionarArmazemEst(id) {
 }
 
 function renderEstoque() {
+  let _estOrdemIconeEl = document.getElementById('estOrdemIcone');
+  if (_estOrdemIconeEl) _estOrdemIconeEl.textContent = _estOrdemNome === 'asc' ? '▲ A-Z' : _estOrdemNome === 'desc' ? '▼ Z-A' : '';
+
   const tbody    = document.getElementById('estBody');
   const busca    = (document.getElementById('estBusca')?.value || '').toLowerCase();
   const filtro   = document.getElementById('estFiltroStatus')?.value || '';
@@ -7936,6 +7945,14 @@ function renderEstoque() {
   };
 
   if (filtro) lista = lista.filter(s => getStatus(s) === filtro);
+
+  // Ordenação A-Z / Z-A pelo nome do item (clique no cabeçalho "Item")
+  if (_estOrdemNome) {
+    lista = [...lista].sort((a, b) => {
+      const cmp = (a.nome_item||'').localeCompare(b.nome_item||'', 'pt-BR');
+      return _estOrdemNome === 'asc' ? cmp : -cmp;
+    });
+  }
 
   // KPIs
   const all = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
