@@ -3164,6 +3164,7 @@ window.addEventListener('pageshow', function(e) {
           <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
           <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⏰ Fora do Prazo</button>
+          <button id="indTabPrevAnual" onclick="indAba('prevanual')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📅 Previsão Anual</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -3184,6 +3185,11 @@ window.addEventListener('pageshow', function(e) {
         <!-- FORA DO PRAZO -->
         <div id="indSecForaPrazo" style="display:none">
           <div id="indForaPrazoContent"><div class="empty-state"><div class="es-icon">⏰</div><div class="es-title">Carregando...</div></div></div>
+        </div>
+
+        <!-- PREVISÃO ANUAL -->
+        <div id="indSecPrevAnual" style="display:none">
+          <div id="indPrevAnualContent"><div class="empty-state"><div class="es-icon">📅</div><div class="es-title">Carregando...</div></div></div>
         </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
@@ -15121,15 +15127,68 @@ function indAba(aba) {
   document.getElementById('indSecEpi').style.display       = aba==='epi'      ? '' : 'none';
   document.getElementById('indSecEnel').style.display      = aba==='enel'     ? '' : 'none';
   document.getElementById('indSecForaPrazo').style.display = aba==='foraprazo'? '' : 'none';
-  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), f=document.getElementById('indTabForaPrazo');
+  document.getElementById('indSecPrevAnual').style.display = aba==='prevanual'? '' : 'none';
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), f=document.getElementById('indTabForaPrazo'), p=document.getElementById('indTabPrevAnual');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
   f.style.color=aba==='foraprazo'?'var(--accent-text)':'var(--text-3)'; f.style.borderBottomColor=aba==='foraprazo'?'var(--accent)':'transparent';
+  p.style.color=aba==='prevanual'?'var(--accent-text)':'var(--text-3)'; p.style.borderBottomColor=aba==='prevanual'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
   if (aba === 'foraprazo' && !_indForaPrazoData) carregarIndForaPrazo();
+  if (aba === 'prevanual' && !_indPrevAnualData) carregarIndPrevAnual();
 }
 
 let _indForaPrazoData = null;
+let _indPrevAnualData = null;
+
+async function carregarIndPrevAnual() {
+  const content = document.getElementById('indPrevAnualContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando previsão até o fim do ano...</div></div>';
+
+  const data = await api('/indicadores/previsao-anual');
+  if (!data?.ok) { content.innerHTML = `<div class="empty-state"><div class="es-title">${data?.erro || 'Erro ao carregar'}</div></div>`; return; }
+  _indPrevAnualData = data;
+  indRenderizarPrevAnual();
+}
+
+function indRenderizarPrevAnual() {
+  const d = _indPrevAnualData;
+  if (!d) return;
+  const content = document.getElementById('indPrevAnualContent');
+  const nomeUnidade = u => u === 'rio_das_ostras' ? 'Rio das Ostras' : u === 'marica' ? 'Maricá' : u;
+
+  const linhasPorUnidade = {};
+  d.itens.forEach(r => { (linhasPorUnidade[r.unidade] = linhasPorUnidade[r.unidade] || []).push(r); });
+
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
+      ${indKpi(d.kpis.totalItens,'Itens com Necessidade','#f59e0b')}
+      ${indKpi(d.kpis.valorTotalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Valor Total Estimado','#ef4444')}
+      ${indKpi((d.kpis.porUnidade.rio_das_ostras?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Rio das Ostras','var(--accent-text)')}
+      ${indKpi((d.kpis.porUnidade.marica?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Maricá','var(--accent-text)')}
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:20px">📌 Considerando ${d.diasRestantes} dias restantes até 31/12, com base no consumo médio dos últimos 90 dias, saldo atual e SCs já em aberto (a caminho).</div>
+
+    ${['rio_das_ostras','marica'].map(u => {
+      const lista = (linhasPorUnidade[u]||[]);
+      if (!lista.length) return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">${nomeUnidade(u)}</div><div style="color:var(--text-3);font-size:12px">Nenhuma necessidade de compra identificada</div></div>`;
+      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📍 ${nomeUnidade(u)} — ${lista.length} itens</div>
+        <div style="max-height:420px;overflow-y:auto">
+        ${indTabela(
+          ['Armazém','Item','Saldo','Mín.','Consumo Proj.','A Caminho','Necessidade','Valor Estimado'],
+          lista.map(r => [
+            r.armazem, r.item, r.saldoAtual, r.estoqueMin, r.consumoProjetado, r.aCaminho,
+            `<span style="font-weight:700;color:#f59e0b">${r.necessidade}</span>`,
+            `<span style="font-weight:700;color:#ef4444">${r.valorEstimado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
+          ]),
+          ['var(--text-2)','var(--text-1)','var(--text-2)','var(--text-3)','var(--text-2)','var(--text-2)','','']
+        )}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
 
 async function carregarIndForaPrazo() {
   const content = document.getElementById('indForaPrazoContent');
