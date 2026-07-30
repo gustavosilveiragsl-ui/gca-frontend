@@ -1472,7 +1472,7 @@ window.addEventListener('pageshow', function(e) {
             <thead>
               <tr>
                 <th style="width:70px">Status</th>
-                <th style="width:34%">Item</th>
+                <th style="width:34%;cursor:pointer;user-select:none" onclick="toggleOrdemEstoque()" title="Clique para ordenar A-Z / Z-A">Item <span id="estOrdemIcone" style="font-size:9px;color:var(--text-3)"></span></th>
                 <th style="width:110px">Código</th>
                 <th id="estThArmazem" style="width:170px;display:none">Armazém</th>
                 <th style="width:80px;text-align:center">Saldo</th>
@@ -1798,8 +1798,8 @@ window.addEventListener('pageshow', function(e) {
               </div>
             </div>
             <table>
-              <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Itens</th><th>Status</th><th></th></tr></thead>
-              <tbody id="scBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+              <thead><tr><th>Nº SC</th><th>Data</th><th>Comprador</th><th>Armazém</th><th>Itens</th><th>Status</th><th></th></tr></thead>
+              <tbody id="scBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
             </table>
           </div>
         </div>
@@ -3164,6 +3164,8 @@ window.addEventListener('pageshow', function(e) {
           <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
           <button id="indTabMateriais" onclick="indAba('materiais')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📦 Solicitações</button>
+          <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⏰ Fora do Prazo</button>
+          <button id="indTabPrevAnual" onclick="indAba('prevanual')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📅 Previsão Anual</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -3184,6 +3186,16 @@ window.addEventListener('pageshow', function(e) {
         <!-- SOLICITAÇÕES DE MATERIAIS -->
         <div id="indSecMateriais" style="display:none">
           <div id="indMateriaisContent"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+
+        <!-- FORA DO PRAZO -->
+        <div id="indSecForaPrazo" style="display:none">
+          <div id="indForaPrazoContent"><div class="empty-state"><div class="es-icon">⏰</div><div class="es-title">Carregando...</div></div></div>
+        </div>
+
+        <!-- PREVISÃO ANUAL -->
+        <div id="indSecPrevAnual" style="display:none">
+          <div id="indPrevAnualContent"><div class="empty-state"><div class="es-icon">📅</div><div class="es-title">Carregando...</div></div></div>
         </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
@@ -6501,7 +6513,7 @@ async function carregarAssinaturas(silencioso = false) {
   // KPIs
   const pendentes = _assinaturas.filter(a => a.statusCalc === 'PENDENTE').length;
   const expirados = _assinaturas.filter(a => a.statusCalc === 'EXPIRADO').length;
-  const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && a.data === hoje).length;
+  const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && (a.assinadoEm||'').slice(0,10) === hoje).length;
 
   document.getElementById('assKpiPendentes').textContent = pendentes;
   document.getElementById('assKpiExpirados').textContent = expirados;
@@ -7871,6 +7883,12 @@ function renderHistoricoMov(tbody, lista) {
 // ═══════════════════════════════════════════
 let _estoqueData  = [];
 let _estArmazem   = '';
+let _estOrdemNome = null; // null | 'asc' | 'desc'
+
+function toggleOrdemEstoque() {
+  _estOrdemNome = _estOrdemNome === 'asc' ? 'desc' : _estOrdemNome === 'desc' ? null : 'asc';
+  renderEstoque();
+}
 let _estPagina    = 1;
 const _estPorPag  = 50;
 
@@ -7918,6 +7936,9 @@ function selecionarArmazemEst(id) {
 }
 
 function renderEstoque() {
+  let _estOrdemIconeEl = document.getElementById('estOrdemIcone');
+  if (_estOrdemIconeEl) _estOrdemIconeEl.textContent = _estOrdemNome === 'asc' ? '▲ A-Z' : _estOrdemNome === 'desc' ? '▼ Z-A' : '';
+
   const tbody    = document.getElementById('estBody');
   const busca    = (document.getElementById('estBusca')?.value || '').toLowerCase();
   const filtro   = document.getElementById('estFiltroStatus')?.value || '';
@@ -7928,8 +7949,7 @@ function renderEstoque() {
 
   // Status
   const getStatus = s => {
-    const item  = (_itens||[]).find(i => i.id === s.item_id);
-    const min   = Number(item?.estoque_min || 0);
+    const min   = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
     if (s.saldo === 0)         return 'zerado';
     if (min > 0 && s.saldo < min)  return 'critico';
     if (min > 0 && s.saldo < min * 1.3) return 'baixo';
@@ -7937,6 +7957,14 @@ function renderEstoque() {
   };
 
   if (filtro) lista = lista.filter(s => getStatus(s) === filtro);
+
+  // Ordenação A-Z / Z-A pelo nome do item (clique no cabeçalho "Item")
+  if (_estOrdemNome) {
+    lista = [...lista].sort((a, b) => {
+      const cmp = (a.nome_item||'').localeCompare(b.nome_item||'', 'pt-BR');
+      return _estOrdemNome === 'asc' ? cmp : -cmp;
+    });
+  }
 
   // KPIs
   const all = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
@@ -7962,13 +7990,13 @@ function renderEstoque() {
   const pagina = lista.slice(inicio, inicio + _estPorPag);
 
   tbody.innerHTML = pagina.map(s => {
-    const item   = (_itens||[]).find(i => i.id === s.item_id);
-    const min    = Number(item?.estoque_min || 0);
+    const min    = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
     const status = getStatus(s);
     const statusTag = status === 'critico' ? '<span style="color:#ef4444;font-size:11px;font-weight:700">🔴 Crítico</span>'
                     : status === 'baixo'   ? '<span style="color:#f59e0b;font-size:11px;font-weight:700">🟡 Baixo</span>'
                     : status === 'zerado'  ? '<span style="color:var(--text-3);font-size:11px;font-weight:700">⬜ Zerado</span>'
                     :                        '<span style="color:#22c55e;font-size:11px;font-weight:700">🟢 OK</span>';
+    const item     = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn  = Number(item?.valor_un || 0);
     const valorTot = (s.saldo * valorUn).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     const vUn      = valorUn.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -8160,7 +8188,7 @@ async function abrirPrevisaoCompra() {
   calcularPrevisao();
 }
 
-function calcularPrevisao() {
+async function calcularPrevisao() {
   const armId = document.getElementById('previsaoArmazem')?.value || '';
   const body  = document.getElementById('previsaoBody');
   if (!body) return;
@@ -8174,26 +8202,45 @@ function calcularPrevisao() {
     saidasPorItem[id] = (saidasPorItem[id] || 0) + Number(m.quantidade || 0);
   });
 
+  // Busca SCs em aberto (ainda não totalmente recebidas) para descontar do que já está a caminho.
+  // Só desconta quando a SC tem armazém vinculado — SCs antigas sem esse vínculo ficam de fora
+  // por segurança (não dá pra saber pra qual armazém aquilo vai).
+  const scResp = await api('/solicitacoes-compra');
+  const scAbertas = (scResp?.data || scResp?.solicitacoes || []).filter(sc => sc.status !== 'Recebido Total' && sc.status !== 'Cancelado');
+  const jaACaminhoMap = {}; // `itemId__armazemId` → quantidade já solicitada e a caminho
+  scAbertas.forEach(sc => {
+    if (!sc.armazem_id) return;
+    let itensSC = []; try { itensSC = JSON.parse(sc.itens_json || '[]'); } catch {}
+    itensSC.forEach(it => {
+      const qtdPendente = Number(it.qtd || it.qtdSolicitada || 0) - Number(it.qtdRecebida || 0);
+      if (qtdPendente <= 0) return;
+      const key = `${it.itemId}__${sc.armazem_id}`;
+      jaACaminhoMap[key] = (jaACaminhoMap[key] || 0) + qtdPendente;
+    });
+  });
+
   // Filtra estoque pelo armazém selecionado
   let estoqueBase = _estoqueData.filter(s => s.nome_item);
   if (armId) estoqueBase = estoqueBase.filter(s => s.armazem_id === armId);
 
   const alertas = estoqueBase.map(s => {
-    const item       = (_itens||[]).find(i => i.id === s.item_id);
-    const min        = Number(item?.estoque_min || 0);
+    const min        = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
     if (min === 0 || s.saldo > min) return null;
 
     const saidUlt90   = saidasPorItem[s.item_id] || 0;
     const mediaMensal = Math.ceil(saidUlt90 / 3);
     const mediaDiaria = saidUlt90 / 90;
     const diasAteZerar = mediaDiaria > 0 ? Math.floor(s.saldo / mediaDiaria) : null;
-    const sugestao    = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
+    const sugestaoBruta = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
+    const jaACaminho  = jaACaminhoMap[`${s.item_id}__${s.armazem_id}`] || 0;
+    const sugestao    = Math.max(sugestaoBruta - jaACaminho, 0);
     if (sugestao === 0) return null;
 
+    const item       = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn    = Number(item?.valor_un || 0);
     return { nome: s.nome_item, codigo: s.codigo_item, armazem: s.nome_armazem,
              saldo: s.saldo, min, mediaMensal, saidUlt90, diasAteZerar,
-             sugestao, valorUn, valorTotal: valorUn * sugestao,
+             sugestao, jaACaminho, valorUn, valorTotal: valorUn * sugestao,
              status: s.saldo <= 0 ? 'critico' : 'baixo' };
   }).filter(Boolean).sort((a, b) => a.saldo - b.saldo);
 
@@ -8233,6 +8280,7 @@ function calcularPrevisao() {
         <td style="padding:8px;border-bottom:1px solid var(--border)">
           <div style="font-size:12px;font-weight:600;color:var(--text-1)">${a.nome}</div>
           <div style="font-size:10px;color:var(--text-3)">${a.codigo||'—'} • ${a.status==='critico'?'<span style="color:#ef4444">🔴 Crítico</span>':'<span style="color:#f59e0b">🟡 Baixo</span>'}</div>
+          ${a.jaACaminho > 0 ? `<div style="font-size:9px;color:#3b82f6;margin-top:2px">🛒 ${a.jaACaminho} já a caminho (SC em aberto)</div>` : ''}
         </td>
         <td style="padding:8px;text-align:center;font-weight:700;color:#ef4444;border-bottom:1px solid var(--border)">${a.saldo}</td>
         <td style="padding:8px;text-align:center;color:var(--text-3);font-size:11px;border-bottom:1px solid var(--border)">${a.min}</td>
@@ -10920,8 +10968,9 @@ function fecharTodosModaisSC() {
   });
 }
 
-function abrirModalSC(id) {
+async function abrirModalSC(id) {
   fecharTodosModaisSC();
+  if (!_armazens.length) await carregarArmazens(); // evita esconder o campo por engano quando a lista ainda não carregou
   _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
@@ -10942,6 +10991,7 @@ function abrirModalSC(id) {
     : (_armazens || []);
   const scArmazemRow = document.getElementById('scArmazemRow');
   const scArmazem    = document.getElementById('scArmazem');
+  console.log('[DIAG SC] _armazens.length=', _armazens.length, '| userArmazens=', userArmazens, '| armazensDisponiveis.length=', armazensDisponiveis.length, '| scArmazemRow encontrado?', !!scArmazemRow);
   if (armazensDisponiveis.length <= 1) {
     // Só um armazém — esconde o select, valor fixo
     if (scArmazemRow) scArmazemRow.style.display = 'none';
@@ -10949,7 +10999,7 @@ function abrirModalSC(id) {
   } else {
     if (scArmazemRow) scArmazemRow.style.display = '';
     if (scArmazem) {
-      scArmazem.innerHTML = '<option value="">Todos os armazéns</option>' +
+      scArmazem.innerHTML = '<option value="">Selecione o armazém...</option>' +
         armazensDisponiveis.map(a => `<option value="${a.id}">${a.nome}</option>`).join('');
     }
   }
@@ -10997,6 +11047,7 @@ async function salvarSC() {
     armazem_id:   document.getElementById('scArmazem')?.value || null,
   };
   if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
+  if (!body.armazem_id) { toast('Selecione o armazém — necessário para calcular a previsão de compras corretamente', 'warn'); return; }
   const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
@@ -11625,6 +11676,7 @@ function filtrarSC() {
 async function carregarSC() {
   const tbody = document.getElementById('scBody');
   if (!tbody) return;
+  if (!_armazens.length) await carregarArmazens();
   const data = await api('/solicitacoes-compra');
   let lista = data?.data || [];
 
@@ -11655,10 +11707,12 @@ function renderSC(lista) {
   tbody.innerHTML = lista.length ? lista.map(sc=>{
     let itens=[]; try{itens=JSON.parse(sc.itens_json||'[]');}catch{}
     const itensStr = itens.slice(0,2).map(i=>i.nome||i.descricao||'').join(', ') + (itens.length>2?`… +${itens.length-2}`:'');
+    const nomeArm = (_armazens||[]).find(a=>a.id===sc.armazem_id)?.nome || (sc.armazem_id ? '—' : '⚠️ Sem armazém');
     return `<tr>
       <td class="td-main td-mono">${sc.numero_sc||'—'}</td>
       <td>${formatarData(sc.data_abertura)}</td>
       <td style="font-size:11px">${sc.comprador||'—'}</td>
+      <td style="font-size:11px;color:${sc.armazem_id?'var(--text-2)':'#f59e0b'}">${nomeArm}</td>
       <td style="font-size:10px;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itens.map(i=>i.nome||i.descricao||'').join(', ')}">${itensStr||'—'}</td>
       <td>${stTag(sc.status)}</td>
       <td style="display:flex;gap:4px">
@@ -11667,7 +11721,7 @@ function renderSC(lista) {
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirSC('${sc.id}','${(sc.numero_sc||'').replace(/'/g,"\\'")}')">🗑️</button>
       </td>
     </tr>`;
-  }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
+  }).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
 }
 
 async function excluirSC(id, numero) {
@@ -11699,7 +11753,8 @@ async function carregarProtheus() {
   const fim     = document.getElementById('prFiltroFim')?.value||'';
 
   let url = `/movimentacoes?pagina=${_prPagina}&por_pagina=${_prPorPag}`;
-  if (tipo)   url += `&tipo=${tipo}`;
+  if (tipo)    url += `&tipo=${tipo}`;
+  if (status)  url += `&status_protheus=${encodeURIComponent(status)}`;
   if (armazem) url += `&armazem=${armazem}`;
   if (inicio) url += `&data_inicio=${inicio}`;
   if (fim)    url += `&data_fim=${fim}`;
@@ -11711,9 +11766,8 @@ async function carregarProtheus() {
   const total = data.total || 0;
   const totalPags = data.totalPaginas || 1;
 
-  // Filtra status localmente (campo não estava no backend originalmente)
+  // Status já vem filtrado do backend — não precisa mais filtrar localmente
   let lista = _prData;
-  if (status) lista = lista.filter(m => (m.status_protheus||'PENDENTE') === status);
 
   // KPIs
   document.getElementById('prKpiPend').textContent = _prData.filter(m=>(m.status_protheus||'PENDENTE')==='PENDENTE').length;
@@ -12924,13 +12978,24 @@ function renderRecuperados() {
     (r.serial||'').toLowerCase().includes(q)
   );
 
-  tbody.innerHTML = lista.length ? lista.map(r => `<tr>
-    <td class="td-main">${r.item||'—'}</td>
+  tbody.innerHTML = lista.length ? lista.map(r => {
+    const semSerial = r.tipo === 'sem_serial';
+    return `<tr>
+    <td class="td-main">${r.item||'—'}${semSerial ? ` <span style="font-size:9px;color:var(--text-3)">(${r.quantidade||1}x, sem serial)</span>` : ''}</td>
     <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${r.serial||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${r.dt_ult_mov_raw ? r.dt_ult_mov_raw.replace('T',' ').slice(0,16) : '—'}</td>
     <td style="font-size:11px;color:var(--text-2)">${r.motivo||'Aguardando Laudo'}</td>
     <td>
       <div style="display:flex;gap:6px">
+        ${semSerial ? `
+        <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 10px"
+          onclick="abrirModalRecuperarSemSerial('${r.id_ativo}','${(r.item||'').replace(/'/g,"\\'")}','${r.origem_armazem_id||''}')">
+          ✅ Recuperar
+        </button>
+        <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 10px"
+          onclick="confirmarInutilizarSemSerial('${r.id_ativo}','${(r.item||'').replace(/'/g,"\\'")}')">
+          🗑️ Inutilizar
+        </button>` : `
         <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 10px"
           onclick="abrirModalRecuperar('${r.id_ativo}','${(r.serial||'').replace(/'/g,"\\'")}','${(r.item||'').replace(/'/g,"\\'")}')">
           ✅ Recuperar
@@ -12938,11 +13003,43 @@ function renderRecuperados() {
         <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 10px"
           onclick="abrirModalReprovar('${r.id_ativo}','${(r.serial||'').replace(/'/g,"\\'")}','${(r.item||'').replace(/'/g,"\\'")}')">
           ❌ Reprovar
-        </button>
+        </button>`}
       </div>
     </td>
-  </tr>`).join('')
+  </tr>`;
+  }).join('')
   : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum item aguardando recuperação</div></div></td></tr>`;
+}
+
+function abrirModalRecuperarSemSerial(id, item, origemArmazemId) {
+  document.getElementById('recupIdAtivo').value         = id;
+  document.getElementById('recupSerialAtual').value     = '';
+  document.getElementById('recupSerialAtualDisplay').textContent = '(item sem serial)';
+  document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupSerialNovo').parentElement.style.display = 'none'; // esconde campo de serial novo
+  document.getElementById('recupItemInfo').textContent  = item;
+
+  const selArm = document.getElementById('recupArmazem');
+  let armazensUser = _armazens;
+  if (GCA.usuario?.role !== 'admin') {
+    let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens||'[]'); } catch {}
+    if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
+  }
+  selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}" ${a.id===origemArmazemId?'selected':''}>${a.nome}</option>`).join('');
+
+  document.getElementById('modalRecuperar').dataset.semSerialId = id;
+  document.getElementById('modalRecuperar').classList.remove('hidden');
+}
+
+async function confirmarInutilizarSemSerial(id, item) {
+  if (!confirm(`Inutilizar "${item}"? A quantidade vai para o descarte deste material.`)) return;
+  const res = await api('/laudos/recuperados/sem-serial/inutilizar', {
+    method: 'POST', body: JSON.stringify({ id })
+  });
+  if (res?.ok) {
+    toast('Item inutilizado e enviado ao descarte!', 'success');
+    carregarRecuperados();
+  } else toast(res?.erro || 'Erro ao inutilizar', 'error');
 }
 
 function abrirModalRecuperar(idAtivo, serial, item) {
@@ -12950,7 +13047,9 @@ function abrirModalRecuperar(idAtivo, serial, item) {
   document.getElementById('recupSerialAtual').value     = serial;
   document.getElementById('recupSerialAtualDisplay').textContent = serial;
   document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupSerialNovo').parentElement.style.display = '';
   document.getElementById('recupItemInfo').textContent  = item;
+  delete document.getElementById('modalRecuperar').dataset.semSerialId;
 
   // Armazéns do usuário
   const selArm = document.getElementById('recupArmazem');
@@ -12965,11 +13064,27 @@ function abrirModalRecuperar(idAtivo, serial, item) {
 }
 
 async function confirmarRecuperacao() {
+  const modal      = document.getElementById('modalRecuperar');
   const idAtivo    = document.getElementById('recupIdAtivo').value;
-  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
   const armazemId  = document.getElementById('recupArmazem').value;
-
   if (!armazemId) { toast('Selecione o armazém destino','warn'); return; }
+
+  // Item SEM serial usa rota diferente
+  if (modal.dataset.semSerialId) {
+    const res = await api('/laudos/recuperados/sem-serial/recuperar', {
+      method: 'POST',
+      body: JSON.stringify({ id: modal.dataset.semSerialId, armazem_id: armazemId })
+    });
+    if (res?.ok) {
+      toast('Item recuperado e devolvido ao estoque!','success');
+      delete modal.dataset.semSerialId;
+      modal.classList.add('hidden');
+      carregarRecuperados();
+    } else toast(res?.erro||'Erro ao recuperar','error');
+    return;
+  }
+
+  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
 
   const res = await api('/laudos/recuperados/recuperar', {
     method: 'POST',
@@ -15018,11 +15133,158 @@ function indAba(aba) {
   document.getElementById('indSecEpi').style.display       = aba==='epi'       ? '' : 'none';
   document.getElementById('indSecEnel').style.display      = aba==='enel'      ? '' : 'none';
   document.getElementById('indSecMateriais').style.display = aba==='materiais' ? '' : 'none';
-  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais');
+  document.getElementById('indSecForaPrazo').style.display  = aba==='foraprazo'? '' : 'none';
+  document.getElementById('indSecPrevAnual').style.display  = aba==='prevanual'? '' : 'none';
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais'), f=document.getElementById('indTabForaPrazo'), p=document.getElementById('indTabPrevAnual');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
   m.style.color=aba==='materiais'?'var(--accent-text)':'var(--text-3)'; m.style.borderBottomColor=aba==='materiais'?'var(--accent)':'transparent';
+  f.style.color=aba==='foraprazo'?'var(--accent-text)':'var(--text-3)'; f.style.borderBottomColor=aba==='foraprazo'?'var(--accent)':'transparent';
+  p.style.color=aba==='prevanual'?'var(--accent-text)':'var(--text-3)'; p.style.borderBottomColor=aba==='prevanual'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
+  if (aba === 'foraprazo' && !_indForaPrazoData) carregarIndForaPrazo();
+  if (aba === 'prevanual' && !_indPrevAnualData) carregarIndPrevAnual();
+}
+
+let _indForaPrazoData = null;
+let _indPrevAnualData = null;
+
+async function carregarIndPrevAnual() {
+  const content = document.getElementById('indPrevAnualContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando previsão até o fim do ano...</div></div>';
+
+  const data = await api('/indicadores/previsao-anual');
+  if (!data?.ok) { content.innerHTML = `<div class="empty-state"><div class="es-title">${data?.erro || 'Erro ao carregar'}</div></div>`; return; }
+  _indPrevAnualData = data;
+  indRenderizarPrevAnual();
+}
+
+function indRenderizarPrevAnual() {
+  const d = _indPrevAnualData;
+  if (!d) return;
+  const content = document.getElementById('indPrevAnualContent');
+  const nomeUnidade = u => u === 'rio_das_ostras' ? 'Rio das Ostras' : u === 'marica' ? 'Maricá' : u;
+
+  const linhasPorUnidade = {};
+  d.itens.forEach(r => { (linhasPorUnidade[r.unidade] = linhasPorUnidade[r.unidade] || []).push(r); });
+
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
+      ${indKpi(d.kpis.totalItens,'Itens com Necessidade','#f59e0b')}
+      ${indKpi(d.kpis.valorTotalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Valor Total Estimado','#ef4444')}
+      ${indKpi((d.kpis.porUnidade.rio_das_ostras?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Rio das Ostras','var(--accent-text)')}
+      ${indKpi((d.kpis.porUnidade.marica?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Maricá','var(--accent-text)')}
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:20px">📌 Considerando ${d.diasRestantes} dias restantes até 31/12, com base no consumo médio dos últimos 90 dias, saldo atual e SCs já em aberto (a caminho).</div>
+
+    ${['rio_das_ostras','marica'].map(u => {
+      const lista = (linhasPorUnidade[u]||[]);
+      if (!lista.length) return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">${nomeUnidade(u)}</div><div style="color:var(--text-3);font-size:12px">Nenhuma necessidade de compra identificada</div></div>`;
+      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📍 ${nomeUnidade(u)} — ${lista.length} itens</div>
+        <div style="max-height:420px;overflow-y:auto">
+        ${indTabela(
+          ['Armazém','Item','Saldo','Mín.','Consumo Proj.','A Caminho','Necessidade','Valor Estimado'],
+          lista.map(r => [
+            r.armazem, r.item, r.saldoAtual, r.estoqueMin, r.consumoProjetado, r.aCaminho,
+            `<span style="font-weight:700;color:#f59e0b">${r.necessidade}</span>`,
+            `<span style="font-weight:700;color:#ef4444">${r.valorEstimado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
+          ]),
+          ['var(--text-2)','var(--text-1)','var(--text-2)','var(--text-3)','var(--text-2)','var(--text-2)','','']
+        )}
+        </div>
+      </div>`;
+    }).join('')}
+  `;
+}
+
+async function carregarIndForaPrazo() {
+  const content = document.getElementById('indForaPrazoContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando...</div></div>';
+
+  const de = document.getElementById('indDe')?.value || '';
+  const ate = document.getElementById('indAte')?.value || '';
+  let url = '/indicadores/fora-prazo';
+  if (de || ate) url += `?de=${de}&ate=${ate}`;
+
+  const data = await api(url);
+  if (!data?.ok) { content.innerHTML = '<div class="empty-state"><div class="es-title">Erro ao carregar</div></div>'; return; }
+  _indForaPrazoData = data;
+  indRenderizarForaPrazo();
+}
+
+function indRankTabela(titulo, icone, lista) {
+  return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">${icone} ${titulo}</div>
+    ${!lista.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' :
+      indTabela(['Nome','Casos','Prejuízo'],
+        lista.map(r => [r.nome, r.total, r.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})]),
+        ['var(--text-1)','#f59e0b','#ef4444'])}
+  </div>`;
+}
+
+function indRenderizarForaPrazo() {
+  const d = _indForaPrazoData;
+  if (!d) return;
+  const content = document.getElementById('indForaPrazoContent');
+
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(d.kpis.totalCasos,'Casos Fora do Prazo','#f59e0b')}
+      ${indKpi(d.kpis.colaboradoresEnvolvidos,'Colaboradores Envolvidos','var(--accent-text)')}
+      ${indKpi(d.kpis.itensDistintos,'Itens Distintos','#8b5cf6')}
+      ${indKpi(d.kpis.prejuizoTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Prejuízo Total Estimado','#ef4444')}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
+      ${indRankTabela('Colaborador com mais trocas fora do prazo', '👤', d.rankColaborador)}
+      ${indRankTabela('Item mais trocado fora do prazo', '📦', d.rankItem)}
+      ${indRankTabela('Solicitante que mais justifica (portal)', '📱', d.rankSolicitante)}
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">🔥 Casos Mais Críticos (maior prejuízo)</div>
+      ${!d.maisCriticos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' :
+        indTabela(['Item','Colaborador','Durou / Deveria','Prejuízo'],
+          d.maisCriticos.map(c => [
+            c.itemNome, c.colaboradorNome,
+            `<span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span>`,
+            `<span style="font-weight:700">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
+          ]),
+          ['var(--text-1)','var(--text-2)','','#ef4444'])}
+    </div>
+
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📋 Relação Completa — Solicitações Fora do Prazo</div>
+      ${!d.casos.length ? '<div style="color:var(--text-3);font-size:12px">Nenhum caso encontrado</div>' : `
+      <div style="max-height:520px;overflow-y:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed">
+        <colgroup>
+          <col style="width:85px"><col style="width:140px"><col style="width:140px">
+          <col style="width:170px"><col style="width:90px"><col style="width:220px"><col style="width:100px">
+        </colgroup>
+        <thead style="position:sticky;top:0;background:var(--bg-card)"><tr>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Data</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Solicitante</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Colaborador</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
+          <th style="text-align:center;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Durou/Deveria</th>
+          <th style="text-align:left;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Justificativa</th>
+          <th style="text-align:right;padding:8px;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Prejuízo</th>
+        </tr></thead>
+        <tbody>${d.casos.map(c => `<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:9px 8px;font-size:11px;color:var(--text-3);vertical-align:top">${c.data ? formatarData(c.data.split('T')[0]) : '—'}</td>
+          <td style="padding:9px 8px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.solicitanteNome}">${c.solicitanteNome}</td>
+          <td style="padding:9px 8px;color:var(--text-2);vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.colaboradorNome}">${c.colaboradorNome}</td>
+          <td style="padding:9px 8px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.itemNome}">${c.itemNome}</td>
+          <td style="padding:9px 8px;text-align:center;vertical-align:top"><span style="color:#ef4444">${c.diasDecorridos}d</span>/<span style="color:#22c55e">${c.prazoMinDias}d</span></td>
+          <td style="padding:9px 8px;font-size:11px;color:var(--yellow);white-space:normal;word-break:break-word;vertical-align:top">${c.justificativa || '<span style="color:var(--text-3)">—</span>'}</td>
+          <td style="padding:9px 8px;text-align:right;font-weight:700;color:#ef4444;vertical-align:top">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+      </div>`}
+    </div>
+  `;
 }
 
 async function carregarIndicadores() {
@@ -15039,6 +15301,8 @@ async function carregarIndicadores() {
   document.getElementById('indMateriaisContent').style.display='';
   if(!data?.ok){toast('Erro ao carregar indicadores','error');return;}
   _indData=data; indRenderizarTudo();
+  _indForaPrazoData = null; // força recarregar com o novo período na próxima vez que abrir a aba
+  if (document.getElementById('indSecForaPrazo').style.display !== 'none') carregarIndForaPrazo();
 }
 
 function indFmt(seg){if(!seg)return'—';const m=Math.floor(seg/60),s=seg%60;return m>0?`${m}min ${s}s`:`${s}s`;}
