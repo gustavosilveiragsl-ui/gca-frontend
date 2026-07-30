@@ -3163,6 +3163,7 @@ window.addEventListener('pageshow', function(e) {
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px">
           <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
+          <button id="indTabMateriais" onclick="indAba('materiais')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📦 Solicitações</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -3178,6 +3179,11 @@ window.addEventListener('pageshow', function(e) {
         <!-- ENEL -->
         <div id="indSecEnel" style="display:none">
           <div id="indEnelContent"><div class="empty-state"><div class="es-icon">⚡</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+
+        <!-- SOLICITAÇÕES DE MATERIAIS -->
+        <div id="indSecMateriais" style="display:none">
+          <div id="indMateriaisContent"><div class="empty-state"><div class="es-icon">📦</div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
         </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
@@ -4070,7 +4076,7 @@ window.addEventListener('pageshow', function(e) {
 
 
 <script>
-const API = 'https://gca-backend-production.up.railway.app';
+const API = 'http://localhost:3000';
 const GCA = { token:null, usuario:null, unidade:null, tokenTemp:null, unidades:[] };
 let _filiais = [
   { slug:'marica', nome:'Maricá', status:'ativa' },
@@ -4489,7 +4495,7 @@ async function verificarTokenAssinatura() {
   document.getElementById('telaAssinatura').style.display = 'block';
   document.getElementById('loadingScreen')?.classList.add('hidden');
 
-  const API = 'https://gca-backend-production.up.railway.app';
+  const API = 'http://localhost:3000';
   try {
     const res = await fetch(`${API}/atendimentos/token/${token}`, { cache: 'no-store' });
     const data = await res.json();
@@ -4599,7 +4605,7 @@ async function confirmarAssinatura(token, atendimentoId) {
   const btn = document.querySelector('#assinCardConteudo button[onclick*="confirmarAssinatura"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
 
-  const API = 'https://gca-backend-production.up.railway.app';
+  const API = 'http://localhost:3000';
   try {
     const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
@@ -15009,11 +15015,13 @@ function indIniciar() {
 }
 
 function indAba(aba) {
-  document.getElementById('indSecEpi').style.display  = aba==='epi'  ? '' : 'none';
-  document.getElementById('indSecEnel').style.display = aba==='enel' ? '' : 'none';
-  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel');
+  document.getElementById('indSecEpi').style.display       = aba==='epi'       ? '' : 'none';
+  document.getElementById('indSecEnel').style.display      = aba==='enel'      ? '' : 'none';
+  document.getElementById('indSecMateriais').style.display = aba==='materiais' ? '' : 'none';
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
+  m.style.color=aba==='materiais'?'var(--accent-text)':'var(--text-3)'; m.style.borderBottomColor=aba==='materiais'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
 }
 
@@ -15023,10 +15031,12 @@ async function carregarIndicadores() {
   if(loading) loading.style.display='';
   document.getElementById('indEpiContent').style.display='none';
   document.getElementById('indEnelContent').style.display='none';
+  document.getElementById('indMateriaisContent').style.display='none';
   const data=await api(`/indicadores?de=${de}&ate=${ate}`);
   if(loading) loading.style.display='none';
   document.getElementById('indEpiContent').style.display='';
   document.getElementById('indEnelContent').style.display='';
+  document.getElementById('indMateriaisContent').style.display='';
   if(!data?.ok){toast('Erro ao carregar indicadores','error');return;}
   _indData=data; indRenderizarTudo();
 }
@@ -15071,7 +15081,7 @@ function indTabela(cols,linhas,cores=[]){
   </table>`;
 }
 
-function indRenderizarTudo(){if(!_indData)return;indRenderEpi(_indData.epi);indRenderEnel(_indData.enel);}
+function indRenderizarTudo(){if(!_indData)return;indRenderEpi(_indData.epi);indRenderEnel(_indData.enel);indRenderMateriais(_indData.materiais);}
 
 function indRenderEpi(d){
   const el=document.getElementById('indEpiContent'),k=d.kpis,pct=k.totalAtend?Math.round((k.assinados/k.totalAtend)*100):0;
@@ -15158,6 +15168,24 @@ function indRenderEnel(d){
     indHBarChart('chartEquipeInstala',d.topEquipeInstala.map(r=>r.nome),d.topEquipeInstala.map(r=>r.total),'Medidores','#22c55e');
     indHBarChart('chartItemRetirado',d.topItemRetirado.map(r=>r.nome.substring(0,22)),d.topItemRetirado.map(r=>r.total),'Qtd','#8b5cf6');
     indHBarChart('chartEquipeCabo',d.topEquipeCabo.map(r=>r.nome),d.topEquipeCabo.map(r=>r.total),'Metros','#f59e0b');
+  },80);
+}
+
+function indRenderMateriais(d){
+  if(!d) return;
+  const el=document.getElementById('indMateriaisContent'),k=d.kpis;
+  el.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(k.totalSolicitacoes,'Solicitações','var(--accent-text)')}
+      ${indKpi(k.tempoMedioAtendimentoHoras!=null ? k.tempoMedioAtendimentoHoras+'h' : '—','Tempo Médio p/ Atender','#f59e0b',k.tempoMedioAtendimentoHoras!=null?'da abertura ao atendimento':'sem dados')}
+      ${indKpi(k.tempoMedioFinalizacaoHoras!=null ? k.tempoMedioFinalizacaoHoras+'h' : '—','Tempo Médio p/ Finalizar','#0ea5e9',k.tempoMedioFinalizacaoHoras!=null?'do transporte à finalização':'sem dados')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+      ${indCardChart('🙋 Top Solicitantes','chartTopSolicitantes',220)}${indCardChart('👤 Colaboradores que Mais Recebem','chartTopColabRecebe',220)}
+    </div>`;
+  setTimeout(()=>{
+    indHBarChart('chartTopSolicitantes',(d.topSolicitantes||[]).map(r=>r.nome),(d.topSolicitantes||[]).map(r=>r.total),'Solicitações','#6366f1');
+    indHBarChart('chartTopColabRecebe',(d.topColabRecebe||[]).map(r=>r.nome),(d.topColabRecebe||[]).map(r=>r.total),'Recebidas','#22c55e');
   },80);
 }
 
@@ -15278,7 +15306,7 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
   let qrImgHtml = '<div style="width:180px;height:180px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;">QR Code</div>';
   if (linkConfirmacao) {
     try {
-      const API = 'https://gca-backend-production.up.railway.app';
+      const API = 'http://localhost:3000';
       const res = await fetch(`${API}/atendimentos/qrcode?url=${encodeURIComponent(linkConfirmacao)}`);
       const data = await res.json();
       if (data.ok) qrImgHtml = `<img src="${data.dataUrl}" width="180" height="180">`;
