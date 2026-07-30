@@ -16064,6 +16064,7 @@ const _recarregarUsuarios = _debounce(() => {
 }, 800);
 
 const _recarregarEstoque = _debounce(() => {
+  console.log('[GCA Realtime] _recarregarEstoque disparou, view ativa "estoque"?', _viewAtiva('estoque'));
   if (_viewAtiva('estoque')) carregarEstoque();
 }, 800);
 
@@ -16088,7 +16089,7 @@ function _iniciarRealtime() {
     // ── Operacional ──
     .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_material' }, () => _recarregarSols())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'atendimentos'          }, () => _recarregarAss())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'saldos'                }, () => _recarregarEstoque())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'saldos'                }, (payload) => { console.log('[GCA Realtime] evento saldos recebido:', payload); _recarregarEstoque(); })
     // ── Cadastros ──
     .on('postgres_changes', { event: '*', schema: 'public', table: 'colaboradores'         }, () => _recarregarColabs())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'itens'                 }, () => _recarregarItens())
