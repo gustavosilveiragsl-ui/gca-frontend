@@ -4131,8 +4131,9 @@ function popularSelectsFiliais() {
       _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${f.nome}</option>`).join('');
     if (cur) selFiltroUni.value = cur;
   }
-  // Select de armazem (criar/editar)
-  ['armUnidade','filtroArmazem','prFiltroArmazem'].forEach(id=>{
+  // Select de armazem (criar/editar) — prFiltroArmazem NÃO entra aqui: é filtro de
+  // armazém de verdade (populado em carregarProtheus com _armazens), não de filial.
+  ['armUnidade','filtroArmazem'].forEach(id=>{
     const el = document.getElementById(id);
     if (!el) return;
     const cur = el.value;
@@ -4806,18 +4807,6 @@ async function confirmarTrocaUnidade(unidade) {
   if (unidade === GCA.unidade) return;
   document.getElementById('unidadeDropdown')?.remove();
 
-  // Zera todos os caches em memória — senão telas que só recarregam "se vazio"
-  // continuam mostrando dados da filial anterior (colaboradores, itens, etc.)
-  _colaboradores = [];
-  _itens = [];
-  _armazens = [];
-  _dotData = [];
-  _descData = [];
-  _scData = [];
-  _equipes = [];
-  _raDados = [];
-  _raArmazens = [];
-
   // Overlay de carregamento
   const ov = document.createElement('div');
   ov.id = 'trocaFilialOverlay';
@@ -4838,14 +4827,14 @@ async function confirmarTrocaUnidade(unidade) {
       toast('Erro ao trocar filial', 'error');
       return;
     }
+    // finalizarLogin já salva token/unidade/usuario no localStorage. Um reload completo
+    // da página garante que NENHUMA tela fique com cache da filial anterior — mais
+    // seguro do que zerar variável por variável manualmente (fácil esquecer alguma).
     finalizarLogin(data);
-    // Garante que os dados do dashboard já estejam prontos antes de esconder o overlay
-    await carregarDashboard();
-    toast(`✓ Filial alterada para ${getNomeUnidade(unidade)}`, 'success', 3000);
+    location.reload();
   } catch {
+    ov.remove();
     toast('Erro de conexão', 'error');
-  } finally {
-    document.getElementById('trocaFilialOverlay')?.remove();
   }
 }
 
@@ -6477,7 +6466,8 @@ function mudarAbaAss(aba) {
 let _assQuery    = '';
 
 async function carregarAssinaturasSilencioso() {
-  if (_assinaturas.length) return; // já carregado
+  // Sempre busca fresco (sem spinner) — a trava antiga de "já carregado" impedia
+  // qualquer atualização depois da primeira vez, inclusive vinda do realtime.
   const data = await api('/atendimentos/pendentes');
   if (!data) return;
   const agora = new Date();
@@ -16073,6 +16063,10 @@ const _recarregarUsuarios = _debounce(() => {
   if (_viewAtiva('logins-solicitacao')) carregarLS();
 }, 800);
 
+const _recarregarEstoque = _debounce(() => {
+  if (_viewAtiva('estoque')) carregarEstoque();
+}, 800);
+
 function _iniciarRealtime() {
   const sb = _getSupabase();
   if (!sb) {
@@ -16094,6 +16088,7 @@ function _iniciarRealtime() {
     // ── Operacional ──
     .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_material' }, () => _recarregarSols())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'atendimentos'          }, () => _recarregarAss())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'saldos'                }, () => _recarregarEstoque())
     // ── Cadastros ──
     .on('postgres_changes', { event: '*', schema: 'public', table: 'colaboradores'         }, () => _recarregarColabs())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'itens'                 }, () => _recarregarItens())
