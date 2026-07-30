@@ -4324,7 +4324,7 @@ function onViewLoad(nome) {
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
-  if (nome === 'estoque')            { if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
+  if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
