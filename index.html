@@ -4099,7 +4099,7 @@ window.addEventListener('pageshow', function(e) {
 
 
 <script>
-const API = 'http://localhost:3000';
+const API = 'https://gca-backend-production.up.railway.app';
 const GCA = { token:null, usuario:null, unidade:null, tokenTemp:null, unidades:[] };
 let _filiais = [
   { slug:'marica', nome:'Maricá', status:'ativa' },
@@ -4518,7 +4518,7 @@ async function verificarTokenAssinatura() {
   document.getElementById('telaAssinatura').style.display = 'block';
   document.getElementById('loadingScreen')?.classList.add('hidden');
 
-  const API = 'http://localhost:3000';
+  const API = 'https://gca-backend-production.up.railway.app';
   try {
     const res = await fetch(`${API}/atendimentos/token/${token}`, { cache: 'no-store' });
     const data = await res.json();
@@ -4628,7 +4628,7 @@ async function confirmarAssinatura(token, atendimentoId) {
   const btn = document.querySelector('#assinCardConteudo button[onclick*="confirmarAssinatura"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
 
-  const API = 'http://localhost:3000';
+  const API = 'https://gca-backend-production.up.railway.app';
   try {
     const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
@@ -15644,7 +15644,7 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
   let qrImgHtml = '<div style="width:180px;height:180px;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:11px;color:#999;">QR Code</div>';
   if (linkConfirmacao) {
     try {
-      const API = 'http://localhost:3000';
+      const API = 'https://gca-backend-production.up.railway.app';
       const res = await fetch(`${API}/atendimentos/qrcode?url=${encodeURIComponent(linkConfirmacao)}`);
       const data = await res.json();
       if (data.ok) qrImgHtml = `<img src="${data.dataUrl}" width="180" height="180">`;
