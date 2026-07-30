@@ -3195,6 +3195,12 @@ window.addEventListener('pageshow', function(e) {
 
         <!-- PREVISÃO ANUAL -->
         <div id="indSecPrevAnual" style="display:none">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <input type="month" id="prevDe"  class="form-input" style="width:150px">
+            <span style="color:var(--text-3);font-size:12px">até</span>
+            <input type="month" id="prevAte" class="form-input" style="width:150px">
+            <button class="btn btn-primary" onclick="carregarIndPrevAnual()">🔍 Simular</button>
+          </div>
           <div id="indPrevAnualContent"><div class="empty-state"><div class="es-icon">📅</div><div class="es-title">Carregando...</div></div></div>
         </div>
       </div>
@@ -3244,6 +3250,11 @@ window.addEventListener('pageshow', function(e) {
               <div><label class="form-label">Localização</label><input id="armLocalizacao" class="form-input" placeholder="Ex: Rua das Flores, 100"></div>
               <div><label class="form-label">Responsável</label><input id="armResponsavel" class="form-input" placeholder="Nome do responsável"></div>
               <div><label class="form-label">Descrição</label><input id="armDescricao" class="form-input" placeholder="Descrição do armazém"></div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="armPrincipal" style="width:16px;height:16px;cursor:pointer">
+                <label for="armPrincipal" class="form-label" style="margin:0;cursor:pointer">⭐ Armazém principal desta filial</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Usado na Previsão Anual — só um armazém principal por filial (marcar aqui desmarca o anterior).</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarArmazem()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormArmazem()">Limpar</button>
@@ -8315,6 +8326,7 @@ async function salvarArmazem() {
     localizacao: document.getElementById('armLocalizacao').value.trim(),
     responsavel: document.getElementById('armResponsavel').value.trim(),
     descricao:   document.getElementById('armDescricao').value.trim(),
+    principal:   document.getElementById('armPrincipal').checked,
   };
   if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
   const res = await api(id ? `/armazens/${id}` : '/armazens', {
@@ -8333,11 +8345,19 @@ function editarArmazem(id) {
     document.getElementById('armLocalizacao').value = a.localizacao||'';
     document.getElementById('armResponsavel').value = a.responsavel||'';
     document.getElementById('armDescricao').value   = a.descricao||'';
+    document.getElementById('armPrincipal').checked = !!a.principal;
   });
 }
 
 function limparFormArmazem() {
   ['armEditId','armNome','armLocalizacao','armResponsavel','armDescricao'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  const p = document.getElementById('armPrincipal'); if (p) p.checked = false;
+}
+
+async function tornarArmazemPrincipal(id) {
+  const res = await api(`/armazens/${id}`, { method: 'PUT', body: JSON.stringify({ principal: true }) });
+  if (res?.ok) { toast('Armazém principal atualizado!', 'success'); _armazens = []; carregarArmazensView(); }
+  else toast(res?.erro || 'Erro ao atualizar', 'error');
 }
 
 async function carregarArmazensView() {
@@ -8347,10 +8367,11 @@ async function carregarArmazensView() {
   if (!data) return;
   const lista = data.data || data.armazens || [];
   tbody.innerHTML = lista.length ? lista.map(a => `<tr>
-    <td class="td-main">${a.nome}<div style="font-size:10px;color:var(--text-3)">${a.descricao||''}</div></td>
+    <td class="td-main">${a.nome}${a.principal ? ' <span style="color:#f59e0b" title="Armazém principal">⭐</span>' : ''}<div style="font-size:10px;color:var(--text-3)">${a.descricao||''}</div></td>
     <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
     <td style="display:flex;gap:6px">
+      ${a.principal ? '' : `<button class="row-action" onclick="tornarArmazemPrincipal('${a.id}')">⭐ Tornar principal</button>`}
       <button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button>
       <button class="row-action" style="color:var(--color-danger,#e53e3e)" onclick="excluirArmazem('${a.id}','${a.nome.replace(/'/g,"\\'")}')">Excluir</button>
     </td>
@@ -15149,12 +15170,26 @@ function indAba(aba) {
 let _indForaPrazoData = null;
 let _indPrevAnualData = null;
 
-async function carregarIndPrevAnual() {
-  const content = document.getElementById('indPrevAnualContent');
-  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Calculando previsão até o fim do ano...</div></div>';
+function indPrevAnualDefaults() {
+  const de = document.getElementById('prevDe'), ate = document.getElementById('prevAte');
+  const hoje = new Date();
+  if (de && !de.value) de.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+  if (ate && !ate.value) ate.value = `${hoje.getFullYear()}-12`;
+}
 
-  const data = await api('/indicadores/previsao-anual');
-  if (!data?.ok) { content.innerHTML = `<div class="empty-state"><div class="es-title">${data?.erro || 'Erro ao carregar'}</div></div>`; return; }
+async function carregarIndPrevAnual() {
+  indPrevAnualDefaults();
+  const content = document.getElementById('indPrevAnualContent');
+  content.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Simulando estoque mês a mês...</div></div>';
+
+  const de = document.getElementById('prevDe')?.value, ate = document.getElementById('prevAte')?.value;
+  const data = await api(`/indicadores/previsao-anual?de=${de}&ate=${ate}`);
+  if (!data?.ok) {
+    const msg = data?.erro || 'Erro ao carregar';
+    const dica = data?.semArmazemPrincipal ? '<div style="margin-top:8px;font-size:12px;color:var(--text-3)">Vá em <b>Armazéns</b> e clique em "⭐ Tornar principal" no armazém correto desta filial.</div>' : '';
+    content.innerHTML = `<div class="empty-state"><div class="es-icon">⚠️</div><div class="es-title">${msg}</div>${dica}</div>`;
+    return;
+  }
   _indPrevAnualData = data;
   indRenderizarPrevAnual();
 }
@@ -15163,39 +15198,78 @@ function indRenderizarPrevAnual() {
   const d = _indPrevAnualData;
   if (!d) return;
   const content = document.getElementById('indPrevAnualContent');
-  const nomeUnidade = u => u === 'rio_das_ostras' ? 'Rio das Ostras' : u === 'marica' ? 'Maricá' : u;
-
-  const linhasPorUnidade = {};
-  d.itens.forEach(r => { (linhasPorUnidade[r.unidade] = linhasPorUnidade[r.unidade] || []).push(r); });
+  const meta = d.meta.valorMensal;
 
   content.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:10px">
-      ${indKpi(d.kpis.totalItens,'Itens com Necessidade','#f59e0b')}
-      ${indKpi(d.kpis.valorTotalGeral.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Valor Total Estimado','#ef4444')}
-      ${indKpi((d.kpis.porUnidade.rio_das_ostras?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Rio das Ostras','var(--accent-text)')}
-      ${indKpi((d.kpis.porUnidade.marica?.valorTotal||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Maricá','var(--accent-text)')}
-    </div>
-    <div style="font-size:11px;color:var(--text-3);margin-bottom:20px">📌 Considerando ${d.diasRestantes} dias restantes até 31/12, com base no consumo médio dos últimos 90 dias, saldo atual e SCs já em aberto (a caminho).</div>
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:14px">📍 Armazém principal: <b>${d.armazemPrincipal.nome}</b> — simulação baseada no consumo médio real dos últimos 90 dias, saldo atual e SCs em aberto. Reposição de um mês só é considerada disponível no mês seguinte.</div>
 
-    ${['rio_das_ostras','marica'].map(u => {
-      const lista = (linhasPorUnidade[u]||[]);
-      if (!lista.length) return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px"><div style="font-size:12px;font-weight:700;margin-bottom:8px">${nomeUnidade(u)}</div><div style="color:var(--text-3);font-size:12px">Nenhuma necessidade de compra identificada</div></div>`;
-      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📍 ${nomeUnidade(u)} — ${lista.length} itens</div>
-        <div style="max-height:420px;overflow-y:auto">
-        ${indTabela(
-          ['Armazém','Item','Saldo','Mín.','Consumo Proj.','A Caminho','Necessidade','Valor Estimado'],
-          lista.map(r => [
-            r.armazem, r.item, r.saldoAtual, r.estoqueMin, r.consumoProjetado, r.aCaminho,
-            `<span style="font-weight:700;color:#f59e0b">${r.necessidade}</span>`,
-            `<span style="font-weight:700;color:#ef4444">${r.valorEstimado.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
-          ]),
-          ['var(--text-2)','var(--text-1)','var(--text-2)','var(--text-3)','var(--text-2)','var(--text-2)','','']
-        )}
-        </div>
-      </div>`;
-    }).join('')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px">
+      ${indKpi(d.kpis.totalItens,'Itens com Necessidade','#f59e0b')}
+      ${indKpi(d.kpis.valorTotalPeriodo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Total do Período','#ef4444')}
+      ${indKpi(d.kpis.mediaMensal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Média Mensal','var(--accent-text)')}
+      ${indKpi(meta.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),'Meta Mensal','#0ea5e9')}
+    </div>
+
+    ${indCardChart('📈 Evolução do Gasto Previsto vs. Meta','chartPrevGasto',260)}
+
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+      ${d.meses.map((m, i) => {
+        const acimaDaMeta = m.valorTotal > meta;
+        return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+          <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer" onclick="indTogglePrevMes(${i})">
+            <div style="font-weight:700;font-size:13px;min-width:90px">${m.nome}/${m.ano}</div>
+            <div style="font-size:12px;color:var(--text-3)">${m.itens.length} ite${m.itens.length===1?'m':'ns'}</div>
+            <div style="margin-left:auto;font-weight:700;font-size:14px;color:${acimaDaMeta?'#ef4444':'#22c55e'}">${m.valorTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div>
+            ${acimaDaMeta ? '<span style="font-size:10px;color:#ef4444;font-weight:700">ACIMA DA META</span>' : ''}
+            <span id="prevMesSeta${i}" style="font-size:11px;color:var(--text-3)">▼</span>
+          </div>
+          <div id="prevMesDetalhe${i}" style="display:none;border-top:1px solid var(--border);padding:10px 16px">
+            ${m.itens.length ? indTabela(['Item','Código','Qtd.','Valor Unit.','Total'],
+              m.itens.map(it => [it.item, it.codigo||'—', it.qtd,
+                it.valorUn.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}),
+                it.valorTotal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})]))
+              : '<div style="font-size:12px;color:var(--text-3);padding:8px 0">Nenhuma compra necessária neste mês</div>'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
   `;
+
+  setTimeout(() => {
+    indDestroyChart('chartPrevGasto');
+    const ctx = document.getElementById('chartPrevGasto')?.getContext('2d');
+    if (!ctx || !window.Chart) return;
+    const labels = d.meses.map(m => `${m.nome}/${String(m.ano).slice(2)}`);
+    _indCharts['chartPrevGasto'] = new Chart(ctx, {
+      data: {
+        labels,
+        datasets: [
+          { type: 'bar', label: 'Gasto previsto', data: d.meses.map(m => m.valorTotal),
+            backgroundColor: d.meses.map(m => m.valorTotal > meta ? '#ef4444cc' : '#6366f1cc'),
+            borderColor: d.meses.map(m => m.valorTotal > meta ? '#ef4444' : '#6366f1'), borderWidth: 1, borderRadius: 4 },
+          { type: 'line', label: 'Meta mensal', data: d.meses.map(() => meta),
+            borderColor: '#0ea5e9', borderDash: [6,4], borderWidth: 2, pointRadius: 0, fill: false },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 800 },
+        plugins: { legend: { display: true, labels: { color: '#94a3b8', font: { size: 11 } } } },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 } } },
+          y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#64748b', font: { size: 10 },
+            callback: v => 'R$ ' + (v/1000) + 'k' } },
+        },
+      },
+    });
+  }, 80);
+}
+
+function indTogglePrevMes(i) {
+  const el = document.getElementById(`prevMesDetalhe${i}`), seta = document.getElementById(`prevMesSeta${i}`);
+  if (!el) return;
+  const aberto = el.style.display !== 'none';
+  el.style.display = aberto ? 'none' : '';
+  if (seta) seta.textContent = aberto ? '▼' : '▲';
 }
 
 async function carregarIndForaPrazo() {
