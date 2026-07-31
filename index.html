@@ -7230,7 +7230,7 @@ async function abrirModalSolicitacao(id) {
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
       ${alertaAss}
-      ${podeAtender ? `<button class="btn btn-primary" ${assPendMod?'disabled title="Assinatura pendente"':''} onclick="atenderSolicitacao('${id}')">🤝 Iniciar Atendimento</button>` : ''}
+      ${podeAtender ? `<button class="btn btn-primary" ${assPendMod?'disabled title="Assinatura pendente"':''} onclick="atenderSolicitacao('${id}', this)">🤝 Iniciar Atendimento</button>` : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')">✏️ Editar</button>` : ''}
       ${statusOpts  ? `
         <select class="form-input" id="solNovoStatus" style="width:220px;font-size:11px">${statusOpts}</select>
@@ -7405,7 +7405,7 @@ async function salvarEdicaoSolicitacao(id) {
 
 let _atendendoSolicitacaoEmAndamento = false;
 
-async function atenderSolicitacao(id) {
+async function atenderSolicitacao(id, btnEl) {
   // Evita clique duplo/repetido disparar o fluxo assíncrono duas vezes em paralelo
   // (causava itens duplicados no atendimento, cada execução adicionando os seus).
   if (_atendendoSolicitacaoEmAndamento) return;
@@ -7417,6 +7417,14 @@ async function atenderSolicitacao(id) {
   if (!colabId) {
     toast('Colaborador não identificado na solicitação.', 'error', 4000);
     return;
+  }
+
+  // Mostra estado de carregamento no botão — evita clique duplo por falta de feedback
+  // enquanto a checagem de assinatura pendente (chamada assíncrona) ainda está rodando.
+  const textoOriginalBtn = btnEl?.innerHTML;
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:-2px;margin-right:6px"></span>Processando...';
   }
 
   _atendendoSolicitacaoEmAndamento = true;
@@ -7500,6 +7508,8 @@ async function atenderSolicitacao(id) {
     }
   } finally {
     _atendendoSolicitacaoEmAndamento = false;
+    // Restaura o botão — inofensivo mesmo se o modal já tiver fechado/sumido da tela
+    if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = textoOriginalBtn; }
   }
 }
 
