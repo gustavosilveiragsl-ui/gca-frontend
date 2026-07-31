@@ -6531,11 +6531,19 @@ function mudarAbaAss(aba) {
 }
 let _assQuery    = '';
 
-async function carregarAssinaturasSilencioso() {
-  // Sempre busca fresco (sem spinner) — a trava antiga de "já carregado" impedia
-  // qualquer atualização depois da primeira vez, inclusive vinda do realtime.
+let _assinaturasUltimoFetch = 0;
+
+async function carregarAssinaturasSilencioso(force = false) {
+  // Cache curto (8s) — evita rebuscar /atendimentos/pendentes (rota pesada, milhares
+  // de registros) a cada clique. force=true (usado pelo realtime, que só dispara numa
+  // mudança real) sempre busca fresco; as demais chamadas (checagens defensivas antes
+  // de iniciar atendimento) aproveitam o cache se ainda estiver "morno".
+  const agoraMs = Date.now();
+  if (!force && _assinaturas.length && (agoraMs - _assinaturasUltimoFetch) < 8000) return;
+
   const data = await api('/atendimentos/pendentes');
   if (!data) return;
+  _assinaturasUltimoFetch = Date.now();
   const agora = new Date();
   _assinaturas = (data.data || []).map(a => {
     const exp = a.expiracao ? new Date(a.expiracao) : null;
@@ -16121,7 +16129,7 @@ const _recarregarSols = _debounce(() => {
 
 const _recarregarAss = _debounce(() => {
   if (_viewAtiva('assinaturas')) carregarAssinaturas(true);
-  carregarAssinaturasSilencioso(); // sempre atualiza em background para verificar pendências
+  carregarAssinaturasSilencioso(true); // mudança real detectada — força busca fresca, ignora o cache
 }, 800);
 
 const _recarregarColabs = _debounce(() => {
