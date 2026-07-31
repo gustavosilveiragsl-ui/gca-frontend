@@ -8194,10 +8194,12 @@ async function calcularPrevisao() {
   const body  = document.getElementById('previsaoBody');
   if (!body) return;
 
-  // Agrupa saídas por item (filtrado por armazém se selecionado)
+  // Agrupa saídas por item (filtrado por armazém se selecionado) — exclui "Troca recuperação":
+  // esses itens serão recuperados, não representam consumo real de estoque.
   const saidasPorItem = {};
   _previsaoSaidas.forEach(m => {
     if (armId && (m.armazemId||m.armazem_id) !== armId) return;
+    if ((m.observacao || '').toLowerCase().includes('troca recuperação')) return;
     const id = m.itemId || m.item_id;
     if (!id) return;
     saidasPorItem[id] = (saidasPorItem[id] || 0) + Number(m.quantidade || 0);
