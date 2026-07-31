@@ -3515,24 +3515,22 @@ window.addEventListener('pageshow', function(e) {
 
 <!-- MODAL TROCA TAMANHO -->
 <div class="modal-overlay hidden" id="modalTrocaTamanho">
-  <div class="modal-box" style="max-width:440px">
+  <div class="modal-box" style="max-width:460px">
     <div class="modal-header"><div class="modal-title">🔄 Troca de Tamanho</div></div>
     <div class="modal-body">
-      <div style="font-size:12px;color:var(--text-2);margin-bottom:14px">O colaborador já possui um item do mesmo tipo com tamanho diferente:</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-md);padding:12px">
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">POSSUI ATUALMENTE</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="trocaTamanhoAntigo" style="color:var(--red)"></div>
-          <div style="font-size:11px;color:var(--text-3);margin-top:2px" id="trocaTamanhoSaldo"></div>
-        </div>
-        <div style="background:var(--green-soft);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-md);padding:12px">
-          <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">NOVO ITEM</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="trocaTamanhoNovo" style="color:var(--green)"></div>
-        </div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:14px">Este item tem variação de tamanho. Confirme qual tamanho o colaborador está devolvendo:</div>
+      <div style="background:var(--green-soft);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-md);padding:12px;margin-bottom:14px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">NOVO ITEM (sendo entregue)</div>
+        <div style="font-size:13px;font-weight:600;color:var(--text-1)" id="trocaTamanhoNovo"></div>
       </div>
+      <label class="form-label">Tamanho que está sendo devolvido *</label>
+      <select class="form-input" id="trocaTamanhoSelect" style="margin-bottom:4px"></select>
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:14px" id="trocaTamanhoDica"></div>
+      <label class="form-label">Justificativa *</label>
+      <textarea class="form-input" id="trocaTamanhoJustificativa" rows="2" placeholder="Ex: não há mais tamanho M em estoque para repor"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="confirmarTrocaTamanho(false)">Cancelar</button>
+      <button class="btn btn-ghost" onclick="confirmarTrocaTamanho(false)">Pular este item</button>
       <button class="btn btn-primary" onclick="confirmarTrocaTamanho(true)">Confirmar Troca</button>
     </div>
   </div>
@@ -5662,74 +5660,8 @@ async function confirmarItensModal() {
   btn.textContent = 'Validando...';
 
   try {
-    // ── PRÉ-VALIDAÇÃO PARALELA DE TODOS OS ITENS ──
-    const resultados = await Promise.all(selecionados.map(async s => {
-      const [resNivel, resDot, resSaldo, resDur, resTroca] = await Promise.all([
-        api('/validacoes/nivel',        { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) }),
-        api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo, quantidade: s.qtd }) }),
-        api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`),
-        (s.motivo||'').toLowerCase() !== 'entrega inicial'
-          ? api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) })
-          : Promise.resolve(null),
-        api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) }),
-      ]);
-
-      const saldo = resSaldo?.data?.[0]?.saldo ?? 0;
-      const bloqueios = [];
-      const avisos    = [];
-
-      if (resNivel && !resNivel.ok)  bloqueios.push(resNivel.erro);
-      if (resDot   && !resDot.ok)    bloqueios.push(resDot.erro);
-      if (saldo < s.qtd)             bloqueios.push(`Saldo insuficiente — disponível: ${saldo}, solicitado: ${s.qtd}`);
-      if (resDur && !resDur.dentro && resDur.ultimaEntrega)
-        avisos.push(`Prazo de durabilidade não atingido (${resDur.diasDecorridos} de ${resDur.prazoMinDias} dias)`);
-      if (resTroca?.troca)
-        avisos.push(`Troca de tamanho detectada — colaborador possui "${resTroca.troca.nomeAntigo}"`);
-
-      return { s, bloqueios, avisos, resTroca };
-    }));
-
-    const comBloqueio = resultados.filter(r => r.bloqueios.length);
-    const comAviso    = resultados.filter(r => r.avisos.length && !r.bloqueios.length);
-    const limpos      = resultados.filter(r => !r.bloqueios.length && !r.avisos.length);
-
-    // Se há bloqueios — mostra resumo e para
-    if (comBloqueio.length) {
-      fecharModalItens();
-      const html = comBloqueio.map(r =>
-        `<div style="margin-bottom:12px;padding:10px;background:var(--red-soft);border-radius:var(--radius-sm);border-left:3px solid #ef4444">
-          <div style="font-weight:700;font-size:12px;color:var(--text-1);margin-bottom:4px">🚫 ${r.s.item.descricao}</div>
-          ${r.bloqueios.map(b => `<div style="font-size:11px;color:var(--text-2)">• ${b}</div>`).join('')}
-        </div>`
-      ).join('');
-      mostrarModalBloqueio(
-        `🚫 ${comBloqueio.length} item(ns) bloqueado(s)`,
-        '__HTML__' + html + (limpos.length + comAviso.length > 0
-          ? `<div style="margin-top:8px;font-size:11px;color:var(--text-3)">Os demais ${limpos.length + comAviso.length} item(ns) foram cancelados. Corrija e tente novamente.</div>`
-          : '')
-      );
-      return;
-    }
-
-    // Se há avisos — mostra resumo e pede confirmação
-    if (comAviso.length) {
-      const prosseguir = await mostrarResumoAvisos(comAviso, limpos.length);
-      if (!prosseguir) return;
-    }
-
-    // Adiciona todos os itens aprovados (limpos + com aviso confirmado)
-    // Para itens com troca de tamanho, injeta itemIdAntigo para o backend saber qual fechar
-    const aprovados = [...limpos, ...comAviso].map(r => {
-      const s = r.s;
-      if (r.resTroca?.troca) {
-        s.itemIdAntigo   = r.resTroca.troca.itemIdAntigo;
-        s.nomeItemAntigo = r.resTroca.troca.nomeAntigo;
-        s.trocaTamanho   = true;
-      }
-      return s;
-    });
-    adicionarItensAoAtendimento(aprovados);
-
+    const aprovados = await validarEPrepararItens(selecionados);
+    if (aprovados && aprovados.length) adicionarItensAoAtendimento(aprovados);
   } catch (err) {
     console.error('[validacao]', err);
     toast('Erro ao validar itens', 'error');
@@ -5737,6 +5669,120 @@ async function confirmarItensModal() {
     btn.disabled = false;
     btn.textContent = 'Incluir no Atendimento';
   }
+}
+
+// ── Nome-base de um item, sem o sufixo de tamanho (ex: "CAMISA/M" → "CAMISA") ──
+// Mesma regra usada no backend (validacoes.js: extrairBase) — mantém consistência.
+function extrairBaseFrontend(descricao) {
+  const nome = (descricao || '').toUpperCase().trim();
+  const idx = nome.lastIndexOf('/');
+  if (idx > 0) {
+    const sufixo = nome.slice(idx + 1).trim();
+    if (sufixo.length > 0 && sufixo.length <= 4 && !sufixo.includes(' ')) {
+      return nome.slice(0, idx).trim();
+    }
+  }
+  return nome;
+}
+
+function temVariacaoDeTamanho(descricao) {
+  return extrairBaseFrontend(descricao) !== (descricao || '').toUpperCase().trim();
+}
+
+// Lista, a partir do catálogo local (_itens), todos os tamanhos do mesmo item base —
+// não depende da ficha_epi, então funciona mesmo quando o colaborador tem o item em
+// mãos mas isso nunca foi registrado no sistema (ex: item de antes do sistema existir).
+function buscarVariantesTamanho(itemAtual) {
+  if (!temVariacaoDeTamanho(itemAtual.descricao)) return [];
+  const base = extrairBaseFrontend(itemAtual.descricao);
+  return (_itens || []).filter(i => extrairBaseFrontend(i.descricao) === base);
+}
+
+// ── Validação completa (nível, dotação, saldo, durabilidade, troca de tamanho) ──
+// Usada tanto ao adicionar itens manualmente quanto ao carregar itens automaticamente
+// de uma solicitação (atenderSolicitacao). Retorna a lista de itens aprovados, prontos
+// para adicionarItensAoAtendimento — ou null se o usuário cancelou/foi bloqueado.
+async function validarEPrepararItens(selecionados) {
+  const resultados = await Promise.all(selecionados.map(async s => {
+    const [resNivel, resDot, resSaldo, resDur, resTroca] = await Promise.all([
+      api('/validacoes/nivel',        { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) }),
+      api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo, quantidade: s.qtd }) }),
+      api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`),
+      (s.motivo||'').toLowerCase() !== 'entrega inicial'
+        ? api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) })
+        : Promise.resolve(null),
+      api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) }),
+    ]);
+
+    const saldo = resSaldo?.data?.[0]?.saldo ?? 0;
+    const bloqueios = [];
+    const avisos    = [];
+
+    if (resNivel && !resNivel.ok)  bloqueios.push(resNivel.erro);
+    if (resDot   && !resDot.ok)    bloqueios.push(resDot.erro);
+    if (saldo < s.qtd)             bloqueios.push(`Saldo insuficiente — disponível: ${saldo}, solicitado: ${s.qtd}`);
+    if (resDur && !resDur.dentro && resDur.ultimaEntrega)
+      avisos.push(`Prazo de durabilidade não atingido (${resDur.diasDecorridos} de ${resDur.prazoMinDias} dias)`);
+
+    return { s, bloqueios, avisos, resTroca };
+  }));
+
+  const comBloqueio = resultados.filter(r => r.bloqueios.length);
+  const comAviso    = resultados.filter(r => r.avisos.length && !r.bloqueios.length);
+  const limpos      = resultados.filter(r => !r.bloqueios.length && !r.avisos.length);
+
+  // Se há bloqueios — mostra resumo e para
+  if (comBloqueio.length) {
+    fecharModalItens();
+    const html = comBloqueio.map(r =>
+      `<div style="margin-bottom:12px;padding:10px;background:var(--red-soft);border-radius:var(--radius-sm);border-left:3px solid #ef4444">
+        <div style="font-weight:700;font-size:12px;color:var(--text-1);margin-bottom:4px">🚫 ${r.s.item.descricao}</div>
+        ${r.bloqueios.map(b => `<div style="font-size:11px;color:var(--text-2)">• ${b}</div>`).join('')}
+      </div>`
+    ).join('');
+    mostrarModalBloqueio(
+      `🚫 ${comBloqueio.length} item(ns) bloqueado(s)`,
+      '__HTML__' + html + (limpos.length + comAviso.length > 0
+        ? `<div style="margin-top:8px;font-size:11px;color:var(--text-3)">Os demais ${limpos.length + comAviso.length} item(ns) foram cancelados. Corrija e tente novamente.</div>`
+        : '')
+    );
+    return null;
+  }
+
+  // Se há avisos (ex: durabilidade) — mostra resumo e pede confirmação
+  if (comAviso.length) {
+    const prosseguir = await mostrarResumoAvisos(comAviso, limpos.length);
+    if (!prosseguir) return null;
+  }
+
+  // ── Troca de tamanho: para cada item com motivo de troca, confirma manualmente
+  // qual tamanho está sendo devolvido (a detecção automática só serve de sugestão) ──
+  const aprovadosFinal = [];
+  for (const r of [...limpos, ...comAviso]) {
+    const s = r.s;
+    const ehTroca   = (s.motivo || '').toLowerCase().includes('troca');
+    const variantes = ehTroca ? buscarVariantesTamanho(s.item) : [];
+
+    if (ehTroca && variantes.length) {
+      const escolha = await mostrarModalTrocaTamanho(s.item, variantes, r.resTroca?.troca);
+      if (!escolha) {
+        toast(`Item "${s.item.descricao}" não incluído — troca de tamanho não confirmada.`, 'warn', 4000);
+        continue;
+      }
+      s.itemIdAntigo   = escolha.itemIdAntigo;
+      s.nomeItemAntigo = escolha.nomeItemAntigo;
+      s.trocaTamanho   = true;
+      s.motivo         = s.motivo + ' — Justificativa: ' + escolha.justificativa;
+    } else if (r.resTroca?.troca) {
+      // Item sem variantes cadastradas no catálogo, mas a ficha indicou uma troca
+      s.itemIdAntigo   = r.resTroca.troca.itemIdAntigo;
+      s.nomeItemAntigo = r.resTroca.troca.nomeAntigo;
+      s.trocaTamanho   = true;
+    }
+    aprovadosFinal.push(s);
+  }
+
+  return aprovadosFinal;
 }
 
 function mostrarResumoAvisos(comAviso, qtdLimpos) {
@@ -5797,19 +5843,39 @@ function confirmarDurabilidade(sim) {
   if (window._durabilidadeResolve) { window._durabilidadeResolve(sim); window._durabilidadeResolve = null; }
 }
 
-function mostrarModalTrocaTamanho(troca, itemNovo) {
+function mostrarModalTrocaTamanho(itemNovo, variantes, autoDetectado) {
   return new Promise(resolve => {
-    document.getElementById('trocaTamanhoAntigo').textContent = troca.nomeAntigo;
-    document.getElementById('trocaTamanhoNovo').textContent   = itemNovo;
-    document.getElementById('trocaTamanhoSaldo').textContent  = `${troca.saldoAntigo} em mãos`;
+    document.getElementById('trocaTamanhoNovo').textContent = itemNovo.descricao;
+    const sel = document.getElementById('trocaTamanhoSelect');
+    sel.innerHTML = variantes.map(v => `<option value="${v.id}">${v.descricao}</option>`).join('');
+    if (autoDetectado) sel.value = autoDetectado.itemIdAntigo;
+    document.getElementById('trocaTamanhoDica').textContent = autoDetectado
+      ? `Detectado automaticamente: colaborador possui "${autoDetectado.nomeAntigo}" (${autoDetectado.saldoAntigo} em mãos). Confira e ajuste se necessário.`
+      : 'Não foi possível detectar automaticamente na ficha do colaborador — selecione manualmente o tamanho que está sendo devolvido.';
+    document.getElementById('trocaTamanhoJustificativa').value = '';
     document.getElementById('modalTrocaTamanho').classList.remove('hidden');
     window._trocaTamanhoResolve = resolve;
   });
 }
 
 function confirmarTrocaTamanho(sim) {
+  if (!window._trocaTamanhoResolve) return;
+
+  if (!sim) {
+    document.getElementById('modalTrocaTamanho').classList.add('hidden');
+    window._trocaTamanhoResolve(null);
+    window._trocaTamanhoResolve = null;
+    return;
+  }
+
+  const justificativa = document.getElementById('trocaTamanhoJustificativa').value.trim();
+  if (!justificativa) { toast('Justificativa obrigatória', 'warn'); return; }
+
+  const sel = document.getElementById('trocaTamanhoSelect');
+  const opt = sel.options[sel.selectedIndex];
   document.getElementById('modalTrocaTamanho').classList.add('hidden');
-  if (window._trocaTamanhoResolve) { window._trocaTamanhoResolve(sim); window._trocaTamanhoResolve = null; }
+  window._trocaTamanhoResolve({ itemIdAntigo: sel.value, nomeItemAntigo: opt?.textContent || '', justificativa });
+  window._trocaTamanhoResolve = null;
 }
 
 function mostrarValidacoes(erros, avisos) {
@@ -7501,8 +7567,17 @@ async function atenderSolicitacao(id, btnEl) {
     }).filter(Boolean);
 
     if (selecionados.length) {
-      adicionarItensAoAtendimento(selecionados);
-      toast(`✅ ${selecionados.length} item(ns) carregado(s) da solicitação #${s.id}`, 'success', 3000);
+      // Roda a mesma validação completa do fluxo manual (nível, dotação, saldo,
+      // durabilidade, troca de tamanho) — itens carregados automaticamente da
+      // solicitação não devem pular essas checagens.
+      if (!_itens.length) await carregarItensAtendimento();
+      const aprovados = await validarEPrepararItens(selecionados);
+      if (aprovados && aprovados.length) {
+        adicionarItensAoAtendimento(aprovados);
+        toast(`✅ ${aprovados.length} item(ns) carregado(s) da solicitação #${s.id}`, 'success', 3000);
+      } else {
+        toast('Nenhum item pôde ser incluído automaticamente. Adicione manualmente.', 'warn', 5000);
+      }
     } else {
       toast('Itens não encontrados no catálogo local. Adicione manualmente.', 'warn', 5000);
     }

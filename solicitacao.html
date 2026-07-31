@@ -472,7 +472,7 @@ input,select,textarea{font-family:var(--font-main);}
       </div>
       <div class="form-group">
         <label class="form-label">Motivo *</label>
-        <select class="form-input" id="confMotivo" onchange="checarOutro()">
+        <select class="form-input" id="confMotivo" onchange="checarOutro();checarTroca()">
           <option value="">Selecione...</option>
           <option value="Entrega inicial">📥 Entrega inicial</option>
           <option value="Desgastado">🪨 Desgastado</option>
@@ -487,10 +487,14 @@ input,select,textarea{font-family:var(--font-main);}
         <label class="form-label">Descreva o motivo *</label>
         <input class="form-input" id="confOutro" placeholder="Descreva...">
       </div>
-      <!-- Aviso: troca de tamanho -->
+      <!-- Troca de tamanho: seleção manual + justificativa -->
       <div class="alerta-box alerta-accent hidden" id="wTroca">
-        <div style="font-size:11px;font-weight:600;margin-bottom:4px">👕 Troca de Tamanho Detectada</div>
-        <div style="font-size:11px">Colaborador possui: <strong id="trocaAnt">—</strong></div>
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px">👕 Troca de Tamanho</div>
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:6px" id="trocaDica"></div>
+        <label class="form-label">Tamanho que está sendo devolvido *</label>
+        <select class="form-input" id="confTrocaSelect" style="margin-bottom:8px"></select>
+        <label class="form-label">Justificativa *</label>
+        <textarea class="form-input" id="confTrocaJust" rows="2" placeholder="Ex: não há mais tamanho M em estoque para repor"></textarea>
       </div>
       <!-- Aviso: durabilidade -->
       <div class="alerta-box alerta-warn hidden" id="wDur">
@@ -915,20 +919,52 @@ async function abrirConf() {
   document.getElementById('durJust').value = '';
   document.getElementById('confMsg').textContent = '';
 
-  // Verificar troca de tamanho
+  // Detecção automática de troca de tamanho — só a sugestão inicial; quem confirma
+  // qual tamanho realmente está sendo devolvido é sempre o solicitante (checarTroca).
   if (colId) {
     const resTroca = await req('/solicitacao-auth/validar-troca-tamanho', {method:'POST',body:{colaborador_id:colId,item_id:it.id,unidade:_usr.unidade}});
-    if (resTroca?.troca) {
-      document.getElementById('trocaAnt').textContent = resTroca.troca.nomeAntigo;
-      document.getElementById('wTroca').classList.remove('hidden');
-      _mCache[it.id].troca = resTroca.troca;
-    }
+    _mCache[it.id].troca = resTroca?.troca || null;
   }
   document.getElementById('mConf').classList.remove('hidden');
 }
 
 function checarOutro() {
   document.getElementById('wOutro').classList.toggle('hidden', document.getElementById('confMotivo').value!=='Outro');
+}
+
+// Nome-base de um item, sem o sufixo de tamanho (ex: "CAMISA/M" → "CAMISA") —
+// mesma regra usada no backend (solicitacao_auth.js: validar-dotacao).
+function extrairBaseSolic(descricao) {
+  return (descricao || '').replace(/\s*\/\s*\S+\s*$/, '').trim();
+}
+
+function buscarVariantesTamanhoSolic(item) {
+  const base = extrairBaseSolic(item.descricao);
+  if (base === (item.descricao||'').trim()) return []; // sem sufixo de tamanho detectável
+  return (_dados?.itens || []).filter(i => extrairBaseSolic(i.descricao) === base);
+}
+
+const MOTIVOS_TROCA = ['Desgastado', 'Troca por laudo', 'Avariado por mau uso'];
+
+function checarTroca() {
+  const it = _mFila[_mIdx];
+  const motivo = document.getElementById('confMotivo').value;
+  const wTroca = document.getElementById('wTroca');
+
+  if (!it || !MOTIVOS_TROCA.includes(motivo)) { wTroca.classList.add('hidden'); return; }
+
+  const variantes = buscarVariantesTamanhoSolic(it);
+  if (!variantes.length) { wTroca.classList.add('hidden'); return; }
+
+  const troca = _mCache[it.id]?.troca || null;
+  const sel = document.getElementById('confTrocaSelect');
+  sel.innerHTML = variantes.map(v => `<option value="${v.id}">${v.descricao}</option>`).join('');
+  if (troca) sel.value = troca.itemIdAntigo;
+  document.getElementById('trocaDica').textContent = troca
+    ? `Detectado automaticamente: você possui "${troca.nomeAntigo}" registrado. Confira e ajuste se necessário.`
+    : 'Selecione manualmente o tamanho que está sendo devolvido.';
+  document.getElementById('confTrocaJust').value = '';
+  wTroca.classList.remove('hidden');
 }
 
 async function addItemConf() {
@@ -946,12 +982,23 @@ async function addItemConf() {
   if (!motiv)         { document.getElementById('confMsg').textContent='Selecione o motivo.'; return; }
   if (motiv==='Outro'&&!outro){ document.getElementById('confMsg').textContent='Descreva o motivo.'; return; }
 
+  // Troca de tamanho visível — exige tamanho selecionado + justificativa
+  let trocaManual = null;
+  const trocaVisivel = !document.getElementById('wTroca').classList.contains('hidden');
+  if (trocaVisivel) {
+    const trocaJust = document.getElementById('confTrocaJust').value.trim();
+    if (!trocaJust) { document.getElementById('confMsg').textContent='Preencha a justificativa da troca de tamanho.'; return; }
+    const sel = document.getElementById('confTrocaSelect');
+    const opt = sel.options[sel.selectedIndex];
+    trocaManual = { itemIdAntigo: sel.value, nomeItemAntigo: opt?.textContent || '', justificativa: trocaJust };
+  }
+
   // Se aviso de dur já visível — só validar justificativa
   const durVisivel = !document.getElementById('wDur').classList.contains('hidden');
   if (durVisivel) {
     const just = document.getElementById('durJust').value.trim();
     if (!just){ document.getElementById('confMsg').textContent='Preencha a justificativa acima.'; return; }
-    commitItem(it, qtd, motiv, outro, armId, just); return;
+    commitItem(it, qtd, motiv, outro, armId, just, trocaManual); return;
   }
 
   const btn = document.getElementById('btnConfOk');
@@ -980,19 +1027,25 @@ async function addItemConf() {
         return;
       }
     }
-    commitItem(it, qtd, motiv, outro, armId, null);
+    commitItem(it, qtd, motiv, outro, armId, null, trocaManual);
   } finally {
     btn.disabled=false; btn.textContent='Adicionar Item';
   }
 }
 
-function commitItem(it, qtd, motiv, outro, armId, just) {
+function commitItem(it, qtd, motiv, outro, armId, just, trocaManual) {
   const motivoFinal = motiv==='Outro' ? outro : motiv;
-  const troca  = _mCache[it.id]?.troca || null;
+  // Troca de tamanho: prioriza a escolha manual do solicitante sobre a detecção automática —
+  // a automática só serve de sugestão inicial (pode estar errada/ausente na ficha).
+  const troca  = trocaManual
+    ? { itemIdAntigo: trocaManual.itemIdAntigo, nomeAntigo: trocaManual.nomeItemAntigo }
+    : (_mCache[it.id]?.troca || null);
+  const justTroca = trocaManual?.justificativa || '';
+  const justCombinada = [just, justTroca].filter(Boolean).join(' | ');
   const durInf = _mCache[it.id]?.dur   || null;
   _itens.push({
     itemId:it.id, nome:it.descricao, quantidade:qtd,
-    motivo: motivoFinal + (just?' — Justificativa: '+just:''),
+    motivo: motivoFinal + (justCombinada?' — Justificativa: '+justCombinada:''),
     armId, nomeArmazem:(_arm.find(a=>a.id===armId)||{}).nome||'',
     trocaTamanho:!!troca, itemIdAntigo:troca?.itemIdAntigo||null, nomeItemAntigo:troca?.nomeAntigo||null,
     diasDecorridos:durInf?.diasDecorridos??null, prazoMinDias:durInf?.prazoMinDias??null,
