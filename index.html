@@ -5764,7 +5764,12 @@ async function validarEPrepararItens(selecionados) {
     const variantes = ehTroca ? buscarVariantesTamanho(s.item) : [];
 
     if (ehTroca && variantes.length) {
-      const escolha = await mostrarModalTrocaTamanho(s.item, variantes, r.resTroca?.troca);
+      // Prioriza o que o solicitante já indicou na solicitação sobre a detecção automática
+      const veioDaSolicitacao = !!s.itemIdAntigoSolicitado;
+      const preSelecionado = veioDaSolicitacao
+        ? { itemIdAntigo: s.itemIdAntigoSolicitado, nomeAntigo: s.nomeItemAntigoSolicitado }
+        : r.resTroca?.troca;
+      const escolha = await mostrarModalTrocaTamanho(s.item, variantes, preSelecionado, veioDaSolicitacao, s.justificativaSolicitada);
       if (!escolha) {
         toast(`Item "${s.item.descricao}" não incluído — troca de tamanho não confirmada.`, 'warn', 4000);
         continue;
@@ -5843,16 +5848,23 @@ function confirmarDurabilidade(sim) {
   if (window._durabilidadeResolve) { window._durabilidadeResolve(sim); window._durabilidadeResolve = null; }
 }
 
-function mostrarModalTrocaTamanho(itemNovo, variantes, autoDetectado) {
+function mostrarModalTrocaTamanho(itemNovo, variantes, preSelecionado, veioDaSolicitacao, justificativaPrefill) {
   return new Promise(resolve => {
     document.getElementById('trocaTamanhoNovo').textContent = itemNovo.descricao;
     const sel = document.getElementById('trocaTamanhoSelect');
     sel.innerHTML = variantes.map(v => `<option value="${v.id}">${v.descricao}</option>`).join('');
-    if (autoDetectado) sel.value = autoDetectado.itemIdAntigo;
-    document.getElementById('trocaTamanhoDica').textContent = autoDetectado
-      ? `Detectado automaticamente: colaborador possui "${autoDetectado.nomeAntigo}" (${autoDetectado.saldoAntigo} em mãos). Confira e ajuste se necessário.`
-      : 'Não foi possível detectar automaticamente na ficha do colaborador — selecione manualmente o tamanho que está sendo devolvido.';
-    document.getElementById('trocaTamanhoJustificativa').value = '';
+    if (preSelecionado) sel.value = preSelecionado.itemIdAntigo;
+
+    let dica;
+    if (veioDaSolicitacao) {
+      dica = `Informado pelo solicitante: "${preSelecionado.nomeAntigo}". Confira e ajuste se necessário.`;
+    } else if (preSelecionado) {
+      dica = `Detectado automaticamente: colaborador possui "${preSelecionado.nomeAntigo}"${preSelecionado.saldoAntigo!=null?` (${preSelecionado.saldoAntigo} em mãos)`:''}. Confira e ajuste se necessário.`;
+    } else {
+      dica = 'Não foi possível detectar automaticamente na ficha do colaborador — selecione manualmente o tamanho que está sendo devolvido.';
+    }
+    document.getElementById('trocaTamanhoDica').textContent = dica;
+    document.getElementById('trocaTamanhoJustificativa').value = justificativaPrefill || '';
     document.getElementById('modalTrocaTamanho').classList.remove('hidden');
     window._trocaTamanhoResolve = resolve;
   });
@@ -7562,8 +7574,10 @@ async function atenderSolicitacao(id, btnEl) {
       const itemLocal = (_itens||[]).find(i => i.id === (it.itemId || it.item_id));
       if (!itemLocal) return null;
 
-      // Extrai motivo original (antes da justificativa)
-      const motivoOriginal = (it.motivo||'').split(' — Justificativa:')[0].trim();
+      // Extrai motivo e justificativa (o que vier depois de " — Justificativa:")
+      const partes = (it.motivo||'').split(' — Justificativa:');
+      const motivoOriginal = partes[0].trim();
+      const justificativaOriginal = (partes[1]||'').trim();
       const motivoAtend    = motivoMap[motivoOriginal] || motivoOriginal || 'Entrega inicial';
 
       return {
@@ -7571,6 +7585,11 @@ async function atenderSolicitacao(id, btnEl) {
         qtd:     it.quantidade || 1,
         motivo:  motivoAtend,
         armazem: armId,
+        // Se o solicitante já indicou a troca de tamanho, isso pré-preenche a
+        // confirmação no atendimento (que ainda pede pra conferir, não pra repetir do zero)
+        itemIdAntigoSolicitado:   it.itemIdAntigo || null,
+        nomeItemAntigoSolicitado: it.nomeItemAntigo || null,
+        justificativaSolicitada:  justificativaOriginal || null,
       };
     }).filter(Boolean);
 
