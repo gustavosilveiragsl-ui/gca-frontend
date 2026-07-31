@@ -7403,7 +7403,13 @@ async function salvarEdicaoSolicitacao(id) {
   }
 }
 
+let _atendendoSolicitacaoEmAndamento = false;
+
 async function atenderSolicitacao(id) {
+  // Evita clique duplo/repetido disparar o fluxo assíncrono duas vezes em paralelo
+  // (causava itens duplicados no atendimento, cada execução adicionando os seus).
+  if (_atendendoSolicitacaoEmAndamento) return;
+
   const s = _solicitacoes.find(x => x.id === id);
   if (!s) return;
 
@@ -7413,82 +7419,87 @@ async function atenderSolicitacao(id) {
     return;
   }
 
-  // ── Verifica assinatura pendente ANTES de navegar ──
-  await carregarAssinaturasSilencioso();
-  const assPendente = (_assinaturas||[]).find(a =>
-    a.colaboradorId === colabId && a.statusCalc === 'PENDENTE'
-  );
-  if (assPendente) {
-    toast(`⚠️ ${s.colaborador_nome} possui assinatura pendente. Resolva antes de iniciar o atendimento.`, 'error', 6000);
-    return;
-  }
+  _atendendoSolicitacaoEmAndamento = true;
+  try {
+    // ── Verifica assinatura pendente ANTES de navegar ──
+    await carregarAssinaturasSilencioso();
+    const assPendente = (_assinaturas||[]).find(a =>
+      a.colaboradorId === colabId && a.statusCalc === 'PENDENTE'
+    );
+    if (assPendente) {
+      toast(`⚠️ ${s.colaborador_nome} possui assinatura pendente. Resolva antes de iniciar o atendimento.`, 'error', 6000);
+      return;
+    }
 
-  // ── Vincula a solicitação ao atendimento ──
-  window._solicitacaoAtendimento = s;
-  ATEND.solicitacaoId = s.id;
+    // ── Vincula a solicitação ao atendimento ──
+    window._solicitacaoAtendimento = s;
+    ATEND.solicitacaoId = s.id;
 
-  fecharModalSolicitacao();
-  showView('atendimento');
+    fecharModalSolicitacao();
+    showView('atendimento');
 
-  // Aguarda a view montar
-  await new Promise(r => setTimeout(r, 350));
+    // Aguarda a view montar
+    await new Promise(r => setTimeout(r, 350));
 
-  // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
-  iniciarAtendimento();
-  await new Promise(r => setTimeout(r, 200));
+    // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
+    iniciarAtendimento();
+    await new Promise(r => setTimeout(r, 200));
 
-  // ── 2. Depois seleciona o colaborador ──
-  // Garante colaboradores carregados antes (evita race condition com o carregamento da view)
-  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
-  await selecionarColabAtend(colabId);
+    // ── 2. Depois seleciona o colaborador ──
+    // Garante colaboradores carregados antes (evita race condition com o carregamento da view)
+    if (!_colaboradores.length) await carregarColaboradoresAtendimento();
+    await selecionarColabAtend(colabId);
 
-  // Se selecionarColabAtend abriu o modal de pendência (raro, pois já verificamos acima), aborta
-  if (!document.getElementById('modalPendencia').classList.contains('hidden')) return;
+    // Se selecionarColabAtend abriu o modal de pendência (raro, pois já verificamos acima), aborta
+    if (!document.getElementById('modalPendencia').classList.contains('hidden')) return;
 
-  await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 400));
 
-  // ── 3. Carrega itens da solicitação automaticamente ──
-  let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
-  if (!itens.length) {
-    toast('Atendimento iniciado! Adicione os itens manualmente.', 'info', 4000);
-    return;
-  }
+    // ── 3. Carrega itens da solicitação automaticamente ──
+    let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+    if (!itens.length) {
+      toast('Atendimento iniciado! Adicione os itens manualmente.', 'info', 4000);
+      return;
+    }
 
-  // Armazém da solicitação
-  const armId = s.armazem_id || s.armazemId || _armazens[0]?.id || '';
+    // Armazém da solicitação
+    const armId = s.armazem_id || s.armazemId || _armazens[0]?.id || '';
 
-  // Monta selecionados no formato de adicionarItensAoAtendimento
-  // Mapeia motivo da solicitação para motivo do atendimento
-  const motivoMap = {
-    'Entrega inicial':      'Entrega inicial',
-    'Desgastado':           'Troca Desgaste',
-    'Troca por laudo':      'Troca Recuperação',
-    'Avariado por mau uso': 'Troca Desgaste',
-    'Perdido':              'Perda/Extravio',
-    'Roubado':              'Perda/Extravio',
-  };
-
-  const selecionados = itens.map(it => {
-    const itemLocal = (_itens||[]).find(i => i.id === (it.itemId || it.item_id));
-    if (!itemLocal) return null;
-
-    // Extrai motivo original (antes da justificativa)
-    const motivoOriginal = (it.motivo||'').split(' — Justificativa:')[0].trim();
-    const motivoAtend    = motivoMap[motivoOriginal] || motivoOriginal || 'Entrega inicial';
-
-    return {
-      item:    itemLocal,
-      qtd:     it.quantidade || 1,
-      motivo:  motivoAtend,
-      armazem: armId,
+    // Monta selecionados no formato de adicionarItensAoAtendimento
+    // Mapeia motivo da solicitação para motivo do atendimento
+    const motivoMap = {
+      'Entrega inicial':      'Entrega inicial',
+      'Desgastado':           'Troca Desgaste',
+      'Troca por laudo':      'Troca Recuperação',
+      'Avariado por mau uso': 'Troca Desgaste',
+      'Perdido':              'Perda/Extravio',
+      'Roubado':              'Perda/Extravio',
     };
-  }).filter(Boolean);
 
-  if (selecionados.length) {
-    adicionarItensAoAtendimento(selecionados);
-    toast(`✅ ${selecionados.length} item(ns) carregado(s) da solicitação #${s.id}`, 'success', 3000);
-  } else {
-    toast('Itens não encontrados no catálogo local. Adicione manualmente.', 'warn', 5000);
+    const selecionados = itens.map(it => {
+      const itemLocal = (_itens||[]).find(i => i.id === (it.itemId || it.item_id));
+      if (!itemLocal) return null;
+
+      // Extrai motivo original (antes da justificativa)
+      const motivoOriginal = (it.motivo||'').split(' — Justificativa:')[0].trim();
+      const motivoAtend    = motivoMap[motivoOriginal] || motivoOriginal || 'Entrega inicial';
+
+      return {
+        item:    itemLocal,
+        qtd:     it.quantidade || 1,
+        motivo:  motivoAtend,
+        armazem: armId,
+      };
+    }).filter(Boolean);
+
+    if (selecionados.length) {
+      adicionarItensAoAtendimento(selecionados);
+      toast(`✅ ${selecionados.length} item(ns) carregado(s) da solicitação #${s.id}`, 'success', 3000);
+    } else {
+      toast('Itens não encontrados no catálogo local. Adicione manualmente.', 'warn', 5000);
+    }
+  } finally {
+    _atendendoSolicitacaoEmAndamento = false;
   }
 }
 
