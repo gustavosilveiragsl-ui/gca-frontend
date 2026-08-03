@@ -12247,8 +12247,6 @@ function laudosRender_() {
     if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
-    // Registrados = qualquer status (ESTOQUE, COM_COLAB, AGUARDANDO_LAUDO, etc.) exceto os pendentes sintéticos
-    const registrados = s.length - pendentes;
     const saldoEstObj = _estoqueData.filter(x=>x.item_id===grupo.itemId);
     const saldoEst = saldoEstObj.reduce((acc, x) => acc + Number(x.saldo||0), 0);
     const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
@@ -12256,10 +12254,12 @@ function laudosRender_() {
     const serialsNecessarios = saldoEst * fatorPar;
     let consist;
     if (pendentes > 0) {
+      // Faltam cadastrar: considera qualquer status (ESTOQUE, COM_COLAB, AGUARDANDO_LAUDO...) — já calculado pelo backend
       consist = `<span style="color:#f59e0b;font-size:10px;font-weight:700" title="Faltam ${pendentes} serial(is) para bater com o saldo de ${saldoEst}${fatorPar===2?' (PAR×2)':''}">📋 Faltam ${pendentes} serial(is)${fatorPar===2?' (PAR)':''}</span>`;
-    } else if (registrados > serialsNecessarios) {
-      const excesso = registrados - serialsNecessarios;
-      consist = `<span style="color:#ef4444;font-size:10px;font-weight:700" title="${registrados} seriais cadastrados mas saldo é ${saldoEst}${fatorPar===2?' (PAR×2)':''}">⚠️ ${excesso} serial(is) a mais que o saldo (${saldoEst})</span>`;
+    } else if (emEst > serialsNecessarios) {
+      // Excesso em estoque: só faz sentido comparar seriais com status ESTOQUE contra o saldo físico
+      const excesso = emEst - serialsNecessarios;
+      consist = `<span style="color:#ef4444;font-size:10px;font-weight:700" title="${emEst} seriais em estoque mas saldo é ${saldoEst}${fatorPar===2?' (PAR×2)':''}">⚠️ ${excesso} serial(is) a mais que o saldo (${saldoEst})</span>`;
     } else {
       consist = `<span style="color:#22c55e;font-size:10px">✅ Consistente</span>`;
     }
