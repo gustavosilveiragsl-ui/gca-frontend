@@ -2904,8 +2904,9 @@ window.addEventListener('pageshow', function(e) {
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase" oninput="validarSerialDuplicado(this.value)">
-              <select id="nsStatus" class="form-input">
+              <select id="nsStatus" class="form-input" onchange="atualizarConsistenciaNS()">
                 <option value="ESTOQUE">📦 Estoque</option>
+                <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
               </select>
             </div>
             <div id="nsMsgConsistencia" style="font-size:11px;min-height:16px"></div>
@@ -12075,6 +12076,7 @@ function abrirFormNovoSerial() { document.getElementById('formNovoSerial').class
 function fecharFormNovoSerial() {
   document.getElementById('formNovoSerial').classList.add('hidden');
   ['nsItemBusca','nsItemId','nsSerial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nsStatus').value = 'ESTOQUE';
   document.getElementById('nsMsgConsistencia').textContent='';
 }
 
@@ -12091,11 +12093,23 @@ async function selecionarItemNS(id, texto) {
   document.getElementById('nsItemBusca').value = texto;
   document.getElementById('nsItemId').value = id;
   document.getElementById('nsItemSug').classList.add('hidden');
+  atualizarConsistenciaNS();
+}
 
+function atualizarConsistenciaNS() {
+  const id = document.getElementById('nsItemId').value;
+  const status = document.getElementById('nsStatus').value;
   const msg = document.getElementById('nsMsgConsistencia');
   msg.textContent = '';
+  if (!id) return;
 
-  // Calcula consistência
+  // Checagem de consistência (saldo em estoque x serials já cadastrados) só se aplica ao status Estoque
+  if (status !== 'ESTOQUE') {
+    document.getElementById('nsSerial').disabled = false;
+    document.getElementById('nsSerial').style.opacity = '';
+    return;
+  }
+
   const itemLocal = (_itens||[]).find(i=>i.id===id);
   const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
   const saldoEst  = _estoqueData.filter(s=>s.item_id===id).reduce((acc,s)=>acc+Number(s.saldo||0),0);
