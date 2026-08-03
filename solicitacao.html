@@ -934,14 +934,21 @@ function checarOutro() {
 
 // Nome-base de um item, sem o sufixo de tamanho (ex: "CAMISA/M" → "CAMISA") —
 // mesma regra usada no backend (solicitacao_auth.js: validar-dotacao).
+// "Único"/"U" no final não é um tamanho de verdade (é "tamanho único" — não tem o que trocar)
+const SUFIXOS_NAO_TAMANHO_SOLIC = ['U', 'UNICO', 'ÚNICO', 'unico', 'único'];
+
 function extrairBaseSolic(descricao) {
-  return (descricao || '').replace(/\s*\/\s*\S+\s*$/, '').trim();
+  const nome = descricao || '';
+  const m = nome.match(/^(.*)\s*\/\s*(\S+)\s*$/);
+  if (m && !SUFIXOS_NAO_TAMANHO_SOLIC.includes(m[2].trim())) return m[1].trim();
+  return nome.trim();
 }
 
 function buscarVariantesTamanhoSolic(item) {
   const base = extrairBaseSolic(item.descricao);
   if (base === (item.descricao||'').trim()) return []; // sem sufixo de tamanho detectável
-  return (_dados?.itens || []).filter(i => extrairBaseSolic(i.descricao) === base);
+  const variantes = (_dados?.itens || []).filter(i => extrairBaseSolic(i.descricao) === base);
+  return variantes.length > 1 ? variantes : []; // só um item no "grupo" = nada pra trocar
 }
 
 const MOTIVOS_TROCA = ['Desgastado', 'Troca por laudo', 'Avariado por mau uso'];
