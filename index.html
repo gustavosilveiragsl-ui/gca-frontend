@@ -10308,7 +10308,6 @@ async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
   const row = document.querySelector(`.dev-row[data-item-id="${itemId}"]`);
   if (!row) return;
   const qtdInput = row.querySelector('.dev-qtd');
-  const destinoSel = row.querySelector('.dev-destino');
   const serialBox = row.querySelector('.dev-serial-box');
   if (!serialBox) return;
 
@@ -10330,13 +10329,18 @@ async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
 
   const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
   serialBox.innerHTML = `
-    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">🔢 Seriais ${hint}:</div>
+    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">🔢 Seriais ${hint} — escolha o destino de cada um:</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px">
       ${seriais.map(s=>`
-        <label style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;cursor:pointer;font-size:11px;background:var(--bg-2)">
+        <span style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;font-size:11px;background:var(--bg-2)">
           <input type="checkbox" class="dev-serial-cb" data-item-id="${itemId}" data-serial="${s.serial}" style="accent-color:#a855f7">
           ${s.serial}
-        </label>`).join('')}
+          <select class="dev-serial-destino" style="font-size:10px;padding:1px 3px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card)">
+            <option value="ESTOQUE">↩️ Estoque</option>
+            <option value="RECUPERACAO">🔧 Recuperação</option>
+            <option value="INUTILIZADO">🗑️ Inutilizado</option>
+          </select>
+        </span>`).join('')}
     </div>
     <div class="dev-serial-erro" style="font-size:11px;color:#ef4444;margin-top:4px;display:none"></div>`;
 
@@ -10371,28 +10375,68 @@ function abrirDevolucaoColab() {
   document.getElementById('devItensLista').innerHTML = itensComSaldo.map(it => {
     const temSer = _temSerial(it);
     const ePar   = _eParItem(it);
-    const serialAttr = temSer ? `data-tem-serial="1" data-par="${ePar?'1':'0'}"` : '';
-    const serialBox  = temSer ? `<div class="dev-serial-box" style="padding:6px 0 2px 0;width:100%"></div>` : '';
     const serialHint = temSer
       ? `<span style="font-size:10px;color:#a855f7;margin-left:4px">${ePar?'🔢 Par (2 seriais/un)':'🔢 Serial obrigatório'}</span>`
       : '';
+
+    if (temSer) {
+      // Item com serial: 1 campo de quantidade (define quantos seriais selecionar) + destino individual por serial
+      return `
+      <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${it.descricao}" data-tem-serial="1" data-par="${ePar?'1':'0'}" data-saldo-max="${it.saldoEmMaos}"
+        style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+        <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}${serialHint}</div>
+        <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
+        <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd" style="width:60px;font-size:12px;text-align:center"
+          data-item-id="${it.item_id}"
+          oninput="_atualizarSeriaisDev('${it.item_id}', ${it.saldoEmMaos}, ${ePar})">
+        <div class="dev-serial-box" style="padding:6px 0 2px 0;width:100%"></div>
+      </div>`;
+    }
+
+    // Item sem serial: 3 campos de quantidade em paralelo (Estoque / Recuperação / Inutilizado)
     return `
-    <div class="dev-row" data-item-id="${it.item_id}" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
-      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}${serialHint}</div>
+    <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${it.descricao}" data-tem-serial="0" data-saldo-max="${it.saldoEmMaos}"
+      style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+      <div style="flex:1;font-size:12px;color:var(--text-1)">${it.descricao}</div>
       <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
-      <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd" style="width:60px;font-size:12px;text-align:center"
-        data-item-id="${it.item_id}" data-item-desc="${it.descricao}" ${serialAttr}
-        oninput="_atualizarSeriaisDev('${it.item_id}', ${it.saldoEmMaos}, ${ePar})">
-      <select class="form-input dev-destino" style="width:120px;font-size:11px"
-        onchange="_atualizarSeriaisDev('${it.item_id}', ${it.saldoEmMaos}, ${ePar})">
-        <option value="ESTOQUE">↩️ Estoque</option>
-        <option value="INUTILIZADO">🗑️ Inutilizado</option>
-      </select>
-      ${serialBox}
+      <div style="display:flex;gap:6px">
+        <div style="text-align:center">
+          <div style="font-size:9px;color:var(--text-3)">↩️ Estoque</div>
+          <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd-split" style="width:48px;font-size:12px;text-align:center"
+            data-item-id="${it.item_id}" data-destino="ESTOQUE" oninput="_validarSplitDev('${it.item_id}')">
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#f59e0b">🔧 Recuperação</div>
+          <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd-split" style="width:48px;font-size:12px;text-align:center"
+            data-item-id="${it.item_id}" data-destino="RECUPERACAO" oninput="_validarSplitDev('${it.item_id}')">
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#ef4444">🗑️ Inutilizado</div>
+          <input type="number" min="0" max="${it.saldoEmMaos}" value="0" class="form-input dev-qtd-split" style="width:48px;font-size:12px;text-align:center"
+            data-item-id="${it.item_id}" data-destino="INUTILIZADO" oninput="_validarSplitDev('${it.item_id}')">
+        </div>
+      </div>
+      <div class="dev-split-erro" style="font-size:10px;color:#ef4444;width:100%;display:none"></div>
     </div>`;
   }).join('');
 
   document.getElementById('modalDevolucaoColab').classList.remove('hidden');
+}
+
+// Valida que a soma dos 3 campos (Estoque/Recuperação/Inutilizado) não passa do saldo em mãos
+function _validarSplitDev(itemId) {
+  const row = document.querySelector(`.dev-row[data-item-id="${itemId}"]`);
+  if (!row) return;
+  const saldoMax = Number(row.dataset.saldoMax) || 0;
+  const inputs = [...row.querySelectorAll('.dev-qtd-split')];
+  const total = inputs.reduce((acc, inp) => acc + (parseInt(inp.value) || 0), 0);
+  const erroEl = row.querySelector('.dev-split-erro');
+  if (total > saldoMax) {
+    if (erroEl) { erroEl.textContent = `Soma (${total}) excede o que está em mãos (${saldoMax})`; erroEl.style.display = ''; }
+    return false;
+  }
+  if (erroEl) erroEl.style.display = 'none';
+  return true;
 }
 
 function fecharModalDevolucao() {
@@ -10412,29 +10456,47 @@ async function confirmarDevolucao() {
   let erro = null;
 
   document.querySelectorAll('.dev-row').forEach(row => {
-    const qtdInput = row.querySelector('.dev-qtd');
-    const destSel  = row.querySelector('.dev-destino');
-    const qtd = parseInt(qtdInput?.value) || 0;
-    if (qtd <= 0) return;
+    const item_id = row.dataset.itemId;
+    const item_descricao = row.dataset.itemDesc;
+    const temSerial = row.dataset.temSerial === '1';
 
-    const item_id    = qtdInput.dataset.itemId;
-    const item_descricao = qtdInput.dataset.itemDesc;
-    const destino    = destSel?.value || 'ESTOQUE';
-    const temSerial  = qtdInput.dataset.temSerial === '1';
-    const ePar       = qtdInput.dataset.par === '1';
-
-    let seriais = null;
     if (temSerial) {
-      const selecionados = [...row.querySelectorAll('.dev-serial-cb:checked')].map(cb => cb.dataset.serial);
+      const qtdInput = row.querySelector('.dev-qtd');
+      const qtd = parseInt(qtdInput?.value) || 0;
+      if (qtd <= 0) return;
+      const ePar = row.dataset.par === '1';
+
+      const cbsMarcados = [...row.querySelectorAll('.dev-serial-cb:checked')];
       const qtdNecessaria = ePar ? qtd * 2 : qtd;
-      if (selecionados.length !== qtdNecessaria) {
+      if (cbsMarcados.length !== qtdNecessaria) {
         erro = `Item "${item_descricao}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
         return;
       }
-      seriais = selecionados;
+
+      // Agrupa os seriais marcados pelo destino escolhido individualmente em cada um
+      const porDestino = {};
+      cbsMarcados.forEach(cb => {
+        const destSel = cb.closest('span')?.querySelector('.dev-serial-destino');
+        const destino = destSel?.value || 'ESTOQUE';
+        (porDestino[destino] = porDestino[destino] || []).push(cb.dataset.serial);
+      });
+      Object.entries(porDestino).forEach(([destino, seriaisGrupo]) => {
+        const quantidadeGrupo = ePar ? seriaisGrupo.length / 2 : seriaisGrupo.length;
+        itens.push({ item_id, item_descricao, quantidade: quantidadeGrupo, destino, seriais: seriaisGrupo });
+      });
+      return;
     }
 
-    itens.push({ item_id, item_descricao, quantidade: qtd, destino, seriais });
+    // Item sem serial: um item por destino preenchido (Estoque / Recuperação / Inutilizado)
+    if (!_validarSplitDev(item_id)) {
+      erro = `Item "${item_descricao}": a soma das quantidades excede o que está em mãos`;
+      return;
+    }
+    row.querySelectorAll('.dev-qtd-split').forEach(inp => {
+      const qtd = parseInt(inp.value) || 0;
+      if (qtd <= 0) return;
+      itens.push({ item_id, item_descricao, quantidade: qtd, destino: inp.dataset.destino, seriais: null });
+    });
   });
 
   if (erro) { toast(erro, 'warn'); return; }
