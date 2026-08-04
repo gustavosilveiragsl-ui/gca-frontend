@@ -1455,7 +1455,7 @@ window.addEventListener('pageshow', function(e) {
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
               <button id="btnPrevisaoCompra" class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()">🔔 Previsão de Compra</button>
-              <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirFormularioInventario()">🖨️ Formulário de Inventário</button>
+              <button class="btn btn-ghost" data-perm-btn="formulario_inventario" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirFormularioInventario()">🖨️ Formulário de Inventário</button>
             <div class="card-actions">
               <div id="estAbasArmazem" style="display:flex;gap:6px"></div>
               <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
@@ -8184,6 +8184,7 @@ function renderEstoque() {
 // FORMULÁRIO DE INVENTÁRIO ROTATIVO MENSAL
 // ═══════════════════════════════════════════
 function abrirFormularioInventario() {
+  if (!temPermissao('formulario_inventario')) { toast('Você não tem permissão para gerar este formulário', 'error'); return; }
   if (!_estArmazem) { toast('Selecione um armazém específico (aba acima) antes de gerar o formulário', 'warn'); return; }
 
   const armazem = (_armazens||[]).find(a => a.id === _estArmazem);
@@ -8198,8 +8199,10 @@ function abrirFormularioInventario() {
 
   if (!linhas.length) { toast('Nenhum item de saldo neste armazém', 'warn'); return; }
 
+  const totalItens      = linhas.length;
+  const totalSaldoZero  = linhas.filter(function(l) { return Number(l.saldo) === 0; }).length;
+
   const filialNome  = getNomeUnidade(GCA.unidade) || GCA.unidade;
-  const supervisor  = GCA.usuario?.nome || '—';
   const armazemNome = armazem?.nome || '—';
   const armazemCod  = armazem?.codigo || '';
 
@@ -8254,7 +8257,6 @@ function abrirFormularioInventario() {
   function cabecalhoInfo() {
     return '<div class="info">'
       + '<p><strong>Filial:</strong> CENEGED – '+filialNome+'</p>'
-      + '<p><strong>Supervisor responsável:</strong> '+supervisor+'</p>'
       + '<p style="margin-top:6px"><strong>Estoque:</strong> '+armazemNome+(armazemCod?' ('+armazemCod+')':'')+'</p>'
       + '<p><strong>Data Prevista de início:</strong> ____/____/______</p>'
       + '<p><strong>Data Prevista de Término:</strong> ____/____/______</p>'
@@ -8281,20 +8283,14 @@ function abrirFormularioInventario() {
       + 'todos os itens listados acima, e garanti a organização e identificação conforme as regras internas do almoxarifado, aplicando a política 5S.</p>'
       + '<p style="margin-top:10px">Eu, ______________________________________________________________________ confirmo que acompanhei a contagem do '
       + 'estoque realizando a conferência de acurácia de pelo menos 10 itens da contagem inicial informada.</p>'
-      + '<p style="margin-top:14px">Quantidade de Itens: _______</p>'
-      + '<p>Quantidade de itens com saldo zero: _______</p>'
+      + '<p style="margin-top:14px">Quantidade de Itens: <strong>'+totalItens+'</strong></p>'
+      + '<p>Quantidade de itens com saldo zero: <strong>'+totalSaldoZero+'</strong></p>'
       + '<p>Quantidade de Divergências: _______ (Informar quantos itens divergiram do saldo físico x sistêmico)</p>'
-      + '<p>Meta De Acurácia: <strong>98%</strong></p>'
-      + '<p style="margin-top:10px">Obs.:</p>'
-      + '<p style="border-bottom:1px solid #000;height:16px;margin:14px 6px 0"></p>'
-      + '<p style="border-bottom:1px solid #000;height:16px;margin:14px 6px 0"></p>'
-      + '<p style="border-bottom:1px solid #000;height:16px;margin:14px 6px 0"></p>'
-      + '<div style="margin-top:40px;display:flex;justify-content:space-between;gap:40px">'
-      + '<div style="flex:1;border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px">Responsável pela contagem</div>'
-      + '</div>'
-      + '<div style="margin-top:36px;display:flex;justify-content:space-between;align-items:flex-end;gap:20px">'
-      + '<div style="flex:1;border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px">Conferente</div>'
-      + '<div style="font-size:11px;white-space:nowrap;padding-bottom:2px">Data: ____/____/______</div>'
+      + '<p style="margin-top:8px">Obs.:</p>'
+      + '<p style="border-bottom:1px solid #000;height:14px;margin:8px 6px 0"></p>'
+      + '<div style="margin-top:44px;display:grid;grid-template-columns:1fr 1fr;gap:40px">'
+      + '<div style="border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px">Responsável pela contagem</div>'
+      + '<div style="border-top:1px solid #000;padding-top:6px;text-align:center;font-size:11px">Conferente<br><span style="font-size:10px">Data: ____/____/______</span></div>'
       + '</div>'
       + '</div>';
   }
@@ -9417,7 +9413,8 @@ const PERMISSOES_SCHEMA = {
   estoque: { label:'Estoque', icon:'📦', itens:{
     ver_estoque:'Consulta de estoque', entrada_material:'Registrar entrada',
     saida_material:'Registrar saída', transferencia:'Transferência',
-    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra'
+    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra',
+    formulario_inventario:'Formulário de Inventário'
   }},
   consulta: { label:'Consulta', icon:'🔍', itens:{
     consulta_itens:'Consulta de itens', consulta_colaboradores:'Consulta de colaboradores',
