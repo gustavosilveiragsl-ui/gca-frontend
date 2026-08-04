@@ -7439,8 +7439,10 @@ function renderItemSolicitacao(i) {
 }
 
 async function cancelarSolicitacao(id) {
-  if (!confirm('Cancelar esta solicitação? Esta ação não pode ser desfeita.')) return;
-  const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'CANCELADO' }) });
+  const justificativa = prompt('Motivo do cancelamento (obrigatório):');
+  if (justificativa === null) return; // usuário desistiu do prompt
+  if (!justificativa.trim()) { toast('Informe o motivo do cancelamento', 'warn'); return; }
+  const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'CANCELADO', obs: justificativa.trim() }) });
   if (res?.ok) {
     const s = _solicitacoes.find(x => x.id === id);
     if (s) s.status = 'CANCELADO';
