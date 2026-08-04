@@ -5770,13 +5770,18 @@ async function validarEPrepararItens(selecionados) {
     const s = r.s;
     const ehTroca   = (s.motivo || '').toLowerCase().includes('troca');
     const variantes = ehTroca ? buscarVariantesTamanho(s.item) : [];
+    const veioDaSolicitacao = !!s.itemIdAntigoSolicitado;
+    // Só pede confirmação de troca de tamanho quando há evidência real: ou o
+    // solicitante já declarou qual tamanho está devolvendo, ou a ficha do
+    // colaborador mostra que ele tem OUTRO tamanho deste item em mãos. O item
+    // existir em vários tamanhos no catálogo, sozinho, não é evidência de troca.
+    const temEvidenciaTroca = veioDaSolicitacao || !!r.resTroca?.troca;
 
-    if (ehTroca && variantes.length) {
+    if (ehTroca && variantes.length && temEvidenciaTroca) {
       // Prioriza o que o solicitante já indicou na solicitação sobre a detecção automática
-      const veioDaSolicitacao = !!s.itemIdAntigoSolicitado;
       const preSelecionado = veioDaSolicitacao
         ? { itemIdAntigo: s.itemIdAntigoSolicitado, nomeAntigo: s.nomeItemAntigoSolicitado }
-        : r.resTroca?.troca;
+        : r.resTroca.troca;
       const escolha = await mostrarModalTrocaTamanho(s.item, variantes, preSelecionado, veioDaSolicitacao, s.justificativaSolicitada);
       if (!escolha) {
         toast(`Item "${s.item.descricao}" não incluído — troca de tamanho não confirmada.`, 'warn', 4000);

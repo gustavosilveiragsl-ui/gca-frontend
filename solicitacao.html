@@ -961,15 +961,16 @@ function checarTroca() {
   if (!it || !MOTIVOS_TROCA.includes(motivo)) { wTroca.classList.add('hidden'); return; }
 
   const variantes = buscarVariantesTamanhoSolic(it);
-  if (!variantes.length) { wTroca.classList.add('hidden'); return; }
-
   const troca = _mCache[it.id]?.troca || null;
+  // Só mostra a troca de tamanho se a ficha do colaborador confirma que ele tem
+  // OUTRO tamanho deste item em mãos — item existir em vários tamanhos no catálogo,
+  // sozinho, não é evidência de troca (colaborador pode ter o mesmo tamanho ou nenhum).
+  if (!variantes.length || !troca) { wTroca.classList.add('hidden'); return; }
+
   const sel = document.getElementById('confTrocaSelect');
   sel.innerHTML = variantes.map(v => `<option value="${v.id}">${v.descricao}</option>`).join('');
-  if (troca) sel.value = troca.itemIdAntigo;
-  document.getElementById('trocaDica').textContent = troca
-    ? `Detectado automaticamente: você possui "${troca.nomeAntigo}" registrado. Confira e ajuste se necessário.`
-    : 'Selecione manualmente o tamanho que está sendo devolvido.';
+  sel.value = troca.itemIdAntigo;
+  document.getElementById('trocaDica').textContent = `Detectado automaticamente: você possui "${troca.nomeAntigo}" registrado. Confira e ajuste se necessário.`;
   document.getElementById('confTrocaJust').value = '';
   wTroca.classList.remove('hidden');
 }
