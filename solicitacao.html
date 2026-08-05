@@ -472,20 +472,17 @@ input,select,textarea{font-family:var(--font-main);}
       </div>
       <div class="form-group">
         <label class="form-label">Motivo *</label>
-        <select class="form-input" id="confMotivo" onchange="checarOutro();checarTroca()">
+        <select class="form-input" id="confMotivo" onchange="checarTroca()">
           <option value="">Selecione...</option>
           <option value="Entrega inicial">📥 Entrega inicial</option>
           <option value="Desgastado">🪨 Desgastado</option>
           <option value="Troca por laudo">🔬 Troca por Laudo</option>
+          <option value="Troca por Tamanho">👕 Troca por Tamanho</option>
+          <option value="Troca por Manutenção">🔧 Troca por Manutenção</option>
           <option value="Avariado por mau uso">⚠️ Avariado por mau uso</option>
           <option value="Perdido">🔍 Perdido</option>
           <option value="Roubado">🚨 Roubado</option>
-          <option value="Outro">✏️ Outro</option>
         </select>
-      </div>
-      <div class="form-group hidden" id="wOutro">
-        <label class="form-label">Descreva o motivo *</label>
-        <input class="form-input" id="confOutro" placeholder="Descreva...">
       </div>
       <!-- Troca de tamanho: seleção manual + justificativa -->
       <div class="alerta-box alerta-accent hidden" id="wTroca">
@@ -571,6 +568,7 @@ const API = 'https://gca-backend-production.up.railway.app';
 const MOTIVO_MAP = {
   'Entrega inicial':'entrega inicial','Desgastado':'troca descarte',
   'Troca por laudo':'troca recuperação','Avariado por mau uso':'troca descarte',
+  'Troca por Tamanho':'troca recuperação','Troca por Manutenção':'troca recuperação',
   'Perdido':'perca','Roubado':'roubo',
 };
 
@@ -914,8 +912,7 @@ async function abrirConf() {
     : `Saldo disponível: ${saldo}`;
   document.getElementById('confQtd').value   = '1';
   document.getElementById('confMotivo').value = '';
-  document.getElementById('confOutro').value  = '';
-  ['wOutro','wTroca','wDur'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  ['wTroca','wDur'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('durJust').value = '';
   document.getElementById('confMsg').textContent = '';
 
@@ -926,10 +923,6 @@ async function abrirConf() {
     _mCache[it.id].troca = resTroca?.troca || null;
   }
   document.getElementById('mConf').classList.remove('hidden');
-}
-
-function checarOutro() {
-  document.getElementById('wOutro').classList.toggle('hidden', document.getElementById('confMotivo').value!=='Outro');
 }
 
 // Nome-base de um item, sem o sufixo de tamanho (ex: "CAMISA/M" → "CAMISA") —
@@ -951,7 +944,7 @@ function buscarVariantesTamanhoSolic(item) {
   return variantes.length > 1 ? variantes : []; // só um item no "grupo" = nada pra trocar
 }
 
-const MOTIVOS_TROCA = ['Desgastado', 'Troca por laudo', 'Avariado por mau uso'];
+const MOTIVOS_TROCA = ['Desgastado', 'Troca por laudo', 'Avariado por mau uso', 'Troca por Tamanho', 'Troca por Manutenção'];
 
 function checarTroca() {
   const it = _mFila[_mIdx];
@@ -979,7 +972,6 @@ async function addItemConf() {
   const it     = _mFila[_mIdx];
   const qtd    = parseInt(document.getElementById('confQtd').value)||0;
   const motiv  = document.getElementById('confMotivo').value;
-  const outro  = document.getElementById('confOutro').value.trim();
   const armId  = document.getElementById('armSel').value;
   const colId  = document.getElementById('colId').value;
   const saldo  = (_dados?.saldos||[]).find(s=>s.item_id===it.id&&s.armazem_id===armId)?.saldo||0;
@@ -988,7 +980,6 @@ async function addItemConf() {
   if (qtd<=0)         { document.getElementById('confMsg').textContent='Informe a quantidade.'; return; }
   if (qtd>sl)         { document.getElementById('confMsg').textContent=`Saldo insuficiente — disponível: ${sl}.`; return; }
   if (!motiv)         { document.getElementById('confMsg').textContent='Selecione o motivo.'; return; }
-  if (motiv==='Outro'&&!outro){ document.getElementById('confMsg').textContent='Descreva o motivo.'; return; }
 
   // Troca de tamanho visível — exige tamanho selecionado + justificativa
   let trocaManual = null;
@@ -1006,13 +997,12 @@ async function addItemConf() {
   if (durVisivel) {
     const just = document.getElementById('durJust').value.trim();
     if (!just){ document.getElementById('confMsg').textContent='Preencha a justificativa acima.'; return; }
-    commitItem(it, qtd, motiv, outro, armId, just, trocaManual); return;
+    commitItem(it, qtd, motiv, armId, just, trocaManual); return;
   }
 
   const btn = document.getElementById('btnConfOk');
   btn.disabled=true; btn.textContent='⏳ Validando...';
-  const motivoFinal = motiv==='Outro' ? outro : motiv;
-  const motivoValid = MOTIVO_MAP[motiv] || motivoFinal;
+  const motivoValid = MOTIVO_MAP[motiv] || motiv;
 
   try {
     if (colId) {
@@ -1035,14 +1025,13 @@ async function addItemConf() {
         return;
       }
     }
-    commitItem(it, qtd, motiv, outro, armId, null, trocaManual);
+    commitItem(it, qtd, motiv, armId, null, trocaManual);
   } finally {
     btn.disabled=false; btn.textContent='Adicionar Item';
   }
 }
 
-function commitItem(it, qtd, motiv, outro, armId, just, trocaManual) {
-  const motivoFinal = motiv==='Outro' ? outro : motiv;
+function commitItem(it, qtd, motiv, armId, just, trocaManual) {
   // Troca de tamanho: prioriza a escolha manual do solicitante sobre a detecção automática —
   // a automática só serve de sugestão inicial (pode estar errada/ausente na ficha).
   const troca  = trocaManual
@@ -1053,7 +1042,7 @@ function commitItem(it, qtd, motiv, outro, armId, just, trocaManual) {
   const durInf = _mCache[it.id]?.dur   || null;
   _itens.push({
     itemId:it.id, nome:it.descricao, quantidade:qtd,
-    motivo: motivoFinal + (justCombinada?' — Justificativa: '+justCombinada:''),
+    motivo: motiv + (justCombinada?' — Justificativa: '+justCombinada:''),
     armId, nomeArmazem:(_arm.find(a=>a.id===armId)||{}).nome||'',
     trocaTamanho:!!troca, itemIdAntigo:troca?.itemIdAntigo||null, nomeItemAntigo:troca?.nomeAntigo||null,
     diasDecorridos:durInf?.diasDecorridos??null, prazoMinDias:durInf?.prazoMinDias??null,
