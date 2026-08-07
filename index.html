@@ -16021,7 +16021,7 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
 
   const itensHtml = (itens||[]).map((it,i) => {
     const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
-    const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.posicao].filter(Boolean).join(' · ') : '—';
+    const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.box].filter(Boolean).join(' · ') : '—';
     const bg = i%2===0?'#f8fafc':'#ffffff';
     return `<tr style="background:${bg}">
       <td style="width:28px;text-align:center;"><div style="width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block;"></div></td>
