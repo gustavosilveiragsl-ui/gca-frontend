@@ -4949,17 +4949,25 @@ function dashVerAtendimento(id) {
   const armazem = itens[0]?.nomeArmazem || itens[0]?.nome_armazem || itens[0]?.armazem || '—';
 
   const itensHtml = itens.length
-    ? itens.map(it => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div>
-            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${it.descricao||it.nome||'—'}</div>
-            ${it.codigo?`<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${it.codigo}</div>`:''}
+    ? itens.map(it => {
+        const seriaisSaida    = (it.seriais||[]).filter(Boolean);
+        const seriaisRetorno  = (it.serialRetorno||[]).filter(Boolean);
+        return `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${it.descricao||it.nome||'—'}</div>
+              ${it.codigo?`<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${it.codigo}</div>`:''}
+            </div>
+            <div style="text-align:right;flex-shrink:0;margin-left:12px">
+              <div style="font-size:13px;font-weight:700;color:var(--accent-text)">${it.quantidade||1} ${it.un_med||it.unidade||'un.'}</div>
+            </div>
           </div>
-          <div style="text-align:right;flex-shrink:0;margin-left:12px">
-            <div style="font-size:13px;font-weight:700;color:var(--accent-text)">${it.quantidade||1} ${it.unidade||'un.'}</div>
-            ${it.seriais?.length?`<div style="font-size:10px;color:var(--text-3)">${it.seriais.join(', ')}</div>`:''}
-          </div>
-        </div>`).join('')
+          ${it.motivo?`<div style="font-size:11px;color:var(--text-2);margin-top:4px">🏷️ ${it.motivo}</div>`:''}
+          ${seriaisSaida.length?`<div style="font-size:10px;color:#22c55e;margin-top:4px">📤 Saiu: ${seriaisSaida.join(', ')}</div>`:''}
+          ${seriaisRetorno.length?`<div style="font-size:10px;color:#a855f7;margin-top:2px">↩️ Retornou: ${seriaisRetorno.join(', ')}</div>`:''}
+        </div>`;
+      }).join('')
     : '<div style="color:var(--text-3);font-size:12px;text-align:center;padding:12px">Sem itens registrados</div>';
 
   const modal = document.createElement('div');
@@ -6463,13 +6471,21 @@ function verDetalhesAtendimento(id) {
             <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
             <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Qtd</th>
             <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Serial(is) Saída</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Serial(is) Retorno</th>
           </tr></thead>
           <tbody>
-            ${itens.map(i => `<tr>
+            ${itens.map(i => {
+              const seriaisSaida   = (i.seriais||[]).filter(Boolean);
+              const seriaisRetorno = (i.serialRetorno||[]).filter(Boolean);
+              return `<tr>
               <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${i.descricao||'—'}</td>
               <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)">${i.quantidade} ${i.un_med||'UN'}</td>
               <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${i.motivo||'—'}</span></td>
-            </tr>`).join('')}
+              <td style="padding:8px;font-size:11px;color:#22c55e;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${seriaisSaida.join(', ')||'—'}</td>
+              <td style="padding:8px;font-size:11px;color:#a855f7;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${seriaisRetorno.join(', ')||'—'}</td>
+            </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
