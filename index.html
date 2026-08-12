@@ -4878,7 +4878,28 @@ function copiarLink(tipo) {
 })();
 
 // ── API HELPER ──
+// ── Indicador global de carregamento — acompanha toda chamada feita via api() ──
+// (barra fina no topo da tela + contador usado pelo bloqueio de duplo clique abaixo)
+let _apiCallsAtivas = 0;
+function _atualizarBarraCarregamento() {
+  let bar = document.getElementById('_barraCarregamentoGlobal');
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = '_barraCarregamentoGlobal';
+    bar.style.cssText = 'position:fixed;top:0;left:0;height:3px;background:var(--accent-text,#6366f1);z-index:99999;width:0%;transition:width .25s ease,opacity .3s ease;opacity:0;pointer-events:none';
+    document.body.appendChild(bar);
+  }
+  if (_apiCallsAtivas > 0) {
+    bar.style.opacity = '1';
+    bar.style.width = '75%';
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => { bar.style.opacity = '0'; setTimeout(() => { bar.style.width = '0%'; }, 300); }, 150);
+  }
+}
+
 async function api(path, opts={}) {
+  _apiCallsAtivas++; _atualizarBarraCarregamento();
   try {
     const res = await fetch(`${API}${path}`, { ...opts, cache: 'no-store', headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
     if (res.status === 401) { fazerLogout(); return null; }
@@ -4887,8 +4908,34 @@ async function api(path, opts={}) {
   } catch (err) {
     console.error('[api]', path, err.message);
     return { ok: false, erro: 'Erro de conexão: ' + err.message };
+  } finally {
+    _apiCallsAtivas--; _atualizarBarraCarregamento();
   }
 }
+
+// ── Bloqueio global contra duplo clique em botões de ação ──
+// Desabilita qualquer botão assim que clicado e só libera de novo quando não há
+// nenhuma chamada api() em andamento (ou depois de um tempo máximo, por segurança),
+// evitando envios duplicados sem precisar de código individual em cada botão.
+// Para excluir um botão específico (ex: um que não deve travar), adicione data-no-guard="1".
+document.addEventListener('click', function(ev) {
+  const btn = ev.target.closest('button');
+  if (!btn || btn.disabled || !btn.hasAttribute('onclick') || btn.dataset.noGuard === '1') return;
+  btn.disabled = true;
+  const opacidadeOriginal = btn.style.opacity;
+  const cursorOriginal    = btn.style.cursor;
+  btn.style.opacity = '0.6';
+  btn.style.cursor  = 'wait';
+  const iniciou = Date.now();
+  const liberar = () => {
+    const decorrido = Date.now() - iniciou;
+    if (_apiCallsAtivas > 0 && decorrido < 8000) { setTimeout(liberar, 150); return; }
+    btn.disabled = false;
+    btn.style.opacity = opacidadeOriginal;
+    btn.style.cursor  = cursorOriginal;
+  };
+  setTimeout(liberar, 350);
+}, true);
 
 // ── DASHBOARD ──
 async function carregarDashboard() {
