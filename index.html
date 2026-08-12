@@ -10535,7 +10535,24 @@ async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
   const seriais = res?.seriais || [];
 
   if (!seriais.length) {
-    serialBox.innerHTML = '<div style="font-size:11px;color:#ef4444;padding:4px">⚠️ Nenhum serial encontrado para este colaborador</div>';
+    // Colaborador tem o item em mãos mas nenhum serial dele está cadastrado no NR10 (item
+    // entregue antes do sistema rastrear seriais, por exemplo) — permite digitar manualmente
+    // em vez de travar a devolução. O backend cadastra o serial na hora, no status certo,
+    // quando o destino for Estoque ou Recuperação (Inutilizado não precisa cadastrar nada).
+    serialBox.innerHTML = `
+      <div style="font-size:10px;color:#f59e0b;margin-bottom:4px">⚠️ Nenhum serial cadastrado no NR10 para este colaborador — digite ${qtdSeriais>1?'os '+qtdSeriais+' seriais':'o serial'} manualmente:</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        ${Array.from({length: qtdSeriais}).map((_, si) => `
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="text" class="form-input dev-serial-manual" style="width:160px;font-size:11px;font-family:var(--font-mono)"
+            placeholder="Serial ${si+1}" oninput="this.value=this.value.toUpperCase()">
+          <select class="dev-serial-manual-destino" style="font-size:10px;padding:3px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card)">
+            <option value="ESTOQUE">↩️ Estoque</option>
+            <option value="RECUPERACAO">🔧 Recuperação</option>
+            <option value="INUTILIZADO">🗑️ Inutilizado</option>
+          </select>
+        </div>`).join('')}
+      </div>`;
     return;
   }
 
@@ -10677,9 +10694,31 @@ async function confirmarDevolucao() {
       const qtd = parseInt(qtdInput?.value) || 0;
       if (qtd <= 0) return;
       const ePar = row.dataset.par === '1';
+      const qtdNecessaria = ePar ? qtd * 2 : qtd;
+
+      // Modo texto livre: colaborador tem o item mas nenhum serial dele está cadastrado
+      // no NR10 — os campos são digitados à mão em vez de marcados numa lista.
+      const camposManuais = [...row.querySelectorAll('.dev-serial-manual')];
+      if (camposManuais.length) {
+        const preenchidos = camposManuais.filter(inp => inp.value.trim());
+        if (preenchidos.length !== qtdNecessaria) {
+          erro = `Item "${item_descricao}": preencha exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
+          return;
+        }
+        const porDestinoManual = {};
+        preenchidos.forEach(inp => {
+          const destSel = inp.closest('div').querySelector('.dev-serial-manual-destino');
+          const destino = destSel?.value || 'ESTOQUE';
+          (porDestinoManual[destino] = porDestinoManual[destino] || []).push(inp.value.trim().toUpperCase());
+        });
+        Object.entries(porDestinoManual).forEach(([destino, seriaisGrupo]) => {
+          const quantidadeGrupo = ePar ? seriaisGrupo.length / 2 : seriaisGrupo.length;
+          itens.push({ item_id, item_descricao, quantidade: quantidadeGrupo, destino, seriais: seriaisGrupo });
+        });
+        return;
+      }
 
       const cbsMarcados = [...row.querySelectorAll('.dev-serial-cb:checked')];
-      const qtdNecessaria = ePar ? qtd * 2 : qtd;
       if (cbsMarcados.length !== qtdNecessaria) {
         erro = `Item "${item_descricao}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
         return;
