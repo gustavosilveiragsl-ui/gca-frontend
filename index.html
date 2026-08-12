@@ -14331,6 +14331,9 @@ async function enelFinalizarAtendimento() {
   })});
   if (res?.ok) {
     toast('Atendimento ENEL finalizado!','success');
+    if (res.avisos?.length) {
+      toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
+    }
     clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null;
     window.__ENEL__.atendimento = null; window.__ENEL__.itens = [];
     document.getElementById('enelCronometro').textContent='00:00:00';
