@@ -12176,6 +12176,7 @@ async function carregarProtheus() {
     const colab    = m.nomeColaborador || m.colaborador_nome || '—';
     const colabObj = _colaboradores?.find(c => c.id === (m.colaboradorId || m.colaborador_id));
     const matric   = colabObj?.matricula || m.matricula || '';
+    const setor    = colabObj?.setor || m.setor || '';
     const data     = m.data || m.criadoEm?.split('T')[0];
     return `<tr>
       <td><input type="checkbox" class="pr-check" data-id="${m.id}" ${_prSelecionados.has(m.id)?'checked':''}
@@ -12184,7 +12185,7 @@ async function carregarProtheus() {
       <td class="td-main" style="max-width:200px">${nomeItem}<div style="font-size:9px;color:var(--text-3);font-family:var(--font-mono)">${m.codigo||m.codigo_item||''}</div></td>
       <td style="font-size:11px;color:var(--text-2)">${armazem}</td>
       <td style="text-align:center;font-weight:600">${m.quantidade}</td>
-      <td style="font-size:11px;color:var(--text-3)">${colab}${matric?`<div style="font-size:9px;color:var(--text-4,#94a3b8);font-family:var(--font-mono)">Mat: ${matric}</div>`:''}</td>
+      <td style="font-size:11px;color:var(--text-3)">${colab}${matric?`<div style="font-size:9px;color:var(--text-4,#94a3b8);font-family:var(--font-mono)">Mat: ${matric}</div>`:''}${setor?`<div style="font-size:9px;color:var(--text-4,#94a3b8)">${setor}</div>`:''}</td>
       <td style="font-size:11px">${formatarData(data)}</td>
       <td>${stTag}</td>
     </tr>`;
