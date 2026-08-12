@@ -5937,6 +5937,11 @@ function adicionarItensAoAtendimento(selecionados) {
     const armazem = (_armazens||[]).find(a => a.id === s.armazem);
     const requerEnsaio = !!(s.item.requer_ensaio || s.item.requerEnsaio);
     const ehPar = (s.item.un_med||'').toUpperCase() === 'PAR';
+    // Quantidade de seriais necessários = quantidade solicitada × 2 se for PAR — antes só
+    // considerava o PAR e ignorava a quantidade, pedindo sempre 1 (ou 2) serial(is) mesmo
+    // quando o atendimento era de 3, 5, etc. unidades do mesmo item.
+    const qtd = Number(s.qtd) || 1;
+    const qtdSeriaisNecessarios = requerEnsaio ? qtd * (ehPar ? 2 : 1) : 0;
     ATEND.itens.push({
       itemId:          s.item.id,
       descricao:       s.item.descricao,
@@ -5949,9 +5954,9 @@ function adicionarItensAoAtendimento(selecionados) {
       tipoRecuperacao: s.tipoRecuperacao || '',
       un_med:          s.item.un_med || 'UN',
       requerEnsaio,
-      qtdSeriais:      requerEnsaio ? (ehPar ? 2 : 1) : 0,
-      seriais:         requerEnsaio ? (ehPar ? ['',''] : ['']) : [],
-      serialRetorno:   [],
+      qtdSeriais:      qtdSeriaisNecessarios,
+      seriais:         requerEnsaio ? Array(qtdSeriaisNecessarios).fill('') : [],
+      serialRetorno:   requerEnsaio ? Array(qtdSeriaisNecessarios).fill('') : [],
       seriaisDisponiveis: [],
       // Troca de tamanho: informa o item antigo para o backend fechar o correto
       trocaTamanho:    s.trocaTamanho || false,
