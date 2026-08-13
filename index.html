@@ -7485,7 +7485,7 @@ function renderItemSolicitacao(i) {
   // Detecta fora do prazo: ou pelos campos diretos ou extraindo do texto do motivo
   const dias  = i.diasDecorridos != null ? Number(i.diasDecorridos) : null;
   const prazo = i.prazoMinDias   != null ? Number(i.prazoMinDias)   : null;
-  const foraPrazo = justificativa && dias != null && prazo != null && dias < prazo;
+  const foraPrazo = dias != null && prazo != null && dias < prazo;
 
   return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;background:var(--bg-card)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
