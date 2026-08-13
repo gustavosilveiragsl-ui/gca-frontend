@@ -2872,7 +2872,7 @@ window.addEventListener('pageshow', function(e) {
             <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="abrirFormNovoSerial()">+ Novo Serial</button>
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
-            <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
+            <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" data-perm-btn="limpar_descartes" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
             <button class="btn btn-ghost" onclick="toggleConfigNR10()">⚙️ Configurações</button>
           </div>
         </div>
@@ -9494,7 +9494,8 @@ const PERMISSOES_SCHEMA = {
     ver_financeiro:'Ver financeiro', descontos:'Gerenciar descontos', protheus:'Protheus / Compras'
   }},
   laudos: { label:'Laudos / NR10', icon:'🔬', itens:{
-    ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais'
+    ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais',
+    limpar_descartes:'Excluir seriais de descarte'
   }},
   enel: { label:'ENEL', icon:'⚡', itens:{
     ver_enel:'Ver módulo ENEL', marcar_instalado:'Marcar como instalado',
@@ -12908,11 +12909,10 @@ async function limparDescartes() {
   const totalDesc = __LAUDOS_NR10__.lista.filter(x=>x.statusLocal==='DESCARTE').length;
   if (!totalDesc) { toast('Nenhum serial com status DESCARTE','info'); return; }
 
-  const senha = prompt(`Esta ação irá excluir ${totalDesc} serial(is) com status DESCARTE.\n\nDigite a senha para confirmar:`);
+  const senha = prompt(`Esta ação irá excluir ${totalDesc} serial(is) com status DESCARTE.\n\nDigite sua senha de login para confirmar:`);
   if (senha === null) return;
-  if (senha !== 'GCA@4782') { toast('Senha incorreta','error'); return; }
 
-  const res = await api('/laudos/nr10/descartes', { method:'DELETE' });
+  const res = await api('/laudos/nr10/descartes', { method:'DELETE', body: JSON.stringify({ senha }) });
   if (res?.ok) { toast(`${res.removidos} serial(is) excluído(s)!`, 'success'); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao excluir','error');
 }
@@ -14317,15 +14317,16 @@ async function confirmarDesbloqueioEnel() {
   const senha = document.getElementById('enelBloqueioSenha').value;
   const just  = document.getElementById('enelBloqueioJustificativa').value.trim();
   const msg   = document.getElementById('enelBloqueioMsg');
-  if (senha !== 'Gca@4782') { msg.style.color='#ef4444'; msg.textContent='❌ Senha incorreta.'; return; }
+  if (!senha) { msg.style.color='#ef4444'; msg.textContent='❌ Digite sua senha de login.'; return; }
   if (!just) { msg.style.color='#ef4444'; msg.textContent='❌ Informe a justificativa.'; return; }
   const item = window.__ENEL_BLOQUEIO_ITEM__;
   if (!item) { document.getElementById('modalEnelBloqueio').classList.add('hidden'); return; }
   // Registra desbloqueio
-  await api('/enel/registrar-desbloqueio', { method:'POST', body: JSON.stringify({
+  const res = await api('/enel/registrar-desbloqueio', { method:'POST', body: JSON.stringify({
     equipe: document.getElementById('enelEquipeBusca').value,
-    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(),
+    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(), senha,
   })});
+  if (!res?.ok) { msg.style.color='#ef4444'; msg.textContent='❌ '+(res?.erro||'Erro ao confirmar desbloqueio.'); return; }
   document.getElementById('modalEnelBloqueio').classList.add('hidden');
   _enelAdicionarItemFinal(item.mat, item.qtd, item.motivo, item.obs);
   window.__ENEL_BLOQUEIO_ITEM__ = null;
