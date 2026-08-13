@@ -7258,11 +7258,12 @@ async function abrirModalSolicitacao(id) {
   const s = _solicitacoes.find(x => x.id === id);
   if (!s) return;
 
-  // Marca como visualizado se pendente
+  // Marca como visualizado se pendente — apenasSeAberta faz o servidor confirmar que
+  // ainda está PENDENTE antes de gravar, pra não sobrescrever um status mais avançado
+  // caso esta lista esteja com cache desatualizado (outra pessoa já atendeu/finalizou).
   if (s.status === 'PENDENTE') {
-    await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'VISUALIZADO' }) });
-    s.status = 'VISUALIZADO';
-    renderSolicitacoes();
+    const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'VISUALIZADO', apenasSeAberta: true }) });
+    if (!res?.ignorado) { s.status = 'VISUALIZADO'; renderSolicitacoes(); }
   }
 
   let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
