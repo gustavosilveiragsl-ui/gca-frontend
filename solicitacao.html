@@ -572,7 +572,7 @@ const MOTIVO_MAP = {
   'Perdido':'perca','Roubado':'roubo',
 };
 
-let _usr = null, _arm = [], _dados = null;
+let _usr = null, _solToken = null, _arm = [], _dados = null;
 let _prio = 'Normal', _itens = [], _imgs = [];
 let _mSel = new Set(), _mFila = [], _mIdx = 0, _mCache = {};
 let _listaSolsCache = [], _solAtual = null;
@@ -583,8 +583,10 @@ let _idsPermitidos = null; // null = sem restrição, Set = itens permitidos
 // ══════════════════════════════════════════
 async function req(path, opts = {}) {
   if (opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
+  const headers = {'Content-Type':'application/json'};
+  if (_solToken) headers.Authorization = 'Bearer ' + _solToken;
   try {
-    const r = await fetch(API + path, { headers:{'Content-Type':'application/json'}, ...opts });
+    const r = await fetch(API + path, { headers, ...opts });
     return await r.json();
   } catch(e) { return { ok:false, erro:'Erro de conexão: '+e.message }; }
 }
@@ -630,7 +632,7 @@ async function login() {
   const res = await req('/solicitacao-auth/login', { method:'POST', body:{matricula:mat,senha:sen} });
   btn.disabled=false; btn.textContent='Entrar';
   if (!res.ok) { errEl.textContent='❌ '+(res.erro||'Credenciais incorretas'); errEl.classList.remove('hidden'); return; }
-  _usr = res.usuario; _arm = res.armazens || [];
+  _usr = res.usuario; _solToken = res.token; _arm = res.armazens || [];
   document.getElementById('pgLogin').classList.add('hidden');
   document.getElementById('pgApp').classList.remove('hidden');
   // Header
@@ -642,7 +644,7 @@ async function login() {
 }
 
 function sair() {
-  _usr=_arm=_dados=null; _itens=[]; _imgs=[];
+  _usr=_solToken=_arm=_dados=null; _itens=[]; _imgs=[];
   document.getElementById('pgLogin').classList.remove('hidden');
   document.getElementById('pgApp').classList.add('hidden');
   document.getElementById('lSen').value='';
