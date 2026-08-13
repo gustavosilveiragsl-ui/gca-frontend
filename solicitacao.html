@@ -581,6 +581,16 @@ let _idsPermitidos = null; // null = sem restrição, Set = itens permitidos
 // ══════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════
+// escHtml: pra texto/atributo HTML normal. escJs: pra dentro de onclick/onmousedown="...('${x}')"
+// (escHtml sozinho não basta lá — o navegador decodifica entidades HTML do próprio atributo
+// antes de rodar como JS, então a aspa escapada volta a ser aspa a tempo de quebrar a string).
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escJs(s) {
+  return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
+
 async function req(path, opts = {}) {
   if (opts.body && typeof opts.body !== 'string') opts.body = JSON.stringify(opts.body);
   const headers = {'Content-Type':'application/json'};
@@ -717,9 +727,9 @@ function filtrarCol() {
   _posicionarAcList(input, lista);
   const res = (_dados?.colaboradores||[]).filter(c=>(c.nome||'').toLowerCase().includes(q)||(c.matricula||'').toLowerCase().includes(q)).slice(0,14);
   if (!res.length) { lista.innerHTML='<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
-  lista.innerHTML = res.map(c=>`<div class="ac-item" onmousedown="selCol('${c.id}','${esc(c.nome)}','${esc(c.funcao||'')}','${c.matricula||''}')">
-    <div class="ac-item-nome">${c.nome}</div>
-    <div class="ac-item-sub">${c.matricula||''} · ${c.funcao||''}</div>
+  lista.innerHTML = res.map(c=>`<div class="ac-item" onmousedown="selCol('${c.id}','${escJs(c.nome)}','${escJs(c.funcao||'')}','${escJs(c.matricula||'')}')">
+    <div class="ac-item-nome">${escHtml(c.nome)}</div>
+    <div class="ac-item-sub">${escHtml(c.matricula||'')} · ${escHtml(c.funcao||'')}</div>
   </div>`).join('');
   lista.classList.remove('hidden');
 }
@@ -767,7 +777,6 @@ async function selCol(id, nome, funcao, mat) {
     document.getElementById('colMetaD').textContent = funcao + (mat?' · Mat. '+mat:'') + ' · ' + info;
   }
 }
-function esc(s){ return (s||'').replace(/'/g,"\\'"); }
 
 // ══════════════════════════════════════════
 // PRIORIDADE / IMAGENS
@@ -837,7 +846,7 @@ function renderMGrid(q) {
     const sel   = _mSel.has(i.id);
     const semSaldo = saldo === 0;
     return `<div class="ig-card ${sel?'sel':''} ${semSaldo?'ig-sem-saldo':''}" id="igc_${i.id}" onclick="toggleMItem('${i.id}',${saldo})">
-      <div class="ig-nome">${i.descricao}</div>
+      <div class="ig-nome">${escHtml(i.descricao)}</div>
       <div class="ig-meta">${i.codigo||''} · ${i.categoria||''}</div>
       <div class="ig-saldo ${semSaldo?'ig-zero':''}">Saldo: ${saldo}</div>
     </div>`;
@@ -963,9 +972,9 @@ function checarTroca() {
   if (!variantes.length || !troca) { wTroca.classList.add('hidden'); return; }
 
   const sel = document.getElementById('confTrocaSelect');
-  sel.innerHTML = variantes.map(v => `<option value="${v.id}">${v.descricao}</option>`).join('');
+  sel.innerHTML = variantes.map(v => `<option value="${v.id}">${escHtml(v.descricao)}</option>`).join('');
   sel.value = troca.itemIdAntigo;
-  document.getElementById('trocaDica').textContent = `Detectado automaticamente: você possui "${troca.nomeAntigo}" registrado. Confira e ajuste se necessário.`;
+  document.getElementById('trocaDica').textContent = `Detectado automaticamente: você possui "${escHtml(troca.nomeAntigo)}" registrado. Confira e ajuste se necessário.`;
   document.getElementById('confTrocaJust').value = '';
   wTroca.classList.remove('hidden');
 }
@@ -1068,10 +1077,10 @@ function renderItens() {
     <div class="item-row">
       <div style="flex:1">
         <div class="item-row-nome">
-          ${it.nome}
+          ${escHtml(it.nome)}
           ${it.trocaTamanho?'<span class="item-row-badge" style="background:var(--accent-soft);color:var(--accent-text);margin-left:6px">👕 Troca de Tamanho</span>':''}
         </div>
-        <div class="item-row-meta">Qtd: <strong style="color:var(--accent-text)">${it.quantidade}</strong> · ${it.motivo}</div>
+        <div class="item-row-meta">Qtd: <strong style="color:var(--accent-text)">${it.quantidade}</strong> · ${escHtml(it.motivo)}</div>
       </div>
       <button class="btn btn-ghost" style="padding:4px 8px;font-size:10px" onclick="_itens.splice(${i},1);renderItens()">✕</button>
     </div>`).join('');
@@ -1172,8 +1181,8 @@ async function carregarSols() {
         </div>
         ${tag(s.status)}
       </div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">🪪 ${s.colaborador_nome||'—'}</div>
-      <div style="font-size:11px;color:var(--text-3)">🏭 ${s.nome_armazem||'—'} · 📦 ${itens.length} item(ns) · 🕐 ${fmtData(s.data_hora||s.criado_em)}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">🪪 ${escHtml(s.colaborador_nome||'—')}</div>
+      <div style="font-size:11px;color:var(--text-3)">🏭 ${escHtml(s.nome_armazem||'—')} · 📦 ${itens.length} item(ns) · 🕐 ${fmtData(s.data_hora||s.criado_em)}</div>
     </div>`;
   }).join('');
 }
@@ -1230,7 +1239,7 @@ function abrirDet(s) {
     return `<div class="item-det">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div class="item-det-nome">
-          ${it.nome||it.descricao||'—'}
+          ${escHtml(it.nome||it.descricao||'—')}
           ${it.trocaTamanho?'<span class="tag tag-accent" style="margin-left:6px;font-size:10px">👕 Troca de Tamanho</span>':''}
         </div>
         <span style="font-weight:700;color:var(--accent-text);font-size:14px;margin-left:10px;flex-shrink:0">${it.quantidade}</span>
@@ -1255,7 +1264,7 @@ function abrirDet(s) {
       const href=img.url||img.dataUrl||'#';
       return href.startsWith('data:')
         ? `<a href="${href}" target="_blank"><img src="${href}" style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius-sm);border:1px solid var(--border)"></a>`
-        : `<a href="${href}" target="_blank" class="tag tag-accent" style="text-decoration:none;gap:4px">📷 ${img.nome||'Imagem '+(i+1)}</a>`;
+        : `<a href="${href}" target="_blank" class="tag tag-accent" style="text-decoration:none;gap:4px">📷 ${escHtml(img.nome||'Imagem '+(i+1))}</a>`;
     }).join('');
   } else imgsW.classList.add('hidden');
 

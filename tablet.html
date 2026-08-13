@@ -212,6 +212,13 @@ canvas{display:block;}
 const API      = 'https://gca-backend-production.up.railway.app';
 let NOMES      = {};
 
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escJs(s) {
+  return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
+
 async function carregarFiliais() {
   try {
     const res = await fetch(`${API}/filiais`);
@@ -328,7 +335,7 @@ function atualizarPendentes(lista) {
   wrap.innerHTML = lista.map(a => `
     <div class="colab-card" onclick="abrirAssinatura('${a.id}')">
       <div class="colab-card-icon">👤</div>
-      <div class="colab-card-name">${a.nome_colaborador}</div>
+      <div class="colab-card-name">${escHtml(a.nome_colaborador)}</div>
       <div class="colab-card-sub">${contarItens(a.itens_json)} item(s)</div>
       <span class="colab-card-badge">Toque para assinar</span>
     </div>
@@ -357,8 +364,8 @@ function abrirAssinatura(id) {
     <div class="item-row">
       <div class="item-qty">${it.quantidade||1}</div>
       <div>
-        <div class="item-desc">${it.descricao||it.nome||'—'}</div>
-        ${it.motivo?`<div class="item-mot">${it.motivo}</div>`:''}
+        <div class="item-desc">${escHtml(it.descricao||it.nome||'—')}</div>
+        ${it.motivo?`<div class="item-mot">${escHtml(it.motivo)}</div>`:''}
       </div>
     </div>
   `).join('') || '<div style="color:#475569;font-size:13px;padding:12px 0">Nenhum item registrado</div>';

@@ -77,6 +77,13 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#0a0a0f;color:#f1
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
 
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escJs(s) {
+  return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
+}
+
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name) || '';
 }
@@ -118,7 +125,7 @@ async function carregar() {
     const diasTxt = l.dias < 0 ? `Vencido há ${Math.abs(l.dias)} dias` : `${l.dias} dias restantes`;
     return `<div class="laudo-row">
       <div style="flex:1">
-        <div class="laudo-tipo">${l.tipo_laudo}</div>
+        <div class="laudo-tipo">${escHtml(l.tipo_laudo)}</div>
         <div class="laudo-venc">Vence: ${new Date(l.data_vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</div>
       </div>
       <div class="laudo-dias ${diasCls}">${diasTxt}</div>
@@ -130,7 +137,7 @@ async function carregar() {
   const equipsHtml = equips.length ? equips.map(eq => `
     <div class="equip-row">
       <div>
-        <div class="equip-label">${eq.label || eq.tipo}</div>
+        <div class="equip-label">${escHtml(eq.label || eq.tipo)}</div>
         ${eq.tem && eq.data_entrega ? `<div class="equip-data">Entregue em: ${new Date(eq.data_entrega+'T12:00:00').toLocaleDateString('pt-BR')}</div>` : ''}
       </div>
       <span class="equip-status ${eq.tem ? 'equip-tem' : 'equip-nao'}">${eq.tem ? '✅ Tem' : '❌ Não tem'}</span>
@@ -138,7 +145,7 @@ async function carregar() {
 
   el.innerHTML = `
     <div style="margin-bottom:4px">
-      <div class="placa-badge">${placa}</div>
+      <div class="placa-badge">${escHtml(placa)}</div>
     </div>
     <div class="sub">${nomes[unidade] || unidade} · Atualizado em ${new Date().toLocaleDateString('pt-BR')}</div>
 
