@@ -6865,15 +6865,23 @@ async function regerarLink(id) {
   } catch { toast('Erro de conexão', 'error'); }
 }
 
-function reenviarLink(id, token) {
+async function reenviarLink(id, token) {
   const link = `https://app.gcasistema.com.br/#/assinar?token=${token}`;
   const atend = (_assinaturas||[]).find(a => a.id === id);
+
+  // A lista /atendimentos/pendentes não traz mais itens_json (removido por performance) —
+  // busca os itens completos direto do atendimento quando precisar reimprimir a ficha.
+  let itensCompletos = [];
+  try {
+    const data = await api(`/atendimentos/${id}`);
+    itensCompletos = JSON.parse(data?.atendimento?.itens_json || '[]');
+  } catch {}
 
   // Recarrega ATEND com os dados REAIS deste atendimento — nunca deixa lixo de outro atendimento
   ATEND.id         = id;
   ATEND.linkGerado = link;
   ATEND.colab      = atend ? { id: atend.colaboradorId, nome: atend.nomeColaborador } : null;
-  ATEND.itens      = (atend?.itens || []).map(it => ({
+  ATEND.itens      = itensCompletos.map(it => ({
     descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
     codigo: it.codigo || '', ca: it.ca || '',
   }));
