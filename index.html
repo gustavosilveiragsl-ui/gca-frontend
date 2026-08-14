@@ -7814,10 +7814,11 @@ async function registrarEntrada() {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
   }
 
-  // Proteção contra duplo clique
+  // Proteção contra duplo clique já é feita pelo bloqueio global (desabilita o botão
+  // antes deste código rodar) — checar btn.disabled aqui de novo sempre dava falso positivo
+  // e fazia a função sair sem fazer nada, mesmo no primeiro clique.
   const btn = document.querySelector('[onclick="registrarEntrada()"]');
-  if (btn?.disabled) return;
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
+  if (btn) { btn.textContent = '⏳ Registrando...'; }
 
   const res = await api('/movimentacoes/entrada', {
     method: 'POST',
@@ -9477,8 +9478,6 @@ function limparFormUsuario() {
   document.querySelectorAll('.usr-uni-check').forEach(cb => {
     cb.checked = cb.value === GCA.unidade;
   });
-  document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = false; });
-  document.getElementById('usrUniRdo').checked    = false;
   renderArmazensUsuario([]);
   document.getElementById('permissoesPanel').style.display = 'none';
   _usrEditandoId = null;
@@ -11818,9 +11817,10 @@ async function _uploadNFPendente(scId) {
 }
 
 async function confirmarRecebimentoSC() {
+  // Proteção contra duplo clique já é feita pelo bloqueio global (ver comentário em
+  // registrarEntrada) — checar btnRecSC.disabled aqui de novo travava a função sempre.
   const btnRecSC = document.querySelector('[onclick="confirmarRecebimentoSC()"]');
-  if (btnRecSC?.disabled) return;
-  if (btnRecSC) { btnRecSC.disabled = true; btnRecSC.textContent = '⏳ Processando...'; }
+  if (btnRecSC) { btnRecSC.textContent = '⏳ Processando...'; }
   try {
 
   const scId      = document.getElementById('recSCId').value;
