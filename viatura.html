@@ -100,8 +100,17 @@ async function carregar() {
 
   document.title = `GCA — ${placa}`;
 
-  const res = await fetch(`${API}/laudos/viaturas/${encodeURIComponent(placa)}/public?unidade=${unidade}`);
-  const data = await res.json();
+  let data;
+  try {
+    const res = await fetch(`${API}/laudos/viaturas/${encodeURIComponent(placa)}/public?unidade=${unidade}`);
+    data = await res.json();
+  } catch (err) {
+    // Sem isso, uma falha de rede deixava a página travada pra sempre na tela de
+    // "Carregando..." (promise rejeitada sem tratamento nenhum), sem nenhum aviso.
+    console.error('[viatura/carregar]', err);
+    el.innerHTML = `<div class="erro"><div class="erro-icon">📡</div><div>Erro de conexão. Verifique sua internet e recarregue a página.</div></div>`;
+    return;
+  }
 
   if (!data?.ok) {
     el.innerHTML = `<div class="erro"><div class="erro-icon">❌</div><div>Erro ao carregar dados da viatura.</div></div>`;
