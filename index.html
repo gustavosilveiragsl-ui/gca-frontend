@@ -3360,7 +3360,7 @@ window.addEventListener('pageshow', function(e) {
                 </div>
               </div>
               <div><label class="form-label">Matrícula</label><input id="lsMatricula" class="form-input" placeholder="Preenchido ao selecionar..." readonly></div>
-              <div><label class="form-label">Senha *</label><input id="lsSenha" class="form-input" type="text" placeholder="Ex: 123456 (6 dígitos CPF)"></div>
+              <div><label class="form-label">Senha</label><input id="lsSenha" class="form-input" type="text" placeholder="Ex: 123456 (6 dígitos CPF) — em branco mantém a senha atual ao editar"></div>
               <div>
                 <label class="form-label">Armazéns Permitidos</label>
                 <div id="lsArmazensLista" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;background:var(--bg)"></div>
@@ -9247,14 +9247,17 @@ async function salvarLS() {
   const ativo  = document.getElementById('lsAtivo').checked;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
-  if (!senha) { toast('Informe a senha.', 'warn'); return; }
+  if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
 
   const arms = [];
   document.querySelectorAll('#lsArmazensLista input[type=checkbox]:checked').forEach(cb => arms.push(cb.value));
 
   if (editId) {
-    // Editar — atualiza senha, ativo, armazéns
-    const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify({ senha, ativo, armazens_permitidos: arms.length ? arms : null }) });
+    // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
+    // branco por padrão); em branco mantém a senha atual sem alterar.
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null };
+    if (senha) body.senha = senha;
+    const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
@@ -9271,7 +9274,7 @@ function editarLS(id) {
   document.getElementById('lsColBusca').value  = u.nome;
   document.getElementById('lsColId').value     = id;
   document.getElementById('lsMatricula').value = u.matricula;
-  document.getElementById('lsSenha').value     = u.senha || '';
+  document.getElementById('lsSenha').value     = ''; // nunca pré-preenche — deixe em branco pra manter a senha atual
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
