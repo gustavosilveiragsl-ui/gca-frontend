@@ -445,13 +445,14 @@ function sair() {
 }
 
 async function api(path, opts={}) {
-  const res  = await fetch(`${API}${path}`, {
+  const res = await fetch(`${API}${path}`, {
     ...opts,
     headers: { 'Authorization': `Bearer ${_token}`, 'Content-Type': 'application/json', ...(opts.headers||{}) }
   });
-  const data = await res.json();
+  // Checa 401 ANTES de tentar ler o corpo — um 401 sem corpo JSON válido (ex: erro de
+  // infra/proxy, não vindo do Express) faria res.json() lançar e sair() nunca ser chamado.
   if (res.status === 401) { sair(); return null; }
-  return data;
+  try { return await res.json(); } catch { return null; }
 }
 
 // ═══════════════════════════════════════
