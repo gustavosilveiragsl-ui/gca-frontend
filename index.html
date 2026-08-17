@@ -16607,20 +16607,29 @@ function _iniciarRealtime() {
   // Remove canal anterior se existir
   if (_realtimeCanal) { sb.removeChannel(_realtimeCanal); _realtimeCanal = null; }
 
+  // Não assina mais as tabelas reais direto — elas têm RLS sem policy pra chave anon
+  // (não pode ter policy ampla nelas, tem senha/PII). Em vez disso escuta uma tabela
+  // sinalizadora (realtime_sinal) que só guarda "qual tabela mudou e quando", populada
+  // por gatilhos no banco. Sem exposição de dado nenhum, e o Realtime volta a funcionar.
+  const _MAPA_SINAL_RECARGA = {
+    solicitacoes_material: _recarregarSols,
+    atendimentos:          _recarregarAss,
+    saldos:                _recarregarEstoque,
+    colaboradores:         _recarregarColabs,
+    itens:                 _recarregarItens,
+    armazens:              _recarregarArmazens,
+    equipes:               _recarregarEquipes,
+    catalogo_dotacao:      _recarregarDotacao,
+    usuarios:              _recarregarUsuarios,
+    logins_solicitacao:    _recarregarUsuarios,
+  };
+
   _realtimeCanal = sb
     .channel('gca-realtime')
-    // ── Operacional ──
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'solicitacoes_material' }, () => _recarregarSols())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'atendimentos'          }, () => _recarregarAss())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'saldos'                }, () => _recarregarEstoque())
-    // ── Cadastros ──
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'colaboradores'         }, () => _recarregarColabs())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'itens'                 }, () => _recarregarItens())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'armazens'              }, () => _recarregarArmazens())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'equipes'               }, () => _recarregarEquipes())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'catalogo_dotacao'      }, () => _recarregarDotacao())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios'              }, () => _recarregarUsuarios())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'logins_solicitacao'    }, () => _recarregarUsuarios())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'realtime_sinal' }, (payload) => {
+      const tabela = payload.new?.tabela || payload.old?.tabela;
+      _MAPA_SINAL_RECARGA[tabela]?.();
+    })
     .subscribe((status) => {
       if (status === 'SUBSCRIBED') {
         console.log('[GCA Realtime] ✅ Conectado — todas as tabelas em tempo real');
