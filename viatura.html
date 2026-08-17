@@ -83,6 +83,15 @@ function escHtml(s) {
 function escJs(s) {
   return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 }
+function safeUrl(u) {
+  const s = String(u ?? '').trim();
+  if (!s) return '';
+  try {
+    const parsed = new URL(s, window.location.origin);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return s;
+  } catch {}
+  return '#';
+}
 
 function getParam(name) {
   return new URLSearchParams(window.location.search).get(name) || '';
@@ -138,7 +147,7 @@ async function carregar() {
         <div class="laudo-venc">Vence: ${new Date(l.data_vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</div>
       </div>
       <div class="laudo-dias ${diasCls}">${diasTxt}</div>
-      ${l.link_pdf ? `<a href="${l.link_pdf}" target="_blank" style="font-size:20px;text-decoration:none">📄</a>` : ''}
+      ${l.link_pdf ? `<a href="${escHtml(safeUrl(l.link_pdf))}" target="_blank" style="font-size:20px;text-decoration:none">📄</a>` : ''}
     </div>`;
   }).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Nenhum laudo cadastrado</div>';
 

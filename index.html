@@ -7415,8 +7415,8 @@ async function abrirModalSolicitacao(id) {
   // ATENDIDO/AGUARDANDO TRANSPORTE/EM TRANSITO: só AguardTransporte + Cancelar
   // FINALIZADO/CANCELADO: só Fechar
   const podeAtender  = ['PENDENTE','VISUALIZADO'].includes(s.status);
-  const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status);
-  const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status);
+  const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('editar_solicitacao');
+  const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status) && temPermissao('alterar_status_sol');
 
   // Verifica assinatura pendente do colaborador
   const colabIdSol = s.colaborador_id || s.colaboradorId;
@@ -7424,7 +7424,9 @@ async function abrirModalSolicitacao(id) {
 
   // Único ponto manual: ATENDIDO → AGUARDANDO TRANSPORTE ou EM TRANSITO
   let statusOpts = '';
-  if (s.status === 'ATENDIDO') {
+  if (!temPermissao('alterar_status_sol')) {
+    // sem a permissão, nem mostra as opções de mudança manual de status
+  } else if (s.status === 'ATENDIDO') {
     statusOpts = `<option value="">Mover para transporte...</option>
       <option value="AGUARDANDO TRANSPORTE">🚛 Aguardando Transporte</option>
       <option value="EM TRANSITO">🚚 Em Trânsito</option>`;

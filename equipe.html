@@ -524,7 +524,7 @@ async function carregarMedidores() {
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div>
             <div class="medidor-serial">${escHtml(m.numero_serie)}</div>
-            <div class="medidor-desc">${m.material_descricao}</div>
+            <div class="medidor-desc">${escHtml(m.material_descricao)}</div>
           </div>
           ${statusHtml}
         </div>
@@ -547,7 +547,7 @@ async function carregarMedidores() {
 
     return `<div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:12px;font-weight:700;color:var(--text-1)">${grp.desc}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--text-1)">${escHtml(grp.desc)}</span>
         <span style="font-size:10px;color:var(--text-3)">${grp.meds.length} serial(is)</span>
         ${bloq ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-soft);padding:2px 7px;border-radius:10px">🚫 BLOQUEADO</span>' : ''}
       </div>
@@ -575,7 +575,7 @@ async function carregarMateriais() {
     ${mats.map(m => `
       <div class="material-row">
         <div>
-          <div class="material-name">${m.material}</div>
+          <div class="material-name">${escHtml(m.material)}</div>
           <div class="material-cod">${m.codigo || '—'}</div>
         </div>
         <div>
@@ -702,7 +702,7 @@ async function carregarHistorico() {
       <div style="font-size:12px;color:var(--text-2)">
         ${itens.map(it => `${escHtml(it.descricao)} × <strong>${it.quantidade}</strong>`).join(' &bull; ')}
       </div>
-      ${s.obs_resposta ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;font-style:italic">💬 ${s.obs_resposta}</div>` : ''}
+      ${s.obs_resposta ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px;font-style:italic">💬 ${escHtml(s.obs_resposta)}</div>` : ''}
       ${s.observacao ? `<div style="font-size:11px;color:var(--text-3);margin-top:4px">Obs: ${escHtml(s.observacao)}</div>` : ''}
     </div>`;
   }).join('');
