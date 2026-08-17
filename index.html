@@ -329,23 +329,40 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
-<!-- ESQUECI SENHA -->
+<!-- ESQUECI SENHA — PASSO 1: pedir o código -->
 <div id="forgotView" class="hidden">
   <div class="forgot-card">
     <div class="forgot-back" onclick="voltarLogin()">← Voltar ao login</div>
     <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
     <div class="login-title">Recuperar senha</div>
-    <div class="forgot-info">Digite seu usuário abaixo. Um administrador receberá a solicitação e redefinirá sua senha em breve.</div>
+    <div class="forgot-info">Digite seu usuário. Se houver um e-mail cadastrado pra essa conta, enviamos um código de confirmação pra ele.</div>
     <div class="form-group">
       <label class="form-label">Usuário</label>
       <input id="forgotUser" class="form-input" type="text" placeholder="Seu usuário">
     </div>
-    <div class="form-group">
-      <label class="form-label">Nova senha desejada</label>
-      <input id="forgotNovaSenha" class="form-input" type="password" placeholder="••••••••">
-    </div>
-    <button class="btn-login" onclick="solicitarRecuperacao()">Enviar solicitação</button>
+    <button class="btn-login" onclick="solicitarRecuperacao()">Enviar código</button>
     <div id="forgotMsg" class="hidden"></div>
+  </div>
+</div>
+
+<!-- ESQUECI SENHA — PASSO 2: confirmar o código + nova senha -->
+<div id="forgotCodigoView" class="hidden">
+  <div class="forgot-card">
+    <div class="forgot-back" onclick="voltarLogin()">← Voltar ao login</div>
+    <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
+    <div class="login-title">Digite o código</div>
+    <div class="forgot-info">Enviamos um código de 6 dígitos pro e-mail cadastrado, se existir. Ele expira em 15 minutos.</div>
+    <div class="form-group">
+      <label class="form-label">Código</label>
+      <input id="forgotCodigo" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:4px;font-size:18px;text-align:center">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nova senha</label>
+      <input id="forgotNovaSenha2" class="form-input" type="password" placeholder="••••••••">
+    </div>
+    <button class="btn-login" onclick="confirmarRecuperacao()">Redefinir senha</button>
+    <a class="forgot-link" onclick="solicitarRecuperacao(true)">Reenviar código</a>
+    <div id="forgotCodigoMsg" class="hidden"></div>
   </div>
 </div>
 
@@ -505,7 +522,6 @@ window.addEventListener('pageshow', function(e) {
             <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px;margin-top:4px">Administração</div>
             <button class="nav-item" data-view="filiais" onclick="abrirGestaoFiliais(this)"><span class="ni-icon">🏢</span> Gestão de Filiais</button>
           </div>
-          <button class="nav-item" id="menuRecuperacaoSenha" style="display:none" data-view="recuperacao-senha" onclick="showView('recuperacao-senha',this)"><span class="ni-icon">🔑</span> Recuperação de Senha <span class="ni-badge" id="badgeSenha" style="display:none">0</span></button>
         </div>
       </div>
 
@@ -3410,6 +3426,9 @@ window.addEventListener('pageshow', function(e) {
               <input type="hidden" id="usrEditId">
               <div><label class="form-label">Nome *</label><input id="usrNome" class="form-input" placeholder="Nome completo"></div>
               <div><label class="form-label">Username *</label><input id="usrUsername" class="form-input" placeholder="Ex: joao.silva"></div>
+              <div><label class="form-label">E-mail</label><input id="usrEmail" class="form-input" type="email" placeholder="usado só pra recuperação de senha">
+                <div style="font-size:10px;color:var(--text-3);margin-top:2px">Sem e-mail cadastrado, o usuário não consegue recuperar a própria senha sozinho.</div>
+              </div>
               <div><label class="form-label">Senha *</label><input id="usrSenha" class="form-input" type="password" placeholder="Senha de acesso"></div>
               <div><label class="form-label">Perfil *</label>
                 <select id="usrRole" class="form-input">
@@ -3465,19 +3484,6 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
-      <!-- RECUPERAÇÃO DE SENHA (admin) -->
-      <div class="view" id="view-recuperacao-senha">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">Solicitações de Recuperação de Senha</div><div class="card-sub">Aprovar ou rejeitar solicitações pendentes</div></div>
-            <div class="card-actions"><button class="btn btn-ghost" onclick="carregarSolicitacoesSenha()">↻ Atualizar</button></div>
-          </div>
-          <table>
-            <thead><tr><th>Usuário</th><th>Solicitado em</th><th>Ações</th></tr></thead>
-            <tbody id="senhaBody"><tr class="loading-row"><td colspan="3"><div class="spinner"></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
 
     </div>
   </div>
@@ -4226,8 +4232,8 @@ function atualizarIconeTema(tema) {
 
 // ── NAVEGAÇÃO DE TELAS ──
 function mostrarTela(nome) {
-  ['loginView','forgotView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
-  const map = { login:'loginView', forgot:'forgotView', unidade:'unidadeView', app:'appView' };
+  ['loginView','forgotView','forgotCodigoView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = { login:'loginView', forgot:'forgotView', forgotCodigo:'forgotCodigoView', unidade:'unidadeView', app:'appView' };
   if (map[nome]) document.getElementById(map[nome]).classList.remove('hidden');
 }
 
@@ -4319,7 +4325,6 @@ function onViewLoad(nome) {
     carregarFiliais().then(() => popularSelectsFiliais());
   }
   if (nome === 'itens')              carregarItens();
-  if (nome === 'recuperacao-senha')  carregarSolicitacoesSenha();
   if (nome === 'assinaturas')        { carregarAssinaturas(); _iniciarRealtime(); }
   if (nome === 'solicitacoes')       { carregarSolicitacoes(); _iniciarRealtime(); }
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
@@ -4412,20 +4417,20 @@ function mostrarErroLogin(msg) {
 function mostrarEsqueciSenha() { mostrarTela('forgot'); }
 function voltarLogin() { mostrarTela('login'); }
 
-async function solicitarRecuperacao() {
-  const usuario   = document.getElementById('forgotUser').value.trim();
-  const novaSenha = document.getElementById('forgotNovaSenha').value;
-  const msgEl     = document.getElementById('forgotMsg');
-  const btnEl     = document.querySelector('#forgotView .btn-login');
+let _forgotUsuarioAtual = '';
+
+async function solicitarRecuperacao(reenvio) {
+  const usuario = reenvio ? _forgotUsuarioAtual : document.getElementById('forgotUser').value.trim();
+  const msgEl   = reenvio ? document.getElementById('forgotCodigoMsg') : document.getElementById('forgotMsg');
+  const btnEl   = reenvio ? null : document.querySelector('#forgotView .btn-login');
   msgEl.classList.add('hidden');
-  if (!usuario || !novaSenha) { toast('Preencha todos os campos','error'); return; }
-  btnEl.disabled = true;
-  btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Enviando...';
+  if (!usuario) { toast('Preencha o usuário','error'); return; }
+  if (btnEl) { btnEl.disabled = true; btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Enviando...'; }
   try {
     const res  = await fetch(`${API}/auth/solicitar-recuperacao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: usuario, nova_senha: novaSenha }),
+      body: JSON.stringify({ username: usuario }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -4434,15 +4439,52 @@ async function solicitarRecuperacao() {
       msgEl.classList.remove('hidden');
       return;
     }
+    _forgotUsuarioAtual = usuario;
+    if (reenvio) {
+      toast('Código reenviado, se a conta tiver e-mail cadastrado', 'success');
+    } else {
+      document.getElementById('forgotCodigo').value = '';
+      document.getElementById('forgotNovaSenha2').value = '';
+      mostrarTela('forgotCodigo');
+    }
+  } catch {
+    toast('Erro de conexão', 'error');
+  } finally {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Enviar código'; }
+  }
+}
+
+async function confirmarRecuperacao() {
+  const codigo    = document.getElementById('forgotCodigo').value.trim();
+  const novaSenha = document.getElementById('forgotNovaSenha2').value;
+  const msgEl     = document.getElementById('forgotCodigoMsg');
+  const btnEl     = document.querySelector('#forgotCodigoView .btn-login');
+  msgEl.classList.add('hidden');
+  if (!codigo || !novaSenha) { toast('Preencha o código e a nova senha','error'); return; }
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Confirmando...';
+  try {
+    const res  = await fetch(`${API}/auth/confirmar-recuperacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: _forgotUsuarioAtual, codigo, nova_senha: novaSenha }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      msgEl.className = 'login-error';
+      msgEl.textContent = data.erro || 'Erro ao redefinir senha.';
+      msgEl.classList.remove('hidden');
+      return;
+    }
     msgEl.className = 'forgot-success';
-    msgEl.textContent = '✓ Solicitação enviada! Um administrador aprovará em breve.';
+    msgEl.textContent = '✓ ' + data.mensagem;
     msgEl.classList.remove('hidden');
-    setTimeout(() => voltarLogin(), 3000);
+    setTimeout(() => voltarLogin(), 2500);
   } catch {
     toast('Erro de conexão', 'error');
   } finally {
     btnEl.disabled = false;
-    btnEl.textContent = 'Enviar solicitação';
+    btnEl.textContent = 'Redefinir senha';
   }
 }
 
@@ -4672,11 +4714,6 @@ function iniciarApp() {
   const unidades = GCA.unidades || [];
   badge.title = unidades.length > 1 ? 'Clique para trocar de unidade' : NOMES_UNIDADE[GCA.unidade] || GCA.unidade;
   badge.style.cursor = unidades.length > 1 ? 'pointer' : 'default';
-  // Mostra menu de recuperação de senha só para admin
-  if (u.role === 'admin') {
-    document.getElementById('menuRecuperacaoSenha').style.display = '';
-    verificarSolicitacoesSenhaPendentes();
-  }
   carregarArmazens();
   carregarItensAtendimento(); // popula _itens para uso em Laudos NR10 e outras telas
   carregarSaldosCache();      // popula _estoqueData para consistência NR10
@@ -4699,51 +4736,6 @@ function iniciarApp() {
     const v = window.location.hash.replace('#/', '').split('?')[0];
     if (v && document.getElementById('view-' + v)) showView(v);
   });
-}
-
-// ── RECUPERAÇÃO DE SENHA ──
-async function verificarSolicitacoesSenhaPendentes() {
-  try {
-    const data = await api('/auth/solicitacoes-senha');
-    if (!data) return;
-    const total = (data.solicitacoes||[]).length;
-    const badge = document.getElementById('badgeSenha');
-    if (total > 0) { badge.textContent = total; badge.style.display = ''; }
-    else badge.style.display = 'none';
-  } catch {}
-}
-
-async function carregarSolicitacoesSenha() {
-  const tbody = document.getElementById('senhaBody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="3"><div class="spinner"></div></td></tr>';
-  const data = await api('/auth/solicitacoes-senha');
-  if (!data) return;
-  const lista = data.solicitacoes || [];
-  if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><div class="es-icon">✓</div><div class="es-title">Nenhuma solicitação pendente</div></div></td></tr>`;
-    return;
-  }
-  tbody.innerHTML = lista.map(s => `
-    <tr>
-      <td class="td-main">${s.username}</td>
-      <td class="td-mono">${new Date(s.criado_em).toLocaleString('pt-BR')}</td>
-      <td style="display:flex;gap:6px;padding:8px 18px">
-        <button class="btn btn-primary" style="font-size:10px;padding:4px 10px" onclick="aprovarSenha('${s.id}',true)">✓ Aprovar</button>
-        <button class="btn btn-ghost" style="font-size:10px;padding:4px 10px;color:var(--red);border-color:var(--red)" onclick="aprovarSenha('${s.id}',false)">✕ Rejeitar</button>
-      </td>
-    </tr>`).join('');
-}
-
-async function aprovarSenha(id, aprovar) {
-  const data = await api('/auth/aprovar-senha', { method:'POST', body: JSON.stringify({ id, aprovar }) });
-  if (!data) return;
-  if (data.ok) {
-    toast(data.mensagem, 'success');
-    carregarSolicitacoesSenha();
-    verificarSolicitacoesSenhaPendentes();
-  } else {
-    toast(data.erro || 'Erro ao processar', 'error');
-  }
 }
 
 function fazerLogout() {
@@ -9343,7 +9335,7 @@ async function carregarUsuariosView() {
     const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
     return `<tr>
       <td class="td-main">${escHtml(u.nome||'—')}<div style="font-size:10px;color:var(--text-3)">${uniStr}</div></td>
-      <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
       <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
       <td style="display:flex;gap:4px">
@@ -9434,6 +9426,7 @@ async function salvarUsuario() {
   const body = {
     nome:     document.getElementById('usrNome').value.trim(),
     username: document.getElementById('usrUsername').value.trim(),
+    email:    document.getElementById('usrEmail').value.trim(),
     role:     document.getElementById('usrRole').value,
     base, unidades: unis, armazens,
   };
@@ -9476,6 +9469,7 @@ function editarUsuario(id) {
   document.getElementById('usrEditId').value   = id;
   document.getElementById('usrNome').value     = u.nome||'';
   document.getElementById('usrUsername').value = u.username||'';
+  document.getElementById('usrEmail').value    = u.email||'';
   document.getElementById('usrSenha').value    = '';
   document.getElementById('usrRole').value     = u.role||'almoxarife';
   if (document.getElementById('usrBase')) {
@@ -9492,7 +9486,7 @@ function editarUsuario(id) {
 }
 
 function limparFormUsuario() {
-  ['usrEditId','usrNome','usrUsername','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['usrEditId','usrNome','usrUsername','usrEmail','usrSenha'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
   document.getElementById('usrRole').value = 'almoxarife';
   if (document.getElementById('usrBase')) {
     document.getElementById('usrBase').value = GCA.unidade || '';
