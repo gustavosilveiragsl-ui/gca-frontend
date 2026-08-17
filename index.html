@@ -68,7 +68,7 @@ input,select,textarea{font-family:var(--font-main);}
 .forgot-link:hover{color:var(--accent-text);}
 
 /* ESQUECI SENHA */
-#forgotView,#forgotCodigoView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+#forgotView,#forgotCodigoView,#forgotSenhaView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
 .forgot-card{width:100%;max-width:380px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;animation:fadeUp .4s ease;}
 .forgot-back{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);cursor:pointer;margin-bottom:20px;}
 .forgot-back:hover{color:var(--accent-text);}
@@ -345,7 +345,7 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
-<!-- ESQUECI SENHA — PASSO 2: confirmar o código + nova senha -->
+<!-- ESQUECI SENHA — PASSO 2: confirmar o código -->
 <div id="forgotCodigoView" class="hidden">
   <div class="forgot-card">
     <div class="forgot-back" onclick="voltarLogin()">← Voltar ao login</div>
@@ -356,13 +356,29 @@ window.addEventListener('pageshow', function(e) {
       <label class="form-label">Código</label>
       <input id="forgotCodigo" class="form-input" type="text" inputmode="numeric" maxlength="6" placeholder="000000" style="letter-spacing:4px;font-size:18px;text-align:center">
     </div>
+    <button class="btn-login" onclick="confirmarCodigoRecuperacao()">Confirmar código</button>
+    <a class="forgot-link" onclick="solicitarRecuperacao(true)">Reenviar código</a>
+    <div id="forgotCodigoMsg" class="hidden"></div>
+  </div>
+</div>
+
+<!-- ESQUECI SENHA — PASSO 3: nova senha -->
+<div id="forgotSenhaView" class="hidden">
+  <div class="forgot-card">
+    <div class="forgot-back" onclick="voltarLogin()">← Voltar ao login</div>
+    <div class="login-logo"><img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA"></div>
+    <div class="login-title">Nova senha</div>
+    <div class="forgot-info">Código confirmado! Agora escolha sua nova senha.</div>
     <div class="form-group">
       <label class="form-label">Nova senha</label>
       <input id="forgotNovaSenha2" class="form-input" type="password" placeholder="••••••••">
     </div>
+    <div class="form-group">
+      <label class="form-label">Confirmar nova senha</label>
+      <input id="forgotConfirmaSenha" class="form-input" type="password" placeholder="••••••••">
+    </div>
     <button class="btn-login" onclick="confirmarRecuperacaoSenha()">Redefinir senha</button>
-    <a class="forgot-link" onclick="solicitarRecuperacao(true)">Reenviar código</a>
-    <div id="forgotCodigoMsg" class="hidden"></div>
+    <div id="forgotSenhaMsg" class="hidden"></div>
   </div>
 </div>
 
@@ -4232,8 +4248,8 @@ function atualizarIconeTema(tema) {
 
 // ── NAVEGAÇÃO DE TELAS ──
 function mostrarTela(nome) {
-  ['loginView','forgotView','forgotCodigoView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
-  const map = { login:'loginView', forgot:'forgotView', forgotCodigo:'forgotCodigoView', unidade:'unidadeView', app:'appView' };
+  ['loginView','forgotView','forgotCodigoView','forgotSenhaView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = { login:'loginView', forgot:'forgotView', forgotCodigo:'forgotCodigoView', forgotSenha:'forgotSenhaView', unidade:'unidadeView', app:'appView' };
   if (map[nome]) document.getElementById(map[nome]).classList.remove('hidden');
 }
 
@@ -4418,6 +4434,7 @@ function mostrarEsqueciSenha() { mostrarTela('forgot'); }
 function voltarLogin() { mostrarTela('login'); }
 
 let _forgotUsuarioAtual = '';
+let _forgotCodigoAtual  = '';
 
 async function solicitarRecuperacao(reenvio) {
   const usuario = reenvio ? _forgotUsuarioAtual : document.getElementById('forgotUser').value.trim();
@@ -4444,7 +4461,6 @@ async function solicitarRecuperacao(reenvio) {
       toast('Código reenviado, se a conta tiver e-mail cadastrado', 'success');
     } else {
       document.getElementById('forgotCodigo').value = '';
-      document.getElementById('forgotNovaSenha2').value = '';
       mostrarTela('forgotCodigo');
     }
   } catch {
@@ -4454,20 +4470,59 @@ async function solicitarRecuperacao(reenvio) {
   }
 }
 
-async function confirmarRecuperacaoSenha() {
-  const codigo    = document.getElementById('forgotCodigo').value.trim();
-  const novaSenha = document.getElementById('forgotNovaSenha2').value;
-  const msgEl     = document.getElementById('forgotCodigoMsg');
-  const btnEl     = document.querySelector('#forgotCodigoView .btn-login');
+async function confirmarCodigoRecuperacao() {
+  const codigo = document.getElementById('forgotCodigo').value.trim();
+  const msgEl  = document.getElementById('forgotCodigoMsg');
+  const btnEl  = document.querySelector('#forgotCodigoView .btn-login');
   msgEl.classList.add('hidden');
-  if (!codigo || !novaSenha) { toast('Preencha o código e a nova senha','error'); return; }
+  if (!codigo) { toast('Preencha o código','error'); return; }
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Confirmando...';
+  try {
+    const res  = await fetch(`${API}/auth/validar-codigo-recuperacao`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: _forgotUsuarioAtual, codigo }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      msgEl.className = 'login-error';
+      msgEl.textContent = data.erro || 'Código inválido.';
+      msgEl.classList.remove('hidden');
+      return;
+    }
+    _forgotCodigoAtual = codigo;
+    document.getElementById('forgotNovaSenha2').value  = '';
+    document.getElementById('forgotConfirmaSenha').value = '';
+    mostrarTela('forgotSenha');
+  } catch {
+    toast('Erro de conexão', 'error');
+  } finally {
+    btnEl.disabled = false;
+    btnEl.textContent = 'Confirmar código';
+  }
+}
+
+async function confirmarRecuperacaoSenha() {
+  const novaSenha     = document.getElementById('forgotNovaSenha2').value;
+  const confirmaSenha = document.getElementById('forgotConfirmaSenha').value;
+  const msgEl = document.getElementById('forgotSenhaMsg');
+  const btnEl = document.querySelector('#forgotSenhaView .btn-login');
+  msgEl.classList.add('hidden');
+  if (!novaSenha || !confirmaSenha) { toast('Preencha os dois campos de senha','error'); return; }
+  if (novaSenha !== confirmaSenha) {
+    msgEl.className = 'login-error';
+    msgEl.textContent = 'As senhas não são iguais.';
+    msgEl.classList.remove('hidden');
+    return;
+  }
   btnEl.disabled = true;
   btnEl.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Confirmando...';
   try {
     const res  = await fetch(`${API}/auth/confirmar-recuperacao`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: _forgotUsuarioAtual, codigo, nova_senha: novaSenha }),
+      body: JSON.stringify({ username: _forgotUsuarioAtual, codigo: _forgotCodigoAtual, nova_senha: novaSenha }),
     });
     const data = await res.json();
     if (!data.ok) {
