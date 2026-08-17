@@ -68,7 +68,7 @@ input,select,textarea{font-family:var(--font-main);}
 .forgot-link:hover{color:var(--accent-text);}
 
 /* ESQUECI SENHA */
-#forgotView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+#forgotView,#forgotCodigoView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
 .forgot-card{width:100%;max-width:380px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;animation:fadeUp .4s ease;}
 .forgot-back{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-3);cursor:pointer;margin-bottom:20px;}
 .forgot-back:hover{color:var(--accent-text);}
@@ -360,7 +360,7 @@ window.addEventListener('pageshow', function(e) {
       <label class="form-label">Nova senha</label>
       <input id="forgotNovaSenha2" class="form-input" type="password" placeholder="••••••••">
     </div>
-    <button class="btn-login" onclick="confirmarRecuperacao()">Redefinir senha</button>
+    <button class="btn-login" onclick="confirmarRecuperacaoSenha()">Redefinir senha</button>
     <a class="forgot-link" onclick="solicitarRecuperacao(true)">Reenviar código</a>
     <div id="forgotCodigoMsg" class="hidden"></div>
   </div>
@@ -4454,7 +4454,7 @@ async function solicitarRecuperacao(reenvio) {
   }
 }
 
-async function confirmarRecuperacao() {
+async function confirmarRecuperacaoSenha() {
   const codigo    = document.getElementById('forgotCodigo').value.trim();
   const novaSenha = document.getElementById('forgotNovaSenha2').value;
   const msgEl     = document.getElementById('forgotCodigoMsg');
