@@ -3856,7 +3856,7 @@ window.addEventListener('pageshow', function(e) {
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <div style="background:var(--yellow-soft);border:1px solid rgba(251,191,36,.2);border-radius:var(--radius-sm);padding:10px;font-size:11px;color:#f59e0b">
-        ⚠️ Use para corrigir o saldo de implantação. Sobrescreve o saldo calculado pelos atendimentos.
+        ⚠️ A quantidade aqui é <strong>somada</strong> ao que já está na ficha EPI do colaborador — use pra registrar unidades que ele tem mas que nunca passaram por um atendimento no sistema. Não substitui nem zera o que já está rastreado.
       </div>
       <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end">
         <div>
@@ -10958,7 +10958,7 @@ function renderAjusteItens() {
   lista.innerHTML = _ajusteItens.length ? _ajusteItens.map(a=>`
     <div style="display:flex;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
       <div style="flex:1;font-size:12px;color:var(--text-1)">${escHtml(a.nome_item||'—')}</div>
-      <div style="font-size:12px;font-weight:600;color:#f59e0b">Saldo: ${a.saldo_inicial}</div>
+      <div style="font-size:12px;font-weight:600;color:#f59e0b">+${a.saldo_inicial} (soma ao rastreado)</div>
       <button class="row-action" style="color:var(--red)" onclick="excluirAjuste('${a.item_id}')">✕</button>
     </div>`).join('') : '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:16px">Nenhum ajuste cadastrado</div>';
 }
