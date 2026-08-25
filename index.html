@@ -760,7 +760,7 @@ window.addEventListener('pageshow', function(e) {
   <div class="atend-tabs">
     <button class="atend-tab active" onclick="switchAtendTab('iniciar', this)">Iniciar Atendimento</button>
     <button class="atend-tab" onclick="switchAtendTab('mobilizar', this)">Mobilizar Colaborador</button>
-    <button class="atend-tab" onclick="switchAtendTab('consulta', this)">Consulta do Dia</button>
+    <button class="atend-tab" onclick="switchAtendTab('consulta', this)">Consulta de Atendimentos</button>
   </div>
 
   <!-- ── TAB: INICIAR ATENDIMENTO ── -->
@@ -6606,7 +6606,7 @@ function verDetalhesAtendimento(id) {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:560px">
+    <div class="modal-box" style="max-width:720px;width:100%">
       <div class="modal-header">
         <div>
           <div class="modal-title">${atend.nome_colaborador||'—'}</div>
@@ -6628,13 +6628,14 @@ function verDetalhesAtendimento(id) {
             <div style="font-size:14px;font-weight:600;color:var(--text-1)">${itens.length} ${itens.length===1?'item':'itens'}</div>
           </div>
         </div>
+        <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Qtd</th>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Motivo</th>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Serial(is) Saída</th>
-            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Serial(is) Retorno</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap">Item</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap">Qtd</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap">Motivo</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap">Serial(is) Saída</th>
+            <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap">Serial(is) Retorno</th>
           </tr></thead>
           <tbody>
             ${itens.map(i => {
@@ -6642,14 +6643,15 @@ function verDetalhesAtendimento(id) {
               const seriaisRetorno = (i.serialRetorno||[]).filter(Boolean);
               return `<tr>
               <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${escHtml(i.descricao||'—')}</td>
-              <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)">${i.quantidade} ${i.un_med||'UN'}</td>
-              <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border)"><span class="tag tag-gray">${escHtml(i.motivo||'—')}</span></td>
-              <td style="padding:8px;font-size:11px;color:#22c55e;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${seriaisSaida.join(', ')||'—'}</td>
-              <td style="padding:8px;font-size:11px;color:#a855f7;border-bottom:1px solid var(--border);font-family:var(--font-mono)">${seriaisRetorno.join(', ')||'—'}</td>
+              <td style="padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border);white-space:nowrap">${i.quantidade} ${i.un_med||'UN'}</td>
+              <td style="padding:8px;font-size:12px;border-bottom:1px solid var(--border);white-space:nowrap"><span class="tag tag-gray">${escHtml(i.motivo||'—')}</span></td>
+              <td style="padding:8px;font-size:11px;color:#22c55e;border-bottom:1px solid var(--border);font-family:var(--font-mono);word-break:break-word">${seriaisSaida.join(', ')||'—'}</td>
+              <td style="padding:8px;font-size:11px;color:#a855f7;border-bottom:1px solid var(--border);font-family:var(--font-mono);word-break:break-word">${seriaisRetorno.join(', ')||'—'}</td>
             </tr>`;
             }).join('')}
           </tbody>
         </table>
+        </div>
       </div>
       <div class="modal-footer">
         ${atend.status === 'PENDENTE' && atend.token ? `<button class="btn btn-ghost" onclick="copiarLink('https://app.gcasistema.com.br/#/assinar?token=${atend.token}')">📋 Copiar link</button>` : ''}
