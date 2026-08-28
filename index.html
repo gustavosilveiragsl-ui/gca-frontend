@@ -3166,26 +3166,59 @@ window.addEventListener('pageshow', function(e) {
       </div>
       <!-- ── RECUPERADOS ── -->
       <div class="view" id="view-recuperados">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">♻️ Materiais Aguardando Recuperação</div><div class="card-sub">Itens com status AGUARDANDO_LAUDO na gestão NR10</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" id="recupBusca" placeholder="Buscar item ou serial..."
-                oninput="renderRecuperados()" onkeydown="if(event.key==='Enter')buscarRecupSerial()">
-              <button class="btn btn-ghost" onclick="buscarRecupSerial()">🔍 Buscar Serial</button>
-              <button class="btn btn-ghost" onclick="carregarRecuperados()">↻</button>
+        <!-- Abas -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">
+          <button id="recupTabAguardando" onclick="recupAba('aguardando')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">⏳ Aguardando Laudo</button>
+          <button id="recupTabRemessas" onclick="recupAba('remessas')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📦 Remessas para Laudo</button>
+        </div>
+
+        <!-- Sub-aba: Aguardando Laudo -->
+        <div id="recupSecAguardando">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">♻️ Materiais Aguardando Recuperação</div><div class="card-sub">Itens com status AGUARDANDO_LAUDO na gestão NR10</div></div>
+              <div class="card-actions">
+                <input class="search-box" type="text" id="recupBusca" placeholder="Buscar item ou serial..."
+                  oninput="renderRecuperados()" onkeydown="if(event.key==='Enter')buscarRecupSerial()">
+                <button class="btn btn-ghost" onclick="buscarRecupSerial()">🔍 Buscar Serial</button>
+                <button class="btn btn-ghost" onclick="carregarRecuperados()">↻</button>
+              </div>
             </div>
+            <div id="recupBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(59,130,246,.08);border-bottom:1px solid var(--border)">
+              <span style="font-size:12px;color:var(--text-2)"><strong id="recupQtdSelecionados">0</strong> item(ns) selecionado(s)</span>
+              <button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="abrirModalNovaRemessa()">📦 Montar Remessa</button>
+              <button class="btn btn-ghost" style="font-size:11px" onclick="recupLimparSelecao()">Limpar seleção</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th style="width:30px"></th>
+                <th>Item</th>
+                <th style="text-align:center">Serial</th>
+                <th>Última Movimentação</th>
+                <th>Motivo</th>
+                <th></th>
+              </tr></thead>
+              <tbody id="recupBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            </table>
           </div>
-          <table>
-            <thead><tr>
-              <th>Item</th>
-              <th style="text-align:center">Serial</th>
-              <th>Última Movimentação</th>
-              <th>Motivo</th>
-              <th></th>
-            </tr></thead>
-            <tbody id="recupBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-          </table>
+        </div>
+
+        <!-- Sub-aba: Remessas para Laudo -->
+        <div id="recupSecRemessas" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">📦 Remessas para Laudo</div><div class="card-sub">Controle do que foi enviado à empresa de laudos elétricos e o que já retornou</div></div>
+              <div class="card-actions">
+                <label style="font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:6px">
+                  Alertar após
+                  <input class="form-input" type="number" min="1" id="remPrazoDias" style="width:60px;font-size:11px" onchange="salvarPrazoRemessa()">
+                  dias sem retorno
+                </label>
+                <button class="btn btn-ghost" onclick="carregarRemessas()">↻</button>
+              </div>
+            </div>
+            <div id="remessasBody" style="padding:16px;display:flex;flex-direction:column;gap:10px"><div class="spinner" style="margin:20px auto"></div></div>
+          </div>
         </div>
       </div>
       <!-- INDICADORES -->
@@ -3982,6 +4015,7 @@ window.addEventListener('pageshow', function(e) {
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <input type="hidden" id="recupIdAtivo">
       <input type="hidden" id="recupSerialAtual">
+      <input type="hidden" id="recupRemessaItemId">
 
       <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;background:var(--bg)">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SERIAL ATUAL</div>
@@ -4019,6 +4053,7 @@ window.addEventListener('pageshow', function(e) {
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <input type="hidden" id="reprovIdAtivo">
+      <input type="hidden" id="reprovRemessaItemId">
 
       <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;background:var(--bg)">
         <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">SERIAL</div>
@@ -4037,6 +4072,81 @@ window.addEventListener('pageshow', function(e) {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalReprovar').classList.add('hidden')">Cancelar</button>
       <button class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="confirmarReprovacao()">❌ Confirmar Reprovação</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL NOVA REMESSA PARA LAUDO -->
+<div class="modal-overlay hidden" id="modalNovaRemessa">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <div><div class="modal-title">📦 Nova Remessa para Laudo</div><div style="font-size:11px;color:var(--text-3)" id="remNovaQtdInfo"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalNovaRemessa').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;background:var(--bg);max-height:140px;overflow-y:auto">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:6px">ITENS SELECIONADOS</div>
+        <div id="remNovaItensLista" style="font-size:12px;color:var(--text-2);display:flex;flex-direction:column;gap:3px"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <div style="flex:1">
+          <label class="form-label">Data de envio *</label>
+          <input type="date" id="remNovaData" class="form-input">
+        </div>
+        <div style="flex:1">
+          <label class="form-label">Quem levou *</label>
+          <select id="remNovaColaborador" class="form-input"></select>
+        </div>
+      </div>
+      <div>
+        <label class="form-label">Empresa *</label>
+        <input id="remNovaEmpresa" class="form-input" placeholder="Nome da empresa que faz o laudo...">
+      </div>
+      <div>
+        <label class="form-label">Observação</label>
+        <input id="remNovaObservacao" class="form-input" placeholder="Opcional...">
+      </div>
+      <div>
+        <label class="form-label">Valor pago (R$) <span style="color:var(--text-3);font-weight:400;text-transform:none">(se já souber, senão preencha depois)</span></label>
+        <input type="number" step="0.01" min="0" id="remNovaValorPago" class="form-input" placeholder="Opcional...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalNovaRemessa').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarNovaRemessa()">📦 Criar Remessa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DETALHE DA REMESSA -->
+<div class="modal-overlay hidden" id="modalDetalheRemessa">
+  <div class="modal-box" style="max-width:640px;width:100%">
+    <div class="modal-header">
+      <div><div class="modal-title">📦 Detalhe da Remessa</div><div style="font-size:11px;color:var(--text-3)" id="remDetInfo"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label class="form-label">Valor pago (R$)</label>
+          <input type="number" step="0.01" min="0" id="remDetValorPago" class="form-input">
+        </div>
+        <div style="flex:2;min-width:200px">
+          <label class="form-label">Observação</label>
+          <input id="remDetObservacao" class="form-input">
+        </div>
+        <div style="align-self:flex-end">
+          <button class="btn btn-ghost" style="font-size:11px" onclick="salvarEdicaoRemessa()">💾 Salvar</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th>Item</th><th style="text-align:center">Serial</th><th>Status</th><th>Retorno</th><th></th>
+          </tr></thead>
+          <tbody id="remDetItensBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -13560,10 +13670,14 @@ async function carregarHistoricoDespachos() {
 // ═══════════════════════════════════════════
 let _recupData = [];
 
+let _recupSelecionados = new Set(); // id_ativo dos itens marcados pra entrar numa remessa (só itens com serial)
+
 async function carregarRecuperados() {
   const tbody = document.getElementById('recupBody');
   if (!tbody) return;
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  _recupSelecionados.clear();
+  recupAtualizarBarraSelecao();
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
   const data = await api('/laudos/recuperados');
   _recupData = data?.data || [];
   renderRecuperados();
@@ -13573,7 +13687,7 @@ async function buscarRecupSerial() {
   const q = document.getElementById('recupBusca').value.trim();
   if (!q) { carregarRecuperados(); return; }
   const tbody = document.getElementById('recupBody');
-  tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
   const data = await api(`/laudos/recuperados?busca=${encodeURIComponent(q)}`);
   _recupData = data?.data || [];
   renderRecuperados();
@@ -13591,6 +13705,7 @@ function renderRecuperados() {
   tbody.innerHTML = lista.length ? lista.map(r => {
     const semSerial = r.tipo === 'sem_serial';
     return `<tr>
+    <td style="text-align:center">${semSerial ? '' : `<input type="checkbox" ${_recupSelecionados.has(r.id_ativo)?'checked':''} onchange="recupToggleSelecao('${r.id_ativo}',this.checked)">`}</td>
     <td class="td-main">${r.item||'—'}${semSerial ? ` <span style="font-size:9px;color:var(--text-3)">(${r.quantidade||1}x, sem serial)</span>` : ''}</td>
     <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(r.serial||'—')}</td>
     <td style="font-size:11px;color:var(--text-3)">${r.dt_ult_mov_raw ? r.dt_ult_mov_raw.replace('T',' ').slice(0,16) : '—'}</td>
@@ -13618,11 +13733,41 @@ function renderRecuperados() {
     </td>
   </tr>`;
   }).join('')
-  : `<tr><td colspan="5"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum item aguardando recuperação</div></div></td></tr>`;
+  : `<tr><td colspan="6"><div class="empty-state" style="padding:20px"><div class="es-icon">✅</div><div class="es-title">Nenhum item aguardando recuperação</div></div></td></tr>`;
+}
+
+// ── Abas Recuperados: Aguardando Laudo / Remessas para Laudo ──
+function recupAba(nome) {
+  document.getElementById('recupSecAguardando').style.display = nome === 'aguardando' ? '' : 'none';
+  document.getElementById('recupSecRemessas').style.display   = nome === 'remessas' ? '' : 'none';
+  document.getElementById('recupTabAguardando').style.color = nome === 'aguardando' ? 'var(--accent-text)' : 'var(--text-3)';
+  document.getElementById('recupTabAguardando').style.borderBottomColor = nome === 'aguardando' ? 'var(--accent)' : 'transparent';
+  document.getElementById('recupTabRemessas').style.color = nome === 'remessas' ? 'var(--accent-text)' : 'var(--text-3)';
+  document.getElementById('recupTabRemessas').style.borderBottomColor = nome === 'remessas' ? 'var(--accent)' : 'transparent';
+  if (nome === 'remessas') carregarRemessas();
+}
+
+function recupToggleSelecao(idAtivo, marcado) {
+  if (marcado) _recupSelecionados.add(idAtivo); else _recupSelecionados.delete(idAtivo);
+  recupAtualizarBarraSelecao();
+}
+
+function recupLimparSelecao() {
+  _recupSelecionados.clear();
+  recupAtualizarBarraSelecao();
+  renderRecuperados();
+}
+
+function recupAtualizarBarraSelecao() {
+  const barra = document.getElementById('recupBarraSelecao');
+  const qtd   = _recupSelecionados.size;
+  document.getElementById('recupQtdSelecionados').textContent = qtd;
+  barra.classList.toggle('hidden', qtd === 0);
 }
 
 function abrirModalRecuperarSemSerial(id, item, origemArmazemId) {
   document.getElementById('recupIdAtivo').value         = id;
+  document.getElementById('recupRemessaItemId').value   = '';
   document.getElementById('recupSerialAtual').value     = '';
   document.getElementById('recupSerialAtualDisplay').textContent = '(item sem serial)';
   document.getElementById('recupSerialNovo').value      = '';
@@ -13652,8 +13797,9 @@ async function confirmarInutilizarSemSerial(id, item) {
   } else toast(res?.erro || 'Erro ao inutilizar', 'error');
 }
 
-function abrirModalRecuperar(idAtivo, serial, item) {
+function abrirModalRecuperar(idAtivo, serial, item, remessaItemId) {
   document.getElementById('recupIdAtivo').value         = idAtivo;
+  document.getElementById('recupRemessaItemId').value   = remessaItemId || '';
   document.getElementById('recupSerialAtual').value     = serial;
   document.getElementById('recupSerialAtualDisplay').textContent = serial;
   document.getElementById('recupSerialNovo').value      = '';
@@ -13695,10 +13841,11 @@ async function confirmarRecuperacao() {
   }
 
   const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
+  const remessaItemId = document.getElementById('recupRemessaItemId').value || null;
 
   const res = await api('/laudos/recuperados/recuperar', {
     method: 'POST',
-    body: JSON.stringify({ id_ativo: idAtivo, serial_novo: serialNovo||null, armazem_id: armazemId })
+    body: JSON.stringify({ id_ativo: idAtivo, serial_novo: serialNovo||null, armazem_id: armazemId, remessa_item_id: remessaItemId })
   });
 
   if (res?.ok) {
@@ -13707,11 +13854,14 @@ async function confirmarRecuperacao() {
     carregarRecuperados();
     // Atualiza laudos NR10 se estiver carregado
     if (__LAUDOS_NR10__?.lista?.length) laudosCarregar_();
+    // Se veio de dentro de uma remessa, reabre o detalhe já atualizado
+    if (remessaItemId && _remDetalheAbertaId) reabrirDetalheRemessaAtualizado();
   } else toast(res?.erro||'Erro ao recuperar','error');
 }
 
-function abrirModalReprovar(idAtivo, serial, item) {
+function abrirModalReprovar(idAtivo, serial, item, remessaItemId) {
   document.getElementById('reprovIdAtivo').value      = idAtivo;
+  document.getElementById('reprovRemessaItemId').value = remessaItemId || '';
   document.getElementById('reprovSerialDisplay').textContent = serial;
   document.getElementById('reprovItemInfo').textContent      = item;
   document.getElementById('reprovMotivo').value       = '';
@@ -13721,10 +13871,11 @@ function abrirModalReprovar(idAtivo, serial, item) {
 async function confirmarReprovacao() {
   const idAtivo = document.getElementById('reprovIdAtivo').value;
   const motivo  = document.getElementById('reprovMotivo').value.trim();
+  const remessaItemId = document.getElementById('reprovRemessaItemId').value || null;
 
   const res = await api('/laudos/recuperados/reprovar', {
     method: 'POST',
-    body: JSON.stringify({ id_ativo: idAtivo, motivo: motivo||null })
+    body: JSON.stringify({ id_ativo: idAtivo, motivo: motivo||null, remessa_item_id: remessaItemId })
   });
 
   if (res?.ok) {
@@ -13733,7 +13884,171 @@ async function confirmarReprovacao() {
     carregarRecuperados();
     // Atualiza laudos NR10 se estiver carregado
     if (__LAUDOS_NR10__?.lista?.length) laudosCarregar_();
+    if (remessaItemId && _remDetalheAbertaId) reabrirDetalheRemessaAtualizado();
   } else toast(res?.erro||'Erro ao reprovar','error');
+}
+
+// ═══════════════════════════════════════════
+// REMESSAS PARA LAUDO
+// ═══════════════════════════════════════════
+let _remessasData = [];
+let _remPrazoDias = 30;
+let _remDetalheAbertaId = null;
+
+async function carregarRemessas() {
+  const box = document.getElementById('remessasBody');
+  box.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  const data = await api('/laudos/remessas');
+  _remessasData = data?.data || [];
+  _remPrazoDias = data?.prazo_dias || 30;
+  const prazoInput = document.getElementById('remPrazoDias');
+  if (prazoInput) prazoInput.value = _remPrazoDias;
+  renderRemessas();
+}
+
+function remStatusBadge(status) {
+  const map = { ENVIADA: ['#3b82f6','Enviada'], PARCIAL: ['#eab308','Parcial'], CONCLUIDA: ['#22c55e','Concluída'] };
+  const [cor, label] = map[status] || ['#888', status];
+  return `<span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:2px 10px;white-space:nowrap">${label}</span>`;
+}
+
+function renderRemessas() {
+  const box = document.getElementById('remessasBody');
+  if (!_remessasData.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-icon">📦</div><div class="es-title">Nenhuma remessa registrada ainda</div></div>`;
+    return;
+  }
+  box.innerHTML = _remessasData.map(r => `
+    <div onclick="abrirDetalheRemessa('${r.id}')" style="cursor:pointer;border:1px solid ${r.atrasada?'#ef4444':'var(--border)'};${r.atrasada?'background:rgba(239,68,68,.05);':''}border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;font-weight:700;color:var(--text-1)">${escHtml(r.empresa)}</div>
+        <div style="font-size:11px;color:var(--text-3)">Levou: ${escHtml(r.nome_colaborador||'—')} · Enviado em ${formatarData(r.data_envio)}${r.atrasada?` · <span style="color:#ef4444;font-weight:700">${r.dias_desde_envio}d sem retorno completo</span>`:''}</div>
+      </div>
+      <div style="font-size:11px;color:var(--text-2)">${r.itens.length} item(ns) · ${r.itens.length - r.pendentes} resolvido(s)</div>
+      ${r.valor_pago != null ? `<div style="font-size:12px;font-weight:700;color:var(--text-1)">R$ ${Number(r.valor_pago).toFixed(2)}</div>` : ''}
+      ${remStatusBadge(r.status)}
+    </div>`).join('');
+}
+
+async function salvarPrazoRemessa() {
+  const valor = document.getElementById('remPrazoDias').value;
+  if (!valor || Number(valor) <= 0) return;
+  await api('/laudos/config-emails', { method: 'POST', body: JSON.stringify({ chave: 'remessa_prazo_dias', valor }) });
+  toast('Prazo de alerta atualizado!', 'success');
+  carregarRemessas();
+}
+
+function recupItensSelecionadosComoLista() {
+  return _recupData.filter(r => r.tipo === 'serial' && _recupSelecionados.has(r.id_ativo));
+}
+
+async function abrirModalNovaRemessa() {
+  const selecionados = recupItensSelecionadosComoLista();
+  if (!selecionados.length) { toast('Selecione ao menos um item com serial','warn'); return; }
+  if (!_colaboradores.length) await carregarColaboradoresAtendimento();
+  if (!_remessasData.length) await carregarRemessas();
+
+  document.getElementById('remNovaQtdInfo').textContent = `${selecionados.length} item(ns) selecionado(s)`;
+  document.getElementById('remNovaItensLista').innerHTML = selecionados.map(r =>
+    `<div>• ${escHtml(r.item||'—')} <span style="font-family:var(--font-mono);color:var(--accent-text)">${escHtml(r.serial||'')}</span></div>`
+  ).join('');
+
+  document.getElementById('remNovaData').value = new Date().toISOString().split('T')[0];
+
+  // Empresa: pré-preenche com a última usada (só existe uma empresa na prática)
+  const ultimaEmpresa = _remessasData[0]?.empresa || '';
+  document.getElementById('remNovaEmpresa').value = ultimaEmpresa;
+  document.getElementById('remNovaObservacao').value = '';
+  document.getElementById('remNovaValorPago').value = '';
+
+  const selColab = document.getElementById('remNovaColaborador');
+  selColab.innerHTML = '<option value="">Selecione...</option>' +
+    _colaboradores.map(c => `<option value="${c.id}">${escHtml(c.nome)}</option>`).join('');
+
+  document.getElementById('modalNovaRemessa').classList.remove('hidden');
+}
+
+async function confirmarNovaRemessa() {
+  const selecionados = recupItensSelecionadosComoLista();
+  const data_envio = document.getElementById('remNovaData').value;
+  const colaborador_id = document.getElementById('remNovaColaborador').value;
+  const empresa = document.getElementById('remNovaEmpresa').value.trim();
+  const observacao = document.getElementById('remNovaObservacao').value.trim();
+  const valor_pago = document.getElementById('remNovaValorPago').value;
+
+  if (!data_envio || !colaborador_id || !empresa) { toast('Preencha data, empresa e quem levou','warn'); return; }
+  if (!selecionados.length) { toast('Nenhum item selecionado','warn'); return; }
+
+  const res = await api('/laudos/remessas', {
+    method: 'POST',
+    body: JSON.stringify({
+      data_envio, empresa, colaborador_id, observacao: observacao || null,
+      valor_pago: valor_pago || null,
+      itens: selecionados.map(r => ({ id_ativo: r.id_ativo })),
+    }),
+  });
+
+  if (res?.ok) {
+    toast('Remessa criada!','success');
+    document.getElementById('modalNovaRemessa').classList.add('hidden');
+    _recupSelecionados.clear();
+    carregarRecuperados();
+    carregarRemessas();
+  } else toast(res?.erro || 'Erro ao criar remessa','error');
+}
+
+function abrirDetalheRemessa(id) {
+  const r = _remessasData.find(x => x.id === id);
+  if (!r) return;
+  _remDetalheAbertaId = id;
+  document.getElementById('remDetInfo').textContent = `${r.empresa} · Enviado em ${formatarData(r.data_envio)} por ${r.nome_colaborador||'—'}`;
+  document.getElementById('remDetValorPago').value = r.valor_pago != null ? r.valor_pago : '';
+  document.getElementById('remDetObservacao').value = r.observacao || '';
+
+  const statusMap = { PENDENTE: ['#eab308','Pendente'], APROVADO: ['#22c55e','Aprovado'], REPROVADO: ['#ef4444','Reprovado'] };
+  document.getElementById('remDetItensBody').innerHTML = r.itens.map(it => {
+    const [cor, label] = statusMap[it.status] || ['#888', it.status];
+    return `<tr>
+      <td class="td-main">${escHtml(it.item||'—')}</td>
+      <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(it.serial||'—')}</td>
+      <td><span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:2px 8px">${label}</span></td>
+      <td style="font-size:11px;color:var(--text-3)">${it.data_retorno ? formatarData(it.data_retorno) : '—'}</td>
+      <td>
+        ${it.status === 'PENDENTE' ? `
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost" style="font-size:10px;color:#22c55e;border-color:#22c55e;padding:4px 8px"
+            onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden');abrirModalRecuperar('${it.id_ativo}','${escJs((it.serial||'').replace(/'/g,"\\'"))}','${(it.item||'').replace(/'/g,"\\'")}','${it.id}')">✅ Aprovar</button>
+          <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 8px"
+            onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden');abrirModalReprovar('${it.id_ativo}','${escJs((it.serial||'').replace(/'/g,"\\'"))}','${(it.item||'').replace(/'/g,"\\'")}','${it.id}')">❌ Reprovar</button>
+        </div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modalDetalheRemessa').classList.remove('hidden');
+}
+
+async function reabrirDetalheRemessaAtualizado() {
+  const id = _remDetalheAbertaId;
+  const data = await api('/laudos/remessas');
+  _remessasData = data?.data || [];
+  renderRemessas();
+  abrirDetalheRemessa(id);
+}
+
+async function salvarEdicaoRemessa() {
+  if (!_remDetalheAbertaId) return;
+  const valor_pago = document.getElementById('remDetValorPago').value;
+  const observacao = document.getElementById('remDetObservacao').value.trim();
+
+  const res = await api(`/laudos/remessas/${_remDetalheAbertaId}`, {
+    method: 'PUT',
+    body: JSON.stringify({ valor_pago: valor_pago || null, observacao: observacao || null }),
+  });
+  if (res?.ok) {
+    toast('Remessa atualizada!','success');
+    carregarRemessas();
+  } else toast(res?.erro || 'Erro ao salvar','error');
 }
 
 // ═══════════════════════════════════════════
