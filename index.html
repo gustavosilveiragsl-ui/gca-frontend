@@ -5636,9 +5636,11 @@ async function selecionarColabAtend(id) {
   // Garante assinaturas carregadas
   await carregarAssinaturasSilencioso();
 
-  // Verifica pendência de assinatura no cache local primeiro
+  // Verifica pendência de assinatura no cache local primeiro — "Expirado" conta igual a
+  // "Pendente" aqui: o link venceu, mas o colaborador nunca assinou, então a pendência
+  // continua real (só não aparece mais como PENDENTE na tela de Assinaturas).
   const pendLocal = (_assinaturas || []).find(a =>
-    a.colaboradorId === id && a.statusCalc === 'PENDENTE'
+    a.colaboradorId === id && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO')
   );
 
   if (pendLocal) {
@@ -7421,7 +7423,7 @@ function renderSolicitacoes() {
     // Tags de alerta
     const temTroca     = itens.some(i => i.trocaTamanho);
     const temForaPrazo = itens.some(i => i.diasDecorridos != null && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
-    const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && a.statusCalc === 'PENDENTE');
+    const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
     const tags = [
       temTroca     ? '<span style="color:#a855f7;font-size:10px;font-weight:600">👕 Troca tamanho</span>' : '',
       temForaPrazo ? '<span style="color:#f59e0b;font-size:10px;font-weight:600">⚠️ Fora do prazo</span>' : '',
@@ -7609,7 +7611,7 @@ async function abrirModalSolicitacao(id) {
 
   // Verifica assinatura pendente do colaborador
   const colabIdSol = s.colaborador_id || s.colaboradorId;
-  const assPendMod = colabIdSol && (_assinaturas||[]).find(a => a.colaboradorId === colabIdSol && a.statusCalc === 'PENDENTE');
+  const assPendMod = colabIdSol && (_assinaturas||[]).find(a => a.colaboradorId === colabIdSol && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
 
   // Único ponto manual: ATENDIDO → AGUARDANDO TRANSPORTE ou EM TRANSITO
   let statusOpts = '';
@@ -7833,10 +7835,12 @@ async function atenderSolicitacao(id, btnEl) {
 
   _atendendoSolicitacaoEmAndamento = true;
   try {
-    // ── Verifica assinatura pendente ANTES de navegar ──
+    // ── Verifica assinatura pendente ANTES de navegar ── "Expirado" bloqueia igual a
+    // "Pendente" — o link vencido não significa que o colaborador assinou, só que não dá
+    // mais pra assinar por aquele link (precisa regerar/cancelar na tela de Assinaturas).
     await carregarAssinaturasSilencioso();
     const assPendente = (_assinaturas||[]).find(a =>
-      a.colaboradorId === colabId && a.statusCalc === 'PENDENTE'
+      a.colaboradorId === colabId && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO')
     );
     if (assPendente) {
       toast(`⚠️ ${escHtml(s.colaborador_nome)} possui assinatura pendente. Resolva antes de iniciar o atendimento.`, 'error', 6000);
