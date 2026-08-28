@@ -460,6 +460,17 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- Logística -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Logística</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="logistica" data-perm="logistica_gerenciar_viagens" onclick="showView('logistica',this)"><span class="ni-icon">🚚</span> Logística</button>
+        </div>
+      </div>
+
       <!-- Financeiro -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
@@ -866,6 +877,16 @@ window.addEventListener('pageshow', function(e) {
               <div class="resumo-row"><span class="resumo-label">Data</span><span class="resumo-val" id="resumoData">—</span></div>
               <div class="resumo-row"><span class="resumo-label">Itens</span><span class="resumo-val" id="resumoItens">0</span></div>
               <div class="resumo-row"><span class="resumo-label">Tempo</span><span class="resumo-val" id="resumoTempo">00:00:00</span></div>
+              <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px;display:flex;flex-direction:column;gap:8px">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+                  <input type="checkbox" id="atendNecessitaLogistica" onchange="toggleDestinoLogistica()" style="width:16px;height:16px;cursor:pointer">
+                  <span style="font-size:12px;color:var(--text-1)">🚚 Necessita logística</span>
+                </label>
+                <div id="atendDestinoLogisticaBox" class="hidden">
+                  <label class="form-label">Destino de entrega</label>
+                  <input id="atendDestinoLogistica" class="form-input" placeholder="Ex: Sede Rio das Ostras" style="font-size:12px">
+                </div>
+              </div>
               <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
                 <div id="atendMsgResumo" style="font-size:11px;color:var(--text-3);text-align:center">Aguardando colaborador...</div>
               </div>
@@ -3465,6 +3486,11 @@ window.addEventListener('pageshow', function(e) {
                 <label for="lsPodeInventario" class="form-label" style="margin:0">📋 Pode contar inventário</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Além de pedir material, essa pessoa também poderá acessar o link de contagem de inventário nos armazéns permitidos acima.</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsPodeLogistica" style="accent-color:var(--primary)">
+                <label for="lsPodeLogistica" class="form-label" style="margin:0">🚚 Pode transportar (logística)</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Libera acesso à tela do transportador (coleta, transferência e entrega de material em trânsito).</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -3543,6 +3569,39 @@ window.addEventListener('pageshow', function(e) {
               </table>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── LOGÍSTICA ── -->
+      <div class="view" id="view-logistica">
+        <div class="view-header"><div class="view-title">🚚 Logística</div><div class="view-sub">Atendimentos que precisam viajar até o colaborador — coleta, trânsito e entrega por destino</div></div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">
+            <div><div class="card-title">📦 Aguardando Transporte</div><div class="card-sub">Marcados como "Necessita logística" no atendimento</div></div>
+            <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
+          </div>
+          <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(59,130,246,.08);border-bottom:1px solid var(--border);flex-wrap:wrap">
+            <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
+            <select id="logTransportadorSelect" class="form-input" style="width:220px;font-size:11px"><option value="">Selecione o transportador...</option></select>
+            <button class="btn btn-primary" style="font-size:11px" onclick="criarViagemLogistica()">🚚 Criar Viagem</button>
+            <button class="btn btn-ghost" style="font-size:11px" onclick="logLimparSelecao()">Limpar seleção</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th style="width:30px"></th>
+              <th>Colaborador</th><th>Destino</th><th>Itens</th><th>Data</th>
+            </tr></thead>
+            <tbody id="logPendentesBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Viagens</div><div class="card-sub">Histórico de coletas e entregas</div></div>
+            <button class="btn btn-ghost" onclick="carregarLogisticaViagens()">↻</button>
+          </div>
+          <div id="logViagensBody" style="padding:16px;display:flex;flex-direction:column;gap:12px"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
       </div>
 
@@ -4466,6 +4525,7 @@ const VIEW_TITLES = {
   transferencia:['Transferência','/ Entre armazéns'], estoque:['Estoque','/ Consulta'],
   movimentacoes:['Movimentações','/ Histórico'], descontos:['Descontos','/ Materiais'],
   inventario:['Inventário','/ Rotativo Mensal'],
+  logistica:['Logística','/ Coleta e Entrega'],
   'solicitacoes-compra':['Solicitações de Compra',''], protheus:['Protheus','/ Lançamentos'],
   'atendimento-enel':['ENEL','/ Atendimento'], 'devolucao-enel':['ENEL','/ Devolução'],
   medidores:['ENEL','/ Medidores'], 'estoque-enel':['ENEL','/ Estoque'],
@@ -4556,6 +4616,7 @@ function onViewLoad(nome) {
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
+  if (nome === 'logistica')          { carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
@@ -5667,7 +5728,15 @@ function resetarAtendimento() {
   document.getElementById('atendEstadoInicial').classList.remove('hidden');
   document.getElementById('atendEmAndamento').classList.add('hidden');
   document.getElementById('atendColabBusca').value = '';
+  document.getElementById('atendNecessitaLogistica').checked = false;
+  document.getElementById('atendDestinoLogistica').value = '';
+  document.getElementById('atendDestinoLogisticaBox').classList.add('hidden');
   renderItensAtendimento();
+}
+
+function toggleDestinoLogistica() {
+  const marcado = document.getElementById('atendNecessitaLogistica').checked;
+  document.getElementById('atendDestinoLogisticaBox').classList.toggle('hidden', !marcado);
 }
 
 // ═══════════════════════════════════════════
@@ -6395,6 +6464,11 @@ function validarSerial(inputEl, itemIdx, serialIdx) {
 async function concluirAtendimento() {
   if (!ATEND.colab || !ATEND.itens.length) return;
 
+  if (document.getElementById('atendNecessitaLogistica').checked && !document.getElementById('atendDestinoLogistica').value.trim()) {
+    toast('Informe o destino de entrega (logística está marcada)', 'warn');
+    return;
+  }
+
   // Valida seriais obrigatórios
   for (const it of ATEND.itens) {
     if (!it.requerEnsaio) continue;
@@ -6449,6 +6523,8 @@ async function concluirAtendimento() {
     usuarioNome:      GCA.usuario?.nome || 'Sistema',
     criadoEm:         agora.toISOString(),
     solicitacaoId:    ATEND.solicitacaoId || null,
+    necessitaLogistica: document.getElementById('atendNecessitaLogistica').checked,
+    destinoEntrega:   document.getElementById('atendDestinoLogistica').value.trim(),
   };
 
   const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
@@ -7711,18 +7787,12 @@ async function abrirModalSolicitacao(id) {
   const colabIdSol = s.colaborador_id || s.colaboradorId;
   const assPendMod = colabIdSol && (_assinaturas||[]).find(a => a.colaboradorId === colabIdSol && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
 
-  // Único ponto manual: ATENDIDO → AGUARDANDO TRANSPORTE ou EM TRANSITO
+  // Ponto manual de "AGUARDANDO TRANSPORTE"/"EM TRANSITO" foi substituído pelo módulo de
+  // Logística (aba 🚚 Logística) — o transporte agora é rastreado ali (coleta/transferência/
+  // entrega por destino), sem precisar mudar manualmente o status da solicitação. Os status
+  // antigos abaixo continuam sendo exibidos normalmente (label/badge/filtro) só pra não sumir
+  // com o histórico de solicitações que já passaram por eles antes desta mudança.
   let statusOpts = '';
-  if (!temPermissao('alterar_status_sol')) {
-    // sem a permissão, nem mostra as opções de mudança manual de status
-  } else if (s.status === 'ATENDIDO') {
-    statusOpts = `<option value="">Mover para transporte...</option>
-      <option value="AGUARDANDO TRANSPORTE">🚛 Aguardando Transporte</option>
-      <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
-  } else if (s.status === 'AGUARDANDO TRANSPORTE') {
-    statusOpts = `<option value="">Próximo passo...</option>
-      <option value="EM TRANSITO">🚚 Em Trânsito</option>`;
-  }
 
   const alertaAss = assPendMod ? `
     <div style="width:100%;background:var(--red-soft);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px;margin-bottom:4px">
@@ -9371,7 +9441,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário">📋</span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário">📋</span>' : ''}${u.pode_logistica ? ' <span title="Pode transportar (logística)">🚚</span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '✅ Ativo' : '⛔ Inativo'}</span></td>
@@ -9429,6 +9499,7 @@ async function salvarLS() {
   const senha  = document.getElementById('lsSenha').value.trim();
   const ativo  = document.getElementById('lsAtivo').checked;
   const podeInventario = document.getElementById('lsPodeInventario').checked;
+  const podeLogistica  = document.getElementById('lsPodeLogistica').checked;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -9439,13 +9510,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_logistica: podeLogistica };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_logistica: podeLogistica }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -9461,6 +9532,7 @@ function editarLS(id) {
   document.getElementById('lsSenha').value     = ''; // nunca pré-preenche — deixe em branco pra manter a senha atual
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
+  document.getElementById('lsPodeLogistica').checked = !!u.pode_logistica;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -9489,6 +9561,7 @@ function limparLS() {
   document.getElementById('lsSenha').value    = '';
   document.getElementById('lsAtivo').checked  = true;
   document.getElementById('lsPodeInventario').checked = false;
+  document.getElementById('lsPodeLogistica').checked = false;
   carregarArmazensLS();
 }
 
@@ -9630,6 +9703,119 @@ async function verPdfInventario(id) {
     const blob = await r.blob();
     window.open(URL.createObjectURL(blob), '_blank');
   } catch { toast('Erro ao gerar PDF', 'error'); }
+}
+
+// ═══════════════════════════════════════════
+// LOGÍSTICA — COLETA / TRÂNSITO / ENTREGA
+// ═══════════════════════════════════════════
+let _logPendentesData = [];
+let _logSelecionados  = new Set();
+let _logViagensData   = [];
+
+async function carregarLogisticaPendentes() {
+  const tbody = document.getElementById('logPendentesBody');
+  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+
+  const sel = document.getElementById('logTransportadorSelect');
+  if (sel && _colaboradores.length) {
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">Selecione o transportador...</option>' +
+      _colaboradores.map(c => `<option value="${c.id}">${escHtml(c.nome)}</option>`).join('');
+    if (atual) sel.value = atual;
+  }
+
+  const res = await api('/logistica/pendentes');
+  _logPendentesData = res?.data || [];
+  _logSelecionados.clear();
+  logAtualizarBarraSelecao();
+  if (!tbody) return;
+
+  if (!_logPendentesData.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum atendimento aguardando transporte</div></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = _logPendentesData.map(a => `
+    <tr>
+      <td><input type="checkbox" onchange="logToggleSelecao('${a.id}',this.checked)"></td>
+      <td class="td-main">${escHtml(a.nome_colaborador||'—')}</td>
+      <td style="font-size:12px">${escHtml(a.destino_entrega||'—')}</td>
+      <td style="text-align:center;font-size:12px">${a.qtd_itens ?? '—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</td>
+    </tr>`).join('');
+}
+
+function logToggleSelecao(id, marcado) {
+  if (marcado) _logSelecionados.add(id); else _logSelecionados.delete(id);
+  logAtualizarBarraSelecao();
+}
+
+function logAtualizarBarraSelecao() {
+  const barra = document.getElementById('logBarraSelecao');
+  const qtd = document.getElementById('logQtdSelecionados');
+  if (qtd) qtd.textContent = _logSelecionados.size;
+  if (barra) barra.classList.toggle('hidden', _logSelecionados.size === 0);
+}
+
+function logLimparSelecao() {
+  _logSelecionados.clear();
+  document.querySelectorAll('#logPendentesBody input[type=checkbox]').forEach(cb => cb.checked = false);
+  logAtualizarBarraSelecao();
+}
+
+async function criarViagemLogistica() {
+  const transportadorId = document.getElementById('logTransportadorSelect').value;
+  if (!transportadorId) { toast('Selecione o transportador', 'warn'); return; }
+  if (!_logSelecionados.size) { toast('Selecione ao menos um atendimento', 'warn'); return; }
+
+  const res = await api('/logistica/viagens', { method: 'POST', body: JSON.stringify({ atendimento_ids: Array.from(_logSelecionados), transportador_id: transportadorId }) });
+  if (res?.ok) {
+    toast(`Viagem criada! ${res.grupos_criados} grupo(s) por destino.`, 'success');
+    logLimparSelecao();
+    carregarLogisticaPendentes();
+    carregarLogisticaViagens();
+  } else toast(res?.erro || 'Erro ao criar viagem', 'error');
+}
+
+async function carregarLogisticaViagens() {
+  const box = document.getElementById('logViagensBody');
+  if (box) box.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+
+  const res = await api('/logistica/viagens');
+  _logViagensData = res?.data || [];
+  if (!box) return;
+
+  if (!_logViagensData.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem criada ainda</div></div>`;
+    return;
+  }
+
+  const statusBadge = (s) => {
+    if (s === 'ENTREGUE') return `<span style="font-size:10px;font-weight:700;color:#22c55e;border:1px solid #22c55e;border-radius:999px;padding:2px 10px">Entregue</span>`;
+    if (s === 'EM_TRANSITO') return `<span style="font-size:10px;font-weight:700;color:#3b82f6;border:1px solid #3b82f6;border-radius:999px;padding:2px 10px">Em trânsito</span>`;
+    return `<span style="font-size:10px;font-weight:700;color:#f59e0b;border:1px solid #f59e0b;border-radius:999px;padding:2px 10px">Aguardando coleta</span>`;
+  };
+  const viagemBadge = (s) => s === 'CONCLUIDA'
+    ? `<span style="font-size:10px;font-weight:700;color:#22c55e;border:1px solid #22c55e;border-radius:999px;padding:2px 10px">Concluída</span>`
+    : `<span style="font-size:10px;font-weight:700;color:#3b82f6;border:1px solid #3b82f6;border-radius:999px;padding:2px 10px">Em andamento</span>`;
+
+  box.innerHTML = _logViagensData.map(v => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
+        ${viagemBadge(v.status)}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${(v.grupos||[]).map(g => `
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;background:var(--bg-2);border-radius:8px;padding:8px 12px">
+            <div>
+              <div style="font-size:12px;font-weight:600">📍 ${escHtml(g.destino)}</div>
+              <div style="font-size:11px;color:var(--text-3)">${(g.atendimentos||[]).length} atendimento(s) · com ${escHtml(g.nome_transportador_atual||'—')}</div>
+            </div>
+            ${statusBadge(g.status)}
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
 }
 
 // ════════════ USUÁRIOS ════════════
@@ -9872,6 +10058,9 @@ const PERMISSOES_SCHEMA = {
     inventario_ver_historico:'Ver histórico de inventários',
     inventario_liberar_atraso:'Liberar inventário atrasado',
     inventario_ajustar_divergencia:'Ajustar estoque por divergência'
+  }},
+  logistica: { label:'Logística', icon:'🚚', itens:{
+    logistica_gerenciar_viagens:'Gerenciar viagens (montar, acompanhar coleta/entrega)'
   }}
 };
 

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GCA — Transporte</title>
+<link rel="icon" type="image/png" href="./icon-v3.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent:#6366f1;--accent-hover:#4f46e5;--accent-text:#818cf8;
+  --green:#22c55e;--green-soft:#052e16;--yellow:#fbbf24;--yellow-soft:#1c1300;
+  --blue:#3b82f6;--blue-soft:#0a1a2e;
+  --red:#f87171;--red-soft:#1c0a0a;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --font-main:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;
+  --transition:0.15s ease;
+  --bg:#0a0a0f;--bg-card:#0f0f17;--bg-hover:#0f172a;
+  --border:#1e1e2e;--border-mid:#2a2a3e;
+  --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#475569;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;}
+button{font-family:var(--font-main);cursor:pointer;}
+input{font-family:var(--font-main);}
+.hidden{display:none!important;}
+
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;}
+.titulo{font-size:16px;font-weight:700;text-align:center;margin-bottom:2px;}
+.sub{font-size:12px;color:var(--text-3);text-align:center;margin-bottom:22px;}
+.form-label{display:block;font-size:11px;font-weight:500;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.form-group{margin-bottom:14px;}
+.form-input{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+.btn{padding:11px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;border:none;cursor:pointer;width:100%;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);}
+.btn-green{background:var(--green);color:#04220f;}
+.btn-sm{width:auto;padding:8px 14px;font-size:12px;}
+.erro-box{margin-top:12px;padding:10px 12px;background:var(--red-soft);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);color:var(--red);font-size:12px;text-align:center;}
+
+/* ── APP ── */
+.app{display:none;flex-direction:column;min-height:100vh;}
+.app.ativo{display:flex;}
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:10;}
+.header-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.header-titulo{font-size:14px;font-weight:700;}
+.header-nome{font-size:11px;color:var(--accent-text);}
+.header-sair{font-size:11px;color:var(--text-3);background:none;border:none;text-decoration:underline;padding:0;width:auto;}
+
+.lista{flex:1;overflow-y:auto;padding:12px;padding-bottom:100px;display:flex;flex-direction:column;gap:10px;}
+.grupo-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;}
+.grupo-card.selecionado{border-color:var(--accent);background:rgba(99,102,241,.06);}
+.grupo-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.grupo-destino{font-size:14px;font-weight:700;}
+.badge{font-size:10px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;}
+.badge-amarelo{color:var(--yellow);border:1px solid var(--yellow);}
+.badge-azul{color:var(--blue);border:1px solid var(--blue);}
+.atend-item{font-size:11px;color:var(--text-2);padding:4px 0;border-top:1px solid var(--border);}
+.atend-item:first-child{border-top:none;}
+.grupo-acoes{display:flex;gap:8px;margin-top:10px;}
+.grupo-acoes .btn{flex:1;}
+.chk-transferir{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--text-3);cursor:pointer;}
+
+.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:12px;}
+
+/* ── BARRA DE TRANSFERÊNCIA ── */
+.barra-transf{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);padding:14px 16px;z-index:20;}
+.barra-transf .linha{display:flex;gap:8px;margin-bottom:8px;}
+.barra-transf .linha .form-input{flex:1;}
+.barra-transf .qtd{font-size:11px;color:var(--text-3);margin-bottom:8px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal-box{width:100%;max-width:400px;background:var(--bg-card);border-radius:var(--radius-lg);padding:24px;border:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="wrap" id="telaLogin">
+  <div class="card">
+    <div class="titulo">🚚 Transporte GCA</div>
+    <div class="sub">Entre com seu crachá para ver suas cargas</div>
+    <div class="form-group">
+      <label class="form-label">Matrícula</label>
+      <input class="form-input" id="loginMatricula" placeholder="Sua matrícula" autocomplete="off" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" id="loginSenha" type="password" placeholder="Sua senha" autocomplete="off">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="fazerLogin()">Entrar</button>
+    <div id="loginErro" class="erro-box hidden"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="telaApp">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-titulo">🚚 Minhas Cargas</div>
+        <div class="header-nome" id="appNome">—</div>
+      </div>
+      <button class="header-sair" onclick="sair()">Sair</button>
+    </div>
+  </div>
+  <div class="lista" id="listaGrupos"></div>
+</div>
+
+<!-- BARRA DE TRANSFERÊNCIA (aparece quando 1+ grupo em trânsito está selecionado) -->
+<div class="barra-transf hidden" id="barraTransf">
+  <div class="qtd"><strong id="transfQtd">0</strong> destino(s) selecionado(s) para transferir</div>
+  <div class="linha">
+    <input class="form-input" id="transfMatricula" placeholder="Matrícula de quem recebe">
+    <input class="form-input" id="transfSenha" type="password" placeholder="Senha">
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn btn-ghost" onclick="limparSelecaoTransf()">Cancelar</button>
+    <button class="btn btn-primary" onclick="confirmarTransferencia()">Transferir</button>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+
+let TOKEN = localStorage.getItem('log_token') || '';
+let NOME  = localStorage.getItem('log_nome') || '';
+let _grupos = [];
+let _selecionados = new Set();
+let _pollTimer = null;
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', ...(TOKEN ? { Authorization: 'Bearer ' + TOKEN } : {}), ...(opts.headers || {}) },
+    });
+    const json = await res.json().catch(() => ({ ok: false, erro: 'Erro de resposta' }));
+    return json;
+  } catch (err) {
+    return { ok: false, erro: 'Erro de conexão: ' + err.message };
+  }
+}
+
+function iniciar() {
+  if (TOKEN) mostrarApp();
+}
+
+async function fazerLogin() {
+  const matricula = document.getElementById('loginMatricula').value.trim();
+  const senha = document.getElementById('loginSenha').value.trim();
+  const erroBox = document.getElementById('loginErro');
+  erroBox.classList.add('hidden');
+  if (!matricula || !senha) { erroBox.textContent = 'Preencha matrícula e senha.'; erroBox.classList.remove('hidden'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const res = await api('/logistica/login', { method: 'POST', body: JSON.stringify({ matricula, senha }) });
+  btn.disabled = false; btn.textContent = 'Entrar';
+
+  if (!res.ok) { erroBox.textContent = res.erro || 'Erro ao entrar'; erroBox.classList.remove('hidden'); return; }
+
+  TOKEN = res.token; NOME = res.nome;
+  localStorage.setItem('log_token', TOKEN);
+  localStorage.setItem('log_nome', NOME);
+  mostrarApp();
+}
+
+function sair() {
+  if (_pollTimer) clearInterval(_pollTimer);
+  localStorage.removeItem('log_token');
+  localStorage.removeItem('log_nome');
+  location.reload();
+}
+
+function mostrarApp() {
+  document.getElementById('telaLogin').classList.add('hidden');
+  document.getElementById('telaApp').classList.add('ativo');
+  document.getElementById('appNome').textContent = '👤 ' + NOME;
+  carregarGrupos();
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(carregarGrupos, 8000); // atualiza sozinho — útil quando alguém te transfere uma carga
+}
+
+async function carregarGrupos() {
+  const res = await api('/logistica/meus-grupos');
+  if (!res.ok) {
+    if (res.erro?.includes('Sessão') || res.erro?.includes('inválido') || res.erro?.includes('Login')) { sair(); return; }
+    return;
+  }
+  _grupos = res.data || [];
+  // Remove da seleção qualquer grupo que não esteja mais aqui (ex: já foi entregue por engano em outra aba)
+  const idsAtuais = new Set(_grupos.map(g => g.id));
+  [..._selecionados].forEach(id => { if (!idsAtuais.has(id)) _selecionados.delete(id); });
+  renderGrupos();
+  atualizarBarraTransf();
+}
+
+function renderGrupos() {
+  const cont = document.getElementById('listaGrupos');
+  if (!_grupos.length) {
+    cont.innerHTML = '<div class="empty">Nenhuma carga com você no momento 🎉</div>';
+    return;
+  }
+
+  cont.innerHTML = _grupos.map(g => {
+    const emTransito = g.status === 'EM_TRANSITO';
+    const badge = emTransito
+      ? '<span class="badge badge-azul">🚚 Em trânsito</span>'
+      : '<span class="badge badge-amarelo">📦 Aguardando coleta</span>';
+    const marcado = _selecionados.has(g.id);
+    return `<div class="grupo-card ${marcado ? 'selecionado' : ''}">
+      <div class="grupo-top">
+        <div class="grupo-destino">📍 ${escHtml(g.destino)}</div>
+        ${badge}
+      </div>
+      ${(g.atendimentos || []).map(a => `<div class="atend-item">${escHtml(a.nome_colaborador || '—')} · ${a.qtd_itens ?? '—'} item(ns)</div>`).join('')}
+      <div class="grupo-acoes">
+        ${!emTransito ? `<button class="btn btn-primary" onclick="coletar('${g.id}')">📦 Confirmar Coleta</button>` : ''}
+        ${emTransito ? `<button class="btn btn-green" onclick="entregar('${g.id}')">✅ Confirmar Entrega</button>` : ''}
+      </div>
+      ${emTransito ? `<label class="chk-transferir">
+        <input type="checkbox" ${marcado ? 'checked' : ''} onchange="toggleSelecao('${g.id}', this.checked)">
+        Repassar este destino para outro transportador
+      </label>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function coletar(grupoId) {
+  const res = await api(`/logistica/grupos/${grupoId}/coletar`, { method: 'POST' });
+  if (!res.ok) { alert(res.erro || 'Erro ao confirmar coleta'); return; }
+  carregarGrupos();
+}
+
+async function entregar(grupoId) {
+  if (!confirm('Confirma que o material deste destino foi entregue?')) return;
+  const res = await api(`/logistica/grupos/${grupoId}/entregar`, { method: 'POST' });
+  if (!res.ok) { alert(res.erro || 'Erro ao confirmar entrega'); return; }
+  _selecionados.delete(grupoId);
+  carregarGrupos();
+}
+
+function toggleSelecao(grupoId, marcado) {
+  if (marcado) _selecionados.add(grupoId); else _selecionados.delete(grupoId);
+  renderGrupos();
+  atualizarBarraTransf();
+}
+
+function atualizarBarraTransf() {
+  const barra = document.getElementById('barraTransf');
+  document.getElementById('transfQtd').textContent = _selecionados.size;
+  barra.classList.toggle('hidden', _selecionados.size === 0);
+}
+
+function limparSelecaoTransf() {
+  _selecionados.clear();
+  document.getElementById('transfMatricula').value = '';
+  document.getElementById('transfSenha').value = '';
+  renderGrupos();
+  atualizarBarraTransf();
+}
+
+async function confirmarTransferencia() {
+  const matricula = document.getElementById('transfMatricula').value.trim();
+  const senha = document.getElementById('transfSenha').value.trim();
+  if (!_selecionados.size) return;
+  if (!matricula || !senha) { alert('Informe a matrícula e senha de quem vai receber a carga.'); return; }
+
+  const res = await api('/logistica/transferir', {
+    method: 'POST',
+    body: JSON.stringify({ grupo_ids: [..._selecionados], matricula_destino: matricula, senha_destino: senha }),
+  });
+  if (!res.ok) { alert(res.erro || 'Erro ao transferir'); return; }
+  alert(`Transferido para ${res.para}!`);
+  limparSelecaoTransf();
+  carregarGrupos();
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+iniciar();
+</script>
+</body>
+</html>
