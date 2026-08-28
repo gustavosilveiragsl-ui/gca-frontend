@@ -217,6 +217,42 @@ tbody tr:hover td{background:var(--bg-hover);}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-row td{text-align:center;padding:32px;color:var(--text-3);}
 
+/* ═══ LOGÍSTICA ═══ */
+.log-grid-pendentes{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:16px;}
+.log-pend-card{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .15s;animation:fadeUp .25s ease both;}
+.log-pend-card:hover{border-color:var(--accent);transform:translateY(-1px);}
+.log-pend-card.selecionado{border-color:var(--accent);background:var(--accent-soft);}
+.log-pend-card input[type=checkbox]{position:absolute;top:10px;right:10px;width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+.log-pend-nome{font-size:12px;font-weight:700;color:var(--text-1);padding-right:22px;}
+.log-pend-destino{font-size:11px;color:var(--accent-text);margin-top:4px;display:flex;align-items:center;gap:4px;}
+.log-pend-meta{font-size:10px;color:var(--text-3);margin-top:6px;}
+
+.log-viagem-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeUp .25s ease both;}
+.log-viagem-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg-hover);flex-wrap:wrap;gap:8px;}
+.log-grupo{padding:14px 16px;border-top:1px solid var(--border);}
+.log-grupo-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.log-grupo-destino{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
+.log-grupo-colabs{font-size:11px;color:var(--text-3);margin-top:2px;}
+
+/* Trilha (stepper) horizontal: Coleta → Trânsito → Transferência(s) → Entrega */
+.log-trilha{display:flex;align-items:flex-start;overflow-x:auto;padding:4px 2px 2px;gap:0;}
+.log-step{display:flex;flex-direction:column;align-items:center;min-width:96px;position:relative;flex-shrink:0;}
+.log-step-line{position:absolute;top:13px;left:-50%;width:100%;height:2px;background:var(--border-mid);z-index:0;}
+.log-step:first-child .log-step-line{display:none;}
+.log-step.feito .log-step-line{background:var(--green);}
+.log-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;background:var(--bg);border:2px solid var(--border-mid);z-index:1;transition:all .2s;}
+.log-step.feito .log-dot{background:var(--green);border-color:var(--green);color:#04220f;}
+.log-step.atual .log-dot{background:var(--blue);border-color:var(--blue);color:#04182e;animation:logPulse 1.6s ease-in-out infinite;}
+.log-step-label{font-size:10px;font-weight:600;color:var(--text-2);margin-top:6px;text-align:center;}
+.log-step.feito .log-step-label{color:var(--text-1);}
+.log-step-sub{font-size:9px;color:var(--text-3);margin-top:2px;text-align:center;max-width:100px;line-height:1.3;}
+@keyframes logPulse{0%,100%{box-shadow:0 0 0 0 rgba(56,189,248,.5);}50%{box-shadow:0 0 0 6px rgba(56,189,248,0);}}
+
+.log-badge{font-size:10px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;display:inline-block;}
+.log-badge-amarelo{color:var(--yellow);border:1px solid var(--yellow);}
+.log-badge-azul{color:var(--blue);border:1px solid var(--blue);}
+.log-badge-verde{color:var(--green);border:1px solid var(--green);}
+
 /* ═══ ATENDIMENTO ═══ */
 .atend-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
 .atend-tab{padding:9px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:-1px}
@@ -431,6 +467,17 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- Logística -->
+      <div class="nav-group">
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Logística</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="logistica" data-perm="logistica_gerenciar_viagens" onclick="showView('logistica',this)"><span class="ni-icon">🚚</span> Logística</button>
+        </div>
+      </div>
+
       <!-- Estoque -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
@@ -457,17 +504,6 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="consulta-itens" data-perm="consulta_itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
           <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
           <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
-        </div>
-      </div>
-
-      <!-- Logística -->
-      <div class="nav-group">
-        <div class="nav-group-header" onclick="toggleNavGroup(this)">
-          <span class="nav-group-label">Logística</span>
-          <span class="nav-group-arrow">›</span>
-        </div>
-        <div class="nav-group-items">
-          <button class="nav-item" data-view="logistica" data-perm="logistica_gerenciar_viagens" onclick="showView('logistica',this)"><span class="ni-icon">🚚</span> Logística</button>
         </div>
       </div>
 
@@ -877,16 +913,6 @@ window.addEventListener('pageshow', function(e) {
               <div class="resumo-row"><span class="resumo-label">Data</span><span class="resumo-val" id="resumoData">—</span></div>
               <div class="resumo-row"><span class="resumo-label">Itens</span><span class="resumo-val" id="resumoItens">0</span></div>
               <div class="resumo-row"><span class="resumo-label">Tempo</span><span class="resumo-val" id="resumoTempo">00:00:00</span></div>
-              <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px;display:flex;flex-direction:column;gap:8px">
-                <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
-                  <input type="checkbox" id="atendNecessitaLogistica" onchange="toggleDestinoLogistica()" style="width:16px;height:16px;cursor:pointer">
-                  <span style="font-size:12px;color:var(--text-1)">🚚 Necessita logística</span>
-                </label>
-                <div id="atendDestinoLogisticaBox" class="hidden">
-                  <label class="form-label">Destino de entrega</label>
-                  <input id="atendDestinoLogistica" class="form-input" placeholder="Ex: Sede Rio das Ostras" style="font-size:12px">
-                </div>
-              </div>
               <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
                 <div id="atendMsgResumo" style="font-size:11px;color:var(--text-3);text-align:center">Aguardando colaborador...</div>
               </div>
@@ -1033,6 +1059,39 @@ window.addEventListener('pageshow', function(e) {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModalValidacoes()">Revisar itens</button>
       <button class="btn btn-primary" id="btnProsseguirValidacoes" onclick="prosseguirAposValidacoes()">Prosseguir assim mesmo</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: PRECISA DE TRANSPORTE? (pergunta obrigatória ao concluir atendimento — antes
+     era um checkbox discreto no resumo, fácil de esquecer de marcar)
+═══════════════════════════════════════════ -->
+<div class="modal-overlay hidden" id="modalDecisaoLogistica">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🚚 Precisa de transporte?</div>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:18px;text-align:center">
+        O material deste atendimento vai ser levado por um transportador até o colaborador, ou a entrega já está sendo feita agora?
+      </div>
+
+      <div id="logDecBotoes" style="display:flex;flex-direction:column;gap:10px">
+        <button class="btn btn-primary" onclick="logDecMostrarDestino()">🚚 Sim, precisa de transporte</button>
+        <button class="btn btn-ghost" onclick="logDecConfirmarNao()">📍 Não, a entrega é feita agora</button>
+      </div>
+
+      <div id="logDecDestinoBox" class="hidden">
+        <div style="margin-top:4px;margin-bottom:14px">
+          <label class="form-label">Destino de entrega</label>
+          <input id="logDecDestino" class="form-input" placeholder="Ex: Sede Rio das Ostras">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" style="flex:1" onclick="logDecVoltar()">Voltar</button>
+          <button class="btn btn-primary" style="flex:1" onclick="logDecConfirmarSim()">Confirmar</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -3576,32 +3635,49 @@ window.addEventListener('pageshow', function(e) {
       <div class="view" id="view-logistica">
         <div class="view-header"><div class="view-title">🚚 Logística</div><div class="view-sub">Atendimentos que precisam viajar até o colaborador — coleta, trânsito e entrega por destino</div></div>
 
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Aguardando coleta</span><div class="kpi-icon">📦</div></div>
+            <div class="kpi-value" id="logKpiAguardando">—</div>
+            <div class="kpi-delta warn">precisam de transportador</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Em trânsito</span><div class="kpi-icon">🚚</div></div>
+            <div class="kpi-value" id="logKpiTransito">—</div>
+            <div class="kpi-delta" style="color:var(--blue)">a caminho do destino</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Entregues hoje</span><div class="kpi-icon">✅</div></div>
+            <div class="kpi-value" id="logKpiEntreguesHoje">—</div>
+            <div class="kpi-delta up">confirmadas hoje</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Viagens ativas</span><div class="kpi-icon">🧭</div></div>
+            <div class="kpi-value" id="logKpiViagensAtivas">—</div>
+            <div class="kpi-delta">em andamento</div>
+          </div>
+        </div>
+
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <div><div class="card-title">📦 Aguardando Transporte</div><div class="card-sub">Marcados como "Necessita logística" no atendimento</div></div>
+            <div><div class="card-title">📦 Aguardando Transporte</div><div class="card-sub">Marcados como "Necessita logística" na conclusão do atendimento</div></div>
             <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
           </div>
-          <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(59,130,246,.08);border-bottom:1px solid var(--border);flex-wrap:wrap">
+          <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
             <select id="logTransportadorSelect" class="form-input" style="width:220px;font-size:11px"><option value="">Selecione o transportador...</option></select>
             <button class="btn btn-primary" style="font-size:11px" onclick="criarViagemLogistica()">🚚 Criar Viagem</button>
             <button class="btn btn-ghost" style="font-size:11px" onclick="logLimparSelecao()">Limpar seleção</button>
           </div>
-          <table>
-            <thead><tr>
-              <th style="width:30px"></th>
-              <th>Colaborador</th><th>Destino</th><th>Itens</th><th>Data</th>
-            </tr></thead>
-            <tbody id="logPendentesBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
-          </table>
+          <div class="log-grid-pendentes" id="logPendentesBody"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
 
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Viagens</div><div class="card-sub">Histórico de coletas e entregas</div></div>
+            <div><div class="card-title">Viagens</div><div class="card-sub">Trilha de coleta, transferência e entrega por destino</div></div>
             <button class="btn btn-ghost" onclick="carregarLogisticaViagens()">↻</button>
           </div>
-          <div id="logViagensBody" style="padding:16px;display:flex;flex-direction:column;gap:12px"><div class="spinner" style="margin:20px auto"></div></div>
+          <div id="logViagensBody" style="padding:16px;display:flex;flex-direction:column;gap:14px"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
       </div>
 
@@ -5728,15 +5804,7 @@ function resetarAtendimento() {
   document.getElementById('atendEstadoInicial').classList.remove('hidden');
   document.getElementById('atendEmAndamento').classList.add('hidden');
   document.getElementById('atendColabBusca').value = '';
-  document.getElementById('atendNecessitaLogistica').checked = false;
-  document.getElementById('atendDestinoLogistica').value = '';
-  document.getElementById('atendDestinoLogisticaBox').classList.add('hidden');
   renderItensAtendimento();
-}
-
-function toggleDestinoLogistica() {
-  const marcado = document.getElementById('atendNecessitaLogistica').checked;
-  document.getElementById('atendDestinoLogisticaBox').classList.toggle('hidden', !marcado);
 }
 
 // ═══════════════════════════════════════════
@@ -6464,11 +6532,6 @@ function validarSerial(inputEl, itemIdx, serialIdx) {
 async function concluirAtendimento() {
   if (!ATEND.colab || !ATEND.itens.length) return;
 
-  if (document.getElementById('atendNecessitaLogistica').checked && !document.getElementById('atendDestinoLogistica').value.trim()) {
-    toast('Informe o destino de entrega (logística está marcada)', 'warn');
-    return;
-  }
-
   // Valida seriais obrigatórios
   for (const it of ATEND.itens) {
     if (!it.requerEnsaio) continue;
@@ -6486,6 +6549,47 @@ async function concluirAtendimento() {
     }
   }
 
+  // Antes só um checkbox discreto no resumo (fácil de esquecer) — agora é uma pergunta
+  // obrigatória toda vez que conclui, pra não passar batido nenhum atendimento que precise
+  // de transporte. finalizarConclusaoAtendimento() continua o fluxo depois da resposta.
+  abrirModalDecisaoLogistica();
+}
+
+function abrirModalDecisaoLogistica() {
+  document.getElementById('logDecDestino').value = '';
+  document.getElementById('logDecDestinoBox').classList.add('hidden');
+  document.getElementById('logDecBotoes').classList.remove('hidden');
+  document.getElementById('modalDecisaoLogistica').classList.remove('hidden');
+}
+
+function fecharModalDecisaoLogistica() {
+  document.getElementById('modalDecisaoLogistica').classList.add('hidden');
+}
+
+function logDecMostrarDestino() {
+  document.getElementById('logDecBotoes').classList.add('hidden');
+  document.getElementById('logDecDestinoBox').classList.remove('hidden');
+  setTimeout(() => document.getElementById('logDecDestino').focus(), 50);
+}
+
+function logDecVoltar() {
+  document.getElementById('logDecDestinoBox').classList.add('hidden');
+  document.getElementById('logDecBotoes').classList.remove('hidden');
+}
+
+function logDecConfirmarNao() {
+  fecharModalDecisaoLogistica();
+  finalizarConclusaoAtendimento(false, '');
+}
+
+function logDecConfirmarSim() {
+  const destino = document.getElementById('logDecDestino').value.trim();
+  if (!destino) { toast('Informe o destino de entrega', 'warn'); return; }
+  fecharModalDecisaoLogistica();
+  finalizarConclusaoAtendimento(true, destino);
+}
+
+async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntrega) {
   const btn = document.getElementById('btnConcluirAtendimento');
   btn.disabled  = true;
   btn.textContent = '⏳ Salvando...';
@@ -6523,8 +6627,8 @@ async function concluirAtendimento() {
     usuarioNome:      GCA.usuario?.nome || 'Sistema',
     criadoEm:         agora.toISOString(),
     solicitacaoId:    ATEND.solicitacaoId || null,
-    necessitaLogistica: document.getElementById('atendNecessitaLogistica').checked,
-    destinoEntrega:   document.getElementById('atendDestinoLogistica').value.trim(),
+    necessitaLogistica: necessitaLogistica,
+    destinoEntrega:   destinoEntrega,
   };
 
   const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
@@ -9713,8 +9817,8 @@ let _logSelecionados  = new Set();
 let _logViagensData   = [];
 
 async function carregarLogisticaPendentes() {
-  const tbody = document.getElementById('logPendentesBody');
-  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  const cont = document.getElementById('logPendentesBody');
+  if (cont) cont.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
 
   const sel = document.getElementById('logTransportadorSelect');
   if (sel && _colaboradores.length) {
@@ -9728,25 +9832,32 @@ async function carregarLogisticaPendentes() {
   _logPendentesData = res?.data || [];
   _logSelecionados.clear();
   logAtualizarBarraSelecao();
-  if (!tbody) return;
+  document.getElementById('logKpiAguardando').textContent = _logPendentesData.length;
+  if (!cont) return;
 
   if (!_logPendentesData.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum atendimento aguardando transporte</div></div></td></tr>`;
+    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">🎉</div><div class="es-title">Nenhum atendimento aguardando transporte</div></div>`;
     return;
   }
 
-  tbody.innerHTML = _logPendentesData.map(a => `
-    <tr>
-      <td><input type="checkbox" onchange="logToggleSelecao('${a.id}',this.checked)"></td>
-      <td class="td-main">${escHtml(a.nome_colaborador||'—')}</td>
-      <td style="font-size:12px">${escHtml(a.destino_entrega||'—')}</td>
-      <td style="text-align:center;font-size:12px">${a.qtd_itens ?? '—'}</td>
-      <td style="font-size:11px;color:var(--text-3)">${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</td>
-    </tr>`).join('');
+  cont.innerHTML = _logPendentesData.map((a, i) => `
+    <div class="log-pend-card" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${a.id}', this)">
+      <input type="checkbox" onclick="event.stopPropagation()" onchange="logToggleSelecao('${a.id}',this.checked,this.closest('.log-pend-card'))">
+      <div class="log-pend-nome">${escHtml(a.nome_colaborador||'—')}</div>
+      <div class="log-pend-destino">📍 ${escHtml(a.destino_entrega||'—')}</div>
+      <div class="log-pend-meta">📦 ${a.qtd_itens ?? '—'} item(ns) · ${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</div>
+    </div>`).join('');
 }
 
-function logToggleSelecao(id, marcado) {
+function logToggleSelecaoCard(id, cardEl) {
+  const cb = cardEl.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  logToggleSelecao(id, cb.checked, cardEl);
+}
+
+function logToggleSelecao(id, marcado, cardEl) {
   if (marcado) _logSelecionados.add(id); else _logSelecionados.delete(id);
+  if (cardEl) cardEl.classList.toggle('selecionado', marcado);
   logAtualizarBarraSelecao();
 }
 
@@ -9759,7 +9870,11 @@ function logAtualizarBarraSelecao() {
 
 function logLimparSelecao() {
   _logSelecionados.clear();
-  document.querySelectorAll('#logPendentesBody input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#logPendentesBody .log-pend-card').forEach(card => {
+    card.classList.remove('selecionado');
+    const cb = card.querySelector('input[type=checkbox]');
+    if (cb) cb.checked = false;
+  });
   logAtualizarBarraSelecao();
 }
 
@@ -9783,6 +9898,14 @@ async function carregarLogisticaViagens() {
 
   const res = await api('/logistica/viagens');
   _logViagensData = res?.data || [];
+
+  // KPIs derivados dos grupos de todas as viagens
+  const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
+  const hoje = new Date().toISOString().slice(0,10);
+  document.getElementById('logKpiTransito').textContent = todosGrupos.filter(g => g.status === 'EM_TRANSITO').length;
+  document.getElementById('logKpiEntreguesHoje').textContent = todosGrupos.filter(g => g.status === 'ENTREGUE' && (g.entregue_em||'').slice(0,10) === hoje).length;
+  document.getElementById('logKpiViagensAtivas').textContent = _logViagensData.filter(v => v.status !== 'CONCLUIDA').length;
+
   if (!box) return;
 
   if (!_logViagensData.length) {
@@ -9790,32 +9913,68 @@ async function carregarLogisticaViagens() {
     return;
   }
 
-  const statusBadge = (s) => {
-    if (s === 'ENTREGUE') return `<span style="font-size:10px;font-weight:700;color:#22c55e;border:1px solid #22c55e;border-radius:999px;padding:2px 10px">Entregue</span>`;
-    if (s === 'EM_TRANSITO') return `<span style="font-size:10px;font-weight:700;color:#3b82f6;border:1px solid #3b82f6;border-radius:999px;padding:2px 10px">Em trânsito</span>`;
-    return `<span style="font-size:10px;font-weight:700;color:#f59e0b;border:1px solid #f59e0b;border-radius:999px;padding:2px 10px">Aguardando coleta</span>`;
-  };
   const viagemBadge = (s) => s === 'CONCLUIDA'
-    ? `<span style="font-size:10px;font-weight:700;color:#22c55e;border:1px solid #22c55e;border-radius:999px;padding:2px 10px">Concluída</span>`
-    : `<span style="font-size:10px;font-weight:700;color:#3b82f6;border:1px solid #3b82f6;border-radius:999px;padding:2px 10px">Em andamento</span>`;
+    ? `<span class="log-badge log-badge-verde">🏁 Concluída</span>`
+    : `<span class="log-badge log-badge-azul">🧭 Em andamento</span>`;
 
-  box.innerHTML = _logViagensData.map(v => `
-    <div style="border:1px solid var(--border);border-radius:10px;padding:14px 16px">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+  box.innerHTML = _logViagensData.map((v, i) => `
+    <div class="log-viagem-card" style="animation-delay:${Math.min(i*0.04,0.3)}s">
+      <div class="log-viagem-top">
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
         ${viagemBadge(v.status)}
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${(v.grupos||[]).map(g => `
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;background:var(--bg-2);border-radius:8px;padding:8px 12px">
+      ${(v.grupos||[]).map(g => `
+        <div class="log-grupo">
+          <div class="log-grupo-head">
             <div>
-              <div style="font-size:12px;font-weight:600">📍 ${escHtml(g.destino)}</div>
-              <div style="font-size:11px;color:var(--text-3)">${(g.atendimentos||[]).length} atendimento(s) · com ${escHtml(g.nome_transportador_atual||'—')}</div>
+              <div class="log-grupo-destino">📍 ${escHtml(g.destino)}</div>
+              <div class="log-grupo-colabs">${(g.atendimentos||[]).map(a=>escHtml(a.nome_colaborador||'—')).join(', ') || '—'}</div>
             </div>
-            ${statusBadge(g.status)}
-          </div>`).join('')}
-      </div>
+            <span class="log-badge ${g.status==='ENTREGUE'?'log-badge-verde':g.status==='EM_TRANSITO'?'log-badge-azul':'log-badge-amarelo'}">
+              ${g.status==='ENTREGUE'?'✅ Entregue':g.status==='EM_TRANSITO'?'🚚 Em trânsito · '+escHtml(g.nome_transportador_atual||'—'):'📦 Aguardando coleta · '+escHtml(g.nome_transportador_atual||'—')}
+            </span>
+          </div>
+          ${renderTrilhaGrupo(g)}
+        </div>`).join('')}
     </div>`).join('');
+}
+
+// Monta a trilha visual (Coleta → Repasse(s) → Entrega) de um grupo, a partir do histórico
+// real de trechos — cada etapa concluída mostra quem fez e quando; a próxima etapa pendente
+// pisca em azul pra indicar onde a carga está agora.
+function renderTrilhaGrupo(g) {
+  const trechos = g.trechos || [];
+  const coleta = trechos.find(t => t.tipo === 'COLETA');
+  const repasses = trechos.filter(t => t.tipo === 'TRANSFERENCIA');
+  const entrega = trechos.find(t => t.tipo === 'ENTREGA');
+
+  const steps = [
+    { icone: '📦', label: 'Coleta', feito: !!coleta,
+      sub: coleta ? `${escHtml(coleta.nome_destino||'—')} · ${fmtDataHoraCurta(coleta.data_hora)}` : 'Aguardando transportador' },
+    ...repasses.map((t, i) => ({
+      icone: '🔄', label: repasses.length > 1 ? `Repasse ${i+1}` : 'Repasse', feito: true,
+      sub: `${escHtml(t.nome_origem||'—')} → ${escHtml(t.nome_destino||'—')} · ${fmtDataHoraCurta(t.data_hora)}`,
+    })),
+    { icone: '🏁', label: 'Entrega', feito: !!entrega,
+      sub: entrega ? `${escHtml(entrega.nome_origem||'—')} · ${fmtDataHoraCurta(entrega.data_hora)}` : (g.status === 'EM_TRANSITO' ? 'A caminho do destino' : 'Aguardando coleta') },
+  ];
+
+  let marcouAtual = false;
+  return `<div class="log-trilha">${steps.map(s => {
+    let classe = s.feito ? 'feito' : '';
+    if (!s.feito && !marcouAtual) { classe += ' atual'; marcouAtual = true; }
+    return `<div class="log-step ${classe}">
+      <div class="log-step-line"></div>
+      <div class="log-dot">${s.feito ? '✓' : s.icone}</div>
+      <div class="log-step-label">${s.label}</div>
+      <div class="log-step-sub">${s.sub}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function fmtDataHoraCurta(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
 }
 
 // ════════════ USUÁRIOS ════════════
