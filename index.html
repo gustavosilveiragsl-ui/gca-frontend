@@ -442,6 +442,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="nav-item" data-view="saida" data-perm="saida_material" onclick="showView('saida',this)"><span class="ni-icon">📤</span> Saída</button>
           <button class="nav-item" data-view="transferencia" data-perm="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon">🔄</span> Transferência</button>
           <button class="nav-item" data-view="estoque" data-perm="ver_estoque" onclick="showView('estoque',this)"><span class="ni-icon">📦</span> Consulta de Estoque</button>
+          <button class="nav-item" data-view="inventario" data-perm="inventario_ver_historico" onclick="showView('inventario',this)"><span class="ni-icon">📋</span> Inventário</button>
           <button class="nav-item" data-view="movimentacoes" data-perm="ver_movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon">📊</span> Movimentações</button>
         </div>
       </div>
@@ -598,6 +599,14 @@ window.addEventListener('pageshow', function(e) {
           <button class="quick-card" data-perm="entrada_material" onclick="showView('entrada')"><div class="qc-icon">📥</div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
           <button class="quick-card" data-perm="transferencia" onclick="showView('transferencia')"><div class="qc-icon">🔄</div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
           <button class="quick-card" data-perm="ver_indicadores" onclick="showView('indicadores')"><div class="qc-icon">📈</div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
+        </div>
+        <div id="dashInventarioAlerta" class="hidden" style="margin-bottom:16px;border:1px solid #f59e0b;background:rgba(245,158,11,.08);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:22px">📋</div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:13px;font-weight:700;color:var(--text-1)">Inventário mensal pendente</div>
+            <div style="font-size:12px;color:var(--text-2)" id="dashInventarioTexto">—</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:11px" onclick="showView('inventario')">Ver Inventário</button>
         </div>
         <div class="card">
           <div class="card-header">
@@ -3333,6 +3342,11 @@ window.addEventListener('pageshow', function(e) {
                 <label for="armPrincipal" class="form-label" style="margin:0;cursor:pointer">⭐ Armazém principal desta filial</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Usado na Previsão Anual — só um armazém principal por filial (marcar aqui desmarca o anterior).</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="armRequerInventario" style="width:16px;height:16px;cursor:pointer">
+                <label for="armRequerInventario" class="form-label" style="margin:0;cursor:pointer">📋 Requer inventário mensal</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Este armazém entra na cobrança de inventário do início de cada mês (dias 1 a 10).</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarArmazem()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormArmazem()">Limpar</button>
@@ -3446,6 +3460,11 @@ window.addEventListener('pageshow', function(e) {
                 <input type="checkbox" id="lsAtivo" checked style="accent-color:var(--primary)">
                 <label for="lsAtivo" class="form-label" style="margin:0">Acesso ativo</label>
               </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsPodeInventario" style="accent-color:var(--primary)">
+                <label for="lsPodeInventario" class="form-label" style="margin:0">📋 Pode contar inventário</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Além de pedir material, essa pessoa também poderá acessar o link de contagem de inventário nos armazéns permitidos acima.</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -3466,6 +3485,63 @@ window.addEventListener('pageshow', function(e) {
               <th></th>
             </tr></thead>
             <tbody id="lsBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── INVENTÁRIO ROTATIVO MENSAL ── -->
+      <div class="view" id="view-inventario">
+        <div class="view-header"><div class="view-title">📋 Inventário Rotativo Mensal</div><div class="view-sub">Cobrança mensal por armazém, contagem coletiva por link e histórico de entregas</div></div>
+
+        <div class="card" style="margin-bottom:16px" data-perm-btn="inventario_gerar_link">
+          <div class="card-header"><div class="card-title">📦 Gerar Link de Contagem</div></div>
+          <div style="padding:16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:220px">
+              <label class="form-label">Armazém</label>
+              <select id="invArmazemSelect" class="form-input"></select>
+            </div>
+            <button class="btn btn-primary" onclick="gerarLinkInventario()">🔗 Gerar Link</button>
+          </div>
+          <div id="invLinkGerado" class="hidden" style="margin:0 16px 16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;display:flex;align-items:center;gap:8px;word-break:break-all">
+            <span id="invLinkGeradoTexto" style="flex:1;color:var(--accent-text)"></span>
+            <button class="btn btn-ghost" style="font-size:11px" onclick="copiarLinkInventario()">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Histórico de Inventários</div><div class="card-sub">Todos os ciclos, mês a mês</div></div>
+            <button class="btn btn-ghost" onclick="carregarInventarioHistorico()">↻</button>
+          </div>
+          <table>
+            <thead><tr>
+              <th>Armazém</th><th>Mês</th><th>Status</th>
+              <th style="text-align:center">Acurácia</th><th style="text-align:center">Divergências</th>
+              <th>Finalizado</th><th></th>
+            </tr></thead>
+            <tbody id="invHistBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- MODAL DETALHE DO INVENTÁRIO -->
+      <div class="modal-overlay hidden" id="modalInventarioDetalhe">
+        <div class="modal-box" style="max-width:700px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title">📋 Detalhe do Inventário</div><div style="font-size:11px;color:var(--text-3)" id="invDetInfo"></div></div>
+            <button class="modal-close" onclick="document.getElementById('modalInventarioDetalhe').classList.add('hidden')">×</button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+            <div id="invDetAcoes" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <div style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Item</th><th style="text-align:center">Saldo GCA</th><th style="text-align:center">Contado</th>
+                  <th>Diverg.</th><th>Contado por</th><th></th>
+                </tr></thead>
+                <tbody id="invDetItensBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -4380,6 +4456,7 @@ const VIEW_TITLES = {
   entrada:['Entrada','/ Recebimento'], saida:['Saída','/ Registrar'],
   transferencia:['Transferência','/ Entre armazéns'], estoque:['Estoque','/ Consulta'],
   movimentacoes:['Movimentações','/ Histórico'], descontos:['Descontos','/ Materiais'],
+  inventario:['Inventário','/ Rotativo Mensal'],
   'solicitacoes-compra':['Solicitações de Compra',''], protheus:['Protheus','/ Lançamentos'],
   'atendimento-enel':['ENEL','/ Atendimento'], 'devolucao-enel':['ENEL','/ Devolução'],
   medidores:['ENEL','/ Medidores'], 'estoque-enel':['ENEL','/ Estoque'],
@@ -4469,6 +4546,7 @@ function onViewLoad(nome) {
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); }
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
+  if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
@@ -5142,7 +5220,18 @@ document.addEventListener('click', function(ev) {
 async function carregarDashboard() {
   const hoje = new Date();
   document.getElementById('dashDataAtual').textContent = hoje.toLocaleDateString('pt-BR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
-  await Promise.all([carregarKPIs(), carregarDashAtendimentos()]);
+  await Promise.all([carregarKPIs(), carregarDashAtendimentos(), carregarAlertaInventarioDash()]);
+}
+
+async function carregarAlertaInventarioDash() {
+  const box = document.getElementById('dashInventarioAlerta');
+  if (!box) return;
+  const res = await api('/inventario/dashboard-pendencias');
+  if (!res?.ok || !res.pendentes?.length) { box.classList.add('hidden'); return; }
+  const nomes = res.pendentes.map(p => p.nome_armazem).join(', ');
+  document.getElementById('dashInventarioTexto').textContent =
+    `${res.pendentes.length} armazém(ns) ainda não entregaram: ${nomes}. Prazo: mais ${res.diasRestantes} dia(s) (até dia 10).`;
+  box.classList.remove('hidden');
 }
 
 async function carregarKPIs() {
@@ -8900,6 +8989,7 @@ async function salvarArmazem() {
     responsavel: document.getElementById('armResponsavel').value.trim(),
     descricao:   document.getElementById('armDescricao').value.trim(),
     principal:   document.getElementById('armPrincipal').checked,
+    requer_inventario_mensal: document.getElementById('armRequerInventario').checked,
   };
   if (!body.nome) { toast('Nome obrigatório', 'warn'); return; }
   const res = await api(id ? `/armazens/${id}` : '/armazens', {
@@ -8919,12 +9009,14 @@ function editarArmazem(id) {
     document.getElementById('armResponsavel').value = a.responsavel||'';
     document.getElementById('armDescricao').value   = a.descricao||'';
     document.getElementById('armPrincipal').checked = !!a.principal;
+    document.getElementById('armRequerInventario').checked = !!a.requer_inventario_mensal;
   });
 }
 
 function limparFormArmazem() {
   ['armEditId','armNome','armLocalizacao','armResponsavel','armDescricao'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   const p = document.getElementById('armPrincipal'); if (p) p.checked = false;
+  const ri = document.getElementById('armRequerInventario'); if (ri) ri.checked = false;
 }
 
 async function tornarArmazemPrincipal(id) {
@@ -9403,7 +9495,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário">📋</span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '✅ Ativo' : '⛔ Inativo'}</span></td>
@@ -9460,6 +9552,7 @@ async function salvarLS() {
   const mat    = document.getElementById('lsMatricula').value.trim();
   const senha  = document.getElementById('lsSenha').value.trim();
   const ativo  = document.getElementById('lsAtivo').checked;
+  const podeInventario = document.getElementById('lsPodeInventario').checked;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -9470,13 +9563,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -9491,6 +9584,7 @@ function editarLS(id) {
   document.getElementById('lsMatricula').value = u.matricula;
   document.getElementById('lsSenha').value     = ''; // nunca pré-preenche — deixe em branco pra manter a senha atual
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
+  document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -9518,7 +9612,148 @@ function limparLS() {
   document.getElementById('lsMatricula').value = '';
   document.getElementById('lsSenha').value    = '';
   document.getElementById('lsAtivo').checked  = true;
+  document.getElementById('lsPodeInventario').checked = false;
   carregarArmazensLS();
+}
+
+// ═══════════════════════════════════════════
+// INVENTÁRIO ROTATIVO MENSAL
+// ═══════════════════════════════════════════
+let _invHistData = [];
+let _invDetalheAberto = null; // { id, itens }
+
+async function carregarInventarioHistorico() {
+  const tbody = document.getElementById('invHistBody');
+  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+
+  // Popula o select de armazém pra gerar link
+  const sel = document.getElementById('invArmazemSelect');
+  if (sel && _armazens.length) {
+    sel.innerHTML = _armazens.map(a => `<option value="${a.id}">${escHtml(a.nome)}${a.requer_inventario_mensal ? '' : ' (não obrigatório)'}</option>`).join('');
+  }
+
+  const res = await api('/inventario/historico');
+  _invHistData = res?.data || [];
+  if (!tbody) return;
+
+  if (!_invHistData.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum inventário registrado ainda</div></div></td></tr>`;
+    return;
+  }
+
+  const statusBadge = (r) => {
+    if (r.status === 'ENTREGUE') return `<span style="font-size:10px;font-weight:700;color:#22c55e;border:1px solid #22c55e;border-radius:999px;padding:2px 10px">Entregue</span>`;
+    if (r.bloqueado) return `<span style="font-size:10px;font-weight:700;color:#ef4444;border:1px solid #ef4444;border-radius:999px;padding:2px 10px">Atrasado</span>`;
+    return `<span style="font-size:10px;font-weight:700;color:#3b82f6;border:1px solid #3b82f6;border-radius:999px;padding:2px 10px">Em andamento</span>`;
+  };
+
+  tbody.innerHTML = _invHistData.map(r => `
+    <tr style="${r.bloqueado ? 'background:rgba(239,68,68,.05)' : ''}">
+      <td class="td-main">${escHtml(r.nome_armazem)}</td>
+      <td style="font-size:11px;color:var(--text-3)">${formatarMesAno(r.ano_mes)}</td>
+      <td>${statusBadge(r)}</td>
+      <td style="text-align:center;font-size:12px;font-weight:700">${r.acuracia_pct != null ? Number(r.acuracia_pct).toFixed(1) + '%' : '—'}</td>
+      <td style="text-align:center;font-size:12px">${r.qtd_divergencias != null ? `${r.qtd_divergencias} de ${r.qtd_itens_contados}` : '—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${r.finalizado_em ? formatarData(r.finalizado_em.slice(0,10)) + ' · ' + escHtml(r.finalizado_por||'') : '—'}</td>
+      <td>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${r.status === 'ENTREGUE' ? `
+            <button class="row-action" onclick="abrirDetalheInventario('${r.id}')">Ver</button>
+            <button class="row-action" onclick="verPdfInventario('${r.id}')">📄 PDF</button>
+          ` : r.bloqueado ? `
+            <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="liberarAtrasoInventario('${r.armazem_id}','${r.ano_mes}')">🔓 Liberar atraso</button>
+          ` : `<span style="font-size:10px;color:var(--text-3)">Aguardando contagem</span>`}
+        </div>
+      </td>
+    </tr>`).join('');
+}
+
+function formatarMesAno(anoMes) {
+  if (!anoMes) return '—';
+  const [ano, mes] = anoMes.split('-');
+  const nomes = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${nomes[Number(mes)]}/${ano}`;
+}
+
+async function gerarLinkInventario() {
+  const armazemId = document.getElementById('invArmazemSelect').value;
+  if (!armazemId) { toast('Selecione o armazém', 'warn'); return; }
+
+  const res = await api('/inventario/gerar-link', { method: 'POST', body: JSON.stringify({ armazem_id: armazemId }) });
+  if (res?.ok) {
+    document.getElementById('invLinkGeradoTexto').textContent = res.link;
+    document.getElementById('invLinkGerado').dataset.link = res.link;
+    document.getElementById('invLinkGerado').classList.remove('hidden');
+    toast('Link gerado!', 'success');
+    carregarInventarioHistorico();
+  } else toast(res?.erro || 'Erro ao gerar link', 'error');
+}
+
+function copiarLinkInventario() {
+  const link = document.getElementById('invLinkGerado').dataset.link;
+  if (!link) return;
+  navigator.clipboard?.writeText(link).then(() => toast('Link copiado!', 'success')).catch(() => {});
+}
+
+async function liberarAtrasoInventario(armazemId, anoMes) {
+  if (!confirm('Liberar este armazém pra contar/finalizar o inventário mesmo com o prazo vencido?')) return;
+  const res = await api('/inventario/liberar-atraso', { method: 'POST', body: JSON.stringify({ armazem_id: armazemId, ano_mes: anoMes }) });
+  if (res?.ok) { toast('Atraso liberado! Gere o link de contagem normalmente.', 'success'); carregarInventarioHistorico(); }
+  else toast(res?.erro || 'Erro ao liberar', 'error');
+}
+
+async function abrirDetalheInventario(id) {
+  const res = await api(`/inventario/${id}/itens`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar detalhe', 'error'); return; }
+  _invDetalheAberto = { id, inventario: res.inventario, itens: res.itens };
+  renderDetalheInventario();
+  document.getElementById('modalInventarioDetalhe').classList.remove('hidden');
+}
+
+function renderDetalheInventario() {
+  const { inventario: inv, itens } = _invDetalheAberto;
+  document.getElementById('invDetInfo').textContent = `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
+
+  const temDivergenciaPendente = itens.some(i => i.divergencia && !i.corrigido);
+  document.getElementById('invDetAcoes').innerHTML = temDivergenciaPendente
+    ? `<button class="btn btn-primary" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirTodasDivergenciasInv()">⚖️ Corrigir todas as divergências</button>`
+    : '';
+
+  document.getElementById('invDetItensBody').innerHTML = itens.map(it => `
+    <tr>
+      <td class="td-main">${escHtml(it.nome_item||'—')}</td>
+      <td style="text-align:center">${it.saldo_gca ?? '—'}</td>
+      <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
+      <td>${it.divergencia ? `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>` : `<span style="color:var(--text-3);font-size:11px">não</span>`}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador||'—')}</td>
+      <td>
+        ${it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${it.id}')">Corrigir</button>` : ''}
+      </td>
+    </tr>`).join('');
+
+  aplicarPermissoesMenu();
+}
+
+async function corrigirDivergenciaInv(itemId) {
+  const res = await api(`/inventario/${_invDetalheAberto.id}/corrigir-divergencia`, { method: 'POST', body: JSON.stringify({ inventario_item_id: itemId }) });
+  if (res?.ok) { toast('Divergência corrigida!', 'success'); await abrirDetalheInventario(_invDetalheAberto.id); }
+  else toast(res?.erro || 'Erro ao corrigir', 'error');
+}
+
+async function corrigirTodasDivergenciasInv() {
+  if (!confirm('Corrigir todas as divergências pendentes deste inventário? Isso lança Entrada/Saída de ajuste para cada item divergente.')) return;
+  const res = await api(`/inventario/${_invDetalheAberto.id}/corrigir-todas`, { method: 'POST' });
+  if (res?.ok) { toast(`${res.corrigidos} divergência(s) corrigida(s)!`, 'success'); await abrirDetalheInventario(_invDetalheAberto.id); carregarInventarioHistorico(); }
+  else toast(res?.erro || 'Erro ao corrigir', 'error');
+}
+
+async function verPdfInventario(id) {
+  try {
+    const r = await fetch(`${API}/inventario/${id}/pdf`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) { toast('Erro ao gerar PDF', 'error'); return; }
+    const blob = await r.blob();
+    window.open(URL.createObjectURL(blob), '_blank');
+  } catch { toast('Erro ao gerar PDF', 'error'); }
 }
 
 // ════════════ USUÁRIOS ════════════
@@ -9755,6 +9990,13 @@ const PERMISSOES_SCHEMA = {
     gerenciar_usuarios:'Gerenciar usuários', gerenciar_usuarios_solicitacao:'Usuários de Solicitação',
     ver_links_externos:'Links Externos',
     aprovar_recuperacao:'Aprovar recuperação de senha'
+  }},
+  inventario: { label:'Inventário', icon:'📋', itens:{
+    inventario_configurar:'Configurar armazéns (requer inventário)',
+    inventario_gerar_link:'Gerar link de contagem',
+    inventario_ver_historico:'Ver histórico de inventários',
+    inventario_liberar_atraso:'Liberar inventário atrasado',
+    inventario_ajustar_divergencia:'Ajustar estoque por divergência'
   }}
 };
 
