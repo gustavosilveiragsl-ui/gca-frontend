@@ -2992,6 +2992,7 @@ window.addEventListener('pageshow', function(e) {
                 <option value="ESTOQUE">📦 Estoque</option>
                 <option value="COM_COLAB">👤 Com Colaborador</option>
                 <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
+                <option value="ENVIADO_LAUDO">📤 Enviado para Laudo</option>
               </select>
             </div>
             <div><label class="form-label">Venc. de</label><input id="laudoFiltroVencDe" class="form-input" type="date" onchange="laudosRender_()"></div>
@@ -4202,16 +4203,25 @@ window.addEventListener('pageshow', function(e) {
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <div style="flex:1;min-width:140px">
+        <div style="flex:1;min-width:120px">
+          <label class="form-label">Empresa</label>
+          <input id="remDetEmpresa" class="form-input">
+        </div>
+        <div style="flex:1;min-width:130px">
+          <label class="form-label">Data de envio</label>
+          <input type="date" id="remDetDataEnvio" class="form-input">
+        </div>
+        <div style="flex:1;min-width:120px">
           <label class="form-label">Valor pago (R$)</label>
           <input type="number" step="0.01" min="0" id="remDetValorPago" class="form-input">
         </div>
-        <div style="flex:2;min-width:200px">
+        <div style="flex:2;min-width:180px">
           <label class="form-label">Observação</label>
           <input id="remDetObservacao" class="form-input">
         </div>
-        <div style="align-self:flex-end">
+        <div style="align-self:flex-end;display:flex;gap:8px">
           <button class="btn btn-ghost" style="font-size:11px" onclick="salvarEdicaoRemessa()">💾 Salvar</button>
+          <button class="btn btn-ghost" style="font-size:11px;color:#ef4444;border-color:#ef4444" onclick="excluirRemessaInteira()">🗑️ Excluir Remessa</button>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -12901,7 +12911,7 @@ function laudosRender_() {
 
   arr.forEach(grupo => {
     const s = grupo.seriais;
-    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length;
+    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length, enviado=s.filter(x=>x.statusLocal==='ENVIADO_LAUDO').length;
     const venc=s.filter(x=>x.status==='VENCIDO').length, alrt=s.filter(x=>x.status==='ALERTA_30').length, sem=s.filter(x=>x.status==='SEM_LAUDO').length;
 
     const pendentes=s.filter(x=>x.status==='PENDENTE_CADASTRO').length;
@@ -12938,7 +12948,7 @@ function laudosRender_() {
     trGrupo.innerHTML = `
       <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${escHtml(grupo.itemNome)}</td>
       <td style="padding:12px;text-align:center"><span style="color:var(--accent-text);font-size:11px;font-weight:700">${s.length} serial(is)</span></td>
-      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}</td>
+      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}${enviado>0?` · 📤 ${enviado}`:''}</td>
       <td style="padding:12px" colspan="2">${badge}</td>
       <td style="padding:12px" colspan="2">${consist}</td>`;
     tbody.appendChild(trGrupo);
@@ -12960,7 +12970,7 @@ function laudosRender_() {
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
         </tr></thead>
         <tbody>${s.map(x=>{
-          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte' : '📦 Estoque';
+          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='ENVIADO_LAUDO' ? '📤 Enviado para Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte' : '📦 Estoque';
           const diasCor = x.status==='VENCIDO'?'#ef4444':x.status==='ALERTA_30'?'#f59e0b':'#22c55e';
 
           if (x.status === 'PENDENTE_CADASTRO') {
@@ -13084,7 +13094,7 @@ async function buscarLocalizador() {
 
   // Situação atual
   const a = data.ativo;
-  const localCor = a?.status_local==='COM_COLAB'?'#a855f7':a?.status_local==='DESCARTE'?'#ef4444':a?.status_local==='AGUARDANDO_LAUDO'?'#f59e0b':'#22c55e';
+  const localCor = a?.status_local==='COM_COLAB'?'#a855f7':a?.status_local==='DESCARTE'?'#ef4444':a?.status_local==='AGUARDANDO_LAUDO'?'#f59e0b':a?.status_local==='ENVIADO_LAUDO'?'#3b82f6':'#22c55e';
   document.getElementById('locSituacaoAtual').innerHTML = a ? [
     ['Item', a.item||'—'],
     ['Serial', a.serial||'—'],
@@ -14113,6 +14123,8 @@ function abrirDetalheRemessa(id) {
   if (!r) return;
   _remDetalheAbertaId = id;
   document.getElementById('remDetInfo').textContent = `${r.empresa} · Enviado em ${formatarData(r.data_envio)} por ${r.nome_colaborador||'—'}`;
+  document.getElementById('remDetEmpresa').value = r.empresa || '';
+  document.getElementById('remDetDataEnvio').value = r.data_envio || '';
   document.getElementById('remDetValorPago').value = r.valor_pago != null ? r.valor_pago : '';
   document.getElementById('remDetObservacao').value = r.observacao || '';
 
@@ -14131,6 +14143,8 @@ function abrirDetalheRemessa(id) {
             onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden');abrirModalRecuperar('${it.id_ativo}','${escJs((it.serial||'').replace(/'/g,"\\'"))}','${(it.item||'').replace(/'/g,"\\'")}','${it.id}')">✅ Aprovar</button>
           <button class="btn btn-ghost" style="font-size:10px;color:#ef4444;border-color:#ef4444;padding:4px 8px"
             onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden');abrirModalReprovar('${it.id_ativo}','${escJs((it.serial||'').replace(/'/g,"\\'"))}','${(it.item||'').replace(/'/g,"\\'")}','${it.id}')">❌ Reprovar</button>
+          <button class="btn btn-ghost" style="font-size:10px;color:var(--text-3);padding:4px 8px" title="Remove este item da remessa e devolve pra Aguardando Laudo"
+            onclick="removerItemRemessa('${it.id}','${escJs((it.item||'').replace(/'/g,"\\'"))}')">🗑️ Remover</button>
         </div>` : ''}
       </td>
     </tr>`;
@@ -14149,17 +14163,43 @@ async function reabrirDetalheRemessaAtualizado() {
 
 async function salvarEdicaoRemessa() {
   if (!_remDetalheAbertaId) return;
+  const empresa = document.getElementById('remDetEmpresa').value.trim();
+  const data_envio = document.getElementById('remDetDataEnvio').value;
   const valor_pago = document.getElementById('remDetValorPago').value;
   const observacao = document.getElementById('remDetObservacao').value.trim();
 
   const res = await api(`/laudos/remessas/${_remDetalheAbertaId}`, {
     method: 'PUT',
-    body: JSON.stringify({ valor_pago: valor_pago || null, observacao: observacao || null }),
+    body: JSON.stringify({ empresa, data_envio, valor_pago: valor_pago || null, observacao: observacao || null }),
   });
   if (res?.ok) {
     toast('Remessa atualizada!','success');
-    carregarRemessas();
+    await reabrirDetalheRemessaAtualizado();
   } else toast(res?.erro || 'Erro ao salvar','error');
+}
+
+async function removerItemRemessa(itemId, nomeItem) {
+  if (!_remDetalheAbertaId) return;
+  if (!confirm(`Remover "${nomeItem}" desta remessa? O item volta pra "Aguardando Laudo".`)) return;
+  const res = await api(`/laudos/remessas/${_remDetalheAbertaId}/itens/${itemId}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast('Item removido da remessa!','success');
+    carregarRecuperados();
+    await reabrirDetalheRemessaAtualizado();
+  } else toast(res?.erro || 'Erro ao remover item','error');
+}
+
+async function excluirRemessaInteira() {
+  if (!_remDetalheAbertaId) return;
+  if (!confirm('Excluir esta remessa inteira? Os itens ainda pendentes voltam pra "Aguardando Laudo". Itens já aprovados/reprovados mantêm o resultado, só perdem o vínculo com esta remessa.\n\nEsta ação não pode ser desfeita.')) return;
+  const res = await api(`/laudos/remessas/${_remDetalheAbertaId}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast(`Remessa excluída! ${res.itens_revertidos||0} item(ns) voltaram pra Aguardando Laudo.`,'success');
+    document.getElementById('modalDetalheRemessa').classList.add('hidden');
+    _remDetalheAbertaId = null;
+    carregarRecuperados();
+    carregarRemessas();
+  } else toast(res?.erro || 'Erro ao excluir remessa','error');
 }
 
 // ═══════════════════════════════════════════
