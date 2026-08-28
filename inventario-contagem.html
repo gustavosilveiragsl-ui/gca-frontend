@@ -252,25 +252,32 @@ function renderLista() {
 
   cont.innerHTML = lista.map(it => {
     const contado = it.saldo_contado != null;
+    const posicao = formatarPosicao(it);
     return `<div class="item-card ${contado ? 'contado' : ''}">
       <div style="flex:1">
         <div class="item-nome">${escHtml(it.nome_item || '—')}</div>
         <div class="item-cod">${escHtml(it.codigo_item || '')} ${it.un_med ? '· ' + escHtml(it.un_med) : ''} · Saldo no sistema: <strong>${it.saldo_gca ?? '—'}</strong></div>
+        ${posicao ? `<div class="item-cod">📍 ${escHtml(posicao)}</div>` : ''}
         <div class="item-status ${contado ? 'contado' : ''}">${contado ? `✓ ${it.saldo_contado} — ${escHtml(it.nome_contador || '')}` : 'Não contado'}</div>
       </div>
-      <button class="item-btn" ${contado ? 'disabled' : ''} onclick="abrirModalContar('${it.id}')">${contado ? 'Contado' : 'Contar'}</button>
+      <button class="item-btn" onclick="abrirModalContar('${it.id}')">${contado ? 'Editar' : 'Contar'}</button>
     </div>`;
   }).join('');
 }
 
+function formatarPosicao(it) {
+  return [it.corredor, it.prateleira, it.box].filter(Boolean).join(' / ');
+}
+
 function abrirModalContar(itemId) {
   _itemAtual = _itens.find(i => i.id === itemId);
-  if (!_itemAtual || _itemAtual.saldo_contado != null) return;
+  if (!_itemAtual) return;
+  const posicao = formatarPosicao(_itemAtual);
   document.getElementById('modalItemNome').textContent = _itemAtual.nome_item || '—';
-  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + ' · Saldo no sistema: ' + (_itemAtual.saldo_gca ?? '—');
-  document.getElementById('qtdInput').value = '';
+  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + ' · Saldo no sistema: ' + (_itemAtual.saldo_gca ?? '—') + (posicao ? ' · 📍 ' + posicao : '');
+  document.getElementById('qtdInput').value = _itemAtual.saldo_contado != null ? _itemAtual.saldo_contado : '';
   document.getElementById('modalContar').classList.remove('hidden');
-  setTimeout(() => document.getElementById('qtdInput').focus(), 100);
+  setTimeout(() => { const el = document.getElementById('qtdInput'); el.focus(); el.select(); }, 100);
 }
 
 function fecharModalContar() {
