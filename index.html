@@ -20,6 +20,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Mapa real da Logística (destinos cadastrados/geocodificados) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <style>
 :root {
   --accent:#6366f1;--accent-hover:#4f46e5;--accent-soft:#1e1b4b;--accent-text:#818cf8;
@@ -252,6 +255,14 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-badge-amarelo{color:var(--yellow);border:1px solid var(--yellow);}
 .log-badge-azul{color:var(--blue);border:1px solid var(--blue);}
 .log-badge-verde{color:var(--green);border:1px solid var(--green);}
+
+.view-toggle-log{display:flex;background:var(--bg-hover);border:1px solid var(--border);border-radius:999px;padding:2px;gap:2px;}
+.view-toggle-log button{border:none;background:transparent;color:var(--text-2);font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;transition:all .15s;}
+.view-toggle-log button.active{background:var(--accent);color:#fff;}
+.log-popup{font-family:var(--font-main);font-size:12px;}
+.log-popup b{display:block;font-size:12.5px;margin-bottom:4px;}
+.log-popup .lp-row{color:var(--text-3);font-size:11px;margin-top:2px;}
+.log-popup .lp-link{display:inline-block;margin-top:6px;font-size:11px;color:var(--accent-text);text-decoration:none;font-weight:600;}
 
 /* ═══ ATENDIMENTO ═══ */
 .atend-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
@@ -1083,15 +1094,57 @@ window.addEventListener('pageshow', function(e) {
       </div>
 
       <div id="logDecDestinoBox" class="hidden">
-        <div style="margin-top:4px;margin-bottom:14px">
+        <div style="margin-top:4px;margin-bottom:8px">
           <label class="form-label">Destino de entrega</label>
-          <input id="logDecDestino" class="form-input" placeholder="Ex: Sede Rio das Ostras">
+          <select id="logDecDestinoSelect" class="form-input"><option value="">Selecione o destino...</option></select>
         </div>
+        <button type="button" class="row-action" style="margin-bottom:14px" onclick="logDecCadastrarNovoDestino()">➕ Cadastrar novo destino</button>
         <div style="display:flex;gap:8px">
           <button class="btn btn-ghost" style="flex:1" onclick="logDecVoltar()">Voltar</button>
           <button class="btn btn-primary" style="flex:1" onclick="logDecConfirmarSim()">Confirmar</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DESTINOS DE ENTREGA (gerenciar) -->
+<div class="modal-overlay hidden" id="modalDestinos">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title">📍 Destinos de Entrega</div>
+      <button class="modal-close" onclick="fecharModalDestinos()">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="destinosLista" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;margin-bottom:16px"></div>
+      <button class="btn btn-primary" style="font-size:12px" onclick="abrirFormNovoDestino()">➕ Cadastrar novo destino</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CADASTRAR/EDITAR DESTINO — busca o endereço no OpenStreetMap (Nominatim) e
+     confirma a coordenada antes de salvar, pra não geocodificar errado. -->
+<div class="modal-overlay hidden" id="modalDestinoForm">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title" id="destFormTitulo">➕ Novo Destino</div>
+      <button class="modal-close" onclick="fecharFormDestino()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:12px">
+        <label class="form-label">Nome do destino</label>
+        <input id="destFormNome" class="form-input" placeholder="Ex: Sede Rio das Ostras">
+      </div>
+      <div style="margin-bottom:8px">
+        <label class="form-label">Endereço</label>
+        <div style="display:flex;gap:8px">
+          <input id="destFormEndereco" class="form-input" placeholder="Rua, número, cidade, UF" onkeydown="if(event.key==='Enter'){event.preventDefault();buscarEnderecoDestino();}">
+          <button type="button" class="btn btn-ghost" style="width:auto;padding:0 14px;font-size:12px;white-space:nowrap" onclick="buscarEnderecoDestino()">🔍 Buscar</button>
+        </div>
+      </div>
+      <div id="destFormResultados" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+      <div id="destFormConfirmado" class="hidden" style="font-size:11px;color:var(--green);background:var(--green-soft);border-radius:8px;padding:8px 10px;margin-bottom:12px"></div>
+      <button class="btn btn-primary" style="width:100%" id="destFormSalvarBtn" onclick="salvarDestino()" disabled>Salvar destino</button>
     </div>
   </div>
 </div>
@@ -3633,7 +3686,10 @@ window.addEventListener('pageshow', function(e) {
 
       <!-- ── LOGÍSTICA ── -->
       <div class="view" id="view-logistica">
-        <div class="view-header"><div class="view-title">🚚 Logística</div><div class="view-sub">Atendimentos que precisam viajar até o colaborador — coleta, trânsito e entrega por destino</div></div>
+        <div class="view-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div><div class="view-title">🚚 Logística</div><div class="view-sub">Atendimentos que precisam viajar até o colaborador — coleta, trânsito e entrega por destino</div></div>
+          <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalDestinos()">📍 Destinos de Entrega</button>
+        </div>
 
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
           <div class="kpi-card">
@@ -3674,10 +3730,25 @@ window.addEventListener('pageshow', function(e) {
 
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Viagens</div><div class="card-sub">Trilha de coleta, transferência e entrega por destino</div></div>
-            <button class="btn btn-ghost" onclick="carregarLogisticaViagens()">↻</button>
+            <div><div class="card-title">Viagens</div><div class="card-sub">Coleta, transferência e entrega por destino</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="view-toggle-log">
+                <button class="active" id="btnLogViewTrilha" onclick="mudarLogView('trilha')">🧭 Trilha</button>
+                <button id="btnLogViewMapa" onclick="mudarLogView('mapa')">🗺️ Mapa</button>
+              </div>
+              <button class="btn btn-ghost" onclick="carregarLogisticaViagens()">↻</button>
+            </div>
           </div>
           <div id="logViagensBody" style="padding:16px;display:flex;flex-direction:column;gap:14px"><div class="spinner" style="margin:20px auto"></div></div>
+          <div id="logMapaWrap" class="hidden" style="padding:16px">
+            <div id="logMapaContainer" style="height:440px;border-radius:var(--radius-md);overflow:hidden;border:1px solid var(--border)"></div>
+            <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text-2)">
+              <span>🟡 Aguardando coleta</span>
+              <span>🔵 Em trânsito</span>
+              <span>🟢 Entregue</span>
+              <span id="logMapaSemCoord" class="hidden" style="color:var(--text-3)">· alguns destinos ainda sem coordenada cadastrada</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -4692,7 +4763,7 @@ function onViewLoad(nome) {
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
-  if (nome === 'logistica')          { carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
+  if (nome === 'logistica')          { carregarDestinosEntrega(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
@@ -6556,7 +6627,6 @@ async function concluirAtendimento() {
 }
 
 function abrirModalDecisaoLogistica() {
-  document.getElementById('logDecDestino').value = '';
   document.getElementById('logDecDestinoBox').classList.add('hidden');
   document.getElementById('logDecBotoes').classList.remove('hidden');
   document.getElementById('modalDecisaoLogistica').classList.remove('hidden');
@@ -6566,10 +6636,11 @@ function fecharModalDecisaoLogistica() {
   document.getElementById('modalDecisaoLogistica').classList.add('hidden');
 }
 
-function logDecMostrarDestino() {
+async function logDecMostrarDestino() {
   document.getElementById('logDecBotoes').classList.add('hidden');
   document.getElementById('logDecDestinoBox').classList.remove('hidden');
-  setTimeout(() => document.getElementById('logDecDestino').focus(), 50);
+  if (!_destinos.length) await carregarDestinosEntrega();
+  popularSelectDestinos('logDecDestinoSelect');
 }
 
 function logDecVoltar() {
@@ -6579,17 +6650,28 @@ function logDecVoltar() {
 
 function logDecConfirmarNao() {
   fecharModalDecisaoLogistica();
-  finalizarConclusaoAtendimento(false, '');
+  finalizarConclusaoAtendimento(false, null);
 }
 
 function logDecConfirmarSim() {
-  const destino = document.getElementById('logDecDestino').value.trim();
-  if (!destino) { toast('Informe o destino de entrega', 'warn'); return; }
+  const destinoId = document.getElementById('logDecDestinoSelect').value;
+  if (!destinoId) { toast('Selecione o destino de entrega', 'warn'); return; }
   fecharModalDecisaoLogistica();
-  finalizarConclusaoAtendimento(true, destino);
+  finalizarConclusaoAtendimento(true, destinoId);
 }
 
-async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntrega) {
+// Abre o cadastro rápido de destino sem sair da pergunta de logística — ao salvar, volta pra
+// cá com o destino novo já selecionado.
+function logDecCadastrarNovoDestino() {
+  document.getElementById('modalDecisaoLogistica').classList.add('hidden');
+  _destReturnToLogDec = true;
+  abrirFormNovoDestino((novoId) => {
+    popularSelectDestinos('logDecDestinoSelect');
+    document.getElementById('logDecDestinoSelect').value = novoId;
+  });
+}
+
+async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaId) {
   const btn = document.getElementById('btnConcluirAtendimento');
   btn.disabled  = true;
   btn.textContent = '⏳ Salvando...';
@@ -6628,7 +6710,7 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntrega)
     criadoEm:         agora.toISOString(),
     solicitacaoId:    ATEND.solicitacaoId || null,
     necessitaLogistica: necessitaLogistica,
-    destinoEntrega:   destinoEntrega,
+    destinoEntregaId: destinoEntregaId,
   };
 
   const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
@@ -9937,6 +10019,72 @@ async function carregarLogisticaViagens() {
           ${renderTrilhaGrupo(g)}
         </div>`).join('')}
     </div>`).join('');
+
+  if (_logViewAtual === 'mapa') renderLogMapa();
+}
+
+// ── Alterna entre a trilha (linha do tempo por evento) e o mapa real (Leaflet + OpenStreetMap,
+// com o pin na coordenada geocodificada de cada destino cadastrado) ──
+let _logViewAtual = 'trilha';
+let _logMap = null;
+let _logMapMarkers = [];
+
+function mudarLogView(v) {
+  _logViewAtual = v;
+  document.getElementById('btnLogViewTrilha').classList.toggle('active', v === 'trilha');
+  document.getElementById('btnLogViewMapa').classList.toggle('active', v === 'mapa');
+  document.getElementById('logViagensBody').classList.toggle('hidden', v !== 'trilha');
+  document.getElementById('logMapaWrap').classList.toggle('hidden', v !== 'mapa');
+  if (v === 'mapa') renderLogMapa();
+}
+
+function corPorStatusGrupo(status) {
+  return status === 'ENTREGUE' ? '#22c55e' : status === 'EM_TRANSITO' ? '#38bdf8' : '#fbbf24';
+}
+
+function renderLogMapa() {
+  const cont = document.getElementById('logMapaContainer');
+  if (!cont || typeof L === 'undefined') return;
+
+  if (!_logMap) {
+    _logMap = L.map(cont, { scrollWheelZoom: true }).setView([-22.85, -42.6], 10); // região padrão (RJ)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap',
+      maxZoom: 19,
+    }).addTo(_logMap);
+  }
+
+  _logMapMarkers.forEach(m => _logMap.removeLayer(m));
+  _logMapMarkers = [];
+
+  const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
+  const comCoord = todosGrupos.filter(g => g.latitude != null && g.longitude != null);
+  document.getElementById('logMapaSemCoord').classList.toggle('hidden', comCoord.length === todosGrupos.length);
+
+  comCoord.forEach(g => {
+    const cor = corPorStatusGrupo(g.status);
+    const icon = L.divIcon({
+      className: '', html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${cor};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
+      iconSize: [16,16], iconAnchor: [8,16],
+    });
+    const marker = L.marker([g.latitude, g.longitude], { icon }).addTo(_logMap);
+    const statusTxt = g.status==='ENTREGUE' ? '✅ Entregue' : g.status==='EM_TRANSITO' ? '🚚 Em trânsito' : '📦 Aguardando coleta';
+    const nomesColab = (g.atendimentos||[]).map(a=>escHtml(a.nome_colaborador||'—')).join(', ') || '—';
+    const rota = `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`;
+    marker.bindPopup(`<div class="log-popup">
+      <b>📍 ${escHtml(g.destino)}</b>
+      <div class="lp-row">${statusTxt} · ${escHtml(g.nome_transportador_atual||'sem transportador')}</div>
+      <div class="lp-row">${nomesColab}</div>
+      <a class="lp-link" href="${rota}" target="_blank" rel="noopener">🧭 Abrir rota</a>
+    </div>`);
+    _logMapMarkers.push(marker);
+  });
+
+  if (comCoord.length) {
+    const grupo = L.featureGroup(_logMapMarkers);
+    _logMap.fitBounds(grupo.getBounds().pad(0.25));
+  }
+  setTimeout(() => _logMap.invalidateSize(), 60);
 }
 
 // Monta a trilha visual (Coleta → Repasse(s) → Entrega) de um grupo, a partir do histórico
@@ -9975,6 +10123,159 @@ function renderTrilhaGrupo(g) {
 function fmtDataHoraCurta(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+}
+
+// ── DESTINOS DE ENTREGA — catálogo de endereços fixos (geocodificados uma vez via Nominatim/
+// OpenStreetMap), usado no lugar de digitar destino como texto livre a cada atendimento. ──
+let _destinos = [];
+let _destEditandoId = null;
+let _destCoordSelecionada = null;
+let _destCandidatos = [];
+let _destCallbackAposSalvar = null;
+let _destReturnToLogDec = false;
+
+async function carregarDestinosEntrega() {
+  const res = await api('/destinos-entrega');
+  _destinos = res?.data || [];
+  return _destinos;
+}
+
+function popularSelectDestinos(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const atual = sel.value;
+  const ativos = _destinos.filter(d => d.ativo !== false);
+  sel.innerHTML = '<option value="">Selecione o destino...</option>' +
+    ativos.map(d => `<option value="${d.id}">${escHtml(d.nome)}</option>`).join('');
+  if (atual) sel.value = atual;
+}
+
+async function abrirModalDestinos() {
+  await carregarDestinosEntrega();
+  renderListaDestinos();
+  document.getElementById('modalDestinos').classList.remove('hidden');
+}
+function fecharModalDestinos() { document.getElementById('modalDestinos').classList.add('hidden'); }
+
+function renderListaDestinos() {
+  const cont = document.getElementById('destinosLista');
+  if (!cont) return;
+  if (!_destinos.length) {
+    cont.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhum destino cadastrado ainda</div></div>`;
+    return;
+  }
+  cont.innerHTML = _destinos.map(d => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:9px 12px;${d.ativo===false?'opacity:.5':''}">
+      <div>
+        <div style="font-size:12px;font-weight:600">${escHtml(d.nome)}</div>
+        <div style="font-size:10px;color:var(--text-3)">${escHtml(d.endereco||'—')}</div>
+      </div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="row-action" onclick="abrirFormEditarDestino('${d.id}')">Editar</button>
+        <button class="row-action" onclick="toggleAtivoDestino('${d.id}', ${d.ativo===false})">${d.ativo===false?'Ativar':'Desativar'}</button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirFormNovoDestino(callback) {
+  _destEditandoId = null;
+  _destCoordSelecionada = null;
+  _destCandidatos = [];
+  _destCallbackAposSalvar = callback || null;
+  document.getElementById('destFormTitulo').textContent = '➕ Novo Destino';
+  document.getElementById('destFormNome').value = '';
+  document.getElementById('destFormEndereco').value = '';
+  document.getElementById('destFormResultados').innerHTML = '';
+  document.getElementById('destFormConfirmado').classList.add('hidden');
+  document.getElementById('destFormSalvarBtn').disabled = true;
+  document.getElementById('modalDestinoForm').classList.remove('hidden');
+  setTimeout(() => document.getElementById('destFormNome').focus(), 50);
+}
+
+function abrirFormEditarDestino(id) {
+  const d = _destinos.find(x => x.id === id);
+  if (!d) return;
+  _destEditandoId = id;
+  _destCoordSelecionada = { latitude: d.latitude, longitude: d.longitude, display_name: d.endereco };
+  _destCandidatos = [];
+  _destCallbackAposSalvar = null;
+  document.getElementById('destFormTitulo').textContent = '✏️ Editar Destino';
+  document.getElementById('destFormNome').value = d.nome;
+  document.getElementById('destFormEndereco').value = d.endereco || '';
+  document.getElementById('destFormResultados').innerHTML = '';
+  document.getElementById('destFormConfirmado').classList.remove('hidden');
+  document.getElementById('destFormConfirmado').textContent = '📍 Localização atual mantida (busque de novo só se o endereço mudou)';
+  document.getElementById('destFormSalvarBtn').disabled = false;
+  document.getElementById('modalDestinoForm').classList.remove('hidden');
+}
+
+function fecharFormDestino() {
+  document.getElementById('modalDestinoForm').classList.add('hidden');
+  if (_destReturnToLogDec) {
+    _destReturnToLogDec = false;
+    document.getElementById('modalDecisaoLogistica').classList.remove('hidden');
+  }
+}
+
+async function buscarEnderecoDestino() {
+  const endereco = document.getElementById('destFormEndereco').value.trim();
+  if (!endereco) { toast('Digite o endereço pra buscar', 'warn'); return; }
+  const cont = document.getElementById('destFormResultados');
+  cont.innerHTML = '<div class="spinner" style="margin:8px auto"></div>';
+  document.getElementById('destFormConfirmado').classList.add('hidden');
+  document.getElementById('destFormSalvarBtn').disabled = true;
+
+  const res = await api('/destinos-entrega/geocodificar', { method: 'POST', body: JSON.stringify({ endereco }) });
+  _destCandidatos = res?.candidatos || [];
+  if (!res?.ok || !_destCandidatos.length) {
+    cont.innerHTML = `<div style="font-size:11px;color:var(--text-3)">Nenhum resultado encontrado — tente um endereço mais completo (rua, número, cidade).</div>`;
+    return;
+  }
+  cont.innerHTML = _destCandidatos.map((c, i) => `
+    <button type="button" class="row-action" style="text-align:left;width:100%;padding:8px 10px" onclick="confirmarCandidatoDestino(${i})">📍 ${escHtml(c.display_name)}</button>`).join('');
+}
+
+function confirmarCandidatoDestino(i) {
+  const c = _destCandidatos[i];
+  if (!c) return;
+  _destCoordSelecionada = c;
+  document.getElementById('destFormResultados').innerHTML = '';
+  document.getElementById('destFormConfirmado').classList.remove('hidden');
+  document.getElementById('destFormConfirmado').textContent = '📍 ' + c.display_name;
+  document.getElementById('destFormSalvarBtn').disabled = false;
+}
+
+async function salvarDestino() {
+  const nome = document.getElementById('destFormNome').value.trim();
+  if (!nome) { toast('Informe o nome do destino', 'warn'); return; }
+  if (!_destCoordSelecionada) { toast('Busque e confirme o endereço', 'warn'); return; }
+
+  const body = {
+    nome,
+    endereco: _destCoordSelecionada.display_name || document.getElementById('destFormEndereco').value.trim(),
+    latitude: _destCoordSelecionada.latitude,
+    longitude: _destCoordSelecionada.longitude,
+  };
+  const res = _destEditandoId
+    ? await api('/destinos-entrega/' + _destEditandoId, { method: 'PUT', body: JSON.stringify(body) })
+    : await api('/destinos-entrega', { method: 'POST', body: JSON.stringify(body) });
+
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar destino', 'error'); return; }
+  toast('Destino salvo!', 'success');
+
+  const novoId = res.data?.id || _destEditandoId;
+  const callback = _destCallbackAposSalvar;
+  _destCallbackAposSalvar = null;
+  fecharFormDestino();
+  await carregarDestinosEntrega();
+  if (typeof callback === 'function') callback(novoId);
+  else renderListaDestinos();
+}
+
+async function toggleAtivoDestino(id, novoAtivo) {
+  const res = await api('/destinos-entrega/' + id, { method: 'PUT', body: JSON.stringify({ ativo: novoAtivo }) });
+  if (res?.ok) { await carregarDestinosEntrega(); renderListaDestinos(); }
+  else toast(res?.erro || 'Erro ao atualizar', 'error');
 }
 
 // ════════════ USUÁRIOS ════════════

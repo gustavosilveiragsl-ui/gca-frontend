@@ -242,6 +242,7 @@ function renderGrupos() {
       <div style="margin-top:10px">
       ${(g.atendimentos || []).map(a => `<div class="atend-item">${escHtml(a.nome_colaborador || '—')} · ${a.qtd_itens ?? '—'} item(ns)</div>`).join('')}
       </div>
+      ${g.latitude != null && g.longitude != null ? `<a class="btn btn-ghost" style="margin-top:10px;text-decoration:none;text-align:center;display:block" href="https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}" target="_blank" rel="noopener">🧭 Abrir rota</a>` : ''}
       <div class="grupo-acoes">
         ${!emTransito ? `<button class="btn btn-primary" onclick="coletar('${g.id}')">📦 Confirmar Coleta</button>` : ''}
         ${emTransito ? `<button class="btn btn-green" onclick="entregar('${g.id}')">✅ Confirmar Entrega</button>` : ''}
