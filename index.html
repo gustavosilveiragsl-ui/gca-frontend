@@ -279,6 +279,9 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-popup{font-family:var(--font-main);font-size:12px;}
 .log-popup b{display:block;font-size:12.5px;margin-bottom:4px;}
 .log-popup .lp-row{color:var(--text-3);font-size:11px;margin-top:2px;}
+.log-popup .lp-status{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;}
+.log-popup .lp-atendimentos{max-height:96px;overflow-y:auto;margin-top:8px;border-top:1px solid #e5e7eb;padding-top:6px;}
+.log-popup .lp-atend{font-size:11px;color:#334155;padding:2px 0;}
 .log-popup .lp-link{display:inline-block;margin-top:6px;font-size:11px;color:var(--accent-text);text-decoration:none;font-weight:600;}
 
 /* ═══ ATENDIMENTO ═══ */
@@ -1121,6 +1124,73 @@ window.addEventListener('pageshow', function(e) {
           <button class="btn btn-primary" style="flex:1" onclick="logDecConfirmarSim()">Confirmar</button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LINK/QR DE UM GRUPO DE LOGÍSTICA -->
+<div class="modal-overlay hidden" id="modalLogisticaLink">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title" id="logLinkModalTitulo">🚚 Link do transportador</div>
+      <button class="modal-close" onclick="document.getElementById('modalLogisticaLink').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="text-align:center">
+      <div id="logLinkModalSub" style="font-size:12px;color:var(--text-2);margin-bottom:14px"></div>
+      <div style="background:#fff;border-radius:var(--radius-md);padding:16px;display:inline-block;margin-bottom:14px">
+        <img id="logLinkModalQR" src="" style="width:160px;height:160px;display:block">
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="logLinkModalUrl" class="form-input" style="font-size:11px" readonly onclick="this.select()">
+        <button class="btn btn-ghost" style="width:auto;padding:0 12px" onclick="copiarLinkLogistica()">📋</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: ATENDIMENTOS DE UM GRUPO (lista clicável → Consulta de Atendimentos) -->
+<div class="modal-overlay hidden" id="modalLogisticaAtendimentos">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">📦 Atendimentos deste destino</div>
+      <button class="modal-close" onclick="document.getElementById('modalLogisticaAtendimentos').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto" id="logAtendimentosModalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: TROCAR / TRANSFERIR TRANSPORTADOR de um grupo (mesmo modal, texto muda conforme o modo) -->
+<div class="modal-overlay hidden" id="modalLogisticaTransportador">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title" id="logTranspModalTitulo">Trocar transportador</div>
+      <button class="modal-close" onclick="document.getElementById('modalLogisticaTransportador').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="logTranspModalAviso" class="hidden" style="font-size:11px;color:var(--blue);background:var(--blue-soft);border-radius:8px;padding:8px 10px;margin-bottom:12px">Este grupo já foi coletado — o novo transportador vai precisar assinar o aceite pelo novo link antes de continuar.</div>
+      <label class="form-label">Novo transportador</label>
+      <div style="position:relative">
+        <input type="hidden" id="logTranspModalId">
+        <input id="logTranspModalBusca" class="form-input" placeholder="Nome ou matrícula..." oninput="filtrarTransportador(this.value,'logTranspModalSugestoes','logTranspModalId','logTranspModalBusca')" autocomplete="off">
+        <div id="logTranspModalSugestoes" class="autocomplete-list hidden"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="confirmarTrocaTransportador()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CANCELAR GRUPO JÁ COLETADO (com senha) -->
+<div class="modal-overlay hidden" id="modalLogisticaCancelar">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <div class="modal-title">⚠️ Cancelar viagem coletada</div>
+      <button class="modal-close" onclick="document.getElementById('modalLogisticaCancelar').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:14px">Esse grupo já foi coletado pelo transportador. Cancelar exige a sua senha pessoal.</div>
+      <label class="form-label">Sua senha</label>
+      <input type="password" id="logCancelarSenha" class="form-input" placeholder="Senha" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmarCancelamentoLogistica();}">
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;background:var(--red)" onclick="confirmarCancelamentoLogistica()">Cancelar viagem</button>
     </div>
   </div>
 </div>
@@ -3615,11 +3685,6 @@ window.addEventListener('pageshow', function(e) {
                 <label for="lsPodeInventario" class="form-label" style="margin:0">📋 Pode contar inventário</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Além de pedir material, essa pessoa também poderá acessar o link de contagem de inventário nos armazéns permitidos acima.</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="checkbox" id="lsPodeLogistica" style="accent-color:var(--primary)">
-                <label for="lsPodeLogistica" class="form-label" style="margin:0">🚚 Pode transportar (logística)</label>
-              </div>
-              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Libera acesso à tela do transportador (coleta, transferência e entrega de material em trânsito).</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -3752,7 +3817,11 @@ window.addEventListener('pageshow', function(e) {
           </div>
           <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
-            <select id="logTransportadorSelect" class="form-input" style="width:220px;font-size:11px"><option value="">Selecione o transportador...</option></select>
+            <div style="position:relative;width:220px">
+              <input type="hidden" id="logTransportadorSelect">
+              <input id="logTransportadorBusca" class="form-input" style="font-size:11px" placeholder="Nome ou matrícula..." oninput="filtrarTransportador(this.value,'logTransportadorSugestoes','logTransportadorSelect','logTransportadorBusca')" autocomplete="off">
+              <div id="logTransportadorSugestoes" class="autocomplete-list hidden"></div>
+            </div>
             <button class="btn btn-primary" style="font-size:11px" onclick="criarViagemLogistica()">🚚 Criar Viagem</button>
             <button class="btn btn-ghost" style="font-size:11px" onclick="logLimparSelecao()">Limpar seleção</button>
           </div>
@@ -4647,6 +4716,13 @@ window.addEventListener('load', async () => {
     if (ehAssinatura) return; // para aqui, não precisa de login
   }
 
+  // Verifica se é o link público de logística (sem login) — transportador assina coleta/
+  // transferência aqui, sem precisar de crachá próprio
+  if (window.location.hash.startsWith('#/logistica-link')) {
+    const ehLogistica = await verificarTokenLogistica();
+    if (ehLogistica) return;
+  }
+
   setTimeout(() => {
     const token   = localStorage.getItem('gca_token');
     const usuario = localStorage.getItem('gca_usuario');
@@ -5201,6 +5277,148 @@ async function confirmarAssinatura(token, atendimentoId) {
   } catch(e) {
     console.error('[confirmarAssinatura]', e);
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
+    alert('Erro de conexão. Tente novamente.');
+  }
+}
+
+// ── LINK PÚBLICO DE LOGÍSTICA ── (sem login — transportador assina coleta/transferência.
+// Ao contrário do link de assinatura do atendimento, esse fica vivo depois de assinado —
+// mostra "em trânsito" ao vivo até a entrega, que acontece sozinha quando o colaborador
+// assina o próprio atendimento, nunca aqui.)
+let _logLinkPoll = null;
+async function verificarTokenLogistica() {
+  const params = new URLSearchParams(window.location.hash.replace('#/logistica-link?', ''));
+  const token = params.get('token');
+  if (!token) return false;
+
+  document.getElementById('telaLogisticaLink').style.display = 'block';
+  document.getElementById('loadingScreen')?.classList.add('hidden');
+  await carregarEstadoLogisticaLink(token);
+  return true;
+}
+
+async function carregarEstadoLogisticaLink(token) {
+  const API = 'http://localhost:3000';
+  const card = document.getElementById('logLinkConteudo');
+  try {
+    const res = await fetch(`${API}/logistica/link/${token}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data.ok) {
+      if (_logLinkPoll) clearInterval(_logLinkPoll);
+      card.innerHTML = `
+        <div style="text-align:center;padding:40px;border:1px solid #334155;border-radius:16px;background:#1e293b">
+          <div style="font-size:48px;margin-bottom:16px">❌</div>
+          <div style="font-size:18px;font-weight:600;color:#f1f5f9;margin-bottom:8px">Link inválido</div>
+          <div style="font-size:13px;color:#94a3b8">Peça um novo link ao almoxarifado.</div>
+        </div>`;
+      return;
+    }
+    renderEstadoLogisticaLink(token, data);
+  } catch (e) {
+    card.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8">Erro ao carregar. Tente novamente.</div>`;
+  }
+}
+
+function renderEstadoLogisticaLink(token, data) {
+  const card = document.getElementById('logLinkConteudo');
+  const { estado, grupo, viagem, atendimentos, tipoPendente } = data;
+
+  if (estado === 'aguardando_assinatura') {
+    if (_logLinkPoll) clearInterval(_logLinkPoll);
+    const ehTransferencia = tipoPendente === 'TRANSFERENCIA';
+    card.innerHTML = `
+      <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;background:#1e293b">
+        <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
+          <div style="font-size:16px;font-weight:600;color:#f1f5f9">Olá, ${escHtml(grupo.nome_transportador_atual||'')}!</div>
+          <div style="font-size:12px;color:#94a3b8;margin-top:4px">📍 Destino: ${escHtml(grupo.destino)}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:2px">Viagem criada por ${escHtml(viagem.criado_por||'—')}</div>
+        </div>
+        <div style="padding:12px">
+          <div style="font-size:11px;color:#64748b;padding:6px 4px;text-transform:uppercase;letter-spacing:.5px">O que você vai ${ehTransferencia ? 'receber' : 'coletar'}</div>
+          ${atendimentos.map(a => `<div style="padding:8px 4px;border-bottom:1px solid #1e293b;font-size:12px;color:#e2e8f0">${escHtml(a.nome_colaborador||'—')} · ${a.qtd_itens ?? '—'} item(ns)</div>`).join('') || '<div style="padding:8px 4px;font-size:12px;color:#64748b">—</div>'}
+        </div>
+      </div>
+
+      <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">Assine abaixo para confirmar:</div>
+        <canvas id="canvasAssinatura" width="520" height="260"
+          style="border:2px dashed #475569;border-radius:10px;width:100%;touch-action:none;cursor:crosshair;background:#ffffff;display:block">
+        </canvas>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button onclick="limparAssinatura()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;padding:4px 8px">↺ Limpar</button>
+          <span style="font-size:11px;color:#64748b;flex:1">Ao assinar, confirmo que estou ${ehTransferencia ? 'recebendo' : 'coletando'} os itens acima.</span>
+        </div>
+      </div>
+
+      <button onclick="confirmarAssinaturaLogistica('${token}')"
+        style="width:100%;padding:18px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">
+        ✅ ${ehTransferencia ? 'Confirmar recebimento' : 'Confirmar coleta'}
+      </button>`;
+    iniciarCanvasAssinatura();
+    return;
+  }
+
+  if (estado === 'em_transito') {
+    card.innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #38bdf8;border-radius:16px;background:#1e293b">
+        <div style="width:72px;height:72px;border-radius:50%;background:rgba(56,189,248,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;animation:logPulseLink 1.6s ease-in-out infinite">🚚</div>
+        <div style="font-size:20px;font-weight:700;color:#38bdf8;margin-bottom:8px">Em trânsito</div>
+        <div style="font-size:13px;color:#e2e8f0;margin-bottom:4px">📍 ${escHtml(grupo.destino)}</div>
+        <div style="font-size:12px;color:#94a3b8">Com ${escHtml(grupo.nome_transportador_atual||'—')}</div>
+        <div style="font-size:11px;color:#64748b;margin-top:16px">Assinado — aguardando a confirmação de entrega no destino.</div>
+      </div>`;
+    // Fica de olho sozinho — assim que a entrega for confirmada (automaticamente, quando o
+    // colaborador assinar o próprio atendimento), essa tela atualiza sem precisar recarregar.
+    if (!_logLinkPoll) _logLinkPoll = setInterval(() => carregarEstadoLogisticaLink(token), 10000);
+    return;
+  }
+
+  if (_logLinkPoll) clearInterval(_logLinkPoll);
+
+  if (estado === 'entregue') {
+    card.innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px;background:#1e293b">
+        <div style="font-size:56px;margin-bottom:16px">✅</div>
+        <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Entregue!</div>
+        <div style="font-size:13px;color:#94a3b8">📍 ${escHtml(grupo.destino)}</div>
+      </div>`;
+    return;
+  }
+
+  if (estado === 'cancelado') {
+    card.innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #f87171;border-radius:16px;background:#1e293b">
+        <div style="font-size:56px;margin-bottom:16px">❌</div>
+        <div style="font-size:20px;font-weight:700;color:#f87171;margin-bottom:8px">Cancelado</div>
+        <div style="font-size:13px;color:#94a3b8">Esta viagem foi cancelada pelo almoxarifado.</div>
+      </div>`;
+  }
+}
+
+async function confirmarAssinaturaLogistica(token) {
+  if (!_assinCanvas) return;
+  const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
+  if (vazio) { alert('Por favor, assine no campo acima antes de confirmar.'); return; }
+
+  const assinaturaBase64 = _assinCanvas.toDataURL('image/png');
+  const btn = document.querySelector('#logLinkConteudo button[onclick*="confirmarAssinaturaLogistica"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+
+  const API = 'http://localhost:3000';
+  try {
+    const res = await fetch(`${API}/logistica/link/${token}/assinar`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assinatura_base64: assinaturaBase64 }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar'; }
+      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
+      return;
+    }
+    await carregarEstadoLogisticaLink(token);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar'; }
     alert('Erro de conexão. Tente novamente.');
   }
 }
@@ -9658,7 +9876,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário">📋</span>' : ''}${u.pode_logistica ? ' <span title="Pode transportar (logística)">🚚</span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário">📋</span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '✅ Ativo' : '⛔ Inativo'}</span></td>
@@ -9716,7 +9934,6 @@ async function salvarLS() {
   const senha  = document.getElementById('lsSenha').value.trim();
   const ativo  = document.getElementById('lsAtivo').checked;
   const podeInventario = document.getElementById('lsPodeInventario').checked;
-  const podeLogistica  = document.getElementById('lsPodeLogistica').checked;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -9727,13 +9944,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_logistica: podeLogistica };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_logistica: podeLogistica }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -9749,7 +9966,6 @@ function editarLS(id) {
   document.getElementById('lsSenha').value     = ''; // nunca pré-preenche — deixe em branco pra manter a senha atual
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
-  document.getElementById('lsPodeLogistica').checked = !!u.pode_logistica;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -9778,7 +9994,6 @@ function limparLS() {
   document.getElementById('lsSenha').value    = '';
   document.getElementById('lsAtivo').checked  = true;
   document.getElementById('lsPodeInventario').checked = false;
-  document.getElementById('lsPodeLogistica').checked = false;
   carregarArmazensLS();
 }
 
@@ -9951,14 +10166,6 @@ async function carregarLogisticaPendentes() {
   const cont = document.getElementById('logPendentesBody');
   if (cont) cont.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
 
-  const sel = document.getElementById('logTransportadorSelect');
-  if (sel && _colaboradores.length) {
-    const atual = sel.value;
-    sel.innerHTML = '<option value="">Selecione o transportador...</option>' +
-      _colaboradores.map(c => `<option value="${c.id}">${escHtml(c.nome)}</option>`).join('');
-    if (atual) sel.value = atual;
-  }
-
   const res = await api('/logistica/pendentes');
   _logPendentesData = res?.data || [];
   _logSelecionados.clear();
@@ -10006,6 +10213,8 @@ function logLimparSelecao() {
     const cb = card.querySelector('input[type=checkbox]');
     if (cb) cb.checked = false;
   });
+  document.getElementById('logTransportadorSelect').value = '';
+  document.getElementById('logTransportadorBusca').value = '';
   logAtualizarBarraSelecao();
 }
 
@@ -10018,9 +10227,160 @@ async function criarViagemLogistica() {
   if (res?.ok) {
     toast(`Viagem criada! ${res.grupos_criados} grupo(s) por destino.`, 'success');
     logLimparSelecao();
-    carregarLogisticaPendentes();
-    carregarLogisticaViagens();
+    await carregarLogisticaPendentes();
+    await carregarLogisticaViagens();
+    // Já mostra o link/QR do primeiro grupo criado — os outros (se for mais de 1 destino)
+    // ficam disponíveis pelo botão "Ver link" no card de cada grupo.
+    const primeiro = (res.grupos || [])[0];
+    if (primeiro?.token) abrirLinkLogistica(primeiro.token, `📍 ${primeiro.destino}`, res.grupos.length > 1 ? `1 de ${res.grupos.length} destinos — os outros estão na lista de viagens` : '');
   } else toast(res?.erro || 'Erro ao criar viagem', 'error');
+}
+
+// ── Autocomplete de transportador (nome/matrícula) — reaproveitado na barra de criar viagem
+// e nos modais de trocar/transferir transportador. ──
+function filtrarTransportador(q, listaId, hiddenId, buscaId) {
+  document.getElementById(hiddenId).value = '';
+  const lista = document.getElementById(listaId);
+  if (q.length < 2) { lista.classList.add('hidden'); return; }
+  const s = q.toLowerCase();
+  const resultados = (_colaboradores || []).filter(c =>
+    (c.nome||'').toLowerCase().includes(s) || (c.matricula||'').toLowerCase().includes(s)
+  ).slice(0, 15);
+  if (!resultados.length) { lista.classList.add('hidden'); return; }
+
+  const input = document.getElementById(buscaId);
+  const rect = input.getBoundingClientRect();
+  lista.style.top = (rect.bottom + 4) + 'px';
+  lista.style.left = rect.left + 'px';
+  lista.style.width = rect.width + 'px';
+  lista.innerHTML = resultados.map(c => `
+    <div class="autocomplete-item" onmousedown="selecionarTransportador('${c.id}','${escJs(c.nome)}','${hiddenId}','${buscaId}','${listaId}')">
+      <div style="font-weight:500;color:var(--text-1)">${escHtml(c.nome)}</div>
+      <div style="font-size:10px;color:var(--text-3)">${escHtml(c.matricula||'—')}</div>
+    </div>`).join('');
+  lista.classList.remove('hidden');
+}
+
+function selecionarTransportador(id, nome, hiddenId, buscaId, listaId) {
+  document.getElementById(hiddenId).value = id;
+  document.getElementById(buscaId).value = nome;
+  document.getElementById(listaId).classList.add('hidden');
+}
+
+// ── Link/QR de um grupo (mostrado ao criar viagem, ou pelo botão "Ver link" no card) ──
+function abrirLinkLogistica(token, titulo, sub) {
+  const url = `${window.location.origin}${window.location.pathname}#/logistica-link?token=${token}`;
+  document.getElementById('logLinkModalTitulo').textContent = titulo || '🚚 Link do transportador';
+  document.getElementById('logLinkModalSub').textContent = sub || 'Compartilhe esse link ou QR com o transportador';
+  document.getElementById('logLinkModalQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}`;
+  document.getElementById('logLinkModalUrl').value = url;
+  document.getElementById('modalLogisticaLink').classList.remove('hidden');
+}
+
+function copiarLinkLogistica() {
+  const url = document.getElementById('logLinkModalUrl').value;
+  navigator.clipboard?.writeText(url).then(() => toast('Link copiado!', 'success')).catch(() => {});
+}
+
+// ── Modal com os atendimentos de um grupo — clicar num leva direto pra Consulta de
+// Atendimentos, já naquele atendimento. ──
+function abrirModalAtendimentosGrupo(grupoId) {
+  const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
+  const grupo = todosGrupos.find(g => g.id === grupoId);
+  if (!grupo) return;
+
+  const podeEditar = grupo.status === 'AGUARDANDO_COLETA';
+  const body = document.getElementById('logAtendimentosModalBody');
+  body.innerHTML = (grupo.atendimentos || []).map(a => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+      <div style="cursor:pointer;flex:1" onclick="irParaAtendimentoConsulta('${a.id}')">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${escHtml(a.nome_colaborador||'—')}</div>
+        <div style="font-size:10px;color:var(--text-3)">${a.qtd_itens ?? '—'} item(ns) · ${escHtml(a.status||'')} · clique para ver na Consulta</div>
+      </div>
+      ${podeEditar ? `<button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="removerAtendimentoDoGrupo('${grupo.id}','${a.id}')">Remover</button>` : ''}
+    </div>`).join('') || '<div class="empty-state" style="padding:16px"><div class="es-title">Nenhum atendimento</div></div>';
+  document.getElementById('modalLogisticaAtendimentos').classList.remove('hidden');
+}
+
+async function irParaAtendimentoConsulta(atendimentoId) {
+  document.getElementById('modalLogisticaAtendimentos').classList.add('hidden');
+  showView('consulta');
+  const de = new Date(); de.setDate(de.getDate() - 60);
+  const elDe = document.getElementById('consultaDataDe'), elAte = document.getElementById('consultaDataAte');
+  if (elDe) elDe.value = de.toISOString().slice(0,10);
+  if (elAte) elAte.value = new Date().toISOString().slice(0,10);
+  await carregarConsultaAtendimentos();
+  verDetalhesAtendimento(atendimentoId);
+}
+
+async function removerAtendimentoDoGrupo(grupoId, atendimentoId) {
+  if (!confirm('Remover este atendimento da viagem? Os demais continuam normalmente.')) return;
+  const res = await api(`/logistica/grupos/${grupoId}/atendimentos/${atendimentoId}`, { method: 'DELETE' });
+  if (res?.ok) {
+    toast(res.grupoRemovido ? 'Atendimento removido — era o último, a viagem foi excluída.' : 'Atendimento removido da viagem.', 'success');
+    document.getElementById('modalLogisticaAtendimentos').classList.add('hidden');
+    carregarLogisticaViagens();
+    carregarLogisticaPendentes();
+  } else toast(res?.erro || 'Erro ao remover', 'error');
+}
+
+// ── Excluir grupo inteiro (só antes de coletado) ──
+async function excluirGrupoLogistica(grupoId) {
+  if (!confirm('Excluir esta viagem? Os atendimentos voltam pra fila de pendentes.')) return;
+  const res = await api(`/logistica/grupos/${grupoId}`, { method: 'DELETE' });
+  if (res?.ok) { toast('Viagem excluída.', 'success'); carregarLogisticaViagens(); carregarLogisticaPendentes(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+// ── Trocar transportador (pré-coleta) ou transferir (pós-coleta) — mesmo modal ──
+let _logGrupoAlvo = null;
+function abrirModalTrocarTransportador(grupoId, modo) {
+  _logGrupoAlvo = { id: grupoId, modo };
+  document.getElementById('logTranspModalTitulo').textContent = modo === 'transferir' ? '🔄 Transferir para outro transportador' : '✏️ Trocar transportador';
+  document.getElementById('logTranspModalAviso').classList.toggle('hidden', modo !== 'transferir');
+  document.getElementById('logTranspModalId').value = '';
+  document.getElementById('logTranspModalBusca').value = '';
+  document.getElementById('modalLogisticaTransportador').classList.remove('hidden');
+  setTimeout(() => document.getElementById('logTranspModalBusca').focus(), 50);
+}
+
+async function confirmarTrocaTransportador() {
+  const transportadorId = document.getElementById('logTranspModalId').value;
+  if (!transportadorId) { toast('Selecione o transportador', 'warn'); return; }
+  if (!_logGrupoAlvo) return;
+
+  const rota = _logGrupoAlvo.modo === 'transferir'
+    ? `/logistica/grupos/${_logGrupoAlvo.id}/transferir`
+    : `/logistica/grupos/${_logGrupoAlvo.id}/transportador`;
+  const metodo = _logGrupoAlvo.modo === 'transferir' ? 'POST' : 'PUT';
+
+  const res = await api(rota, { method: metodo, body: JSON.stringify({ transportador_id: transportadorId }) });
+  if (res?.ok) {
+    toast(_logGrupoAlvo.modo === 'transferir' ? `Transferência criada — aguardando ${res.para} assinar.` : 'Transportador trocado.', 'success');
+    document.getElementById('modalLogisticaTransportador').classList.add('hidden');
+    await carregarLogisticaViagens();
+    if (res.token) abrirLinkLogistica(res.token, _logGrupoAlvo.modo === 'transferir' ? '🔄 Link do novo transportador' : '🚚 Link do transportador');
+  } else toast(res?.erro || 'Erro ao trocar transportador', 'error');
+}
+
+// ── Cancelar grupo já coletado (com senha) ──
+let _logGrupoCancelar = null;
+function abrirModalCancelarLogistica(grupoId) {
+  _logGrupoCancelar = grupoId;
+  document.getElementById('logCancelarSenha').value = '';
+  document.getElementById('modalLogisticaCancelar').classList.remove('hidden');
+  setTimeout(() => document.getElementById('logCancelarSenha').focus(), 50);
+}
+
+async function confirmarCancelamentoLogistica() {
+  const senha = document.getElementById('logCancelarSenha').value;
+  if (!senha) { toast('Informe sua senha', 'warn'); return; }
+  const res = await api(`/logistica/grupos/${_logGrupoCancelar}/cancelar`, { method: 'POST', body: JSON.stringify({ senha }) });
+  if (res?.ok) {
+    toast('Viagem cancelada.', 'success');
+    document.getElementById('modalLogisticaCancelar').classList.add('hidden');
+    carregarLogisticaViagens();
+  } else toast(res?.erro || 'Erro ao cancelar', 'error');
 }
 
 async function carregarLogisticaViagens() {
@@ -10048,6 +10408,31 @@ async function carregarLogisticaViagens() {
     ? `<span class="log-badge log-badge-verde">🏁 Concluída</span>`
     : `<span class="log-badge log-badge-azul">🧭 Em andamento</span>`;
 
+  const grupoBadge = (g) => {
+    if (g.status === 'ENTREGUE') return `<span class="log-badge log-badge-verde">✅ Entregue</span>`;
+    if (g.status === 'CANCELADO') return `<span class="log-badge" style="color:var(--text-3);border:1px solid var(--text-3)">🚫 Cancelado</span>`;
+    if (g.status === 'EM_TRANSITO') return `<span class="log-badge log-badge-azul">🚚 Em trânsito</span>`;
+    return `<span class="log-badge log-badge-amarelo">📦 Aguardando coleta</span>`;
+  };
+
+  const acoesGrupo = (g) => {
+    const btns = [];
+    if (g.status !== 'ENTREGUE' && g.status !== 'CANCELADO' && g.token) {
+      btns.push(`<button class="row-action" onclick="abrirLinkLogistica('${g.token}','📍 ${escJs(g.destino)}')">🔗 Link</button>`);
+    }
+    if (g.status === 'AGUARDANDO_COLETA' && temPermissao('logistica_editar_viagem')) {
+      btns.push(`<button class="row-action" onclick="abrirModalTrocarTransportador('${g.id}','editar')">✏️ Editar</button>`);
+      btns.push(`<button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirGrupoLogistica('${g.id}')">🗑️ Excluir</button>`);
+    }
+    if (g.status === 'EM_TRANSITO' && temPermissao('logistica_transferir')) {
+      btns.push(`<button class="row-action" onclick="abrirModalTrocarTransportador('${g.id}','transferir')">🔄 Transferir</button>`);
+    }
+    if (g.status === 'EM_TRANSITO' && temPermissao('logistica_cancelar_viagem_assinada')) {
+      btns.push(`<button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelarLogistica('${g.id}')">⚠️ Cancelar</button>`);
+    }
+    return btns.join('');
+  };
+
   box.innerHTML = _logViagensData.map((v, i) => `
     <div class="log-viagem-card" style="animation-delay:${Math.min(i*0.04,0.3)}s">
       <div class="log-viagem-top">
@@ -10059,13 +10444,15 @@ async function carregarLogisticaViagens() {
           <div class="log-grupo-head">
             <div>
               <div class="log-grupo-destino">📍 ${escHtml(g.destino)}</div>
-              <div class="log-grupo-colabs">${(g.atendimentos||[]).map(a=>escHtml(a.nome_colaborador||'—')).join(', ') || '—'}</div>
+              <button type="button" class="row-action" style="margin-top:4px" onclick="abrirModalAtendimentosGrupo('${g.id}')">📦 ${(g.atendimentos||[]).length} atendimento(s) — ver</button>
             </div>
-            <span class="log-badge ${g.status==='ENTREGUE'?'log-badge-verde':g.status==='EM_TRANSITO'?'log-badge-azul':'log-badge-amarelo'}">
-              ${g.status==='ENTREGUE'?'✅ Entregue':g.status==='EM_TRANSITO'?'🚚 Em trânsito · '+escHtml(g.nome_transportador_atual||'—'):'📦 Aguardando coleta · '+escHtml(g.nome_transportador_atual||'—')}
-            </span>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              ${grupoBadge(g)}
+              <span style="font-size:10px;color:var(--text-3)">${escHtml(g.nome_transportador_atual||'—')}</span>
+            </div>
           </div>
           ${renderTrilhaGrupo(g)}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">${acoesGrupo(g)}</div>
         </div>`).join('')}
     </div>`).join('');
 
@@ -10088,7 +10475,10 @@ function mudarLogView(v) {
 }
 
 function corPorStatusGrupo(status) {
-  return status === 'ENTREGUE' ? '#22c55e' : status === 'EM_TRANSITO' ? '#38bdf8' : '#fbbf24';
+  if (status === 'ENTREGUE') return '#22c55e';
+  if (status === 'EM_TRANSITO') return '#38bdf8';
+  if (status === 'CANCELADO') return '#64748b';
+  return '#fbbf24';
 }
 
 function renderLogMapa() {
@@ -10117,13 +10507,14 @@ function renderLogMapa() {
       iconSize: [16,16], iconAnchor: [8,16],
     });
     const marker = L.marker([g.latitude, g.longitude], { icon }).addTo(_logMap);
-    const statusTxt = g.status==='ENTREGUE' ? '✅ Entregue' : g.status==='EM_TRANSITO' ? '🚚 Em trânsito' : '📦 Aguardando coleta';
-    const nomesColab = (g.atendimentos||[]).map(a=>escHtml(a.nome_colaborador||'—')).join(', ') || '—';
+    const statusTxt = g.status==='ENTREGUE' ? '✅ Entregue' : g.status==='CANCELADO' ? '🚫 Cancelado' : g.status==='EM_TRANSITO' ? '🚚 Em trânsito' : '📦 Aguardando coleta';
+    const nomesHtml = (g.atendimentos||[]).map(a=>`<div class="lp-atend">${escHtml(a.nome_colaborador||'—')}</div>`).join('') || '<div class="lp-atend">—</div>';
     const rota = `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`;
     marker.bindPopup(`<div class="log-popup">
       <b>📍 ${escHtml(g.destino)}</b>
-      <div class="lp-row">${statusTxt} · ${escHtml(g.nome_transportador_atual||'sem transportador')}</div>
-      <div class="lp-row">${nomesColab}</div>
+      <span class="lp-status" style="background:${cor}22;color:${cor}">${statusTxt}</span>
+      <div class="lp-row" style="margin-top:6px">🚚 ${escHtml(g.nome_transportador_atual||'sem transportador')}</div>
+      <div class="lp-atendimentos">${nomesHtml}</div>
       <a class="lp-link" href="${rota}" target="_blank" rel="noopener">🧭 Abrir rota</a>
     </div>`);
     _logMapMarkers.push(marker);
@@ -10569,7 +10960,10 @@ const PERMISSOES_SCHEMA = {
     inventario_ajustar_divergencia:'Ajustar estoque por divergência'
   }},
   logistica: { label:'Logística', icon:'🚚', itens:{
-    logistica_gerenciar_viagens:'Gerenciar viagens (montar, acompanhar coleta/entrega)'
+    logistica_gerenciar_viagens:'Gerenciar viagens (montar, acompanhar coleta/entrega)',
+    logistica_editar_viagem:'Editar/excluir viagem (antes da coleta)',
+    logistica_transferir:'Transferir grupo entre transportadores (depois da coleta)',
+    logistica_cancelar_viagem_assinada:'Cancelar viagem já coletada (com senha)'
   }}
 };
 
@@ -18913,6 +19307,24 @@ async function baExcluirEquipe(id) {
             <div style="font-size:12px;color:#94a3b8;margin-top:4px">Gestão de Almoxarifado · Ceneged</div>
           </div>
           <div id="assinCardConteudo">
+            <div style="text-align:center;padding:60px 0">
+              <div style="width:40px;height:40px;border:4px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
+              <div style="font-size:13px;color:#94a3b8">Carregando...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LINK PÚBLICO DE LOGÍSTICA (sem login) — fica vivo até a entrega, ao contrário do de
+           assinatura do atendimento (que encerra assim que assinado) -->
+      <div id="telaLogisticaLink" style="display:none;position:fixed;inset:0;z-index:99999;background:#0f172a;overflow-y:auto;color:#e2e8f0">
+        <style>@keyframes logPulseLink{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.08);opacity:.75}}</style>
+        <div style="max-width:560px;margin:0 auto;padding:32px 16px">
+          <div style="text-align:center;margin-bottom:32px">
+            <img src="https://i.postimg.cc/hvM5wcMw/LOGOTIPO-GCA.png" alt="GCA" style="height:64px;object-fit:contain;margin-bottom:8px">
+            <div style="font-size:12px;color:#94a3b8;margin-top:4px">🚚 Logística · Ceneged</div>
+          </div>
+          <div id="logLinkConteudo">
             <div style="text-align:center;padding:60px 0">
               <div style="width:40px;height:40px;border:4px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px"></div>
               <div style="font-size:13px;color:#94a3b8">Carregando...</div>
