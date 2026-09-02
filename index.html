@@ -277,13 +277,32 @@ tbody tr:hover td{background:var(--bg-hover);}
 .view-toggle-log{display:flex;background:var(--bg-hover);border:1px solid var(--border);border-radius:999px;padding:2px;gap:2px;}
 .view-toggle-log button{border:none;background:transparent;color:var(--text-2);font-size:11px;font-weight:600;padding:5px 12px;border-radius:999px;transition:all .15s;}
 .view-toggle-log button.active{background:var(--accent);color:#fff;}
-.log-popup{font-family:var(--font-main);font-size:12px;}
+/* Card do destino no mapa (popup do Leaflet) */
+.leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:0 12px 32px rgba(15,23,42,.22)!important;padding:2px!important;}
+.leaflet-popup-content{margin:12px 14px!important;}
+.leaflet-popup-tip{box-shadow:none!important;}
+.log-popup{font-family:var(--font-main);font-size:12px;color:#0f172a;}
 .log-popup b{display:block;font-size:12.5px;margin-bottom:4px;}
-.log-popup .lp-row{color:var(--text-3);font-size:11px;margin-top:2px;}
-.log-popup .lp-status{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;}
-.log-popup .lp-atendimentos{max-height:96px;overflow-y:auto;margin-top:8px;border-top:1px solid #e5e7eb;padding-top:6px;}
-.log-popup .lp-atend{font-size:11px;color:#334155;padding:2px 0;}
-.log-popup .lp-link{display:inline-block;margin-top:6px;font-size:11px;color:var(--accent-text);text-decoration:none;font-weight:600;}
+.log-popup .lp-head{display:flex;flex-direction:column;gap:6px;padding-bottom:8px;border-bottom:1px solid #eef2f7;}
+.log-popup .lp-destino{font-size:13.5px;font-weight:800;letter-spacing:-.01em;line-height:1.25;}
+.log-popup .lp-status{align-self:flex-start;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;}
+.log-popup .lp-rota-mini{font-size:10.5px;color:#64748b;margin-top:8px;line-height:1.4;}
+.log-popup .lp-rota-mini .lp-seta{color:#94a3b8;margin:0 2px;}
+.log-popup .lp-transp{font-size:11.5px;color:#334155;font-weight:600;margin-top:6px;}
+.log-popup .lp-row{color:#64748b;font-size:11px;margin-top:2px;}
+.log-popup .lp-atend-head{font-size:9.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 4px;}
+.log-popup .lp-atendimentos{max-height:118px;overflow-y:auto;border:1px solid #eef2f7;border-radius:9px;background:#f8fafc;}
+.log-popup .lp-atend{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:#334155;padding:5px 9px;border-bottom:1px solid #eef2f7;}
+.log-popup .lp-atend:last-child{border-bottom:none;}
+.log-popup .lp-atend-nome{line-height:1.3;}
+.log-popup .lp-atend-qtd{flex-shrink:0;font-size:9.5px;font-weight:700;color:#64748b;background:#e8edf5;border-radius:999px;padding:1px 7px;}
+.log-popup .lp-link{display:block;text-align:center;margin-top:10px;font-size:11px;color:#4f46e5;background:#eef2ff;border-radius:9px;padding:7px;text-decoration:none;font-weight:700;}
+.log-popup .lp-link:hover{background:#e0e7ff;}
+
+/* Marcadores do mapa: origem (armazém) e o emoji que corre pela rota */
+.mapa-origem-pin{width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 10px rgba(15,23,42,.28);}
+.mapa-emoji-movel{font-size:19px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));transition:transform .09s linear;}
 
 /* ═══ ATENDIMENTO ═══ */
 .atend-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
@@ -4803,6 +4822,8 @@ function showView(nome, btnEl) {
     clearInterval(window._autoRefreshTimer);
     window._autoRefreshTimer = null;
   }
+  // Saindo da Logística, para a animação dos emojis no mapa
+  if (nome !== 'logistica') pararAnimacaoMapa();
   // Se sair da tela de atendimento com atendimento ativo, cancela
   const viewAtual = document.querySelector('.view.active')?.id;
   if (viewAtual === 'view-atendimento' && nome !== 'atendimento' && ATEND.ativo) {
@@ -9415,14 +9436,30 @@ async function carregarArmazensView() {
   const lista = data.data || data.armazens || [];
   tbody.innerHTML = lista.length ? lista.map(a => `<tr>
     <td class="td-main">${escHtml(a.nome)}${a.principal ? ' <span style="color:#f59e0b" title="Armazém principal">⭐</span>' : ''}<div style="font-size:10px;color:var(--text-3)">${escHtml(a.descricao||'')}</div></td>
-    <td style="font-size:11px;color:var(--text-3)">${a.localizacao||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${a.responsavel||'—'}</td>
-    <td style="display:flex;gap:6px">
+    <td style="font-size:11px;color:var(--text-3)">${escHtml(a.localizacao||'—')}
+      ${a.latitude != null && a.longitude != null
+        ? '<div style="font-size:10px;color:var(--green);margin-top:2px">📍 Localizado no mapa</div>'
+        : '<div style="font-size:10px;color:var(--text-3);margin-top:2px">📍 Sem coordenada</div>'}
+    </td>
+    <td style="font-size:11px;color:var(--text-3)">${escHtml(a.responsavel||'—')}</td>
+    <td style="display:flex;gap:6px;flex-wrap:wrap">
       ${a.principal ? '' : `<button class="row-action" onclick="tornarArmazemPrincipal('${a.id}')">⭐ Tornar principal</button>`}
+      <button class="row-action" onclick="geocodificarArmazem('${a.id}')" title="Usa a localização acima pra achar a coordenada no mapa da Logística">📍 Localizar</button>
       <button class="row-action" onclick="editarArmazem('${a.id}')">Editar</button>
       <button class="row-action" style="color:var(--color-danger,#e53e3e)" onclick="excluirArmazem('${a.id}','${escJs(a.nome)}')">Excluir</button>
     </td>
   </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum armazém</div></div></td></tr>`;
+}
+
+// Resolve a coordenada do armazém a partir do endereço já cadastrado em "localização" —
+// é isso que permite o mapa da Logística mostrar de onde a carga saiu e traçar a rota.
+async function geocodificarArmazem(id) {
+  const res = await api(`/armazens/${id}/geocodificar`, { method: 'POST' });
+  if (res?.ok) {
+    toast(`Localizado: ${res.endereco_encontrado}`, 'success', 6000);
+    _armazens = [];
+    carregarArmazensView();
+  } else toast(res?.erro || 'Erro ao localizar no mapa', 'error', 6000);
 }
 
 async function excluirArmazem(id, nome) {
@@ -10472,7 +10509,9 @@ function mudarLogView(v) {
   document.getElementById('btnLogViewMapa').classList.toggle('active', v === 'mapa');
   document.getElementById('logViagensBody').classList.toggle('hidden', v !== 'trilha');
   document.getElementById('logMapaWrap').classList.toggle('hidden', v !== 'mapa');
-  if (v === 'mapa') renderLogMapa();
+  // Sai do mapa = para a animação dos emojis; senão o timer fica rodando à toa em segundo
+  // plano mexendo em marcadores que ninguém está vendo.
+  if (v === 'mapa') renderLogMapa(); else pararAnimacaoMapa();
 }
 
 function corPorStatusGrupo(status) {
@@ -10528,6 +10567,7 @@ async function renderLogMapa() {
     }).addTo(_logMap);
   }
 
+  pararAnimacaoMapa();
   _logMapMarkers.forEach(m => _logMap.removeLayer(m));
   _logMapMarkers = [];
 
@@ -10535,31 +10575,134 @@ async function renderLogMapa() {
   const comCoord = todosGrupos.filter(g => g.latitude != null && g.longitude != null);
   document.getElementById('logMapaSemCoord').classList.toggle('hidden', comCoord.length === todosGrupos.length);
 
+  // ── Origens (armazéns de onde a carga saiu) — um pin por armazém, sem repetir ──
+  const origens = {};
+  comCoord.forEach(g => { if (g.origem) origens[g.origem.id] = g.origem; });
+  Object.values(origens).forEach(o => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div class="mapa-origem-pin">🏭</div>`,
+      iconSize: [34, 34], iconAnchor: [17, 17],
+    });
+    const marker = L.marker([o.latitude, o.longitude], { icon, zIndexOffset: 500 }).addTo(_logMap);
+    marker.bindPopup(`<div class="log-popup">
+      <b>🏭 ${escHtml(o.nome)}</b>
+      <div class="lp-row">Origem da carga</div>
+      ${o.localizacao ? `<div class="lp-row">${escHtml(o.localizacao)}</div>` : ''}
+    </div>`);
+    _logMapMarkers.push(marker);
+  });
+
+  // ── Rotas + destinos ──
+  const animaveis = [];
   comCoord.forEach(g => {
     const cor = corPorStatusGrupo(g.status);
+    const emAndamento = g.status === 'AGUARDANDO_COLETA' || g.status === 'EM_TRANSITO';
+
+    // Linha curva da origem até o destino
+    if (g.origem) {
+      const pontos = curvaEntrePontos([g.origem.latitude, g.origem.longitude], [g.latitude, g.longitude]);
+      const linha = L.polyline(pontos, {
+        color: cor,
+        weight: emAndamento ? 3 : 2,
+        opacity: emAndamento ? 0.85 : 0.35,
+        dashArray: g.status === 'AGUARDANDO_COLETA' ? '6 8' : null,
+      }).addTo(_logMap);
+      _logMapMarkers.push(linha);
+
+      // Emoji correndo pela linha: caixa esperando coleta, caminhão quando está a caminho
+      if (emAndamento) {
+        const emoji = g.status === 'EM_TRANSITO' ? '🚚' : '📦';
+        const icon = L.divIcon({ className: '', html: `<div class="mapa-emoji-movel">${emoji}</div>`, iconSize: [26,26], iconAnchor: [13,13] });
+        const movel = L.marker(pontos[0], { icon, interactive: false, zIndexOffset: 900 }).addTo(_logMap);
+        _logMapMarkers.push(movel);
+        animaveis.push({ marker: movel, pontos, passo: g.status === 'EM_TRANSITO' ? 0.9 : 0.35, pos: Math.random() * pontos.length });
+      }
+    }
+
+    // Pin do destino
     const icon = L.divIcon({
       className: '', html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${cor};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
       iconSize: [16,16], iconAnchor: [8,16],
     });
     const marker = L.marker([g.latitude, g.longitude], { icon }).addTo(_logMap);
-    const statusTxt = g.status==='ENTREGUE' ? '✅ Entregue' : g.status==='CANCELADO' ? '🚫 Cancelado' : g.status==='EM_TRANSITO' ? '🚚 Em trânsito' : '📦 Aguardando coleta';
-    const nomesHtml = (g.atendimentos||[]).map(a=>`<div class="lp-atend">${escHtml(a.nome_colaborador||'—')}</div>`).join('') || '<div class="lp-atend">—</div>';
-    const rota = `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`;
-    marker.bindPopup(`<div class="log-popup">
-      <b>📍 ${escHtml(g.destino)}</b>
-      <span class="lp-status" style="background:${cor}22;color:${cor}">${statusTxt}</span>
-      <div class="lp-row" style="margin-top:6px">🚚 ${escHtml(g.nome_transportador_atual||'sem transportador')}</div>
-      <div class="lp-atendimentos">${nomesHtml}</div>
-      <a class="lp-link" href="${rota}" target="_blank" rel="noopener">🧭 Abrir rota</a>
-    </div>`);
+    marker.bindPopup(montarPopupGrupo(g, cor), { maxWidth: 300, minWidth: 240 });
     _logMapMarkers.push(marker);
   });
 
-  if (comCoord.length) {
-    const grupo = L.featureGroup(_logMapMarkers);
-    _logMap.fitBounds(grupo.getBounds().pad(0.25));
+  iniciarAnimacaoMapa(animaveis);
+
+  if (_logMapMarkers.length) {
+    const camadas = L.featureGroup(_logMapMarkers);
+    _logMap.fitBounds(camadas.getBounds().pad(0.25));
   }
   setTimeout(() => _logMap.invalidateSize(), 60);
+}
+
+// Gera os pontos de uma curva (bezier quadrática) entre origem e destino — uma linha reta
+// entre duas cidades fica sem graça e se confunde com estrada; a curva deixa claro que é
+// um trajeto lógico, não um caminho real.
+function curvaEntrePontos(a, b, segmentos = 64) {
+  const [lat1, lng1] = a, [lat2, lng2] = b;
+  // Ponto de controle deslocado perpendicularmente ao meio da reta, pra "abaular" a curva
+  const meioLat = (lat1 + lat2) / 2, meioLng = (lng1 + lng2) / 2;
+  const dLat = lat2 - lat1, dLng = lng2 - lng1;
+  const ctrlLat = meioLat + dLng * 0.16;
+  const ctrlLng = meioLng - dLat * 0.16;
+
+  const pontos = [];
+  for (let i = 0; i <= segmentos; i++) {
+    const t = i / segmentos, u = 1 - t;
+    pontos.push([
+      u * u * lat1 + 2 * u * t * ctrlLat + t * t * lat2,
+      u * u * lng1 + 2 * u * t * ctrlLng + t * t * lng2,
+    ]);
+  }
+  return pontos;
+}
+
+// Move os emojis pelas curvas. Um único timer pra todos, em vez de um por carga.
+let _logMapAnim = null;
+function iniciarAnimacaoMapa(animaveis) {
+  if (!animaveis.length) return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  _logMapAnim = setInterval(() => {
+    animaveis.forEach(a => {
+      a.pos += a.passo;
+      if (a.pos >= a.pontos.length) a.pos = 0; // recomeça a viagem
+      a.marker.setLatLng(a.pontos[Math.floor(a.pos)]);
+    });
+  }, 90);
+}
+function pararAnimacaoMapa() {
+  if (_logMapAnim) { clearInterval(_logMapAnim); _logMapAnim = null; }
+}
+
+// Card do destino no mapa — cabeçalho com o destino, status em pílula, transportador, e a
+// lista de atendimentos separada e rolável (antes era tudo um bloco de texto corrido).
+function montarPopupGrupo(g, cor) {
+  const statusTxt = g.status==='ENTREGUE' ? '✅ Entregue'
+    : g.status==='CANCELADO' ? '🚫 Cancelado'
+    : g.status==='EM_TRANSITO' ? '🚚 Em trânsito'
+    : '📦 Aguardando coleta';
+  const atends = g.atendimentos || [];
+  const rota = `https://www.google.com/maps/dir/?api=1&destination=${g.latitude},${g.longitude}`;
+  return `<div class="log-popup">
+    <div class="lp-head">
+      <div class="lp-destino">📍 ${escHtml(g.destino)}</div>
+      <span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${statusTxt}</span>
+    </div>
+    ${g.origem ? `<div class="lp-rota-mini">🏭 ${escHtml(g.origem.nome)} <span class="lp-seta">→</span> ${escHtml(g.destino)}</div>` : ''}
+    <div class="lp-transp">👤 ${escHtml(g.nome_transportador_atual||'sem transportador')}</div>
+    <div class="lp-atend-head">${atends.length} atendimento${atends.length === 1 ? '' : 's'}</div>
+    <div class="lp-atendimentos">
+      ${atends.map(a => `<div class="lp-atend">
+        <span class="lp-atend-nome">${escHtml(a.nome_colaborador||'—')}</span>
+        <span class="lp-atend-qtd">${a.qtd_itens ?? '—'}</span>
+      </div>`).join('') || '<div class="lp-atend"><span class="lp-atend-nome">—</span></div>'}
+    </div>
+    <a class="lp-link" href="${rota}" target="_blank" rel="noopener">🧭 Abrir rota</a>
+  </div>`;
 }
 
 // Monta a trilha visual (Coleta → Repasse(s) → Entrega) de um grupo, a partir do histórico
