@@ -20,9 +20,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <!-- Mapa real da Logística (destinos cadastrados/geocodificados) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <!-- Leaflet (mapa real da Logística) NÃO é carregado aqui de propósito — um <script src>
+       no <head> trava a página inteira até baixar, mesmo pra quem nunca abre a aba Mapa.
+       É carregado sob demanda em carregarLeafletSobDemanda(), só quando alguém clica em
+       "🗺️ Mapa" dentro de Logística. ──>
 <style>
 :root {
   --accent:#6366f1;--accent-hover:#4f46e5;--accent-soft:#1e1b4b;--accent-text:#818cf8;
@@ -10303,13 +10304,13 @@ function abrirModalAtendimentosGrupo(grupoId) {
 }
 
 async function irParaAtendimentoConsulta(atendimentoId) {
+  // Só mostra o modal de detalhe do atendimento aqui mesmo, sem trocar de tela — não existe
+  // uma tela de "Consulta de Atendimentos" navegável separada, então não faz sentido sair da
+  // Logística pra chegar nela.
   document.getElementById('modalLogisticaAtendimentos').classList.add('hidden');
-  showView('consulta');
-  const de = new Date(); de.setDate(de.getDate() - 60);
-  const elDe = document.getElementById('consultaDataDe'), elAte = document.getElementById('consultaDataAte');
-  if (elDe) elDe.value = de.toISOString().slice(0,10);
-  if (elAte) elAte.value = new Date().toISOString().slice(0,10);
-  await carregarConsultaAtendimentos();
+  const res = await api(`/atendimentos/${atendimentoId}`);
+  if (!res?.ok || !res.atendimento) { toast(res?.erro || 'Erro ao carregar atendimento', 'error'); return; }
+  if (!_consultaAtendimentos.some(a => a.id === atendimentoId)) _consultaAtendimentos.push(res.atendimento);
   verDetalhesAtendimento(atendimentoId);
 }
 
@@ -10481,11 +10482,45 @@ function corPorStatusGrupo(status) {
   return '#fbbf24';
 }
 
-function renderLogMapa() {
+// Carrega o Leaflet só quando alguém realmente abre a aba Mapa — um <script> de biblioteca
+// de mapa no <head> travaria a página inteira (mesmo a tela de login) até baixar do CDN,
+// pra quem nem chega a usar essa aba. Guarda a promise em andamento pra não injetar duas
+// vezes se a pessoa clicar rápido em Mapa mais de uma vez.
+let _leafletCarregando = null;
+function carregarLeafletSobDemanda() {
+  if (typeof L !== 'undefined') return Promise.resolve();
+  if (_leafletCarregando) return _leafletCarregando;
+  _leafletCarregando = new Promise((resolve, reject) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(link);
+
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js';
+    script.onload = () => resolve();
+    script.onerror = () => { _leafletCarregando = null; reject(new Error('Falha ao carregar o mapa')); };
+    document.head.appendChild(script);
+  });
+  return _leafletCarregando;
+}
+
+async function renderLogMapa() {
   const cont = document.getElementById('logMapaContainer');
-  if (!cont || typeof L === 'undefined') return;
+  if (!cont) return;
+  // Só mexe no innerHTML se o mapa ainda não existe — se já existe, o próprio Leaflet já
+  // está desenhado dentro de cont, e limpar aqui destruiria o mapa sem chamar _logMap.remove().
+  if (!_logMap) cont.innerHTML = '<div class="spinner" style="margin:40px auto"></div>';
+  try {
+    await carregarLeafletSobDemanda();
+  } catch (e) {
+    cont.innerHTML = '<div class="empty-state" style="padding:24px"><div class="es-title">Não foi possível carregar o mapa. Verifique sua conexão.</div></div>';
+    return;
+  }
+  if (typeof L === 'undefined') return;
 
   if (!_logMap) {
+    cont.innerHTML = ''; // limpa o spinner antes do Leaflet desenhar o mapa aqui dentro
     _logMap = L.map(cont, { scrollWheelZoom: true }).setView([-22.85, -42.6], 10); // região padrão (RJ)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
