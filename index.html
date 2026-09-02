@@ -9456,7 +9456,7 @@ async function carregarArmazensView() {
 async function geocodificarArmazem(id) {
   const res = await api(`/armazens/${id}/geocodificar`, { method: 'POST' });
   if (res?.ok) {
-    toast(`Localizado: ${res.endereco_encontrado}`, 'success', 6000);
+    toast(`${res.aproximado ? 'Localizado (aproximado, pela cidade)' : 'Localizado'}: ${res.endereco_encontrado}`, 'success', 6000);
     _armazens = [];
     carregarArmazensView();
   } else toast(res?.erro || 'Erro ao localizar no mapa', 'error', 6000);
