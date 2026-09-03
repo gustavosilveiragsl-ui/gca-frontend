@@ -17830,8 +17830,8 @@ function indRenderizarForaPrazo() {
         indTabela(['Item','Colaborador','Durou / Deveria','Prejuízo'],
           d.maisCriticos.map(c => [
             c.itemNome, c.colaboradorNome,
-            `<span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span>`,
-            `<span style="font-weight:700">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`,
+            indHtml(`<span style="color:#ef4444;font-weight:600">${c.diasDecorridos}d</span> / <span style="color:#22c55e">${c.prazoMinDias}d</span>`),
+            indHtml(`<span style="font-weight:700">${c.prejuizo.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</span>`),
           ]),
           ['var(--text-1)','var(--text-2)','','#ef4444'])}
     </div>
@@ -17920,10 +17920,23 @@ function indCardChart(titulo,canvasId,h=220){
   </div>`;
 }
 
+// Marca um trecho montado AQUI no código como HTML de verdade, pra indTabela não escapar.
+// Só use com string escrita no próprio código — nunca com dado vindo do banco.
+function indHtml(html){ return { __html: String(html) }; }
+
+// Nome/descrição que vêm do banco são digitados por gente e não podem ir crus pra tela.
+// A célula é escapada por padrão; quem precisa de marcação (um <span> colorido, por
+// exemplo) passa por indHtml() e assume a responsabilidade.
+// Antes o escape era feito FORA, envolvendo a tabela inteira com escHtml() — o que
+// escapava as próprias tags da tabela e imprimia o HTML como texto na tela.
+function indCelula(c){
+  return (c && typeof c === 'object' && '__html' in c) ? c.__html : escHtml(c);
+}
+
 function indTabela(cols,linhas,cores=[]){
   return `<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr>${cols.map(c=>`<th style="padding:8px;text-align:left;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">${c}</th>`).join('')}</tr></thead>
-    <tbody>${linhas.map(l=>`<tr style="border-bottom:1px solid var(--border)">${l.map((c,j)=>`<td style="padding:9px 8px;color:${cores[j]||'var(--text-1)'}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+    <thead><tr>${cols.map(c=>`<th style="padding:8px;text-align:left;font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">${escHtml(c)}</th>`).join('')}</tr></thead>
+    <tbody>${linhas.map(l=>`<tr style="border-bottom:1px solid var(--border)">${l.map((c,j)=>`<td style="padding:9px 8px;color:${cores[j]||'var(--text-1)'}">${indCelula(c)}</td>`).join('')}</tr>`).join('')}</tbody>
   </table>`;
 }
 
@@ -17948,10 +17961,10 @@ function indRenderEpi(d){
         ['Item','Total','Precoces','% Precoce','Estimado (dur.)','Média Real (uso)'],
         d.trocasPrecocesTabela.slice(0,15).map(r=>[
           r.item, r.total, r.precoce,
-          `<span style="font-weight:700;color:${r.pct>50?'#f87171':'#fbbf24'}">${r.pct}%</span>`,
+          indHtml(`<span style="font-weight:700;color:${r.pct>50?'#f87171':'#fbbf24'}">${r.pct}%</span>`),
           r.durabilidade_estimada ? `${r.durabilidade_estimada} dias` : '—',
           r.duracao_media_real!=null
-            ? `<span style="font-weight:700;color:${(r.durabilidade_estimada && r.duracao_media_real < r.durabilidade_estimada) ? '#f87171' : '#4ade80'}">${r.duracao_media_real} dias</span>`
+            ? indHtml(`<span style="font-weight:700;color:${(r.durabilidade_estimada && r.duracao_media_real < r.durabilidade_estimada) ? '#f87171' : '#4ade80'}">${r.duracao_media_real} dias</span>`)
             : '—',
         ]),
         ['var(--text-1)','var(--text-2)','#f87171','','var(--text-3)','']
@@ -17959,7 +17972,7 @@ function indRenderEpi(d){
     </div>`:''}
     ${d.topOperadores.length?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">👷 Atendimentos por Operador</div>
-      ${escHtml(indTabela(['Operador','Atendimentos'],d.topOperadores.map(r=>[r.nome,r.total])))}
+      ${indTabela(['Operador','Atendimentos'],d.topOperadores.map(r=>[r.nome,r.total]))}
     </div>`:''}`;
   setTimeout(()=>{
     const tl=d.atendTimeline||[];
@@ -17988,26 +18001,26 @@ function indRenderEnel(d){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📟 Modelos Mais Instalados</div>
-        ${escHtml(indTabela(['Modelo','Instalados'],d.topModeloMedInstala.map(r=>[r.nome,r.total])))}
+        ${indTabela(['Modelo','Instalados'],d.topModeloMedInstala.map(r=>[r.nome,r.total]))}
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📤 Equipes que mais Retiram Medidores</div>
-        ${escHtml(indTabela(['Equipe','Medidores Retirados'],d.topEquipeRetiraMed.map(r=>[r.nome,r.total])))}
+        ${indTabela(['Equipe','Medidores Retirados'],d.topEquipeRetiraMed.map(r=>[r.nome,r.total]))}
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">🔌 Equipes que mais Retiram Cabo (m)</div>
-        ${escHtml(indTabela(['Equipe','Metros Retirados'],(d.topEquipeRetiraCabo||[]).map(r=>[r.nome,r.total])))}
+        ${indTabela(['Equipe','Metros Retirados'],(d.topEquipeRetiraCabo||[]).map(r=>[r.nome,r.total]))}
       </div>
       <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
         <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📤 Equipes que mais Solicitam</div>
-        ${escHtml(indTabela(['Equipe','Solicitações'],d.topEquipeSolicita.map(r=>[r.nome,r.total])))}
+        ${indTabela(['Equipe','Solicitações'],d.topEquipeSolicita.map(r=>[r.nome,r.total]))}
       </div>
     </div>
     ${d.topItemSolicitado.length?`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
       <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px">📋 Itens Mais Solicitados pelas Equipes</div>
-      ${escHtml(indTabela(['Item','Quantidade'],d.topItemSolicitado.map(r=>[r.nome,r.total])))}
+      ${indTabela(['Item','Quantidade'],d.topItemSolicitado.map(r=>[r.nome,r.total]))}
     </div>`:''}`;
   setTimeout(()=>{
     indHBarChart('chartEquipeRetira',d.topEquipeRetira.map(r=>r.nome),d.topEquipeRetira.map(r=>r.total),'Qtd','#0ea5e9');
