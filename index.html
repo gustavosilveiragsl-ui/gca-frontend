@@ -1421,6 +1421,7 @@ window.addEventListener('pageshow', function(e) {
                 <option value="ATENDIDO">Atendido</option>
                 <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
                 <option value="EM TRANSITO">Em Trânsito</option>
+                <option value="NA BASE DESTINO">Na Base Destino</option>
               </select>
               <select class="form-input" id="solFiltroPrioridade" style="width:120px;font-size:11px" onchange="filtrarSolicitacoes()">
                 <option value="">Todas prioridades</option>
@@ -7914,7 +7915,8 @@ function mudarAbaSol(aba) {
       <option value="VISUALIZADO">Visualizado</option>
       <option value="ATENDIDO">Atendido</option>
       <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
-      <option value="EM TRANSITO">Em Trânsito</option>`;
+      <option value="EM TRANSITO">Em Trânsito</option>
+      <option value="NA BASE DESTINO">Na Base Destino</option>`;
     cardSub.textContent = 'Solicitações em andamento';
   } else {
     // Mostra só FINALIZADAS (sem canceladas antigas)
@@ -8113,6 +8115,7 @@ function solStatusTag(status) {
     'ATENDIDO':              '<span style="color:var(--accent-text);font-weight:600;font-size:11px">✅ Atendido</span>',
     'AGUARDANDO TRANSPORTE': '<span style="color:var(--yellow);font-weight:600;font-size:11px">🚛 Aguard. Transporte</span>',
     'EM TRANSITO':           '<span style="color:var(--blue);font-weight:600;font-size:11px">🚚 Em Trânsito</span>',
+    'NA BASE DESTINO':       '<span style="color:var(--accent-text);font-weight:600;font-size:11px">📍 Na base destino</span>',
     'FINALIZADO':            '<span style="color:var(--green);font-weight:600;font-size:11px">🏁 Finalizado</span>',
     'CANCELADO':             '<span style="color:var(--text-3);font-weight:600;font-size:11px">❌ Cancelado</span>',
   };
@@ -8155,6 +8158,7 @@ async function abrirModalSolicitacao(id) {
     'ATENDIDO':              '✅ Atendido',
     'AGUARDANDO TRANSPORTE': '🚛 Aguardando transporte',
     'EM TRANSITO':           '🚚 Em trânsito',
+    'NA BASE DESTINO':       '📍 Na base destino — aguardando entrega ao colaborador',
     'FINALIZADO':            '🏁 Finalizado',
     'CANCELADO':             '❌ Cancelado',
   };
