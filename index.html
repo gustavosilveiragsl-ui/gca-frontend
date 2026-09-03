@@ -352,6 +352,12 @@ tbody tr:hover td{background:var(--bg-hover);}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;width:100%;height:100%;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;animation:fadeIn .15s ease;}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+/* Modal que abre POR CIMA de outro modal. Todos os .modal-overlay tem z-index 200, entao
+   entre dois abertos quem ganha e o que vem depois no HTML — e o de liberacao do inventario
+   fica no topo do arquivo, ou seja, atras da devolucao e da ficha do colaborador. Com isso a
+   pessoa via o modal mas nao conseguia responder. Fica acima dos modais e do overlay de
+   processamento (9999), e abaixo dos toasts (99999) pra os avisos ainda aparecerem. */
+.modal-acima{z-index:10000;}
 .modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:460px;animation:slideUp .2s ease;}
 @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
@@ -1172,7 +1178,7 @@ window.addEventListener('pageshow', function(e) {
 </div>
 
 <!-- MODAL: LIBERAR MOVIMENTAÇÃO DURANTE O INVENTÁRIO -->
-<div class="modal-overlay hidden" id="modalLiberarInventario">
+<div class="modal-overlay modal-acima hidden" id="modalLiberarInventario">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
       <div class="modal-title">🔒 Armazém em contagem</div>
