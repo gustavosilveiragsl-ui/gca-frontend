@@ -1171,6 +1171,30 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
+<!-- MODAL: LIBERAR MOVIMENTAÇÃO DURANTE O INVENTÁRIO -->
+<div class="modal-overlay hidden" id="modalLiberarInventario">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-header">
+      <div class="modal-title">🔒 Armazém em contagem</div>
+      <button class="modal-close" onclick="fecharLiberacaoInventario(null)">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="libInvTexto" style="font-size:12px;color:var(--text-2);line-height:1.5;margin-bottom:12px"></div>
+      <label class="form-label">Por que esta movimentação não pode esperar?</label>
+      <textarea id="libInvJustificativa" class="form-input" rows="3" style="resize:vertical"
+                placeholder="Ex: Solicitação urgente 1234 — equipe parada em campo sem EPI"></textarea>
+      <div style="font-size:11px;color:var(--text-3);margin-top:6px">
+        Fica registrado no inventário com seu nome, a data e o item — e, se este item já tiver sido contado,
+        a contagem é ajustada para não acusar divergência.
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-ghost" style="flex:1" onclick="fecharLiberacaoInventario(null)">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1" onclick="confirmarLiberacaoInventario()">Liberar e continuar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: ATENDIMENTOS DE UM GRUPO (lista clicável → Consulta de Atendimentos) -->
 <div class="modal-overlay hidden" id="modalLogisticaAtendimentos">
   <div class="modal-box" style="max-width:440px">
@@ -3795,7 +3819,7 @@ window.addEventListener('pageshow', function(e) {
             <div style="overflow-x:auto">
               <table>
                 <thead><tr>
-                  <th>Item</th><th style="text-align:center">Saldo GCA</th><th style="text-align:center">Contado</th>
+                  <th>Item</th><th style="text-align:center">Saldo na contagem</th><th style="text-align:center">Contado</th>
                   <th>Diverg.</th><th>Contado por</th><th></th>
                 </tr></thead>
                 <tbody id="invDetItensBody"></tbody>
@@ -6988,7 +7012,7 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     destinoEntregaId: destinoEntregaId,
   };
 
-  const res = await api('/atendimentos', { method:'POST', body: JSON.stringify(registro) });
+  const res = await apiMovimentacao('/atendimentos', registro);
 
   if (!res || !res.ok) {
     console.error('[concluirAtendimento] erro:', res);
@@ -8667,10 +8691,8 @@ async function registrarEntrada() {
   const btn = document.querySelector('[onclick="registrarEntrada()"]');
   if (btn) { btn.textContent = '⏳ Registrando...'; }
 
-  const res = await api('/movimentacoes/entrada', {
-    method: 'POST',
-    body: JSON.stringify({ item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs })
-  });
+  const res = await apiMovimentacao('/movimentacoes/entrada',
+    { item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs });
 
   // Reabilitar botão independente do resultado
   if (btn) { btn.disabled = false; btn.textContent = '✓ Registrar Entrada'; }
@@ -8790,10 +8812,8 @@ async function registrarSaida() {
     toast('Preencha todos os campos obrigatórios', 'warn'); return;
   }
 
-  const res = await api('/movimentacoes/saida', {
-    method: 'POST',
-    body: JSON.stringify({ item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs, colaborador_id:colabId })
-  });
+  const res = await apiMovimentacao('/movimentacoes/saida',
+    { item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs, colaborador_id:colabId });
 
   if (res?.ok) {
     toast('Saída registrada com sucesso!', 'success');
@@ -8916,10 +8936,8 @@ async function registrarTransferencia() {
     toast('Origem e destino não podem ser iguais', 'warn'); return;
   }
 
-  const res = await api('/movimentacoes/transferencia', {
-    method: 'POST',
-    body: JSON.stringify({ item_id:itemId, armazem_origem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, observacao:obs })
-  });
+  const res = await apiMovimentacao('/movimentacoes/transferencia',
+    { item_id:itemId, armazem_origem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, observacao:obs });
 
   if (res?.ok) {
     toast('Transferência realizada com sucesso!', 'success');
@@ -10082,7 +10100,8 @@ async function carregarInventarioHistorico() {
   const statusBadge = (r) => {
     if (r.status === 'ENTREGUE') return `<span class="log-badge log-badge-verde">✅ Entregue</span>`;
     if (r.bloqueado) return `<span class="log-badge" style="color:var(--red);border:1px solid var(--red)">🔴 Atrasado</span>`;
-    return `<span class="log-badge log-badge-azul">⏳ Em andamento</span>`;
+    if (r.congelado) return `<span class="log-badge" style="color:var(--accent-text);border:1px solid var(--accent-text)">🔒 Contando</span>`;
+    return `<span class="log-badge log-badge-azul">⏳ Aguardando início</span>`;
   };
 
   cont.innerHTML = _invHistData.map((r, i) => {
@@ -10106,7 +10125,12 @@ async function carregarInventarioHistorico() {
           <button class="row-action" onclick="verPdfInventario('${r.id}')">📄 PDF</button>
         ` : r.bloqueado ? `
           <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="liberarAtrasoInventario('${r.armazem_id}','${r.ano_mes}')">🔓 Liberar atraso</button>
-        ` : `<span style="font-size:10px;color:var(--text-3)">Aguardando contagem</span>`}
+        ` : `
+          ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','${escJs(r.nome_armazem)}')">🔗 Link / QR</button>` : ''}
+          ${r.congelado
+            ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="descongelarInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">🔓 Descongelar</button>`
+            : `<button class="row-action" style="color:var(--accent-text);border-color:var(--accent-text)" data-perm-btn="inventario_gerar_link" onclick="iniciarContagemInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">▶️ Iniciar contagem</button>`}
+        `}
       </div>
     </div>`;
   }).join('');
@@ -10139,6 +10163,88 @@ function copiarLinkInventario() {
   navigator.clipboard?.writeText(link).then(() => toast('Link copiado!', 'success')).catch(() => {});
 }
 
+// O link da contagem sempre existiu no banco e nunca mudava — gerar de novo devolvia o
+// mesmo. Só faltava poder vê-lo depois: agora fica no card do ciclo, com QR pro contador
+// abrir no celular, até finalizar ou vencer o prazo. Reaproveita o modal de link/QR.
+function abrirLinkInventario(link, nomeArmazem) {
+  document.getElementById('logLinkModalTitulo').textContent = '📦 Link da contagem';
+  document.getElementById('logLinkModalSub').textContent = `${nomeArmazem} — envie para quem vai contar`;
+  document.getElementById('logLinkModalQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}`;
+  document.getElementById('logLinkModalUrl').value = link;
+  document.getElementById('modalLogisticaLink').classList.remove('hidden');
+}
+
+// ── Iniciar a contagem: congela o armazém e refaz a foto do saldo ──
+// A foto é tirada aqui, e não na geração do link, porque entre uma coisa e outra podem
+// passar dias — e era nesse intervalo que o estoque andava e criava divergência falsa.
+async function iniciarContagemInventario(id, nomeArmazem) {
+  const ok = confirm(
+    `Iniciar a contagem de ${nomeArmazem}?\n\n` +
+    'A partir de agora nenhuma movimentação deste armazém é permitida — nem atendimento, nem entrada, ' +
+    'nem transferência — até a contagem terminar.\n\n' +
+    'Quem tiver permissão pode liberar exceções com justificativa.\n' +
+    'O saldo de referência passa a ser o de agora.');
+  if (!ok) return;
+
+  const res = await api(`/inventario/${id}/iniciar-contagem`, { method: 'POST' });
+  if (res?.ok) {
+    toast(`Contagem iniciada — ${nomeArmazem} congelado (${res.itens_atualizados} itens)`, 'success');
+    carregarInventarioHistorico();
+  } else toast(res?.erro || 'Erro ao iniciar a contagem', 'error');
+}
+
+async function descongelarInventario(id, nomeArmazem) {
+  const ok = confirm(
+    `Descongelar ${nomeArmazem}?\n\n` +
+    'O armazém volta a aceitar movimentação normalmente, mas a contagem continua aberta — ' +
+    'do que se mexer daqui pra frente, a contagem já feita não sabe.\n\n' +
+    'Use só se a operação não puder esperar.');
+  if (!ok) return;
+
+  const res = await api(`/inventario/${id}/descongelar`, { method: 'POST' });
+  if (res?.ok) { toast('Armazém descongelado', 'success'); carregarInventarioHistorico(); }
+  else toast(res?.erro || 'Erro ao descongelar', 'error');
+}
+
+// ── Liberação de movimentação durante o congelamento ──
+// O backend responde 423 com codigo INVENTARIO_CONGELADO. Se quem está na tela tiver a
+// permissão, pede a justificativa e repete a mesma chamada uma vez, agora autorizada.
+let _libInvResolver = null;
+function pedirLiberacaoInventario(resposta) {
+  const nomes = (resposta.inventarios || []).map(i => i.nome_armazem).filter(Boolean).join(', ');
+  document.getElementById('libInvTexto').innerHTML =
+    `<strong>${escHtml(nomes || 'Este armazém')}</strong> está com a contagem do inventário em andamento, ` +
+    `e por isso as movimentações estão bloqueadas.`;
+  document.getElementById('libInvJustificativa').value = '';
+  document.getElementById('modalLiberarInventario').classList.remove('hidden');
+  setTimeout(() => document.getElementById('libInvJustificativa').focus(), 50);
+  return new Promise(resolve => { _libInvResolver = resolve; });
+}
+
+function fecharLiberacaoInventario(valor) {
+  document.getElementById('modalLiberarInventario').classList.add('hidden');
+  const resolver = _libInvResolver; _libInvResolver = null;
+  if (resolver) resolver(valor);
+}
+
+function confirmarLiberacaoInventario() {
+  const just = document.getElementById('libInvJustificativa').value.trim();
+  if (just.length < 10) { toast('Descreva o motivo com pelo menos 10 caracteres', 'warn'); return; }
+  fecharLiberacaoInventario(just);
+}
+
+// Envolve as chamadas que mexem no saldo: se o armazém estiver congelado e a pessoa puder
+// liberar, abre o modal e reenvia. Se não puder liberar, devolve o erro pra tela mostrar.
+async function apiMovimentacao(rota, corpo, opts = {}) {
+  let res = await api(rota, { method: 'POST', ...opts, body: JSON.stringify(corpo) });
+  if (res?.codigo === 'INVENTARIO_CONGELADO' && res.pode_liberar) {
+    const justificativa = await pedirLiberacaoInventario(res);
+    if (!justificativa) return res;
+    res = await api(rota, { method: 'POST', ...opts, body: JSON.stringify({ ...corpo, liberacao_inventario: { justificativa } }) });
+  }
+  return res;
+}
+
 async function liberarAtrasoInventario(armazemId, anoMes) {
   if (!confirm('Liberar este armazém pra contar/finalizar o inventário mesmo com o prazo vencido?')) return;
   const res = await api('/inventario/liberar-atraso', { method: 'POST', body: JSON.stringify({ armazem_id: armazemId, ano_mes: anoMes }) });
@@ -10163,17 +10269,25 @@ function renderDetalheInventario() {
     ? `<button class="btn btn-primary" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirTodasDivergenciasInv()">⚖️ Corrigir todas as divergências</button>`
     : '';
 
-  document.getElementById('invDetItensBody').innerHTML = itens.map(it => `
+  document.getElementById('invDetItensBody').innerHTML = itens.map(it => {
+    // Item que sofreu movimentação liberada DEPOIS de ser contado: a contagem estava certa
+    // na hora, o saldo mudou por autorização. Mostrar isso evita ler como erro de contagem.
+    const moveu = Number(it.delta_apos_contagem || 0);
+    const marcaMovimento = moveu
+      ? `<div style="font-size:10px;color:var(--yellow);margin-top:2px">⚠️ ${moveu > 0 ? '+' : ''}${moveu} após a contagem (liberado)</div>`
+      : '';
+    return `
     <tr>
-      <td class="td-main">${escHtml(it.nome_item||'—')}</td>
-      <td style="text-align:center">${it.saldo_gca ?? '—'}</td>
+      <td class="td-main">${escHtml(it.nome_item||'—')}${marcaMovimento}</td>
+      <td style="text-align:center">${it.saldo_na_contagem ?? it.saldo_gca ?? '—'}</td>
       <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
       <td>${it.divergencia ? `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>` : `<span style="color:var(--text-3);font-size:11px">não</span>`}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador||'—')}</td>
       <td>
         ${it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${it.id}')">Corrigir</button>` : ''}
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   aplicarPermissoesMenu();
 }
@@ -11142,7 +11256,8 @@ const PERMISSOES_SCHEMA = {
     inventario_gerar_link:'Gerar link de contagem',
     inventario_ver_historico:'Ver histórico de inventários',
     inventario_liberar_atraso:'Liberar inventário atrasado',
-    inventario_ajustar_divergencia:'Ajustar estoque por divergência'
+    inventario_ajustar_divergencia:'Ajustar estoque por divergência',
+    inventario_liberar_movimentacao:'Liberar movimentação durante o inventário'
   }},
   logistica: { label:'Logística', icon:'🚚', itens:{
     logistica_gerenciar_viagens:'Gerenciar viagens (montar, acompanhar coleta/entrega)',
@@ -12390,9 +12505,8 @@ async function confirmarDevolucao() {
   if (erro) { toast(erro, 'warn'); return; }
   if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
 
-  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/devolucao`, {
-    method: 'POST', body: JSON.stringify({ itens, armazem_id, nome_armazem, data, motivo, obs })
-  });
+  const res = await apiMovimentacao(`/consulta/colaborador/${_consultaColabAtual}/devolucao`,
+    { itens, armazem_id, nome_armazem, data, motivo, obs });
 
   if (res?.ok) {
     if (res.comprovante) {
