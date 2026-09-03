@@ -6129,7 +6129,22 @@ function limparMobilizar() {
 // ═══════════════════════════════════════════
 // INICIAR / CANCELAR ATENDIMENTO
 // ═══════════════════════════════════════════
-function iniciarAtendimento() {
+async function iniciarAtendimento() {
+  // Se TODOS os armazéns que esta pessoa pode usar estão em contagem, não há de onde tirar
+  // material — avisa aqui em vez de deixar montar o atendimento pra falhar no fim. Se só
+  // alguns estão, segue: ela ainda pode separar dos outros.
+  const congelados = await armazensCongelados();
+  if (congelados.length) {
+    const meus = getUserArmazens();
+    const disponiveis = (meus.length ? meus : (_armazens || []).map(a => a.id))
+      .filter(id => !congelados.some(c => c.armazem_id === id));
+    if (!disponiveis.length) {
+      toast(`🔒 ${escHtml(congelados.map(c => c.nome_armazem).join(', '))} em contagem de inventário — não há armazém liberado para atender agora.`,
+            'error', 7000);
+      return false;
+    }
+  }
+
   // Reseta solicitacao vinculada (será setada por atenderSolicitacao se vier de lá)
   if (!window._solicitacaoAtendimento) ATEND.solicitacaoId = null;
   ATEND.ativo    = true;
@@ -6160,6 +6175,7 @@ function iniciarAtendimento() {
 
   // Limpa colaborador
   limparColaboradorAtend();
+  return true;
 }
 
 function cancelarAtendimento() {
@@ -7272,7 +7288,7 @@ async function executarMobilizacao() {
 
   // Muda para a aba de atendimento e inicia
   switchAtendTab('iniciar', document.querySelector('.atend-tab'));
-  iniciarAtendimento();
+  if (!await iniciarAtendimento()) return;
 
   // Aguarda e seleciona colaborador
   setTimeout(async () => {
@@ -8503,6 +8519,11 @@ async function atenderSolicitacao(id, btnEl) {
       return;
     }
 
+    // ── Armazém em contagem de inventário ── mesma ideia da checagem acima: avisa ANTES de
+    // sair da solicitação, em vez de deixar a pessoa montar o atendimento inteiro e só
+    // descobrir na hora de concluir.
+    if (await bloqueadoPorInventario(s.armazem_id || s.armazemId)) return;
+
     // ── Vincula a solicitação ao atendimento ──
     window._solicitacaoAtendimento = s;
     ATEND.solicitacaoId = s.id;
@@ -8514,7 +8535,7 @@ async function atenderSolicitacao(id, btnEl) {
     await new Promise(r => setTimeout(r, 350));
 
     // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
-    iniciarAtendimento();
+    if (!await iniciarAtendimento()) return;
     await new Promise(r => setTimeout(r, 200));
 
     // ── 2. Depois seleciona o colaborador ──
@@ -10206,6 +10227,36 @@ async function descongelarInventario(id, nomeArmazem) {
   else toast(res?.erro || 'Erro ao descongelar', 'error');
 }
 
+// ── Armazéns em contagem: consultado ANTES de começar o trabalho ──
+// O bloqueio do backend continua sendo a trava de verdade, mas se ele fosse o único aviso a
+// pessoa só descobriria ao concluir o atendimento, depois de separar tudo. Aqui o aviso
+// chega antes de abrir a tela. Cache curto pra não consultar a cada clique.
+let _invCongelados = { lista: null, em: 0 };
+async function armazensCongelados(forcar) {
+  const agora = Date.now();
+  if (!forcar && _invCongelados.lista && (agora - _invCongelados.em) < 60000) return _invCongelados.lista;
+  const res = await api('/inventario/congelados');
+  _invCongelados = { lista: res?.ok ? (res.data || []) : [], em: agora };
+  return _invCongelados.lista;
+}
+
+// Avisa e devolve true se o armazém estiver em contagem. Quem tem permissão de liberar
+// segue em frente (o modal de justificativa aparece na hora de gravar); quem não tem, para
+// aqui mesmo em vez de montar o atendimento inteiro à toa.
+async function bloqueadoPorInventario(armazemId) {
+  if (!armazemId) return false;
+  const congelados = await armazensCongelados();
+  const achado = (congelados || []).find(c => c.armazem_id === armazemId);
+  if (!achado) return false;
+
+  if (temPermissao('inventario_liberar_movimentacao')) {
+    toast(`🔒 ${escHtml(achado.nome_armazem)} está em contagem de inventário — será preciso justificar a liberação ao concluir.`, 'warn', 6000);
+    return false;
+  }
+  toast(`🔒 ${escHtml(achado.nome_armazem)} está em contagem de inventário. As movimentações estão bloqueadas até a contagem terminar.`, 'error', 7000);
+  return true;
+}
+
 // ── Liberação de movimentação durante o congelamento ──
 // O backend responde 423 com codigo INVENTARIO_CONGELADO. Se quem está na tela tiver a
 // permissão, pede a justificativa e repete a mesma chamada uma vez, agora autorizada.
@@ -10238,8 +10289,15 @@ function confirmarLiberacaoInventario() {
 async function apiMovimentacao(rota, corpo, opts = {}) {
   let res = await api(rota, { method: 'POST', ...opts, body: JSON.stringify(corpo) });
   if (res?.codigo === 'INVENTARIO_CONGELADO' && res.pode_liberar) {
+    // O "Processando atendimento..." cobre a tela inteira. Se ele continuar aparecendo, o
+    // modal de justificativa abre atrás dele e a tela trava sem a pessoa conseguir responder.
+    const overlay = document.getElementById('overlayProcessando');
+    const displayAnterior = overlay?.style.display;
+    if (overlay) overlay.style.display = 'none';
+
     const justificativa = await pedirLiberacaoInventario(res);
     if (!justificativa) return res;
+    if (overlay) overlay.style.display = displayAnterior || 'flex';
     res = await api(rota, { method: 'POST', ...opts, body: JSON.stringify({ ...corpo, liberacao_inventario: { justificativa } }) });
   }
   return res;
