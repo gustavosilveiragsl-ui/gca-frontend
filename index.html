@@ -10386,20 +10386,67 @@ function renderDetalheInventario() {
     const marcaMovimento = moveu
       ? `<div style="font-size:10px;color:var(--yellow);margin-top:2px">⚠️ ${moveu > 0 ? '+' : ''}${moveu} após a contagem (liberado)</div>`
       : '';
+
+    // Houve movimentação liberada neste item durante o inventário. É a explicação mais
+    // comum de divergência que "não faz sentido": a contagem foi feita antes e registrada
+    // depois, e o que se moveu no meio virou diferença sem ser. Mostrar aqui evita ter que
+    // investigar item por item pra descobrir isso.
+    const libs = it.liberacoes || [];
+    const avisoLiberacao = (libs.length && it.divergencia) ? `
+      <div style="font-size:10px;color:var(--yellow);margin-top:3px;line-height:1.4">
+        ⚠️ ${libs.length} movimentação(ões) liberada(s) durante o inventário:
+        ${libs.map(l => `${Number(l.quantidade) > 0 ? '+' : ''}${l.quantidade} em ${l.criado_em ? formatarData(l.criado_em.slice(0,10)) : '—'}`).join(', ')}
+      </div>` : '';
+
+    const marcaReclass = it.divergencia_reclassificada ? `
+      <div style="font-size:10px;color:var(--text-3);margin-top:3px">
+        ✔️ Não é divergência — ${escHtml(it.reclassificada_motivo || '')}${it.reclassificada_por ? ' · ' + escHtml(it.reclassificada_por) : ''}
+      </div>` : '';
+
+    const tagDiverg = !it.divergencia
+      ? `<span style="color:var(--text-3);font-size:11px">não</span>`
+      : it.divergencia_reclassificada
+        ? `<span style="color:var(--text-3);font-weight:600;font-size:11px">justificada</span>`
+        : `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>`;
+
     return `
     <tr>
-      <td class="td-main">${escHtml(it.nome_item||'—')}${marcaMovimento}</td>
+      <td class="td-main">${escHtml(it.nome_item||'—')}${marcaMovimento}${avisoLiberacao}${marcaReclass}</td>
       <td style="text-align:center">${it.saldo_na_contagem ?? it.saldo_gca ?? '—'}</td>
       <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
-      <td>${it.divergencia ? `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>` : `<span style="color:var(--text-3);font-size:11px">não</span>`}</td>
+      <td>${tagDiverg}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador||'—')}</td>
-      <td>
-        ${it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${it.id}')">Corrigir</button>` : ''}
+      <td style="white-space:nowrap">
+        ${it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${escJs(it.id)}')">Corrigir</button>` : ''}
+        ${it.divergencia ? (it.divergencia_reclassificada
+            ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="reclassificarDivergencia('${escJs(it.id)}', true)">Desfazer</button>`
+            : `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="reclassificarDivergencia('${escJs(it.id)}', false)">Não é divergência</button>`) : ''}
       </td>
     </tr>`;
   }).join('');
 
   aplicarPermissoesMenu();
+}
+
+// Tira (ou devolve) uma divergência da conta da acurácia. O valor calculado continua
+// gravado — o que muda é a leitura: diferença explicada por movimentação liberada no meio
+// da contagem não é estoque faltando, e contar ela derruba a acurácia sem motivo.
+async function reclassificarDivergencia(itemId, desfazer) {
+  let motivo = '';
+  if (!desfazer) {
+    motivo = prompt('Por que esta diferença não é uma divergência real?\n\nEx: contagem registrada depois de uma saída liberada; material separado de atendimento pendente.');
+    if (motivo === null) return;
+    if (motivo.trim().length < 5) { toast('Explique com pelo menos 5 caracteres', 'warn'); return; }
+  }
+
+  const res = await api(`/inventario/${_invDetalheAberto.id}/itens/${itemId}/reclassificar`, {
+    method: 'POST', body: JSON.stringify(desfazer ? { desfazer: true } : { motivo }),
+  });
+  if (res?.ok) {
+    toast(desfazer ? 'Voltou a contar como divergência' : `Reclassificado — acurácia agora ${Number(res.acuracia_pct).toFixed(1)}%`, 'success');
+    await abrirDetalheInventario(_invDetalheAberto.id);
+    carregarInventarioHistorico();
+  } else toast(res?.erro || 'Erro ao reclassificar', 'error');
 }
 
 async function corrigirDivergenciaInv(itemId) {
