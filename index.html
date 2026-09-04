@@ -359,6 +359,14 @@ tbody tr:hover td{background:var(--bg-hover);}
    processamento (9999), e abaixo dos toasts (99999) pra os avisos ainda aparecerem. */
 .modal-acima{z-index:10000;}
 .modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);width:100%;max-width:460px;animation:slideUp .2s ease;}
+/* Modal com lista longa (o inventario chega a 192 itens). Sem isso o .modal-box cresce
+   junto com o conteudo, passa da altura da tela e arrasta o cabecalho pra fora — o X some
+   e nao da pra rolar, porque o overlay e position:fixed e a pagina atras nao rola.
+   Trava a altura, prende o cabecalho e faz so o corpo rolar. */
+.modal-alto{max-height:88vh;display:flex;flex-direction:column;}
+.modal-alto .modal-header{flex-shrink:0;}
+.modal-alto .modal-body{overflow-y:auto;flex:1;min-height:0;}
+.modal-alto .modal-footer{flex-shrink:0;}
 @keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
 .modal-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 .modal-title{font-size:13px;font-weight:600;color:var(--text-1);}
@@ -1109,7 +1117,7 @@ window.addEventListener('pageshow', function(e) {
      MODAL: VALIDAÇÕES
 ═══════════════════════════════════════════ -->
 <div class="modal-overlay hidden" id="modalValidacoes">
-  <div class="modal-box" style="max-width:520px">
+  <div class="modal-box modal-alto" style="max-width:520px">
     <div class="modal-header">
       <div class="modal-title">Resultado das Validações</div>
     </div>
@@ -3815,7 +3823,7 @@ window.addEventListener('pageshow', function(e) {
 
       <!-- MODAL DETALHE DO INVENTÁRIO -->
       <div class="modal-overlay hidden" id="modalInventarioDetalhe">
-        <div class="modal-box" style="max-width:700px;width:100%">
+        <div class="modal-box modal-alto" style="max-width:700px;width:100%">
           <div class="modal-header">
             <div><div class="modal-title">📋 Detalhe do Inventário</div><div style="font-size:11px;color:var(--text-3)" id="invDetInfo"></div></div>
             <button class="modal-close" onclick="document.getElementById('modalInventarioDetalhe').classList.add('hidden')">×</button>
@@ -4556,7 +4564,7 @@ window.addEventListener('pageshow', function(e) {
 
 <!-- MODAL DETALHE DA REMESSA -->
 <div class="modal-overlay hidden" id="modalDetalheRemessa">
-  <div class="modal-box" style="max-width:640px;width:100%">
+  <div class="modal-box modal-alto" style="max-width:640px;width:100%">
     <div class="modal-header">
       <div><div class="modal-title">📦 Detalhe da Remessa</div><div style="font-size:11px;color:var(--text-3)" id="remDetInfo"></div></div>
       <button class="modal-close" onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden')">×</button>
