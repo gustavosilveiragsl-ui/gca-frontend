@@ -3815,7 +3815,12 @@ window.addEventListener('pageshow', function(e) {
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Histórico de Inventários</div><div class="card-sub">Todos os ciclos, mês a mês</div></div>
-            <button class="btn btn-ghost" onclick="carregarInventarioHistorico()">↻</button>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select class="form-input" id="invFiltroMes" style="width:150px;font-size:11px" onchange="renderInventarioHistorico()">
+                <option value="">Todos os meses</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarInventarioHistorico()">↻</button>
+            </div>
           </div>
           <div class="inv-grid-hist" id="invHistBody"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
@@ -3875,7 +3880,12 @@ window.addEventListener('pageshow', function(e) {
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
             <div><div class="card-title">📦 Aguardando Transporte</div><div class="card-sub">Marcados como "Necessita logística" na conclusão do atendimento</div></div>
-            <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select class="form-input" id="logFiltroBasePend" style="width:190px;font-size:11px" onchange="renderLogPendentes()">
+                <option value="">Todas as bases</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
+            </div>
           </div>
           <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
@@ -3894,6 +3904,9 @@ window.addEventListener('pageshow', function(e) {
           <div class="card-header">
             <div><div class="card-title">Viagens</div><div class="card-sub">Coleta, transferência e entrega por destino</div></div>
             <div style="display:flex;align-items:center;gap:8px">
+              <select class="form-input" id="logFiltroBaseViagens" style="width:190px;font-size:11px" onchange="renderLogViagens()">
+                <option value="">Todas as bases</option>
+              </select>
               <div class="view-toggle-log">
                 <button class="active" id="btnLogViewTrilha" onclick="mudarLogView('trilha')">🧭 Trilha</button>
                 <button id="btnLogViewMapa" onclick="mudarLogView('mapa')">🗺️ Mapa</button>
@@ -10125,10 +10138,35 @@ async function carregarInventarioHistorico() {
   document.getElementById('invKpiAtrasados').textContent = atrasados.length;
   document.getElementById('invKpiAcuracia').textContent = acuraciaMedia != null ? acuraciaMedia.toFixed(1) + '%' : '—';
 
+  invPreencherFiltroMes();
+  renderInventarioHistorico();
+}
+
+// Meses que realmente existem no histórico, do mais novo pro mais antigo. Preserva a
+// escolha atual pra recarregar a tela não jogar a pessoa de volta pra "todos".
+function invPreencherFiltroMes() {
+  const sel = document.getElementById('invFiltroMes');
+  if (!sel) return;
+  const atual = sel.value;
+  const meses = [...new Set(_invHistData.map(r => r.ano_mes).filter(Boolean))].sort().reverse();
+  sel.innerHTML = `<option value="">Todos os meses</option>` +
+    meses.map(m => `<option value="${escHtml(m)}">${escHtml(formatarMesAno(m))}</option>`).join('');
+  sel.value = meses.includes(atual) ? atual : '';
+}
+
+function renderInventarioHistorico() {
+  const cont = document.getElementById('invHistBody');
   if (!cont) return;
 
-  if (!_invHistData.length) {
-    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📋</div><div class="es-title">Nenhum inventário registrado ainda</div></div>`;
+  // Os KPIs do topo continuam olhando o histórico inteiro — eles são o retrato geral, não
+  // do mês escolhido.
+  const mes = document.getElementById('invFiltroMes')?.value || '';
+  const lista = mes ? _invHistData.filter(r => r.ano_mes === mes) : _invHistData;
+
+  if (!lista.length) {
+    cont.innerHTML = mes
+      ? `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📋</div><div class="es-title">Nenhum inventário em ${escHtml(formatarMesAno(mes))}</div></div>`
+      : `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📋</div><div class="es-title">Nenhum inventário registrado ainda</div></div>`;
     return;
   }
 
@@ -10139,7 +10177,7 @@ async function carregarInventarioHistorico() {
     return `<span class="log-badge log-badge-azul">⏳ Aguardando início</span>`;
   };
 
-  cont.innerHTML = _invHistData.map((r, i) => {
+  cont.innerHTML = lista.map((r, i) => {
     const classe = r.status === 'ENTREGUE' ? 'entregue' : r.bloqueado ? 'atrasado' : 'andamento';
     return `<div class="inv-hist-card ${classe}" style="animation-delay:${Math.min(i*0.03,0.3)}s">
       <div class="inv-hist-top">
@@ -10401,15 +10439,56 @@ async function carregarLogisticaPendentes() {
   _logPendentesData = res?.data || [];
   _logSelecionados.clear();
   logAtualizarBarraSelecao();
+  // O KPI conta tudo que está aguardando, independente do filtro da tela.
   document.getElementById('logKpiAguardando').textContent = _logPendentesData.length;
+  logPreencherFiltrosBase();
+  renderLogPendentes();
+}
+
+// Monta as opções dos dois filtros com as bases que existem de fato nos dados, preservando
+// o que já estava selecionado (o filtro não pode se perder a cada recarga da tela).
+function logPreencherFiltrosBase() {
+  const preencher = (id, bases) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const atual = sel.value;
+    const lista = [...new Set(bases.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    sel.innerHTML = `<option value="">Todas as bases</option>` +
+      lista.map(b => `<option value="${escHtml(b)}">${escHtml(b)}</option>`).join('');
+    // Se a base escolhida sumiu (última viagem daquele destino foi entregue), volta pra "todas"
+    sel.value = lista.includes(atual) ? atual : '';
+  };
+  preencher('logFiltroBasePend', _logPendentesData.map(a => a.destino_entrega));
+  preencher('logFiltroBaseViagens', _logViagensData.flatMap(v => (v.grupos || []).map(g => g.destino)));
+}
+
+// Grupos que devem aparecer agora, conforme o filtro de base. Trilha e mapa usam o mesmo,
+// senão filtrar na trilha e trocar pro mapa mostraria bases que a pessoa acabou de esconder.
+function logGruposFiltrados() {
+  const base = document.getElementById('logFiltroBaseViagens')?.value || '';
+  const todos = _logViagensData.flatMap(v => v.grupos || []);
+  return base ? todos.filter(g => g.destino === base) : todos;
+}
+
+function renderLogPendentes() {
+  const cont = document.getElementById('logPendentesBody');
   if (!cont) return;
 
-  if (!_logPendentesData.length) {
-    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">🎉</div><div class="es-title">Nenhum atendimento aguardando transporte</div></div>`;
+  const base = document.getElementById('logFiltroBasePend')?.value || '';
+  const lista = base ? _logPendentesData.filter(a => a.destino_entrega === base) : _logPendentesData;
+
+  // Trocar de base zera a seleção: sem isso ficariam atendimentos marcados fora da tela, e a
+  // viagem sairia com gente que a pessoa nem está vendo.
+  if (_logSelecionados.size) { _logSelecionados.clear(); logAtualizarBarraSelecao(); }
+
+  if (!lista.length) {
+    cont.innerHTML = base
+      ? `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📭</div><div class="es-title">Nenhum atendimento aguardando transporte para ${escHtml(base)}</div></div>`
+      : `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">🎉</div><div class="es-title">Nenhum atendimento aguardando transporte</div></div>`;
     return;
   }
 
-  cont.innerHTML = _logPendentesData.map((a, i) => `
+  cont.innerHTML = lista.map((a, i) => `
     <div class="log-pend-card" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${a.id}', this)">
       <input type="checkbox" onclick="event.stopPropagation()" onchange="logToggleSelecao('${a.id}',this.checked,this.closest('.log-pend-card'))">
       <div class="log-pend-nome">${escHtml(a.nome_colaborador||'—')}</div>
@@ -10621,17 +10700,36 @@ async function carregarLogisticaViagens() {
   const res = await api('/logistica/viagens');
   _logViagensData = res?.data || [];
 
-  // KPIs derivados dos grupos de todas as viagens
+  // KPIs olham TODAS as viagens, não o que está filtrado na tela — senão o número do topo
+  // mudaria conforme o filtro e deixaria de ser o retrato da operação.
   const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
   const hoje = new Date().toISOString().slice(0,10);
   document.getElementById('logKpiTransito').textContent = todosGrupos.filter(g => g.status === 'EM_TRANSITO').length;
   document.getElementById('logKpiEntreguesHoje').textContent = todosGrupos.filter(g => g.status === 'ENTREGUE' && (g.entregue_em||'').slice(0,10) === hoje).length;
   document.getElementById('logKpiViagensAtivas').textContent = _logViagensData.filter(v => v.status !== 'CONCLUIDA').length;
 
+  logPreencherFiltrosBase();
+  renderLogViagens();
+}
+
+function renderLogViagens() {
+  const box = document.getElementById('logViagensBody');
   if (!box) return;
 
-  if (!_logViagensData.length) {
-    box.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem criada ainda</div></div>`;
+  // Filtrar por base esconde os GRUPOS de outros destinos, e a viagem some se não sobrar
+  // nenhum grupo — uma viagem pode levar carga pra várias bases ao mesmo tempo.
+  const base = document.getElementById('logFiltroBaseViagens')?.value || '';
+  const viagens = (base
+    ? _logViagensData
+        .map(v => ({ ...v, grupos: (v.grupos || []).filter(g => g.destino === base) }))
+        .filter(v => v.grupos.length)
+    : _logViagensData);
+
+  if (!viagens.length) {
+    box.innerHTML = base
+      ? `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem para ${escHtml(base)}</div></div>`
+      : `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem criada ainda</div></div>`;
+    if (_logViewAtual === 'mapa') renderLogMapa();
     return;
   }
 
@@ -10664,7 +10762,7 @@ async function carregarLogisticaViagens() {
     return btns.join('');
   };
 
-  box.innerHTML = _logViagensData.map((v, i) => `
+  box.innerHTML = viagens.map((v, i) => `
     <div class="log-viagem-card" style="animation-delay:${Math.min(i*0.04,0.3)}s">
       <div class="log-viagem-top">
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
@@ -10764,7 +10862,7 @@ async function renderLogMapa() {
   _logMapMarkers.forEach(m => _logMap.removeLayer(m));
   _logMapMarkers = [];
 
-  const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
+  const todosGrupos = logGruposFiltrados();
   const comCoord = todosGrupos.filter(g => g.latitude != null && g.longitude != null);
   document.getElementById('logMapaSemCoord').classList.toggle('hidden', comCoord.length === todosGrupos.length);
 
