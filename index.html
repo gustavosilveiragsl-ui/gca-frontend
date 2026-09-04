@@ -240,6 +240,10 @@ tbody tr:hover td{background:var(--bg-hover);}
 .inv-hist-stat span{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em;}
 .inv-hist-meta{font-size:10px;color:var(--text-3);margin-bottom:10px;}
 .inv-hist-acoes{display:flex;gap:6px;flex-wrap:wrap;}
+/* Progresso da contagem no proprio card — pra ver o andamento sem abrir o link de contagem */
+.inv-prog-barra{height:6px;background:var(--bg);border-radius:99px;overflow:hidden;margin:8px 0 4px;}
+.inv-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-text));border-radius:99px;transition:width .3s ease;}
+.inv-prog-txt{font-size:10px;color:var(--text-3);display:flex;justify-content:space-between;gap:8px;}
 
 /* ═══ LOGÍSTICA ═══ */
 .log-grid-pendentes{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:16px;}
@@ -3826,6 +3830,17 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- MODAL: ANDAMENTO DA CONTAGEM -->
+      <div class="modal-overlay hidden" id="modalInvProgresso">
+        <div class="modal-box modal-alto" style="max-width:600px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title">📊 Andamento da contagem</div><div style="font-size:11px;color:var(--text-3)" id="invProgInfo"></div></div>
+            <button class="modal-close" onclick="fecharProgressoInventario()">×</button>
+          </div>
+          <div class="modal-body" id="invProgBody"><div class="spinner" style="margin:20px auto"></div></div>
+        </div>
+      </div>
+
       <!-- MODAL DETALHE DO INVENTÁRIO -->
       <div class="modal-overlay hidden" id="modalInventarioDetalhe">
         <div class="modal-box modal-alto" style="max-width:700px;width:100%">
@@ -4879,6 +4894,9 @@ function showView(nome, btnEl) {
   }
   // Saindo da Logística, para a animação dos emojis no mapa
   if (nome !== 'logistica') pararAnimacaoMapa();
+  // Saindo do Inventário, para o acompanhamento da contagem — senão fica batendo na API a
+  // cada 20s pra atualizar um modal que ninguém está vendo.
+  if (nome !== 'inventario') fecharProgressoInventario();
   // Se sair da tela de atendimento com atendimento ativo, cancela
   const viewAtual = document.querySelector('.view.active')?.id;
   if (viewAtual === 'view-atendimento' && nome !== 'atendimento' && ATEND.ativo) {
@@ -10199,6 +10217,7 @@ function renderInventarioHistorico() {
         ` : r.bloqueado ? `
           <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="liberarAtrasoInventario('${r.armazem_id}','${r.ano_mes}')">🔓 Liberar atraso</button>
         ` : `
+          ${r.congelado ? `<button class="row-action" onclick="abrirProgressoInventario('${escJs(r.id)}')">📊 Andamento</button>` : ''}
           ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','${escJs(r.nome_armazem)}')">🔗 Link / QR</button>` : ''}
           ${r.congelado
             ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="descongelarInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">🔓 Descongelar</button>`
@@ -10360,6 +10379,85 @@ async function liberarAtrasoInventario(armazemId, anoMes) {
   const res = await api('/inventario/liberar-atraso', { method: 'POST', body: JSON.stringify({ armazem_id: armazemId, ano_mes: anoMes }) });
   if (res?.ok) { toast('Atraso liberado! Gere o link de contagem normalmente.', 'success'); carregarInventarioHistorico(); }
   else toast(res?.erro || 'Erro ao liberar', 'error');
+}
+
+// ── Andamento da contagem, direto no sistema ──
+// Antes, pra ver como estava indo era preciso abrir o link de contagem e se logar como se
+// fosse contar. Aqui o mesmo dado aparece na tela normal, e atualiza sozinho enquanto o
+// modal estiver aberto.
+let _invProgId = null, _invProgTimer = null;
+
+async function abrirProgressoInventario(id) {
+  _invProgId = id;
+  document.getElementById('invProgBody').innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  document.getElementById('modalInvProgresso').classList.remove('hidden');
+  await carregarProgressoInventario();
+  // Atualiza a cada 20s enquanto estiver aberto — contagem é coisa de acompanhar ao vivo.
+  clearInterval(_invProgTimer);
+  _invProgTimer = setInterval(carregarProgressoInventario, 20000);
+}
+
+function fecharProgressoInventario() {
+  clearInterval(_invProgTimer); _invProgTimer = null; _invProgId = null;
+  document.getElementById('modalInvProgresso').classList.add('hidden');
+}
+
+async function carregarProgressoInventario() {
+  if (!_invProgId) return;
+  const res = await api(`/inventario/${_invProgId}/progresso`);
+  if (!res?.ok) { document.getElementById('invProgBody').innerHTML = `<div style="color:var(--text-3);font-size:12px">${escHtml(res?.erro || 'Erro ao carregar')}</div>`; return; }
+
+  const inv = res.inventario;
+  document.getElementById('invProgInfo').textContent =
+    `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)}${inv.congelado_em ? ' · iniciado ' + formatarData(inv.congelado_em.slice(0,10)) : ''}`;
+
+  const faltando = res.total - res.contados;
+  const quando = (d) => {
+    if (!d) return '—';
+    const min = Math.round((Date.now() - new Date(d).getTime()) / 60000);
+    if (min < 1) return 'agora';
+    if (min < 60) return `há ${min} min`;
+    const h = Math.floor(min / 60);
+    return h < 24 ? `há ${h}h` : formatarData(String(d).slice(0,10));
+  };
+
+  document.getElementById('invProgBody').innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
+      <div style="font-size:26px;font-weight:800;color:var(--accent-text)">${res.percentual}%</div>
+      <div style="font-size:12px;color:var(--text-2)">${res.contados} de ${res.total} itens contados</div>
+    </div>
+    <div class="inv-prog-barra" style="height:10px"><div class="inv-prog-fill" style="width:${res.percentual}%"></div></div>
+    <div class="inv-prog-txt" style="margin-bottom:16px">
+      <span>${faltando} item(ns) faltando</span>
+      <span>${inv.bloqueado ? '🔴 prazo vencido' : 'prazo ' + (inv.prazo_final ? formatarData(inv.prazo_final) : '—')}</span>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👥 Quem está contando</div>
+    ${res.contadores.length ? `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">
+      ${res.contadores.map(c => `
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:8px;padding:8px 10px">
+          <span style="font-size:12px;color:var(--text-1)">${escHtml(c.nome)}</span>
+          <span style="font-size:11px;color:var(--text-3)">${c.itens} item(ns) · último ${quando(c.ultimo_em)}</span>
+        </div>`).join('')}
+    </div>` : `<div style="font-size:12px;color:var(--text-3);margin-bottom:16px">Ninguém registrou contagem ainda.</div>`}
+
+    ${res.ultimos.length ? `
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🕒 Últimos registrados</div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:16px">
+        ${res.ultimos.map(u => `
+          <div style="display:flex;justify-content:space-between;gap:10px;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--text-1)">${escHtml(u.nome_item)}</span>
+            <span style="color:var(--text-3);white-space:nowrap">${u.saldo_contado} un · ${quando(u.contado_em)}</span>
+          </div>`).join('')}
+      </div>` : ''}
+
+    ${res.faltam_total ? `
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⏳ Ainda não contados (${res.faltam_total})</div>
+      <div style="font-size:11px;color:var(--text-2);line-height:1.6">
+        ${res.faltam_nomes.map(n => escHtml(n)).join(' · ')}${res.faltam_total > res.faltam_nomes.length ? ` <span style="color:var(--text-3)">e mais ${res.faltam_total - res.faltam_nomes.length}…</span>` : ''}
+      </div>` : `<div style="font-size:12px;color:var(--green)">✅ Todos os itens já foram contados — falta só finalizar pelo link.</div>`}
+
+    <div style="font-size:10px;color:var(--text-3);margin-top:16px;text-align:right">atualiza sozinho a cada 20s</div>`;
 }
 
 async function abrirDetalheInventario(id) {
