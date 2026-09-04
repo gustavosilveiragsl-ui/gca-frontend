@@ -244,6 +244,14 @@ tbody tr:hover td{background:var(--bg-hover);}
 .inv-prog-barra{height:6px;background:var(--bg);border-radius:99px;overflow:hidden;margin:8px 0 4px;}
 .inv-prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-text));border-radius:99px;transition:width .3s ease;}
 .inv-prog-txt{font-size:10px;color:var(--text-3);display:flex;justify-content:space-between;gap:8px;}
+/* "Ainda não contados": os nomes so mudam no tamanho (CAMISA .../P, /M, /G...). Listar tudo
+   corrido vira um paragrafo ilegivel — agrupa pela familia e mostra os tamanhos como chips. */
+.inv-falta-grupo{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.inv-falta-grupo:last-child{border-bottom:none;}
+.inv-falta-nome{flex:1;min-width:0;font-size:11.5px;color:var(--text-1);line-height:1.4;}
+.inv-falta-tags{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;max-width:58%;}
+.inv-falta-tag{font-size:10px;font-weight:600;color:var(--text-2);background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;white-space:nowrap;}
+.inv-falta-so{font-size:10px;color:var(--text-3);font-style:italic;}
 
 /* ═══ LOGÍSTICA ═══ */
 .log-grid-pendentes{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;padding:16px;}
@@ -10381,6 +10389,35 @@ async function liberarAtrasoInventario(armazemId, anoMes) {
   else toast(res?.erro || 'Erro ao liberar', 'error');
 }
 
+// Junta "CAMISA LEITURISTA ENEL/P", "/M", "/G"... numa linha so, com os tamanhos ao lado.
+// O catalogo nomeia a variacao depois da última barra, então é por ali que a familia é
+// separada. Item sem barra vira uma linha sozinha.
+function agruparPorFamilia(nomes) {
+  const grupos = new Map();
+  (nomes || []).forEach(nome => {
+    const texto = String(nome || '').trim();
+    const corte = texto.lastIndexOf('/');
+    const familia  = corte > 0 ? texto.slice(0, corte).trim() : texto;
+    const variacao = corte > 0 ? texto.slice(corte + 1).trim() : null;
+    if (!grupos.has(familia)) grupos.set(familia, []);
+    if (variacao) grupos.get(familia).push(variacao);
+  });
+  return [...grupos.entries()]
+    .map(([familia, variacoes]) => ({
+      familia,
+      // tamanhos em ordem de manequim, não alfabética: PP, P, M, G, GG, XG... e o resto no fim
+      variacoes: variacoes.sort((a, b) => {
+        const ordem = ['PP','P','M','G','GG','XG','XGG','3G','4G','5G','6G'];
+        const ia = ordem.indexOf(a.toUpperCase()), ib = ordem.indexOf(b.toUpperCase());
+        if (ia >= 0 && ib >= 0) return ia - ib;
+        if (ia >= 0) return -1;
+        if (ib >= 0) return 1;
+        return a.localeCompare(b, 'pt-BR', { numeric: true });
+      }),
+    }))
+    .sort((a, b) => a.familia.localeCompare(b.familia, 'pt-BR'));
+}
+
 // ── Andamento da contagem, direto no sistema ──
 // Antes, pra ver como estava indo era preciso abrir o link de contagem e se logar como se
 // fosse contar. Aqui o mesmo dado aparece na tela normal, e atualiza sozinho enquanto o
@@ -10452,10 +10489,18 @@ async function carregarProgressoInventario() {
       </div>` : ''}
 
     ${res.faltam_total ? `
-      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⏳ Ainda não contados (${res.faltam_total})</div>
-      <div style="font-size:11px;color:var(--text-2);line-height:1.6">
-        ${res.faltam_nomes.map(n => escHtml(n)).join(' · ')}${res.faltam_total > res.faltam_nomes.length ? ` <span style="color:var(--text-3)">e mais ${res.faltam_total - res.faltam_nomes.length}…</span>` : ''}
-      </div>` : `<div style="font-size:12px;color:var(--green)">✅ Todos os itens já foram contados — falta só finalizar pelo link.</div>`}
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⏳ Ainda não contados (${res.faltam_total})</div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:4px 12px">
+        ${agruparPorFamilia(res.faltam_nomes).map(g => `
+          <div class="inv-falta-grupo">
+            <div class="inv-falta-nome">${escHtml(g.familia)}</div>
+            ${g.variacoes.length
+              ? `<div class="inv-falta-tags">${g.variacoes.map(v => `<span class="inv-falta-tag">${escHtml(v)}</span>`).join('')}</div>`
+              : `<span class="inv-falta-so">1 item</span>`}
+          </div>`).join('')}
+      </div>
+      ${res.faltam_total > res.faltam_nomes.length ? `<div style="font-size:10px;color:var(--text-3);margin-top:6px">e mais ${res.faltam_total - res.faltam_nomes.length} item(ns)…</div>` : ''}
+      ` : `<div style="font-size:12px;color:var(--green)">✅ Todos os itens já foram contados — falta só finalizar pelo link.</div>`}
 
     <div style="font-size:10px;color:var(--text-3);margin-top:16px;text-align:right">atualiza sozinho a cada 20s</div>`;
 }
