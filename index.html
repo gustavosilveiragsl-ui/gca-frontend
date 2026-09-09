@@ -14979,11 +14979,19 @@ async function buscarLocalizador() {
   const semHist  = document.getElementById('locSemHistorico');
   if (hist.length) {
     semHist.style.display = 'none';
-    histBody.innerHTML = hist.map(h=>`<tr>
-      <td style="padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)">${(h.dt||'—').replace('T',' ').slice(0,16)}</td>
-      <td style="padding:6px 8px;font-size:11px;font-weight:600;border-bottom:1px solid var(--border)">${h.tipo||'—'}</td>
-      <td style="padding:6px 8px;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${h.resp||'—'}</td>
-      <td style="padding:6px 8px;font-size:11px;color:var(--text-3);border-bottom:1px solid var(--border)">${escHtml(h.obs||'—')}</td>
+    // Nome de colaborador e observação vêm do banco (digitados por gente): escapa tudo.
+    const corEvento = (t) => ({
+      ENTRADA: '#22c55e', SAIDA: '#ef4444', RECUPERACAO: '#0ea5e9',
+      DESCARTE: '#64748b', ENVIO_LAUDO: '#f59e0b', RETORNO_LAUDO: '#a855f7',
+    })[String(t || '').toUpperCase()] || 'var(--text-1)';
+
+    const celula = 'padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)';
+    histBody.innerHTML = hist.map(h => `<tr>
+      <td style="${celula};white-space:nowrap">${escHtml(formatarData(String(h.dt || '').slice(0, 10)) || '—')}</td>
+      <td style="${celula};font-weight:700;color:${corEvento(h.tipo)}">${escHtml(h.tipo || '—')}</td>
+      <td style="${celula};color:var(--text-2)">${escHtml(h.colab || '—')}</td>
+      <td style="${celula};color:var(--text-2)">${escHtml(h.resp || '—')}</td>
+      <td style="${celula};color:var(--text-3)">${escHtml(h.obs || '—')}</td>
     </tr>`).join('');
   } else {
     histBody.innerHTML = '';
@@ -20028,6 +20036,25 @@ async function baExcluirEquipe(id) {
         <div id="locLaudoBox" style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px;display:none">
           <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📋 Laudo Atual</div>
           <div id="locLaudoInfo" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+        </div>
+        <!-- Trajetoria do serial. Este bloco NAO existia no HTML, mas a busca ja tentava
+             preencher locHistoricoBody/locSemHistorico — batia em null, a funcao morria ali
+             e a tela ficava carregando pra sempre, sem erro visivel. -->
+        <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">🕒 Por onde passou</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse">
+              <thead><tr>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Data</th>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Evento</th>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Colaborador</th>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Responsável</th>
+                <th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Observação</th>
+              </tr></thead>
+              <tbody id="locHistoricoBody"></tbody>
+            </table>
+          </div>
+          <div id="locSemHistorico" style="display:none;text-align:center;color:var(--text-3);font-size:12px;padding:12px">Nenhuma movimentação registrada para este serial</div>
         </div>
       </div>
       <div id="locNaoEncontrado" style="display:none;text-align:center;color:#ef4444;font-size:12px;padding:16px">Serial não encontrado</div>
