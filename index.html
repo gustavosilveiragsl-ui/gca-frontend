@@ -1878,6 +1878,7 @@ window.addEventListener('pageshow', function(e) {
               </select>
               <input class="form-input" type="date" id="movFiltroInicio" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
               <input class="form-input" type="date" id="movFiltroFim" style="width:130px;font-size:11px" onchange="filtrarMovimentacoes()">
+              <button class="btn btn-ghost" id="btnExportarMov" onclick="exportarMovimentacoes()">📊 Exportar Excel</button>
               <button class="btn btn-ghost" onclick="carregarMovimentacoes()">↻ Atualizar</button>
             </div>
           </div>
@@ -9220,6 +9221,91 @@ let _movData   = [];
 let _movPagina = 1;
 const _movPorPag = 30;
 
+// ── Exportar as movimentações do período pra planilha ──
+// Exporta o PERÍODO FILTRADO INTEIRO, não a página que está na tela: _movData só tem os
+// registros da página atual, e um relatório de "tudo que entrou e saiu no mês" que traz
+// só 50 linhas é pior do que não ter relatório — parece completo e não é.
+async function exportarMovimentacoes() {
+  const btn = document.getElementById('btnExportarMov');
+  const textoOriginal = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Montando...'; }
+
+  try {
+    const tipo  = document.getElementById('movFiltroTipo')?.value || '';
+    const arm   = document.getElementById('movFiltroArmazem')?.value || '';
+    const ini   = document.getElementById('movFiltroInicio')?.value || '';
+    const fim   = document.getElementById('movFiltroFim')?.value || '';
+    const busca = document.getElementById('movBusca')?.value.trim() || '';
+
+    const montarUrl = (pag) => {
+      let u = `/movimentacoes?pagina=${pag}&por_pagina=1000`;
+      if (tipo)  u += `&tipo=${tipo}`;
+      if (arm)   u += `&armazem=${arm}`;
+      if (ini)   u += `&data_inicio=${ini}`;
+      if (fim)   u += `&data_fim=${fim}`;
+      if (busca) u += `&q=${encodeURIComponent(busca)}`;
+      return u;
+    };
+
+    // Busca página a página até acabar. O teto de 50 páginas (50 mil linhas) existe só pra
+    // um filtro muito largo não travar o navegador — avisa quando bate nele.
+    let todos = [], pag = 1, totalPaginas = 1;
+    do {
+      const r = await api(montarUrl(pag));
+      if (!r?.ok) { toast(r?.erro || 'Erro ao buscar as movimentações', 'error'); return; }
+      todos = todos.concat(r.registros || []);
+      totalPaginas = r.totalPaginas || 1;
+      pag++;
+    } while (pag <= totalPaginas && pag <= 50);
+
+    if (!todos.length) { toast('Nenhuma movimentação no período filtrado', 'warn'); return; }
+    if (totalPaginas > 50) toast(`Muitos registros — exportadas as primeiras ${todos.length} linhas. Reduza o período.`, 'warn', 7000);
+
+    const dataBR = (d) => {
+      const iso = String(d || '').slice(0, 10);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return '';
+      const partes = iso.split('-');
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    };
+    const tipoLegivel = (t) => ({ ENTRADA: 'Entrada', SAIDA: 'Saída', TRANSFERENCIA: 'Transferência' })[String(t || '').toUpperCase()] || t || '';
+
+    // Excel em pt-BR: separador ";" e decimal com vírgula.
+    const celula = (v) => '"' + String(v ?? '').replace(/"/g, '""').replace(/[\r\n]+/g, ' ') + '"';
+    const numero = (n) => String(Number(n ?? 0)).replace('.', ',');
+
+    const colunas = ['Data', 'Tipo', 'Código', 'Item', 'Quantidade', 'Armazém', 'Colaborador', 'Motivo / Observação', 'Usuário', 'Protheus'];
+    const linhas = todos.map(m => [
+      celula(dataBR(m.data || m.criadoEm)),
+      celula(tipoLegivel(m.tipo)),
+      celula(m.codigo || ''),
+      celula(m.descricao || ''),
+      numero(m.quantidade),
+      celula(m.nomeArmazem || ''),
+      celula(m.nomeColaborador || ''),
+      celula(m.motivo || m.observacao || ''),
+      celula(m.usuario || ''),
+      celula(m.status_protheus || ''),
+    ].join(';'));
+
+    const csv = [colunas.map(celula).join(';')].concat(linhas).join('\r\n');
+    // O ﻿ na frente é o BOM: sem ele o Excel abre os acentos errados (Ã, Ã§...).
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+
+    const periodo = (ini && fim) ? `_${ini}_a_${fim}` : '';
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `movimentacoes${periodo}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+
+    toast(`${todos.length} movimentação(ões) exportada(s)`, 'success');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = textoOriginal || '📊 Exportar Excel'; }
+  }
+}
+
 async function carregarMovimentacoes() {
   const tbody = document.getElementById('movBody');
   if (!tbody) return;
@@ -14843,6 +14929,15 @@ async function buscarLocalizador() {
     return;
   }
 
+  // Serial repetido entre itens: mostra qual foi escolhido e quais são os outros.
+  const avisoDup = document.getElementById('locAvisoDuplicado');
+  if (data.ativos_duplicados?.length) {
+    avisoDup.style.display = '';
+    avisoDup.innerHTML = `⚠️ <strong>Este número de série existe em ${data.ativos_duplicados.length} itens diferentes.</strong>
+      Abaixo está o de movimentação mais recente. Os outros:
+      ${data.ativos_duplicados.slice(1).map(x => `<div style="margin-top:4px">• ${escHtml(x.item || '—')} — ${escHtml(x.status_local || '—')}${x.nome_colab_atual ? ' com ' + escHtml(x.nome_colab_atual) : ''}</div>`).join('')}`;
+  } else avisoDup.style.display = 'none';
+
   // Situação atual
   const a = data.ativo;
   const localCor = a?.status_local==='COM_COLAB'?'#a855f7':a?.status_local==='DESCARTE'?'#ef4444':a?.status_local==='AGUARDANDO_LAUDO'?'#f59e0b':a?.status_local==='ENVIADO_LAUDO'?'#3b82f6':'#22c55e';
@@ -19921,6 +20016,9 @@ async function baExcluirEquipe(id) {
         <button class="btn btn-primary" onclick="buscarLocalizador()">Buscar</button>
       </div>
       <div id="locResultado" style="display:none">
+        <!-- Mesmo numero de serie usado em itens diferentes (a numeracao do fabricante nao e
+             unica entre modelos) — sem esse aviso a tela mostraria so um deles em silencio -->
+        <div id="locAvisoDuplicado" style="display:none;border:1px solid var(--yellow);background:rgba(251,191,36,.08);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:12px;font-size:11.5px;color:var(--text-1);line-height:1.5"></div>
         <!-- Situação atual -->
         <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:12px">
           <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:8px">📌 Situação Atual</div>
