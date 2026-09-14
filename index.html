@@ -1754,65 +1754,83 @@ window.addEventListener('pageshow', function(e) {
           <button id="trfTabFil" onclick="trfMudarAba('filiais')">🏢 Entre filiais <span id="trfBadgeFil" class="hidden" style="background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-size:10px;margin-left:4px">0</span></button>
         </div>
         <div id="trfPainelArmazens">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-header"><div><div class="card-title">Nova transferência entre armazéns</div><div class="card-sub">O material sai da origem e entra no destino ao registrar · gera o PDF para acompanhar o transporte</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:20px">
+              <div>
+                <div class="tfl-secao">1. Armazéns e responsável</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+                  <div><label class="form-label">Armazém de origem *</label>
+                    <select id="trfOrigem" class="form-input" onchange="traOrigemMudou()"><option value="">Selecione...</option></select></div>
+                  <div><label class="form-label">Armazém de destino *</label>
+                    <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select></div>
+                  <div><label class="form-label">Data *</label><input id="trfData" class="form-input" type="date"></div>
+                  <div><label class="form-label">Responsável *</label><input id="traResponsavel" class="form-input"></div>
+                </div>
+              </div>
 
-          <!-- FORMULÁRIO -->
-          <div class="card">
-            <div class="card-header"><div><div class="card-title">Transferência entre Armazéns</div><div class="card-sub">Transfira itens de um armazém para outro</div></div></div>
-            <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
               <div>
-                <label class="form-label">Item *</label>
-                <input id="trfItemBusca" class="form-input" placeholder="Buscar item..." oninput="filtrarItensTrf(this.value)" onblur="setTimeout(()=>document.getElementById('trfItemSugestoes').classList.add('hidden'),200)" autocomplete="off">
-                <div id="trfItemSugestoes" class="autocomplete-list hidden"></div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div>
-                  <label class="form-label">Armazém de Origem *</label>
-                  <select id="trfOrigem" class="form-input" onchange="verificarSaldoTrf()"><option value="">Selecione...</option></select>
+                <div class="tfl-secao">2. Transporte</div>
+                <div style="display:flex;gap:20px;margin-bottom:10px;font-size:12px;color:var(--text-1);flex-wrap:wrap">
+                  <label style="cursor:pointer"><input type="radio" name="traMeio" value="PROPRIO" checked onchange="traMeioMudou()"> Meio próprio</label>
+                  <label style="cursor:pointer"><input type="radio" name="traMeio" value="TRANSPORTADORA" onchange="traMeioMudou()"> Transportadora</label>
+                  <label style="cursor:pointer"><input type="radio" name="traMeio" value="CORREIOS" onchange="traMeioMudou()"> Correios</label>
                 </div>
-                <div>
-                  <label class="form-label">Armazém de Destino *</label>
-                  <select id="trfDestino" class="form-input"><option value="">Selecione...</option></select>
+                <div id="traBlocoProprio" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px">
+                  <div><label class="form-label">Nome do motorista *</label><input id="traMotorista" class="form-input"></div>
+                  <div><label class="form-label">Placa do veículo *</label><input id="traPlaca" class="form-input" style="text-transform:uppercase"></div>
+                  <div><label class="form-label">Placa da carreta</label><input id="traCarreta" class="form-input" style="text-transform:uppercase" placeholder="se houver"></div>
+                  <div><label class="form-label">Horário de saída *</label><input id="traHora" type="time" class="form-input"></div>
+                  <div><label class="form-label">Dia de saída *</label><input id="traDia" type="date" class="form-input"></div>
                 </div>
-              </div>
-              <div id="trfSaldoBox" class="hidden" style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-size:12px;color:var(--text-2)">
-                Saldo disponível na origem: <strong id="trfSaldoValor" style="color:var(--accent-text)">—</strong>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div>
-                  <label class="form-label">Quantidade *</label>
-                  <input id="trfQtd" class="form-input" type="number" min="1" value="1">
+                <div id="traBlocoTransp" class="hidden" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+                  <div><label class="form-label">CNPJ da transportadora *</label><input id="traCnpjTransp" class="form-input" placeholder="00.000.000/0000-00"></div>
+                  <div><label class="form-label">Nome da transportadora</label><input id="traNomeTransp" class="form-input"></div>
                 </div>
-                <div>
-                  <label class="form-label">Data *</label>
-                  <input id="trfData" class="form-input" type="date">
-                </div>
+                <div id="traBlocoCorreios" class="hidden" style="font-size:12px;color:var(--text-2);background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px">📮 O material será enviado pelos Correios.</div>
               </div>
+
               <div>
-                <label class="form-label">Observação (opcional)</label>
-                <textarea id="trfObs" class="form-input" rows="2" style="resize:vertical" placeholder="Ex: Reforço de estoque..."></textarea>
+                <div class="tfl-secao">3. Itens</div>
+                <div style="position:relative;max-width:560px;margin-bottom:10px">
+                  <input id="traItemBusca" class="form-input" placeholder="Buscar no estoque do armazém de origem..." autocomplete="off"
+                    oninput="traFiltrarItens(this.value)" onfocus="traFiltrarItens(this.value)"
+                    onblur="setTimeout(()=>document.getElementById('traItemSugestoes').classList.add('hidden'),200)">
+                  <div id="traItemSugestoes" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0"></div>
+                </div>
+                <div style="overflow-x:auto"><table>
+                  <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Saldo na origem</th><th style="text-align:center">Quantidade</th><th>Un.</th><th></th></tr></thead>
+                  <tbody id="traItensBody"></tbody>
+                </table></div>
               </div>
-              <div style="display:flex;gap:10px">
-                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="registrarTransferencia()">↔ Transferir</button>
-                <button class="btn btn-ghost" onclick="limparTransferencia()">Limpar</button>
+
+              <div>
+                <div class="tfl-secao">4. Justificativa</div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px">
+                  <div><label class="form-label">Justificativa da transferência *</label>
+                    <textarea id="traJustificativa" class="form-input" rows="2" style="resize:vertical" placeholder="Ex.: reforço de estoque da base para a operação da semana"></textarea></div>
+                  <div><label class="form-label">Observação</label>
+                    <textarea id="traObs" class="form-input" rows="2" style="resize:vertical"></textarea></div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button class="btn btn-ghost" onclick="traLimpar(false)">Limpar</button>
+                <button class="btn btn-primary" id="traBtnRegistrar" onclick="traRegistrar()">↔ Registrar transferência</button>
               </div>
             </div>
           </div>
 
-          <!-- SALDO POR ARMAZÉM -->
           <div class="card">
             <div class="card-header">
-              <div><div class="card-title">Saldo por Armazém</div><div class="card-sub" id="trfSaldoCardSub">Selecione um item para ver o saldo em cada armazém</div></div>
-            </div>
-            <div id="trfSaldoCards" style="padding:16px;display:flex;flex-direction:column;gap:10px">
-              <div style="text-align:center;padding:40px 0;color:var(--text-3)">
-                <div style="font-size:32px;margin-bottom:8px">📦</div>
-                <div style="font-size:12px">Busque um item para ver a disponibilidade</div>
+              <div><div class="card-title">Transferências entre armazéns</div><div class="card-sub">Histórico da filial · baixe o PDF de qualquer uma</div></div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="month" id="traFiltroMes" class="form-input" style="width:150px;font-size:11px" onchange="traCarregarLista()">
+                <button class="btn btn-ghost" onclick="traCarregarLista()">↻</button>
               </div>
             </div>
+            <div id="traLista" style="padding:12px 16px"></div>
           </div>
-
-        </div>
         </div>
 
         <!-- ── TRANSFERÊNCIA ENTRE FILIAIS ── -->
@@ -5154,7 +5172,7 @@ function onViewLoad(nome) {
   if (nome === 'solicitacoes')       { carregarSolicitacoes(); _iniciarRealtime(); }
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
-  if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); trfPrepararAbas(); }
+  if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); trfPrepararAbas(); if (!document.getElementById('trfTabFil')?.classList.contains('active')) traIniciar(); }
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
@@ -9113,100 +9131,247 @@ async function carregarUltimasSaidas() {
   renderHistoricoMov(tbody, data?.registros || []);
 }
 
-// ── TRANSFERÊNCIA ──
-function filtrarItensTrf(q) {
-  if (q.length < 2) { document.getElementById('trfItemSugestoes').classList.add('hidden'); return; }
-  const lista = (_itens||[]).filter(i => {
-    const s = q.toLowerCase();
-    return (i.descricao||'').toLowerCase().includes(s) || (i.codigo||'').toLowerCase().includes(s);
-  }).slice(0,15);
-  mostrarAutocompleteItens('trfItemSugestoes','trfItemBusca', lista, 'selecionarItemTrf');
+// ── TRANSFERÊNCIA ENTRE ARMAZÉNS ──
+// Vários itens de uma vez, com transporte, justificativa e PDF. O saldo muda na hora de
+// registrar (sai da origem e entra no destino), como sempre foi.
+let _traEstoque = [], _traItens = [], _traLista = [];
+const traVal = (id) => (document.getElementById(id)?.value || '').trim();
+const traHoje = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const TRA_MEIO = { PROPRIO: 'Meio próprio', TRANSPORTADORA: 'Transportadora', CORREIOS: 'Correios' };
+
+// Entrar na aba começa do zero, igual à transferência entre filiais: nada pela metade
+// reaparece ao voltar para a tela.
+async function traIniciar() {
+  traLimpar(true);
+  const mes = document.getElementById('traFiltroMes');
+  if (mes && !mes.value) mes.value = traHoje().slice(0, 7);
+  traCarregarLista();
+  await Promise.all([populateArmazens('trfOrigem'), populateArmazens('trfDestino')]);
+  ['trfOrigem', 'trfDestino'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
 }
-function selecionarItemTrf(id) {
-  _trfItemSel = (_itens||[]).find(i => i.id === id);
-  if (!_trfItemSel) return;
-  document.getElementById('trfItemBusca').value = _trfItemSel.descricao;
-  document.getElementById('trfItemSugestoes').classList.add('hidden');
-  verificarSaldoTrf();
-  atualizarSaldoCardTrf();
+
+function traMeio() { return document.querySelector('input[name="traMeio"]:checked')?.value || 'PROPRIO'; }
+
+function traMeioMudou() {
+  const m = traMeio();
+  document.getElementById('traBlocoProprio').classList.toggle('hidden', m !== 'PROPRIO');
+  document.getElementById('traBlocoTransp').classList.toggle('hidden', m !== 'TRANSPORTADORA');
+  document.getElementById('traBlocoCorreios').classList.toggle('hidden', m !== 'CORREIOS');
 }
 
-async function atualizarSaldoCardTrf() {
-  const container = document.getElementById('trfSaldoCards');
-  const sub       = document.getElementById('trfSaldoCardSub');
-  if (!container || !_trfItemSel) return;
+async function traOrigemMudou() {
+  // Trocar a origem zera os itens: o saldo de cada um é daquele armazém.
+  _traItens = []; _traEstoque = [];
+  traRenderItens();
+  const arm = traVal('trfOrigem');
+  if (!arm) return;
+  const res = await api(`/transferencias-armazens/estoque?armazem_id=${encodeURIComponent(arm)}`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar o estoque', 'error'); return; }
+  if (traVal('trfOrigem') !== arm) return;
+  _traEstoque = res.data || [];
+}
 
-  container.innerHTML = '<div style="text-align:center;padding:20px"><div class="spinner"></div></div>';
-  if (sub) sub.textContent = _trfItemSel.descricao;
+function traFiltrarItens(q) {
+  const box = document.getElementById('traItemSugestoes');
+  if (!traVal('trfOrigem')) {
+    box.innerHTML = `<div class="tfl-sug" style="color:var(--text-3);cursor:default">Escolha o armazém de origem primeiro</div>`;
+    box.classList.remove('hidden'); return;
+  }
+  const t = String(q || '').toLowerCase().trim();
+  const lista = _traEstoque
+    .filter(i => !_traItens.some(x => x.item_id === i.item_id))
+    .filter(i => !t || String(i.descricao).toLowerCase().includes(t) || String(i.codigo || '').toLowerCase().includes(t))
+    .slice(0, 40);
+  box.innerHTML = lista.length
+    ? lista.map(i => `<div class="tfl-sug" onmousedown="traAdicionarItem('${escJs(i.item_id)}')">${escHtml(i.descricao)}
+        <span style="color:var(--text-3);font-size:10px"> · ${escHtml(i.codigo || 's/ código')} · saldo ${i.saldo}</span></div>`).join('')
+    : `<div class="tfl-sug" style="color:var(--text-3);cursor:default">Nenhum item com saldo encontrado</div>`;
+  box.classList.remove('hidden');
+}
 
-  const data = await api(`/saldos?item_id=${_trfItemSel.id}`);
-  const saldos = (data?.data || []).filter(s => s.saldo > 0 || s.armazem_id);
+function traAdicionarItem(id) {
+  const i = _traEstoque.find(x => x.item_id === id);
+  if (!i) return;
+  _traItens.push({ ...i, quantidade: 1 });
+  document.getElementById('traItemBusca').value = '';
+  document.getElementById('traItemSugestoes').classList.add('hidden');
+  traRenderItens();
+}
 
-  if (!saldos.length) {
-    container.innerHTML = `<div style="text-align:center;padding:30px;color:var(--text-3);font-size:12px">Nenhum saldo encontrado para este item</div>`;
+function traQtdItem(id, v) {
+  const it = _traItens.find(x => x.item_id === id);
+  if (!it) return;
+  let q = Number(v);
+  if (!Number.isFinite(q) || q <= 0) q = 1;
+  if (q > it.saldo) { q = it.saldo; toast(`Saldo disponível de "${it.descricao}": ${it.saldo}`, 'warn'); }
+  it.quantidade = q;
+  traRenderItens();
+}
+
+function traRemoverItem(id) {
+  _traItens = _traItens.filter(x => x.item_id !== id);
+  traRenderItens();
+}
+
+function traRenderItens() {
+  const tbody = document.getElementById('traItensBody');
+  if (!tbody) return;
+  if (!_traItens.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text-3);font-size:12px">Nenhum item adicionado</td></tr>`;
     return;
   }
-
-  const userArmazens = getUserArmazens();
-  const lista = userArmazens.length ? saldos.filter(s => userArmazens.includes(s.armazem_id)) : saldos;
-
-  container.innerHTML = lista.map(s => {
-    const pct   = Math.min(100, s.saldo > 0 ? 100 : 0);
-    const cor   = s.saldo === 0 ? '#ef4444' : s.saldo < 10 ? '#f59e0b' : '#22c55e';
-    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;cursor:pointer;transition:background .15s"
-      onclick="document.getElementById('trfOrigem').value='${s.armazem_id}';verificarSaldoTrf()"
-      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${escHtml(s.nome_armazem||'—')}</div>
-        <div style="font-size:14px;font-weight:700;color:${cor}">${s.saldo} <span style="font-size:10px;font-weight:400">${_trfItemSel.un_med||'UN'}</span></div>
-      </div>
-      <div style="height:4px;background:var(--border);border-radius:2px">
-        <div style="height:4px;background:${cor};border-radius:2px;width:${pct}%;transition:width .3s"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text-3);margin-top:4px">Clique para selecionar como origem</div>
-    </div>`;
-  }).join('');
+  tbody.innerHTML = _traItens.map(i => `
+    <tr>
+      <td class="td-main">${escHtml(i.descricao)}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(i.codigo || '—')}</td>
+      <td style="text-align:center;font-size:11px">${i.saldo}</td>
+      <td style="text-align:center"><input type="number" min="1" max="${i.saldo}" value="${i.quantidade}" class="form-input" style="width:80px;text-align:center"
+            onchange="traQtdItem('${escJs(i.item_id)}', this.value)"></td>
+      <td style="font-size:11px">${escHtml(i.un_med || 'UN')}</td>
+      <td><button class="row-action" style="color:var(--red)" onclick="traRemoverItem('${escJs(i.item_id)}')">✕</button></td>
+    </tr>`).join('') + `
+    <tr><td colspan="6" style="text-align:right;font-size:11px;color:var(--text-3)">${_traItens.length} item(ns) · ${_traItens.reduce((s, i) => s + i.quantidade, 0)} unidade(s)</td></tr>`;
 }
 
-async function verificarSaldoTrf() {
-  const origem = document.getElementById('trfOrigem')?.value;
-  const box    = document.getElementById('trfSaldoBox');
-  if (!_trfItemSel || !origem) { box?.classList.add('hidden'); return; }
-  const data = await api(`/saldos?item_id=${_trfItemSel.id}&armazem_id=${origem}`);
-  const registro = data?.data?.[0];
-  const saldo = registro?.saldo ?? 0;
-  document.getElementById('trfSaldoValor').textContent = `${saldo} ${_trfItemSel.un_med||'UN'}`;
-  box?.classList.remove('hidden');
+// completo = também volta os armazéns para "Selecione" (usado ao entrar na tela).
+function traLimpar(completo) {
+  _traItens = [];
+  ['traItemBusca', 'traMotorista', 'traPlaca', 'traCarreta', 'traHora', 'traCnpjTransp', 'traNomeTransp', 'traJustificativa', 'traObs']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  if (completo) {
+    _traEstoque = [];
+    ['trfOrigem', 'trfDestino'].forEach(id => { const el = document.getElementById(id); if (el) el.selectedIndex = 0; });
+  }
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+  set('traResponsavel', GCA.usuario?.nome || '');
+  set('trfData', traHoje());
+  set('traDia', traHoje());
+  const radio = document.querySelector('input[name="traMeio"][value="PROPRIO"]');
+  if (radio) radio.checked = true;
+  if (document.getElementById('traBlocoProprio')) traMeioMudou();
+  traRenderItens();
 }
 
-async function registrarTransferencia() {
-  if (window._processing_registrarTransferencia) return; window._processing_registrarTransferencia = true;
+async function traRegistrar() {
+  if (window._processing_traRegistrar) return;
+  window._processing_traRegistrar = true;
+  const btn = document.getElementById('traBtnRegistrar');
   try {
-  const itemId  = _trfItemSel?.id;
-  const origem  = document.getElementById('trfOrigem')?.value;
-  const destino = document.getElementById('trfDestino')?.value;
-  const qtd     = parseFloat(document.getElementById('trfQtd')?.value);
-  const data    = document.getElementById('trfData')?.value;
-  const obs     = document.getElementById('trfObs')?.value || '';
+    const origem = traVal('trfOrigem'), destino = traVal('trfDestino');
+    if (!origem || !destino) { toast('Selecione os armazéns de origem e destino', 'warn'); return; }
+    if (origem === destino) { toast('Origem e destino precisam ser armazéns diferentes', 'warn'); return; }
+    if (!_traItens.length) { toast('Adicione ao menos um item', 'warn'); return; }
+    if (traVal('traJustificativa').length < 5) { toast('Informe a justificativa da transferência', 'warn'); return; }
 
-  if (!itemId || !origem || !destino || !qtd || !data) {
-    toast('Preencha todos os campos obrigatórios', 'warn'); return;
+    const meio = traMeio();
+    const transporte = meio === 'PROPRIO'
+      ? { nome_motorista: traVal('traMotorista'), placa_veiculo: traVal('traPlaca'), placa_carreta: traVal('traCarreta'), horario_saida: traVal('traHora'), dia_saida: traVal('traDia') }
+      : meio === 'TRANSPORTADORA'
+        ? { cnpj_transportadora: traVal('traCnpjTransp'), nome_transportadora: traVal('traNomeTransp') }
+        : {};
+    const corpo = {
+      armazem_origem_id: origem, armazem_destino_id: destino, data: traVal('trfData'),
+      nome_responsavel: traVal('traResponsavel'), justificativa: traVal('traJustificativa'), observacao: traVal('traObs'),
+      meio_transporte: meio, transporte,
+      itens: _traItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade })),
+    };
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
+    // Mexe no saldo: se algum dos dois armazéns estiver em inventário, passa pelo fluxo de liberação.
+    const res = await apiMovimentacao('/transferencias-armazens', corpo);
+    if (!res?.ok) { toast(res?.erro || 'Erro ao registrar a transferência', 'error', 8000); return; }
+    toast(`Transferência ${res.numero} registrada — saldo atualizado`, 'success', 6000);
+    traLimpar(false);
+    traOrigemMudou();
+    traCarregarLista();
+    traAbrirDetalhe(res.id);
+  } finally {
+    window._processing_traRegistrar = false;
+    if (btn) { btn.disabled = false; btn.textContent = '↔ Registrar transferência'; }
   }
-  if (origem === destino) {
-    toast('Origem e destino não podem ser iguais', 'warn'); return;
+}
+
+async function traCarregarLista() {
+  const box = document.getElementById('traLista');
+  if (!box) return;
+  box.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  const mes = traVal('traFiltroMes');
+  const res = await api(`/transferencias-armazens${mes ? `?mes=${encodeURIComponent(mes)}` : ''}`);
+  if (!res?.ok) { box.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div>`; return; }
+  _traLista = res.data || [];
+  if (!_traLista.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-title">Nenhuma transferência entre armazéns neste mês</div></div>`;
+    return;
   }
+  box.innerHTML = _traLista.map(t => `
+    <div class="tfl-linha">
+      <div style="min-width:0">
+        <div style="font-size:12px;font-weight:700;color:var(--text-1)">${escHtml(t.numero)}
+          <span style="font-weight:500;color:var(--text-3)"> · ${escHtml(t.nome_armazem_origem || '—')} → ${escHtml(t.nome_armazem_destino || '—')}</span></div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px">${t.data ? formatarData(t.data) : '—'} · ${t.itens} item(ns), ${t.quantidade} un. · ${escHtml(TRA_MEIO[t.meio_transporte] || t.meio_transporte)} · por ${escHtml(t.criado_por || '—')}</div>
+        <div style="font-size:11px;color:var(--text-2);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(t.justificativa || '')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <button class="row-action" onclick="traAbrirDetalhe('${escJs(t.id)}')">Ver</button>
+        <button class="row-action" onclick="traBaixarPDF('${escJs(t.id)}')">PDF</button>
+      </div>
+    </div>`).join('');
+}
 
-  const res = await apiMovimentacao('/movimentacoes/transferencia',
-    { item_id:itemId, armazem_origem_id:origem, armazem_destino_id:destino, data, quantidade:qtd, observacao:obs });
+// O PDF exige o token, então não dá pra abrir por link direto: baixa como blob.
+async function traBaixarPDF(id) {
+  try {
+    const r = await fetch(`${API}/transferencias-armazens/${encodeURIComponent(id)}/pdf`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) { toast('Erro ao gerar o PDF', 'error'); return; }
+    window.open(URL.createObjectURL(await r.blob()), '_blank');
+  } catch { toast('Erro ao gerar o PDF', 'error'); }
+}
 
-  if (res?.ok) {
-    toast('Transferência realizada com sucesso!', 'success');
-    limparTransferencia();
-  } else {
-    toast(res?.erro || 'Erro ao transferir', 'error');
-  }
-
-  } finally { window._processing_registrarTransferencia = false; }}
+async function traAbrirDetalhe(id) {
+  const res = await api(`/transferencias-armazens/${encodeURIComponent(id)}`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao abrir a transferência', 'error'); return; }
+  const t = res.data, tr = t.transporte_json || {};
+  const linhasTransp = t.meio_transporte === 'PROPRIO'
+    ? [['Motorista', tr.nome_motorista], ['Placa', tr.placa_veiculo], ['Carreta', tr.placa_carreta || '—'], ['Saída', `${tr.dia_saida ? formatarData(tr.dia_saida) : '—'} ${tr.horario_saida || ''}`]]
+    : t.meio_transporte === 'TRANSPORTADORA'
+      ? [['Transportadora', tr.nome_transportadora || '—'], ['CNPJ', tr.cnpj_transportadora]]
+      : [['Envio', 'Correios']];
+  document.getElementById('modalTraDetalhe')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.id = 'modalTraDetalhe';
+  m.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:720px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">↔ ${escHtml(t.numero)}</div>
+          <div style="font-size:11px;color:var(--text-3)">${t.data ? formatarData(t.data) : '—'} · registrada por ${escHtml(t.criado_por || '—')} · responsável ${escHtml(t.nome_responsavel || '—')}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalTraDetalhe').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div style="background:var(--bg);border-radius:var(--radius-md);padding:10px 12px"><div class="tfl-secao" style="margin-bottom:4px">Origem</div><div style="font-size:13px;font-weight:700;color:var(--text-1)">${escHtml(t.nome_armazem_origem || '—')}</div></div>
+          <div style="background:var(--bg);border-radius:var(--radius-md);padding:10px 12px"><div class="tfl-secao" style="margin-bottom:4px">Destino</div><div style="font-size:13px;font-weight:700;color:var(--text-1)">${escHtml(t.nome_armazem_destino || '—')}</div></div>
+        </div>
+        <div class="tfl-secao">Transporte — ${escHtml(TRA_MEIO[t.meio_transporte] || '')}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;margin-bottom:14px">
+          ${linhasTransp.map(([k, v]) => `<span><span style="color:var(--text-3)">${k}:</span> <strong>${escHtml(v || '—')}</strong></span>`).join('')}
+        </div>
+        <div class="tfl-secao">Justificativa</div>
+        <div style="font-size:12px;color:var(--text-1);margin-bottom:14px;white-space:pre-wrap">${escHtml(t.justificativa || '—')}</div>
+        <div class="tfl-secao">Itens</div>
+        <div style="overflow-x:auto;margin-bottom:10px"><table>
+          <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Qtd.</th><th>Un.</th></tr></thead>
+          <tbody>${(t.itens || []).map(i => `<tr><td class="td-main">${escHtml(i.descricao)}</td><td style="font-size:11px">${escHtml(i.codigo || '—')}</td><td style="text-align:center">${Number(i.quantidade)}</td><td style="font-size:11px">${escHtml(i.un_med || 'UN')}</td></tr>`).join('')}</tbody>
+        </table></div>
+        ${t.observacao ? `<div style="font-size:12px;color:var(--text-2)"><span style="color:var(--text-3)">Observação:</span> ${escHtml(t.observacao)}</div>` : ''}
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalTraDetalhe').remove()">Fechar</button>
+        <button class="btn btn-primary" onclick="traBaixarPDF('${escJs(t.id)}')">📄 PDF</button>
+      </div>
+    </div>`;
+  m.addEventListener('click', ev => { if (ev.target === m) m.remove(); });
+  document.body.appendChild(m);
+}
 
 // ═══════════════════════════════════════════
 // TRANSFERÊNCIA ENTRE FILIAIS
@@ -9236,7 +9401,7 @@ function trfMudarAba(aba) {
   document.getElementById('trfTabFil').classList.toggle('active', fil);
   document.getElementById('trfPainelArmazens').classList.toggle('hidden', fil);
   document.getElementById('trfPainelFiliais').classList.toggle('hidden', !fil);
-  if (fil) tflIniciar();
+  if (fil) tflIniciar(); else traIniciar();
 }
 
 // Entrar na aba sempre começa uma transferência do zero: o que ficou pela metade ao sair da
@@ -9860,18 +10025,7 @@ async function tflConfirmarRecebimento(id) {
   await tflDepoisDeAcao(id);
 }
 
-function limparTransferencia() {
-  _trfItemSel = null;
-  ['trfItemBusca','trfQtd','trfObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = id==='trfQtd'?'1':''; });
-  ['trfOrigem','trfDestino'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex=0; });
-  const hoje = new Date().toISOString().split('T')[0];
-  const dt = document.getElementById('trfData'); if(dt) dt.value = hoje;
-  document.getElementById('trfSaldoBox')?.classList.add('hidden');
-  const sub = document.getElementById('trfSaldoCardSub');
-  if (sub) sub.textContent = 'Selecione um item para ver o saldo em cada armazém';
-  const cards = document.getElementById('trfSaldoCards');
-  if (cards) cards.innerHTML = `<div style="text-align:center;padding:40px 0;color:var(--text-3)"><div style="font-size:32px;margin-bottom:8px">📦</div><div style="font-size:12px">Busque um item para ver a disponibilidade</div></div>`;
-}
+function limparTransferencia() { traLimpar(true); }
 
 // ── RENDER HISTÓRICO COMUM ──
 function renderHistoricoMov(tbody, lista) {
