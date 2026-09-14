@@ -4103,7 +4103,14 @@ window.addEventListener('pageshow', function(e) {
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Viagens</div><div class="card-sub">Coleta, transferência e entrega por destino</div></div>
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+              <select class="form-input" id="logFiltroSituacao" style="width:230px;font-size:11px" onchange="logSituacaoMudou()" title="Concluídas saem da tela 3 dias depois da última entrega">
+                <option value="padrao">Em andamento + concluídas (3 dias)</option>
+                <option value="andamento">Só em andamento</option>
+                <option value="concluidas">Concluídas no mês</option>
+                <option value="todas">Todas do mês</option>
+              </select>
+              <input type="month" class="form-input hidden" id="logFiltroMes" style="width:150px;font-size:11px" onchange="carregarLogisticaViagens()">
               <select class="form-input" id="logFiltroBaseViagens" style="width:190px;font-size:11px" onchange="renderLogViagens()">
                 <option value="">Todas as bases</option>
               </select>
@@ -11799,20 +11806,40 @@ async function confirmarCancelamentoLogistica() {
   } else toast(res?.erro || 'Erro ao cancelar', 'error');
 }
 
+// Concluída não fica na tela para sempre: no filtro padrão aparece só por 3 dias depois da
+// última entrega. As antigas continuam acessíveis por "Concluídas no mês".
+function logSituacaoMudou() {
+  const sit = document.getElementById('logFiltroSituacao')?.value || 'padrao';
+  const mes = document.getElementById('logFiltroMes');
+  const precisaMes = sit === 'concluidas' || sit === 'todas';
+  if (mes) {
+    mes.classList.toggle('hidden', !precisaMes);
+    if (precisaMes && !mes.value) {
+      const d = new Date();
+      mes.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+  }
+  carregarLogisticaViagens();
+}
+
 async function carregarLogisticaViagens() {
   const box = document.getElementById('logViagensBody');
   if (box) box.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
 
-  const res = await api('/logistica/viagens');
+  const sit = document.getElementById('logFiltroSituacao')?.value || 'padrao';
+  const mes = document.getElementById('logFiltroMes')?.value || '';
+  const qs = new URLSearchParams({ situacao: sit });
+  if ((sit === 'concluidas' || sit === 'todas') && mes) qs.set('mes', mes);
+  const res = await api(`/logistica/viagens?${qs}`);
+  if (res && !res.ok) toast(res.erro || 'Erro ao carregar as viagens', 'error');
   _logViagensData = res?.data || [];
 
-  // KPIs olham TODAS as viagens, não o que está filtrado na tela — senão o número do topo
-  // mudaria conforme o filtro e deixaria de ser o retrato da operação.
-  const todosGrupos = _logViagensData.flatMap(v => v.grupos || []);
-  const hoje = new Date().toISOString().slice(0,10);
-  document.getElementById('logKpiTransito').textContent = todosGrupos.filter(g => g.status === 'EM_TRANSITO').length;
-  document.getElementById('logKpiEntreguesHoje').textContent = todosGrupos.filter(g => g.status === 'ENTREGUE' && (g.entregue_em||'').slice(0,10) === hoje).length;
-  document.getElementById('logKpiViagensAtivas').textContent = _logViagensData.filter(v => v.status !== 'CONCLUIDA').length;
+  // Os números do topo vêm do servidor e olham TODAS as viagens — o filtro esconde as
+  // concluídas antigas, mas o retrato da operação não pode mudar com ele.
+  const resumo = res?.resumo || {};
+  document.getElementById('logKpiTransito').textContent = resumo.em_transito ?? 0;
+  document.getElementById('logKpiEntreguesHoje').textContent = resumo.entregues_hoje ?? 0;
+  document.getElementById('logKpiViagensAtivas').textContent = resumo.viagens_ativas ?? 0;
 
   logPreencherFiltrosBase();
   renderLogViagens();
@@ -11832,15 +11859,21 @@ function renderLogViagens() {
     : _logViagensData);
 
   if (!viagens.length) {
-    box.innerHTML = base
-      ? `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem para ${escHtml(base)}</div></div>`
-      : `<div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma viagem criada ainda</div></div>`;
+    const sitV = document.getElementById('logFiltroSituacao')?.value || 'padrao';
+    const msgSit = {
+      padrao: 'Nenhuma viagem em andamento nem concluída nos últimos 3 dias',
+      andamento: 'Nenhuma viagem em andamento',
+      concluidas: 'Nenhuma viagem concluída neste mês',
+      todas: 'Nenhuma viagem neste mês',
+    }[sitV];
+    box.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">${base ? `${msgSit} para ${escHtml(base)}` : msgSit}</div>${
+      sitV === 'padrao' ? '<div style="font-size:11px;color:var(--text-3);margin-top:4px">As mais antigas ficam em "Concluídas no mês"</div>' : ''}</div>`;
     if (_logViewAtual === 'mapa') renderLogMapa();
     return;
   }
 
-  const viagemBadge = (s) => s === 'CONCLUIDA'
-    ? `<span class="log-badge log-badge-verde">🏁 Concluída</span>`
+  const viagemBadge = (v) => v.status === 'CONCLUIDA'
+    ? `<span class="log-badge log-badge-verde">🏁 Concluída${v.concluida_em ? ' em ' + new Date(v.concluida_em).toLocaleDateString('pt-BR') : ''}</span>`
     : `<span class="log-badge log-badge-azul">🧭 Em andamento</span>`;
 
   const grupoBadge = (g) => {
@@ -11872,7 +11905,7 @@ function renderLogViagens() {
     <div class="log-viagem-card" style="animation-delay:${Math.min(i*0.04,0.3)}s">
       <div class="log-viagem-top">
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
-        ${viagemBadge(v.status)}
+        ${viagemBadge(v)}
       </div>
       ${(v.grupos||[]).map(g => `
         <div class="log-grupo">
