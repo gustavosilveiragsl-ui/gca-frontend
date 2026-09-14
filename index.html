@@ -1197,6 +1197,25 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
+<!-- MODAL: ADICIONAR ITENS A UMA REMESSA JÁ MONTADA -->
+<div class="modal-overlay modal-acima hidden" id="modalAddItensRemessa">
+  <div class="modal-box modal-alto" style="max-width:620px;width:100%">
+    <div class="modal-header">
+      <div><div class="modal-title">➕ Adicionar itens à remessa</div><div style="font-size:11px;color:var(--text-3)" id="addRemInfo"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalAddItensRemessa').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <input id="addRemBusca" class="form-input" placeholder="Buscar item ou serial..." oninput="renderAddItensRemessa()" style="margin-bottom:12px">
+      <div id="addRemLista"></div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
+      <span id="addRemContador" style="margin-right:auto;font-size:12px;color:var(--text-2);align-self:center"></span>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalAddItensRemessa').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarAddItensRemessa()">Adicionar à remessa</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: LIBERAR MOVIMENTAÇÃO DURANTE O INVENTÁRIO -->
 <div class="modal-overlay modal-acima hidden" id="modalLiberarInventario">
   <div class="modal-box" style="max-width:440px">
@@ -4629,6 +4648,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="btn btn-ghost" style="font-size:11px;color:#ef4444;border-color:#ef4444" onclick="excluirRemessaInteira()">🗑️ Excluir Remessa</button>
         </div>
       </div>
+      <div id="remDetAcoesItens" style="display:flex;justify-content:flex-end;margin-bottom:8px"></div>
       <div style="overflow-x:auto">
         <table>
           <thead><tr>
@@ -16004,7 +16024,79 @@ function abrirDetalheRemessa(id) {
     </tr>`;
   }).join('');
 
+  // Esqueceu um serial ao montar? Da pra incluir aqui, sem ter que criar outra remessa.
+  const acoes = document.getElementById('remDetAcoesItens');
+  if (acoes) acoes.innerHTML = `<button class="btn btn-ghost" style="font-size:11px" onclick="abrirAddItensRemessa()">➕ Adicionar itens</button>`;
+
   document.getElementById('modalDetalheRemessa').classList.remove('hidden');
+}
+
+// ── Adicionar itens a uma remessa já montada ──
+let _addRemSelecionados = new Set();
+
+async function abrirAddItensRemessa() {
+  if (!_remDetalheAbertaId) return;
+  const r = _remessasData.find(x => x.id === _remDetalheAbertaId);
+  document.getElementById('addRemInfo').textContent = r ? `${r.empresa} · enviado em ${formatarData(r.data_envio)}` : '';
+  document.getElementById('addRemBusca').value = '';
+  _addRemSelecionados.clear();
+  document.getElementById('addRemLista').innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  document.getElementById('modalAddItensRemessa').classList.remove('hidden');
+
+  // Busca a lista de aguardando laudo na hora — entre abrir a remessa e clicar aqui, outra
+  // pessoa pode ter mandado o item em outra remessa.
+  const data = await api('/laudos/recuperados');
+  _recupData = data?.data || [];
+  renderAddItensRemessa();
+}
+
+function renderAddItensRemessa() {
+  const cont = document.getElementById('addRemLista');
+  const q = (document.getElementById('addRemBusca')?.value || '').toLowerCase();
+
+  // Só itens com serial: quem não tem serial é resolvido pela própria tela de recuperação,
+  // não vai pra remessa.
+  let lista = (_recupData || []).filter(r => r.tipo !== 'sem_serial' && r.id_ativo);
+  if (q) lista = lista.filter(r => (r.item||'').toLowerCase().includes(q) || (r.serial||'').toLowerCase().includes(q));
+
+  document.getElementById('addRemContador').textContent = _addRemSelecionados.size
+    ? `${_addRemSelecionados.size} selecionado(s)` : '';
+
+  if (!lista.length) {
+    cont.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-title">${q ? 'Nenhum item encontrado' : 'Nenhum item aguardando laudo'}</div></div>`;
+    return;
+  }
+
+  cont.innerHTML = lista.map(r => `
+    <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer">
+      <input type="checkbox" ${_addRemSelecionados.has(r.id_ativo) ? 'checked' : ''}
+             onchange="addRemToggle('${escJs(r.id_ativo)}', this.checked)" style="accent-color:var(--accent)">
+      <span style="flex:1;font-size:12px;color:var(--text-1)">${escHtml(r.item || '—')}</span>
+      <span style="font-family:var(--font-mono);font-size:11px;font-weight:700;color:var(--accent-text)">${escHtml(r.serial || '—')}</span>
+    </label>`).join('');
+}
+
+function addRemToggle(idAtivo, marcado) {
+  if (marcado) _addRemSelecionados.add(idAtivo); else _addRemSelecionados.delete(idAtivo);
+  document.getElementById('addRemContador').textContent = _addRemSelecionados.size
+    ? `${_addRemSelecionados.size} selecionado(s)` : '';
+}
+
+async function confirmarAddItensRemessa() {
+  if (!_remDetalheAbertaId) return;
+  if (!_addRemSelecionados.size) { toast('Selecione ao menos um item', 'warn'); return; }
+
+  const res = await api(`/laudos/remessas/${_remDetalheAbertaId}/itens`, {
+    method: 'POST',
+    body: JSON.stringify({ itens: [..._addRemSelecionados].map(id_ativo => ({ id_ativo })) }),
+  });
+
+  if (res?.ok) {
+    toast(`${res.adicionados} item(ns) adicionado(s) à remessa!`, 'success');
+    document.getElementById('modalAddItensRemessa').classList.add('hidden');
+    carregarRecuperados();
+    await reabrirDetalheRemessaAtualizado();
+  } else toast(res?.erro || 'Erro ao adicionar itens', 'error');
 }
 
 async function reabrirDetalheRemessaAtualizado() {
