@@ -7651,8 +7651,8 @@ function renderConsultaAtendimentos(lista) {
     const hora  = a.hora_inicio ? a.hora_inicio.substring(0,5) : '—';
     const tempo = a.tempo_segundos ? formatarTempo(a.tempo_segundos) : '—';
     return `<tr>
-      <td class="td-main">${a.nome_colaborador||'—'}</td>
-      <td>${a.funcao_colaborador||'—'}</td>
+      <td class="td-main">${escHtml(a.nome_colaborador||'—')}</td>
+      <td>${escHtml(a.funcao_colaborador||'—')}</td>
       <td>${itens.length} ${itens.length===1?'item':'itens'}</td>
       <td class="td-mono">${hora}</td>
       <td class="td-mono">${tempo}</td>
@@ -7682,8 +7682,8 @@ function verDetalhesAtendimento(id) {
     <div class="modal-box" style="max-width:720px;width:100%">
       <div class="modal-header">
         <div>
-          <div class="modal-title">${atend.nome_colaborador||'—'}</div>
-          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${atend.funcao_colaborador||'—'} • ${formatarData(atend.data)} • ${hora}</div>
+          <div class="modal-title">${escHtml(atend.nome_colaborador||'—')}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:2px">${escHtml(atend.funcao_colaborador||'—')} • ${formatarData(atend.data)} • ${hora}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           ${statusTag(atend.status)}
@@ -12530,7 +12530,7 @@ async function carregarUsuariosView() {
     const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
     return `<tr>
       <td class="td-main">${escHtml(u.nome||'—')}<div style="font-size:10px;color:var(--text-3)">${uniStr}</div></td>
-      <td style="font-size:11px;color:var(--text-3)">${u.username||'—'}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(u.username||'—')}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
       <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
       <td style="display:flex;gap:4px">
@@ -16276,15 +16276,15 @@ function renderViaturasAgrupado() {
       <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleViatPlaca('${gid}')">
         <span id="icon_${gid}" style="font-size:11px;color:var(--text-3)">▶</span>
         <div style="flex:1">
-          <div style="font-size:15px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${p.placa}</div>
+          <div style="font-size:15px;font-weight:800;color:var(--text-1);font-family:var(--font-mono)">${escHtml(p.placa)}</div>
           <div style="font-size:11px;color:var(--text-3);margin-top:2px">${p.laudos.length} laudo(s) · ${vencLabel}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
           ${nVenc?`<span style="font-size:10px;font-weight:700;color:#ef4444;background:rgba(239,68,68,.1);padding:2px 8px;border-radius:4px">❌ ${nVenc} vencido(s)</span>`:''}
           ${nAlerta?`<span style="font-size:10px;font-weight:700;color:#f59e0b;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:4px">⚠️ ${nAlerta} alerta(s)</span>`:''}
           ${!nVenc&&!nAlerta?`<span style="font-size:10px;font-weight:700;color:#22c55e">✅ OK</span>`:''}
-          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirModalViatura('${p.placa}')">+ Laudo</button>
-          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirQrViatura('${p.placa}')">⬛ QR</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirModalViatura('${escJs(p.placa)}')">+ Laudo</button>
+          <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px" onclick="event.stopPropagation();abrirQrViatura('${escJs(p.placa)}')">⬛ QR</button>
         </div>
       </div>
       <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
@@ -16292,7 +16292,7 @@ function renderViaturasAgrupado() {
           const lCor = l.st==='vencido'?'#ef4444':l.st==='alerta'?'#f59e0b':'#22c55e';
           return `<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border)">
             <div style="flex:1">
-              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${l.tipo_laudo}</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)">${escHtml(l.tipo_laudo)}</div>
               <div style="font-size:10px;color:var(--text-3)">Vence: ${formatarData(l.data_vencimento)}</div>
             </div>
             <span style="font-size:12px;font-weight:700;color:${lCor};min-width:70px;text-align:center">${l.dias<0?`${Math.abs(l.dias)}d atrás`:`${l.dias}d`}</span>
@@ -16337,10 +16337,10 @@ async function carregarEquipamentosViatura(gid) {
   // Extrai a placa do gid (vgp_ABC1234 → ABC1234)
   const placa = gid.replace(/^vgp_/,'').replace(/_/g,'-');
   // Tenta com hífen e sem
-  let data = await api(`/laudos/viaturas/${placa}/equipamentos`);
+  let data = await api(`/laudos/viaturas/${encodeURIComponent(placa)}/equipamentos`);
   if (!data?.ok) {
     const placa2 = gid.replace(/^vgp_/,'');
-    data = await api(`/laudos/viaturas/${placa2}/equipamentos`);
+    data = await api(`/laudos/viaturas/${encodeURIComponent(placa2)}/equipamentos`);
   }
   const equips = data?.data || [];
   if (!equips.length) { listaEl.innerHTML = '<div style="font-size:11px;color:var(--text-3)">Nenhum equipamento configurado</div>'; return; }
@@ -16353,19 +16353,19 @@ async function carregarEquipamentosViatura(gid) {
       </div>
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:${eq.tem?'#22c55e':'var(--text-3)'}">
         <input type="checkbox" ${eq.tem?'checked':''} 
-          onchange="salvarEquipamentoViatura('${eq.placa||placa}','${eq.tipo}','${eq.label||eq.tipo}',this.checked,'${eq.data_entrega||''}')"
+          onchange="salvarEquipamentoViatura('${escJs(eq.placa||placa)}','${escJs(eq.tipo)}','${escJs(eq.label||eq.tipo)}',this.checked,'${escJs(eq.data_entrega||'')}')"
           style="width:16px;height:16px;accent-color:#22c55e">
         ${eq.tem?'✅ Tem':'❌ Não tem'}
       </label>
       ${eq.tem ? `<input type="date" value="${eq.data_entrega||''}" 
         style="font-size:10px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text-2)"
-        onchange="salvarEquipamentoViatura('${eq.placa||placa}','${eq.tipo}','${eq.label||eq.tipo}',true,this.value)">` : ''}
+        onchange="salvarEquipamentoViatura('${escJs(eq.placa||placa)}','${escJs(eq.tipo)}','${escJs(eq.label||eq.tipo)}',true,this.value)">` : ''}
     </div>
   `).join('');
 }
 
 async function salvarEquipamentoViatura(placa, tipo, label, tem, data_entrega) {
-  const res = await api(`/laudos/viaturas/${placa}/equipamentos`, {
+  const res = await api(`/laudos/viaturas/${encodeURIComponent(placa)}/equipamentos`, {
     method: 'PUT',
     body: JSON.stringify({ tipo, label, tem, data_entrega: data_entrega || null })
   });
@@ -17753,7 +17753,7 @@ async function carregarHistSaidas() {
   const lista = data?.data||[];
   tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
     <td>${formatarData(s.data)}</td>
-    <td class="td-main">${s.material_descricao||'—'}</td>
+    <td class="td-main">${escHtml(s.material_descricao||'—')}</td>
     <td style="text-align:center;font-weight:600;color:#ef4444">${s.quantidade}</td>
     <td style="font-size:11px">${s.destino||'—'}</td>
     <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
@@ -18246,7 +18246,7 @@ function renderMedPreBaixaEnel(lista) {
         onchange="window.__PRE_BAIXAS__.medidoresSelecionados[this.checked?'add':'delete'](this.dataset.serial)">
       <div style="flex:1">
         <div style="font-size:12px;font-weight:700;font-family:var(--font-mono)">${escHtml(m.numero_serie)}</div>
-        <div style="font-size:10px;color:var(--text-3)">${m.material_descricao||'—'}</div>
+        <div style="font-size:10px;color:var(--text-3)">${escHtml(m.material_descricao||'—')}</div>
       </div>
     </label>`).join('');
 }
@@ -18353,7 +18353,7 @@ async function trfVerificarSeriais() {
   enc.innerHTML = _trfSeriaisVerificados.length ? `<div style="margin-bottom:8px">
     <strong style="color:#22c55e">✅ ${_trfSeriaisVerificados.length} serial(is) encontrado(s):</strong>
     <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${_trfSeriaisVerificados.map(s=>`
-      <span style="padding:3px 8px;border-radius:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);font-size:11px;font-family:var(--font-mono);color:#22c55e">${escHtml(s.numero_serie)} <span style="color:var(--text-3)">${s.material_descricao||''}</span></span>
+      <span style="padding:3px 8px;border-radius:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);font-size:11px;font-family:var(--font-mono);color:#22c55e">${escHtml(s.numero_serie)} <span style="color:var(--text-3)">${escHtml(s.material_descricao||'')}</span></span>
     `).join('')}</div></div>` : '';
   nEnc.innerHTML = naoEnc.length ? `<div><strong style="color:#ef4444">❌ ${naoEnc.length} não encontrado(s):</strong>
     <div style="margin-top:4px;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${naoEnc.join(', ')}</div></div>` : '';
@@ -18760,7 +18760,7 @@ async function btdcBuscar() {
   if (ate)    params.append('ate', ate);
 
   const res = await api(`/enel/baixas-tdc?${params}`);
-  if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${res?.erro||'Tente novamente'}</div></div>`; return; }
+  if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${escHtml(res?.erro||'Tente novamente')}</div></div>`; return; }
 
   const materiais = res.data || [];
   _btdcUltimoResult = materiais;
@@ -18849,7 +18849,7 @@ async function cseBuscar() {
 
   const res = await api(`/enel/consulta-saidas-estoque?${params}`);
   if (!res?.ok) {
-    lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${res?.erro||'Tente novamente'}</div></div>`;
+    lista.innerHTML = `<div class="empty-state"><div class="es-icon">❌</div><div class="es-title">Erro ao buscar</div><div class="es-sub">${escHtml(res?.erro||'Tente novamente')}</div></div>`;
     return;
   }
 
