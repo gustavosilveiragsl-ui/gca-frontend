@@ -4219,9 +4219,10 @@ window.addEventListener('pageshow', function(e) {
           <div class="card-header">
             <div><div class="card-title">📦 Aguardando Transporte</div><div class="card-sub">Marcados como "Necessita logística" na conclusão do atendimento</div></div>
             <div style="display:flex;align-items:center;gap:8px">
-              <select class="form-input" id="logFiltroBasePend" style="width:190px;font-size:11px" onchange="renderLogPendentes()">
-                <option value="">Todas as bases</option>
-              </select>
+              <div id="logFiltroBasePendBox" style="position:relative">
+                <button type="button" class="form-input" id="logFiltroBasePendBtn" style="width:220px;font-size:11px;text-align:left;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="logBasesPendToggle(event)" title="Marque uma ou mais bases">📍 Todas as bases ▾</button>
+                <div id="logFiltroBasePendLista" class="hidden" style="position:absolute;right:0;top:calc(100% + 4px);z-index:50;min-width:240px;max-height:300px;overflow:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:6px"></div>
+              </div>
               <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
             </div>
           </div>
@@ -11959,6 +11960,7 @@ async function verPdfInventario(id) {
 // ═══════════════════════════════════════════
 let _logPendentesData = [];
 let _logSelecionados  = new Set();
+let _logBasesPend     = new Set(); // bases marcadas no filtro da fila (nenhuma = todas)
 let _logViagensData   = [];
 
 async function carregarLogisticaPendentes() {
@@ -11988,7 +11990,7 @@ function logPreencherFiltrosBase() {
     // Se a base escolhida sumiu (última viagem daquele destino foi entregue), volta pra "todas"
     sel.value = lista.includes(atual) ? atual : '';
   };
-  preencher('logFiltroBasePend', _logPendentesData.map(a => a.destino_entrega));
+  logMontarFiltroBasesPend();
   preencher('logFiltroBaseViagens', _logViagensData.flatMap(v => (v.grupos || []).map(g => g.destino)));
 }
 
@@ -12004,29 +12006,98 @@ function renderLogPendentes() {
   const cont = document.getElementById('logPendentesBody');
   if (!cont) return;
 
-  const base = document.getElementById('logFiltroBasePend')?.value || '';
-  const lista = base ? _logPendentesData.filter(a => a.destino_entrega === base) : _logPendentesData;
+  const lista = logFiltrarPendentesPorBase(_logPendentesData, _logBasesPend);
 
-  // Trocar de base zera a seleção: sem isso ficariam atendimentos marcados fora da tela, e a
-  // viagem sairia com gente que a pessoa nem está vendo.
-  if (_logSelecionados.size) { _logSelecionados.clear(); logAtualizarBarraSelecao(); }
+  // A seleção fica enquanto o atendimento continua na tela: dá para juntar várias bases
+  // marcando-as no filtro (ex.: Maricá + Angra). Desmarcar uma base tira da seleção os
+  // atendimentos dela — senão a viagem sairia com gente que a pessoa nem está vendo.
+  const antes = _logSelecionados.size;
+  _logSelecionados = logPodarSelecao(_logSelecionados, lista);
+  if (_logSelecionados.size !== antes) logAtualizarBarraSelecao();
 
   if (!lista.length) {
-    cont.innerHTML = base
-      ? `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📭</div><div class="es-title">Nenhum atendimento aguardando transporte para ${escHtml(base)}</div></div>`
+    const nomes = [..._logBasesPend].join(', ');
+    cont.innerHTML = nomes
+      ? `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">📭</div><div class="es-title">Nenhum atendimento aguardando transporte para ${escHtml(nomes)}</div></div>`
       : `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">🎉</div><div class="es-title">Nenhum atendimento aguardando transporte</div></div>`;
     return;
   }
 
-  cont.innerHTML = lista.map((a, i) => `
-    <div class="log-pend-card" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${a.id}', this)">
-      <input type="checkbox" onclick="event.stopPropagation()" onchange="logToggleSelecao('${a.id}',this.checked,this.closest('.log-pend-card'))">
+  cont.innerHTML = lista.map((a, i) => {
+    const marcado = _logSelecionados.has(a.id);
+    return `
+    <div class="log-pend-card${marcado ? ' selecionado' : ''}" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${escJs(a.id)}', this)">
+      <input type="checkbox" ${marcado ? 'checked' : ''} onclick="event.stopPropagation()" onchange="logToggleSelecao('${escJs(a.id)}',this.checked,this.closest('.log-pend-card'))">
       <div class="log-pend-nome">${escHtml(a.nome_colaborador||'—')}</div>
       <div class="log-pend-destino">📍 ${escHtml(a.destino_entrega||'—')}</div>
       <div class="log-pend-meta">📦 ${a.qtd_itens ?? '—'} item(ns) · ${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</div>
       <div class="log-pend-acoes"><button class="row-action" onclick="event.stopPropagation();logAbrirAlterarDestino('${escJs(a.id)}')">✏️ Alterar destino</button></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
+
+// Atendimentos da fila nas bases marcadas (nenhuma marcada = todas).
+function logFiltrarPendentesPorBase(lista, bases) {
+  return bases && bases.size ? (lista || []).filter(a => bases.has(a.destino_entrega)) : (lista || []);
+}
+
+// Mantém selecionado só o que continua visível.
+function logPodarSelecao(selecionados, visiveis) {
+  const ids = new Set((visiveis || []).map(a => a.id));
+  return new Set([...(selecionados || [])].filter(id => ids.has(id)));
+}
+
+// ── Filtro de bases da fila: várias ao mesmo tempo ──
+function logMontarFiltroBasesPend() {
+  const lista = document.getElementById('logFiltroBasePendLista');
+  if (!lista) return;
+  const contagem = {};
+  _logPendentesData.forEach(a => { if (a.destino_entrega) contagem[a.destino_entrega] = (contagem[a.destino_entrega] || 0) + 1; });
+  const bases = Object.keys(contagem).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  // Base que saiu da fila (tudo dela já foi para viagem) sai do filtro também.
+  _logBasesPend = new Set([..._logBasesPend].filter(b => contagem[b]));
+  lista.innerHTML = bases.length
+    ? `<button type="button" class="row-action" style="width:100%;margin-bottom:4px" onclick="logBasesPendLimpar()">Todas as bases</button>` +
+      bases.map(b => `<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--text-1)">
+        <input type="checkbox" data-base="${escHtml(b)}" ${_logBasesPend.has(b) ? 'checked' : ''} onchange="logBasesPendMudou(this)" style="accent-color:var(--accent)">
+        <span style="flex:1">${escHtml(b)}</span><span style="color:var(--text-3);font-size:11px">${contagem[b]}</span>
+      </label>`).join('')
+    : '<div style="padding:8px;font-size:12px;color:var(--text-3)">Nenhuma base na fila</div>';
+  logBasesPendAtualizarBotao();
+}
+
+function logBasesPendAtualizarBotao() {
+  const btn = document.getElementById('logFiltroBasePendBtn');
+  if (!btn) return;
+  const nomes = [..._logBasesPend];
+  btn.textContent = `📍 ${!nomes.length ? 'Todas as bases' : nomes.length <= 2 ? nomes.join(' + ') : `${nomes.length} bases`} ▾`;
+  btn.title = nomes.length ? nomes.join(', ') : 'Marque uma ou mais bases';
+}
+
+function logBasesPendToggle(ev) {
+  if (ev) ev.stopPropagation();
+  document.getElementById('logFiltroBasePendLista')?.classList.toggle('hidden');
+}
+
+function logBasesPendMudou(cb) {
+  const base = cb.dataset.base;
+  if (cb.checked) _logBasesPend.add(base); else _logBasesPend.delete(base);
+  logBasesPendAtualizarBotao();
+  renderLogPendentes();
+}
+
+function logBasesPendLimpar() {
+  _logBasesPend.clear();
+  document.querySelectorAll('#logFiltroBasePendLista input[type=checkbox]').forEach(cb => { cb.checked = false; });
+  logBasesPendAtualizarBotao();
+  renderLogPendentes();
+}
+
+// Fecha a lista de bases ao clicar fora dela.
+document.addEventListener('click', (ev) => {
+  const box = document.getElementById('logFiltroBasePendBox');
+  if (box && !box.contains(ev.target)) document.getElementById('logFiltroBasePendLista')?.classList.add('hidden');
+});
 
 function logToggleSelecaoCard(id, cardEl) {
   const cb = cardEl.querySelector('input[type=checkbox]');
