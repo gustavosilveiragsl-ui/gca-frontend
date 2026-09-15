@@ -263,6 +263,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-pend-destino{font-size:11px;color:var(--accent-text);margin-top:4px;display:flex;align-items:center;gap:4px;}
 .log-pend-meta{font-size:10px;color:var(--text-3);margin-top:6px;}
 .log-pend-acoes{margin-top:8px;display:flex;justify-content:flex-end;}
+@media (max-width:900px){.log-kpi-grid{grid-template-columns:repeat(2,1fr)!important;}}
 
 .log-viagem-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeUp .25s ease both;}
 .log-viagem-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg-hover);flex-wrap:wrap;gap:8px;}
@@ -1285,6 +1286,26 @@ window.addEventListener('pageshow', function(e) {
       <button class="modal-close" onclick="document.getElementById('modalLogisticaAtendimentos').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto" id="logAtendimentosModalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: RECEBIDOS SEM VIAGEM — marcados com logística e assinados sem passar por viagem -->
+<div class="modal-overlay hidden" id="modalLogSemViagem">
+  <div class="modal-box" style="max-width:760px;width:100%">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📭 Recebidos sem viagem</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px">Marcados com logística, mas o colaborador assinou sem o material passar por uma viagem</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modalLogSemViagem').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+        <input type="month" class="form-input" id="logSemViagemMes" style="width:160px;font-size:12px" onchange="logCarregarSemViagemLista()">
+        <span id="logSemViagemTotal" style="font-size:12px;color:var(--text-2)"></span>
+      </div>
+      <div id="logSemViagemBody" style="overflow:auto;max-height:420px"></div>
+    </div>
   </div>
 </div>
 
@@ -4114,7 +4135,7 @@ window.addEventListener('pageshow', function(e) {
           <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalDestinos()">📍 Destinos de Entrega</button>
         </div>
 
-        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+        <div class="kpi-grid log-kpi-grid" style="grid-template-columns:repeat(5,1fr)">
           <div class="kpi-card">
             <div class="kpi-top"><span class="kpi-label">Aguardando coleta</span><div class="kpi-icon">📦</div></div>
             <div class="kpi-value" id="logKpiAguardando">—</div>
@@ -4134,6 +4155,11 @@ window.addEventListener('pageshow', function(e) {
             <div class="kpi-top"><span class="kpi-label">Viagens ativas</span><div class="kpi-icon">🧭</div></div>
             <div class="kpi-value" id="logKpiViagensAtivas">—</div>
             <div class="kpi-delta">em andamento</div>
+          </div>
+          <div class="kpi-card" style="cursor:pointer" onclick="logAbrirRecebidosSemViagem()" title="Marcados com logística, mas o colaborador assinou sem o material passar por uma viagem">
+            <div class="kpi-top"><span class="kpi-label">Recebidos sem viagem</span><div class="kpi-icon">📭</div></div>
+            <div class="kpi-value" id="logKpiSemViagem">—</div>
+            <div class="kpi-delta warn">no mês · ver lista</div>
           </div>
         </div>
 
@@ -12177,6 +12203,57 @@ async function carregarLogisticaViagens() {
 
   logPreencherFiltrosBase();
   renderLogViagens();
+  logCarregarKpiSemViagem();
+}
+
+// ── Recebidos sem viagem: marcados com logística, mas o colaborador assinou sem o material
+// passar por uma viagem. Saem da fila de transporte; este número acompanha quem pulou o processo. ──
+function logMesAtual() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+async function logCarregarKpiSemViagem() {
+  const res = await api(`/logistica/recebidos-sem-viagem?mes=${logMesAtual()}`);
+  const el = document.getElementById('logKpiSemViagem');
+  if (el) el.textContent = res?.ok ? res.total : '—';
+}
+
+async function logAbrirRecebidosSemViagem() {
+  const inp = document.getElementById('logSemViagemMes');
+  if (!inp.value) inp.value = logMesAtual();
+  document.getElementById('modalLogSemViagem').classList.remove('hidden');
+  await logCarregarSemViagemLista();
+}
+
+async function logCarregarSemViagemLista() {
+  const body = document.getElementById('logSemViagemBody');
+  const mes = document.getElementById('logSemViagemMes').value || logMesAtual();
+  const total = document.getElementById('logSemViagemTotal');
+  body.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  total.textContent = '';
+  const res = await api(`/logistica/recebidos-sem-viagem?mes=${encodeURIComponent(mes)}`);
+  if (!res?.ok) {
+    body.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div>`;
+    return;
+  }
+  total.textContent = `${res.total} atendimento(s)`;
+  if (!res.data.length) {
+    body.innerHTML = '<div class="empty-state" style="padding:16px"><div class="es-icon">🎉</div><div class="es-title">Nenhum atendimento recebido sem viagem neste mês</div></div>';
+    return;
+  }
+  const th = 'padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap';
+  const td = 'padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)';
+  const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+  body.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr><th style="${th}">Colaborador</th><th style="${th}">Destino marcado</th><th style="${th}">Atendido em</th><th style="${th}">Assinado em</th><th style="${th}">Itens</th></tr></thead>
+    <tbody>${res.data.map(a => `<tr>
+      <td style="${td}"><div style="color:var(--text-1);font-weight:600">${escHtml(a.nome_colaborador || '—')}</div><div style="font-size:10px;color:var(--text-3)">${escHtml(a.funcao_colaborador || '')}</div></td>
+      <td style="${td}">${escHtml(a.destino_entrega || '—')}</td>
+      <td style="${td};white-space:nowrap">${a.data ? formatarData(a.data) : '—'}</td>
+      <td style="${td};white-space:nowrap">${quando(a.assinado_em)}</td>
+      <td style="${td}">${Number(a.qtd_itens) || 0}</td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 function renderLogViagens() {
