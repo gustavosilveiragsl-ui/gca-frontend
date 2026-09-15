@@ -3498,6 +3498,7 @@ window.addEventListener('pageshow', function(e) {
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
             <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" data-perm-btn="limpar_descartes" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
+            <button class="btn btn-ghost" style="color:#16a34a;border-color:#16a34a" onclick="laudosExportarExcel()" title="Exporta o que está na tela, com os filtros aplicados">📊 Exportar Excel</button>
             <button class="btn btn-ghost" onclick="toggleConfigNR10()">⚙️ Configurações</button>
           </div>
         </div>
@@ -16129,21 +16130,11 @@ function laudosLimparFiltros_() {
 }
 
 function laudosRender_() {
-  const texto  = (document.getElementById('laudoFiltro')?.value||'').toLowerCase();
-  const status = document.getElementById('laudoFiltroStatus')?.value||'';
-  const local  = document.getElementById('laudoFiltroLocal')?.value||'';
-  const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
-  const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
   const tbody  = document.getElementById('tbLaudosTbody');
   const info   = document.getElementById('laudoInfo');
   if (!tbody) return;
 
-  let lista = __LAUDOS_NR10__.lista || [];
-  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
-  if (status) lista = lista.filter(x=>x.status===status);
-  if (local)  lista = lista.filter(x=>x.statusLocal===local);
-  if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
-  if (vencAte)lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)<=vencAte);
+  const lista = laudosFiltrarLista_();
 
   // Agrupa por item
   const grupos = {};
@@ -16256,6 +16247,149 @@ function laudosRender_() {
     </div>`;
     trContent.appendChild(td);
     tbody.appendChild(trContent);
+  });
+}
+
+function laudosFiltrarLista_() {
+  const texto  = (document.getElementById('laudoFiltro')?.value||'').toLowerCase();
+  const status = document.getElementById('laudoFiltroStatus')?.value||'';
+  const local  = document.getElementById('laudoFiltroLocal')?.value||'';
+  const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
+  const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
+
+  let lista = __LAUDOS_NR10__.lista || [];
+  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
+  if (status) lista = lista.filter(x=>x.status===status);
+  if (local)  lista = lista.filter(x=>x.statusLocal===local);
+  if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
+  if (vencAte)lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)<=vencAte);
+  return lista;
+}
+
+// ── EXPORTAR EXCEL — o que a tela mostra, com os filtros aplicados: uma aba com cada
+// serial, uma com o resumo por item (a mesma conta de consistência com o saldo da tela)
+// e uma com os filtros usados. ──
+const LAUDOS_LOCAL_TXT = { ESTOQUE: 'Estoque', COM_COLAB: 'Com colaborador', AGUARDANDO_LAUDO: 'Aguardando laudo', ENVIADO_LAUDO: 'Enviado para laudo', DESCARTE: 'Descarte' };
+const LAUDOS_STATUS_TXT = { OK: 'OK', ALERTA_30: 'Alerta 30 dias', VENCIDO: 'Vencido', SEM_LAUDO: 'Sem laudo', PENDENTE_CADASTRO: 'Pendente de cadastro' };
+
+// Monta as linhas das abas sem tocar na tela.
+function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincipalId = null } = {}) {
+  const dataBR = (v) => {
+    if (!v) return '';
+    const [a, m, d] = String(v).slice(0, 10).split('-');
+    return d ? `${d}/${m}/${a}` : String(v);
+  };
+  const dataHoraBR = (v) => {
+    if (!v) return '';
+    const d = new Date(v);
+    return isNaN(d) ? String(v) : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+  const numero = (v) => (v === '' || v == null || !Number.isFinite(Number(v))) ? '' : Number(v);
+  const itemPorId = Object.fromEntries((itens || []).map(i => [i.id, i]));
+  const ordenada = [...(lista || [])].sort((a, b) =>
+    String(a.itemNome || '').localeCompare(String(b.itemNome || ''), 'pt-BR') ||
+    String(a.serial || '').localeCompare(String(b.serial || ''), 'pt-BR', { numeric: true }));
+
+  const seriais = [['Item', 'Código', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Lote / Nº laudo', 'Data do ensaio',
+    'Validade (dias)', 'Vencimento', 'Dias restantes', 'Motivo do descarte', 'Última movimentação', 'Link do laudo']];
+  ordenada.forEach(x => {
+    const it = itemPorId[x.itemId];
+    if (x.status === 'PENDENTE_CADASTRO') {
+      seriais.push([x.itemNome || '', it?.codigo || '', '(sem serial)', x.nomeArmazem || 'Estoque', '', LAUDOS_STATUS_TXT.PENDENTE_CADASTRO, '', '', '', '', '', '', '', '']);
+      return;
+    }
+    seriais.push([
+      x.itemNome || '', it?.codigo || '', x.serial || '', LAUDOS_LOCAL_TXT[x.statusLocal] || x.statusLocal || '',
+      x.statusLocal === 'COM_COLAB' ? (x.nomeColab || '') : '', LAUDOS_STATUS_TXT[x.status] || x.status || '',
+      x.loteLaudo || '', dataBR(x.dataEnsaio), numero(x.validadeDias), dataBR(x.dataVenc), numero(x.diasRest),
+      x.statusLocal === 'DESCARTE' ? (x.motivo || '') : '', dataHoraBR(x.dtUltMov), x.anexoUrl || '',
+    ]);
+  });
+
+  const grupos = new Map();
+  ordenada.forEach(x => {
+    const k = x.itemId || x.itemNome;
+    if (!grupos.has(k)) grupos.set(k, { itemId: x.itemId, itemNome: x.itemNome, s: [] });
+    grupos.get(k).s.push(x);
+  });
+  const resumo = [['Item', 'Código', 'Seriais cadastrados', 'Em estoque', 'Com colaborador', 'Aguardando laudo', 'Enviado para laudo',
+    'Descarte', 'Laudo OK', 'Alerta 30 dias', 'Vencidos', 'Sem laudo', 'Pendentes de cadastro', 'Saldo (armazém principal)',
+    'Unidade', 'Seriais esperados em estoque', 'Situação']];
+  [...grupos.values()].forEach(g => {
+    const conta = (f) => g.s.filter(f).length;
+    const cadastrado = (x) => x.status !== 'PENDENTE_CADASTRO';
+    const pend = conta(x => !cadastrado(x));
+    const emEst = conta(x => cadastrado(x) && x.statusLocal === 'ESTOQUE');
+    const it = itemPorId[g.itemId];
+    const saldo = (saldos || []).filter(v => v.item_id === g.itemId && (!armazemPrincipalId || v.armazem_id === armazemPrincipalId))
+      .reduce((acc, v) => acc + Number(v.saldo || 0), 0);
+    const esperados = saldo * (String(it?.un_med || '').toUpperCase() === 'PAR' ? 2 : 1);
+    const situacao = pend > 0 ? `Faltam ${pend} serial(is)`
+      : emEst > esperados ? `${emEst - esperados} serial(is) a mais que o saldo` : 'Consistente';
+    resumo.push([
+      g.itemNome || '', it?.codigo || '', conta(cadastrado), emEst,
+      conta(x => x.statusLocal === 'COM_COLAB'), conta(x => x.statusLocal === 'AGUARDANDO_LAUDO'),
+      conta(x => x.statusLocal === 'ENVIADO_LAUDO'), conta(x => x.statusLocal === 'DESCARTE'),
+      conta(x => x.status === 'OK'), conta(x => x.status === 'ALERTA_30'), conta(x => x.status === 'VENCIDO'),
+      conta(x => x.status === 'SEM_LAUDO'), pend, saldo, it?.un_med || '', esperados, situacao,
+    ]);
+  });
+  return { seriais, resumo };
+}
+
+function laudosExportarExcel() {
+  const todos = __LAUDOS_NR10__.lista || [];
+  if (!todos.length) { toast('Carregue os laudos antes de exportar', 'warn'); return; }
+  const lista = laudosFiltrarLista_();
+  if (!lista.length) { toast('Nenhum serial com os filtros atuais', 'warn'); return; }
+
+  const armPrincipal = (_armazens || []).find(a => a.principal);
+  const { seriais, resumo } = laudosMontarPlanilhas_(lista, {
+    itens: _itens || [], saldos: _estoqueData || [], armazemPrincipalId: armPrincipal?.id || null,
+  });
+  const textoSelect = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value ? el.options[el.selectedIndex].textContent.trim() : 'Todos';
+  };
+  const dataFiltro = (id) => {
+    const v = document.getElementById(id)?.value || '';
+    return v ? v.split('-').reverse().join('/') : '—';
+  };
+  const filtrado = lista.length < todos.length;
+  const filtros = [
+    ['Gestão de Laudos NR-10'],
+    ['Gerado em', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })],
+    ['Gerado por', GCA.usuario?.nome || GCA.usuario?.username || ''],
+    ['Filial', GCA.usuario?.unidade || ''],
+    ['Saldo considerado', armPrincipal?.nome || 'Armazém principal'],
+    [],
+    ['Filtros aplicados', filtrado ? 'Sim — só o que estava na tela' : 'Nenhum — tudo'],
+    ['Busca', document.getElementById('laudoFiltro')?.value || '—'],
+    ['Status', textoSelect('laudoFiltroStatus')],
+    ['Local', textoSelect('laudoFiltroLocal')],
+    ['Vencimento de', dataFiltro('laudoFiltroVencDe')],
+    ['Vencimento até', dataFiltro('laudoFiltroVencAte')],
+    [],
+    ['Linhas na aba Seriais', seriais.length - 1],
+    ['Itens na aba Resumo', resumo.length - 1],
+  ];
+
+  gcaCarregarSheetJS(() => {
+    const wb = XLSX.utils.book_new();
+    const aba = (nome, linhas, larguras, comFiltro) => {
+      const ws = XLSX.utils.aoa_to_sheet(linhas);
+      ws['!cols'] = larguras.map(w => ({ wch: w }));
+      if (comFiltro && linhas.length > 1) {
+        ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length - 1, c: linhas[0].length - 1 } }) };
+      }
+      XLSX.utils.book_append_sheet(wb, ws, nome);
+    };
+    aba('Seriais', seriais, [34, 12, 16, 18, 30, 20, 18, 14, 14, 14, 14, 36, 18, 40], true);
+    aba('Resumo por item', resumo, [34, 12, 12, 11, 15, 15, 15, 10, 10, 13, 10, 10, 15, 16, 9, 18, 32], true);
+    aba('Filtros', filtros, [26, 44], false);
+    const nome = `laudos_nr10_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}${filtrado ? '_filtrado' : ''}.xlsx`;
+    XLSX.writeFile(wb, nome);
+    toast(`✅ ${nome} gerado!`, 'success', 3000);
   });
 }
 
