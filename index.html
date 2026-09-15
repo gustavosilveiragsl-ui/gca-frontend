@@ -7323,7 +7323,14 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
   // Atendimento já foi salvo com sucesso no passo acima (estoque já baixado).
   // O token de assinatura é CRÍTICO — sem ele o atendimento não pode ser assinado.
   // Tenta gerar com retry automático antes de admitir falha.
+  // O token já vem na resposta do salvamento (gerado junto com o atendimento). A chamada
+  // separada abaixo só roda se ele não vier — ex.: servidor ainda na versão antiga.
   let tokenOk = false;
+  if (res.token) {
+    ATEND.tokenGerado = res.token;
+    ATEND.linkGerado  = `https://app.gcasistema.com.br/#/assinar?token=${res.token}`;
+    tokenOk = true;
+  }
   try {
     for (let tentativa = 1; tentativa <= 3 && !tokenOk; tentativa++) {
       const resToken = await api(`/atendimentos/${ATEND.id}/token`, { method:'POST' });
@@ -7945,7 +7952,9 @@ function renderAssinaturas(lista) {
       ? '<span style="color:var(--green);font-weight:600;font-size:11px">✅ Assinado</span>'
       : a.statusCalc === 'EXPIRADO'
         ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">⏰ Expirado</span>'
-        : '<span style="color:var(--yellow);font-weight:600;font-size:11px">⏳ Pendente</span>';
+        : !a.token
+          ? '<span style="color:var(--red);font-weight:600;font-size:11px" title="O atendimento foi salvo, mas o link de assinatura não foi gerado">⚠️ Sem link</span>'
+          : '<span style="color:var(--yellow);font-weight:600;font-size:11px">⏳ Pendente</span>';
 
     const expiraEm = a.expiracaoDate && a.statusCalc === 'PENDENTE'
       ? formatarTempoRestante(a.expiracaoDate) : '—';
@@ -7967,7 +7976,9 @@ function renderAssinaturas(lista) {
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${escHtml((a.nomeColaborador||'').replace(/"/g,'&quot;'))}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
-        <button class="row-action" onclick="reenviarLink('${a.id}','${a.token||''}')">↺ Reenviar</button>
+        ${a.token
+          ? `<button class="row-action" onclick="reenviarLink('${a.id}','${a.token}')">↺ Reenviar</button>`
+          : `<button class="row-action" style="color:var(--accent);border-color:var(--accent)" onclick="regerarLink('${a.id}')">🔄 Gerar link</button>`}
         <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${escHtml((a.nomeColaborador||'').replace(/"/g,'&quot;'))}">Cancelar</button>
       </div>`;
@@ -8030,7 +8041,7 @@ function formatarTempoRestante(data) {
 async function regerarLink(id) {
   const atend = _assinaturas.find(a => a.id === id);
   if (!atend) return;
-  const conf = confirm(`Regerar link para ${escHtml(atend.nomeColaborador)}?\n\nUm novo link será gerado com prazo de 10 dias.`);
+  const conf = confirm(`${atend.token ? 'Regerar' : 'Gerar'} link para ${atend.nomeColaborador}?\n\nUm novo link será gerado com prazo de 10 dias.`);
   if (!conf) return;
   try {
     const data = await api(`/atendimentos/${id}/regerar-token`, { method: 'POST' });
@@ -8044,6 +8055,8 @@ async function regerarLink(id) {
 }
 
 async function reenviarLink(id, token) {
+  // Sem token não existe link: gera um em vez de mandar "token=" vazio.
+  if (!token) return regerarLink(id);
   const link = `https://app.gcasistema.com.br/#/assinar?token=${token}`;
   const atend = (_assinaturas||[]).find(a => a.id === id);
 
