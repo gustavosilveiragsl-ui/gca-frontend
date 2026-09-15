@@ -262,6 +262,7 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-pend-nome{font-size:12px;font-weight:700;color:var(--text-1);padding-right:22px;}
 .log-pend-destino{font-size:11px;color:var(--accent-text);margin-top:4px;display:flex;align-items:center;gap:4px;}
 .log-pend-meta{font-size:10px;color:var(--text-3);margin-top:6px;}
+.log-pend-acoes{margin-top:8px;display:flex;justify-content:flex-end;}
 
 .log-viagem-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeUp .25s ease both;}
 .log-viagem-top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--bg-hover);flex-wrap:wrap;gap:8px;}
@@ -1284,6 +1285,24 @@ window.addEventListener('pageshow', function(e) {
       <button class="modal-close" onclick="document.getElementById('modalLogisticaAtendimentos').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto" id="logAtendimentosModalBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: ALTERAR DESTINO de um atendimento (base errada) — só antes da coleta -->
+<div class="modal-overlay hidden" id="modalLogisticaDestino">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">✏️ Alterar destino</div>
+      <button class="modal-close" onclick="document.getElementById('modalLogisticaDestino').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:4px"><b id="logDestinoColab">—</b></div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">Destino atual: <b id="logDestinoAtual">—</b></div>
+      <div id="logDestinoAvisoCarga" class="hidden" style="font-size:11px;color:var(--blue);background:var(--blue-soft);border-radius:8px;padding:8px 10px;margin-bottom:12px">Este atendimento já está numa carga aguardando coleta. Ao trocar o destino ele sai dessa carga e volta para a fila, para entrar numa viagem da base certa.</div>
+      <label class="form-label">Novo destino</label>
+      <select id="logDestinoNovo" class="form-input"></select>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="logConfirmarAlterarDestino(this)">Salvar destino</button>
+    </div>
   </div>
 </div>
 
@@ -11796,6 +11815,7 @@ function renderLogPendentes() {
       <div class="log-pend-nome">${escHtml(a.nome_colaborador||'—')}</div>
       <div class="log-pend-destino">📍 ${escHtml(a.destino_entrega||'—')}</div>
       <div class="log-pend-meta">📦 ${a.qtd_itens ?? '—'} item(ns) · ${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</div>
+      <div class="log-pend-acoes"><button class="row-action" onclick="event.stopPropagation();logAbrirAlterarDestino('${escJs(a.id)}')">✏️ Alterar destino</button></div>
     </div>`).join('');
 }
 
@@ -11909,7 +11929,10 @@ function abrirModalAtendimentosGrupo(grupoId) {
         <div style="font-size:12px;font-weight:600;color:var(--text-1)">${escHtml(a.nome_colaborador||'—')}</div>
         <div style="font-size:10px;color:var(--text-3)">${a.qtd_itens ?? '—'} item(ns) · ${escHtml(a.status||'')} · clique para ver na Consulta</div>
       </div>
-      ${podeEditar ? `<button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="removerAtendimentoDoGrupo('${grupo.id}','${a.id}')">Remover</button>` : ''}
+      ${podeEditar ? `<div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="row-action" onclick="logAbrirAlterarDestino('${escJs(a.id)}','${escJs(grupo.id)}')">✏️ Destino</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="removerAtendimentoDoGrupo('${grupo.id}','${a.id}')">Remover</button>
+      </div>` : ''}
     </div>`).join('') || '<div class="empty-state" style="padding:16px"><div class="es-title">Nenhum atendimento</div></div>';
   document.getElementById('modalLogisticaAtendimentos').classList.remove('hidden');
 }
@@ -11934,6 +11957,56 @@ async function removerAtendimentoDoGrupo(grupoId, atendimentoId) {
     carregarLogisticaViagens();
     carregarLogisticaPendentes();
   } else toast(res?.erro || 'Erro ao remover', 'error');
+}
+
+// ── Alterar destino de um atendimento que foi para a base errada ──
+// Aguardando viagem: troca direto. Numa carga aguardando coleta: sai da carga e volta para
+// a fila. Depois da coleta o backend bloqueia (já existe assinatura para aquele destino).
+let _logDestinoAtendId = null;
+
+async function logAbrirAlterarDestino(atendimentoId, grupoId) {
+  let atend = (_logPendentesData || []).find(a => a.id === atendimentoId);
+  let grupo = null;
+  if (grupoId) {
+    grupo = (_logViagensData || []).flatMap(v => v.grupos || []).find(g => g.id === grupoId) || null;
+    atend = (grupo?.atendimentos || []).find(a => a.id === atendimentoId) || atend;
+    document.getElementById('modalLogisticaAtendimentos').classList.add('hidden');
+  }
+  if (!atend) { toast('Atendimento não encontrado — atualize a tela.', 'error'); return; }
+  _logDestinoAtendId = atendimentoId;
+
+  await carregarDestinosEntrega();
+  popularSelectDestinos('logDestinoNovo');
+  const sel = document.getElementById('logDestinoNovo');
+  sel.value = '';
+  const atualId = atend.destino_entrega_id || grupo?.destino_entrega_id || '';
+  [...sel.options].forEach(o => { if (o.value && o.value === atualId) { o.disabled = true; o.textContent += ' (atual)'; } });
+
+  document.getElementById('logDestinoColab').textContent = atend.nome_colaborador || '—';
+  document.getElementById('logDestinoAtual').textContent = atend.destino_entrega || grupo?.destino || '—';
+  document.getElementById('logDestinoAvisoCarga').classList.toggle('hidden', !grupo);
+  document.getElementById('modalLogisticaDestino').classList.remove('hidden');
+}
+
+async function logConfirmarAlterarDestino(btn) {
+  const destinoId = document.getElementById('logDestinoNovo').value;
+  if (!destinoId) { toast('Selecione o novo destino.', 'warn'); return; }
+  if (!_logDestinoAtendId) return;
+
+  btn.disabled = true;
+  const res = await api(`/logistica/atendimentos/${encodeURIComponent(_logDestinoAtendId)}/destino`,
+    { method: 'PUT', body: JSON.stringify({ destino_entrega_id: destinoId }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao alterar o destino', 'error'); return; }
+
+  const msg = res.cargaExcluida ? `Destino alterado para ${res.destino} — era o último da carga, a carga foi excluída.`
+    : res.saiuDaCarga ? `Destino alterado para ${res.destino} — saiu da carga e voltou para a fila.`
+    : `Destino alterado para ${res.destino}.`;
+  toast(msg, 'success');
+  document.getElementById('modalLogisticaDestino').classList.add('hidden');
+  _logDestinoAtendId = null;
+  carregarLogisticaPendentes();
+  if (res.saiuDaCarga) carregarLogisticaViagens();
 }
 
 // ── Excluir grupo inteiro (só antes de coletado) ──
