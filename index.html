@@ -1577,6 +1577,13 @@ window.addEventListener('pageshow', function(e) {
             <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento</div></div>
             <div class="card-actions">
               <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
+              <input class="search-box" type="text" id="solBuscaItem" placeholder="🔎 Item (ex: detector)" oninput="filtrarSolicitacoes()" title="Mostra as solicitações que têm um item com esse nome">
+              <select class="form-input" id="solFiltroSolicitante" style="width:180px;font-size:11px" onchange="filtrarSolicitacoes()">
+                <option value="">Todos os solicitantes</option>
+              </select>
+              <select class="form-input" id="solFiltroBase" style="width:160px;font-size:11px" onchange="filtrarSolicitacoes()" title="Base pelo setor do solicitante (ou do colaborador atendido, quando o setor do solicitante não tem cidade)">
+                <option value="">Todas as bases</option>
+              </select>
               <select class="form-input" id="solFiltroStatus" style="width:140px;font-size:11px" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os status</option>
                 <option value="PENDENTE">Pendente</option>
@@ -8333,7 +8340,10 @@ async function confirmarCancelarAtendimento() {
 let _solicitacoes   = [];
 let _solPagina      = 1;
 const _solPorPagina = 10;
-let _solFiltros     = { status: '', prioridade: '', armazem: '', busca: '' };
+let _solFiltros     = { status: '', prioridade: '', armazem: '', busca: '', solicitante: '', base: '', item: '' };
+// Histórico Completo busca mais solicitações (a pesquisa por item precisa ir além das últimas 500).
+const SOL_LIMITE_PADRAO = 500, SOL_LIMITE_HISTORICO = 2000;
+let _solLimiteCarregado = 0;
 let _solAbaAtual    = 'ativas'; // 'ativas' ou 'finalizadas'
 
 function mudarAbaSol(aba) {
@@ -8376,6 +8386,50 @@ function mudarAbaSol(aba) {
   _solFiltros.status = '';
   _solPagina = 1;
   filtrarSolicitacoes();
+  // Histórico Completo: busca além das últimas 500 (sem travar a tela — mostra o que já tem e completa).
+  if (aba === 'historico' && _solLimiteCarregado < SOL_LIMITE_HISTORICO) carregarSolicitacoes(true);
+}
+
+function solLimiteDesejado() {
+  return (_solAbaAtual === 'historico' || _solLimiteCarregado >= SOL_LIMITE_HISTORICO) ? SOL_LIMITE_HISTORICO : SOL_LIMITE_PADRAO;
+}
+
+// Texto sem acento e minúsculo — "Detector de Tensão" bate com "detector tensao".
+const solNormalizar = (t) => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+
+// Nomes dos itens da solicitação que têm todas as palavras pesquisadas.
+function solItensQueBatem(s, qItem) {
+  let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+  if (!Array.isArray(itens)) return [];
+  const termos = qItem.split(' ').filter(Boolean);
+  return itens.map(i => i?.nome || i?.descricao || '').filter(n => {
+    const nn = solNormalizar(n);
+    return nn && termos.every(t => nn.includes(t));
+  });
+}
+
+// Solicitante e base: montados com o que foi carregado, mantendo o que já estava escolhido.
+function solPopularFiltrosExtras() {
+  const preencher = (id, rotuloTodos, pares) => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const atual = sel.value;
+    sel.innerHTML = `<option value="">${rotuloTodos}</option>` +
+      pares.map(([v, t]) => `<option value="${escHtml(v)}">${escHtml(t)}</option>`).join('');
+    sel.value = pares.some(([v]) => v === atual) ? atual : '';
+  };
+  const solicitantes = [...new Map(_solicitacoes.filter(s => s.solicitante_id)
+    .map(s => [s.solicitante_id, s.solicitante_nome || s.solicitante_id])).entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'));
+  preencher('solFiltroSolicitante', 'Todos os solicitantes', solicitantes);
+
+  const bases = [...new Set(_solicitacoes.map(s => s.base_solicitante).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR')).map(b => [b, b]);
+  if (_solicitacoes.some(s => !s.base_solicitante)) bases.push(['__sem__', 'Sem base definida']);
+  preencher('solFiltroBase', 'Todas as bases', bases);
+
+  _solFiltros.solicitante = document.getElementById('solFiltroSolicitante')?.value || '';
+  _solFiltros.base = document.getElementById('solFiltroBase')?.value || '';
 }
 
 async function carregarSolicitacoes(silencioso = false) {
@@ -8385,13 +8439,15 @@ async function carregarSolicitacoes(silencioso = false) {
 
   // Carrega assinaturas em paralelo para ter dados de pendência
   const [data] = await Promise.all([
-    api('/solicitacoes?por_pagina=500&order=desc'),
+    api(`/solicitacoes?por_pagina=${solLimiteDesejado()}&order=desc`),
     carregarAssinaturasSilencioso(),
   ]);
   if (!data) return;
 
   _solicitacoes = data.solicitacoes || data.data || [];
+  _solLimiteCarregado = solLimiteDesejado();
   _solPagina = 1;
+  solPopularFiltrosExtras();
 
   // Popula filtro de armazém (uma vez só, com os armazéns realmente usados nas solicitações)
   const selArm = document.getElementById('solFiltroArmazem');
@@ -8438,6 +8494,9 @@ function filtrarSolicitacoes(campo, valor) {
     _solFiltros.prioridade = document.getElementById('solFiltroPrioridade')?.value || '';
     _solFiltros.armazem    = document.getElementById('solFiltroArmazem')?.value || '';
     _solFiltros.busca      = document.getElementById('solBusca')?.value || '';
+    _solFiltros.solicitante = document.getElementById('solFiltroSolicitante')?.value || '';
+    _solFiltros.base       = document.getElementById('solFiltroBase')?.value || '';
+    _solFiltros.item       = document.getElementById('solBuscaItem')?.value || '';
   }
   _solPagina = 1;
   renderSolicitacoes();
@@ -8482,6 +8541,11 @@ function renderSolicitacoes() {
       (s.id||'').toLowerCase().includes(q)
     );
   }
+  const { solicitante, base, item } = _solFiltros;
+  if (solicitante) lista = lista.filter(s => s.solicitante_id === solicitante);
+  if (base) lista = lista.filter(s => base === '__sem__' ? !s.base_solicitante : s.base_solicitante === base);
+  const qItem = solNormalizar(item);
+  if (qItem) lista = lista.filter(s => solItensQueBatem(s, qItem).length);
 
   if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon">📋</div><div class="es-title">Nenhuma solicitação encontrada</div></div></td></tr>`;
@@ -8507,12 +8571,14 @@ function renderSolicitacoes() {
 
     // Tags de alerta
     const temTroca     = itens.some(i => i.trocaTamanho);
+    const itensBatem   = qItem ? solItensQueBatem(s, qItem) : [];
     const temForaPrazo = itens.some(i => i.diasDecorridos != null && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
     const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
     const tags = [
       temTroca     ? '<span style="color:#a855f7;font-size:10px;font-weight:600">👕 Troca tamanho</span>' : '',
       temForaPrazo ? '<span style="color:#f59e0b;font-size:10px;font-weight:600">⚠️ Fora do prazo</span>' : '',
       temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600">✍️ Ass. pendente</span>' : '',
+      itensBatem.length ? `<span style="color:var(--accent-text);font-size:10px;font-weight:600">🔎 ${escHtml(itensBatem.slice(0, 2).join(', '))}${itensBatem.length > 2 ? ` +${itensBatem.length - 2}` : ''}</span>` : '',
     ].filter(Boolean).join(' ');
 
     const _rowBorder = s.status === 'PENDENTE'
@@ -8520,14 +8586,14 @@ function renderSolicitacoes() {
       : s.status === 'VISUALIZADO'
       ? 'border-left:4px solid #3b82f6 !important;background:rgba(59,130,246,.06) !important'
       : 'border-left:4px solid transparent';
-    return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${s.id}')">
+    return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${escJs(s.id)}')">
       <td>
-        <div class="td-main">${nome}</div>
-        <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${s.id}</div>
+        <div class="td-main">${escHtml(nome)}</div>
+        <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${escHtml(s.id)}</div>
         ${s.nome_armazem ? `<div style="font-size:10px;color:var(--accent-text);margin-top:2px">📦 ${escHtml(s.nome_armazem)}</div>` : ''}
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
-      <td style="font-size:11px;color:var(--text-2)">${sol}</td>
+      <td style="font-size:11px;color:var(--text-2)">${escHtml(sol)}${s.base_solicitante ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px" title="${s.base_origem === 'colaborador' ? 'Base do colaborador atendido (o setor do solicitante não tem cidade)' : 'Base do solicitante'}">📍 ${escHtml(s.base_solicitante)}${s.base_origem === 'colaborador' ? ' (colab.)' : ''}</div>` : ''}</td>
       <td>${(() => {
         // data_hora pode vir como "19/06/2026, 10:30" (pt-BR) ou ISO
         const dh = s.data_hora || s.criado_em || '';
