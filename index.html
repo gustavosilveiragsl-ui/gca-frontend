@@ -379,6 +379,11 @@ tbody tr:hover td{background:var(--bg-hover);}
 .modal-alto .modal-header{flex-shrink:0;}
 .modal-alto .modal-body{overflow-y:auto;flex:1;min-height:0;}
 .modal-alto .modal-footer{flex-shrink:0;}
+/* Fotos da remessa de laudo */
+.rem-fotos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.rem-foto{position:relative;aspect-ratio:1/1;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);background:var(--bg)}
+.rem-foto img{width:100%;height:100%;object-fit:cover;display:block;cursor:pointer}
+.rem-foto button{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:999px;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:11px;cursor:pointer;line-height:22px;padding:0}
 /* Financeiro */
 .fin-abas{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
 .fin-abas button{padding:10px 18px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
@@ -4760,7 +4765,7 @@ window.addEventListener('pageshow', function(e) {
 
 <!-- MODAL NOVA REMESSA PARA LAUDO -->
 <div class="modal-overlay hidden" id="modalNovaRemessa">
-  <div class="modal-box" style="max-width:520px">
+  <div class="modal-box modal-alto" style="max-width:560px;width:100%">
     <div class="modal-header">
       <div><div class="modal-title">📦 Nova Remessa para Laudo</div><div style="font-size:11px;color:var(--text-3)" id="remNovaQtdInfo"></div></div>
       <button class="modal-close" onclick="document.getElementById('modalNovaRemessa').classList.add('hidden')">×</button>
@@ -4792,10 +4797,16 @@ window.addEventListener('pageshow', function(e) {
         <label class="form-label">Valor pago (R$) <span style="color:var(--text-3);font-weight:400;text-transform:none">(se já souber, senão preencha depois)</span></label>
         <input type="number" step="0.01" min="0" id="remNovaValorPago" class="form-input" placeholder="Opcional...">
       </div>
+      <div>
+        <label class="form-label">Fotos da remessa * <span style="color:var(--text-3);font-weight:400;text-transform:none">(pelo menos 1 · até 10 — o que está sendo enviado)</span></label>
+        <div id="remNovaFotosPrev" class="rem-fotos-grid"></div>
+        <input type="file" id="remNovaFotosInput" accept="image/*" multiple class="hidden" onchange="remNovaFotosSelecionadas(this)">
+        <button type="button" class="btn btn-ghost" style="font-size:11px;margin-top:8px" onclick="document.getElementById('remNovaFotosInput').click()">📷 Tirar / anexar fotos</button>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalNovaRemessa').classList.add('hidden')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarNovaRemessa()">📦 Criar Remessa</button>
+      <button class="btn btn-primary" id="remNovaBtnCriar" onclick="confirmarNovaRemessa()">📦 Criar Remessa</button>
     </div>
   </div>
 </div>
@@ -4805,7 +4816,10 @@ window.addEventListener('pageshow', function(e) {
   <div class="modal-box modal-alto" style="max-width:640px;width:100%">
     <div class="modal-header">
       <div><div class="modal-title">📦 Detalhe da Remessa</div><div style="font-size:11px;color:var(--text-3)" id="remDetInfo"></div></div>
-      <button class="modal-close" onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden')">×</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-ghost" style="font-size:11px" id="remDetBtnPdf" onclick="remBaixarPDF()">🖨️ PDF</button>
+        <button class="modal-close" onclick="document.getElementById('modalDetalheRemessa').classList.add('hidden')">×</button>
+      </div>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -4838,6 +4852,14 @@ window.addEventListener('pageshow', function(e) {
           </tr></thead>
           <tbody id="remDetItensBody"></tbody>
         </table>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">📷 Fotos da remessa</div>
+          <input type="file" id="remDetFotosInput" accept="image/*" multiple class="hidden" onchange="remAdicionarFotos(this)">
+          <button class="btn btn-ghost" style="font-size:11px;margin-left:auto" id="remDetBtnFotos" onclick="document.getElementById('remDetFotosInput').click()">➕ Adicionar fotos</button>
+        </div>
+        <div id="remDetFotos" class="rem-fotos-grid"></div>
       </div>
     </div>
   </div>
@@ -16963,6 +16985,117 @@ function recupItensSelecionadosComoLista() {
   return _recupData.filter(r => r.tipo === 'serial' && _recupSelecionados.has(r.id_ativo));
 }
 
+// ── Fotos da remessa ──
+// A foto é reduzida no próprio aparelho antes de enviar (lado maior até 1600 px, JPEG):
+// foto de celular chega a 5 MB e não precisa disso para registrar o que foi enviado.
+let _remNovaFotos = [];
+
+function remComprimirImagem(file) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const escala = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * escala);
+      canvas.height = Math.round(img.height * escala);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => resolve(b), 'image/jpeg', 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    img.src = url;
+  });
+}
+
+async function remNovaFotosSelecionadas(input) {
+  const arquivos = [...(input.files || [])];
+  input.value = '';
+  for (const f of arquivos) {
+    if (_remNovaFotos.length >= 10) { toast('No máximo 10 fotos por remessa', 'warn'); break; }
+    const blob = await remComprimirImagem(f);
+    if (!blob) { toast(`Não foi possível ler a imagem "${f.name}"`, 'warn'); continue; }
+    _remNovaFotos.push({ blob, url: URL.createObjectURL(blob) });
+  }
+  remNovaRenderFotos();
+}
+
+function remNovaRemoverFoto(i) {
+  const f = _remNovaFotos[i];
+  if (f) URL.revokeObjectURL(f.url);
+  _remNovaFotos.splice(i, 1);
+  remNovaRenderFotos();
+}
+
+function remNovaRenderFotos() {
+  const box = document.getElementById('remNovaFotosPrev');
+  if (!box) return;
+  box.innerHTML = _remNovaFotos.length
+    ? _remNovaFotos.map((f, i) => `<div class="rem-foto"><img src="${f.url}" alt="Foto ${i + 1}" onclick="window.open(this.src, '_blank')"><button type="button" title="Tirar esta foto" onclick="remNovaRemoverFoto(${i})">✕</button></div>`).join('')
+    : '<div style="font-size:11px;color:var(--yellow);grid-column:1/-1">Nenhuma foto ainda — é obrigatório anexar pelo menos 1.</div>';
+}
+
+async function remCarregarFotos(id) {
+  const box = document.getElementById('remDetFotos');
+  if (!box) return;
+  box.innerHTML = '<div class="spinner" style="margin:10px auto;grid-column:1/-1"></div>';
+  const res = await api(`/laudos/remessas/${encodeURIComponent(id)}/fotos`);
+  if (_remDetalheAbertaId !== id) return;
+  if (!res?.ok) {
+    box.innerHTML = `<div style="font-size:11px;color:var(--red);grid-column:1/-1">${escHtml(res?.erro || 'Erro ao carregar as fotos')}</div>`;
+    return;
+  }
+  const fotos = res.data || [];
+  box.innerHTML = fotos.length
+    ? fotos.map((f, i) => `<div class="rem-foto"><img src="${escHtml(f.url || '')}" alt="Foto ${i + 1}" loading="lazy" onclick="window.open(this.src, '_blank')"></div>`).join('')
+    : '<div style="font-size:11px;color:var(--text-3);grid-column:1/-1">Esta remessa não tem fotos.</div>';
+}
+
+async function remAdicionarFotos(input) {
+  const id = _remDetalheAbertaId;
+  const arquivos = [...(input.files || [])];
+  input.value = '';
+  if (!id || !arquivos.length) return;
+  if (arquivos.length > 10) { toast('Envie no máximo 10 fotos por vez', 'warn'); return; }
+  const btn = document.getElementById('remDetBtnFotos');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando...'; }
+  try {
+    const fd = new FormData();
+    let n = 0;
+    for (const f of arquivos) {
+      const blob = await remComprimirImagem(f);
+      if (blob) fd.append('fotos', blob, `foto_${++n}.jpg`);
+    }
+    if (!n) { toast('Não foi possível ler as imagens', 'warn'); return; }
+    const r = await fetch(`${API}/laudos/remessas/${encodeURIComponent(id)}/fotos`, { method: 'POST', headers: { Authorization: `Bearer ${GCA.token}` }, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!j?.ok) { toast(j?.erro || 'Erro ao enviar as fotos', 'error', 7000); return; }
+    toast(`${j.adicionadas} foto(s) adicionada(s)`, 'success');
+    remCarregarFotos(id);
+  } catch {
+    toast('Falha de conexão ao enviar as fotos', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '➕ Adicionar fotos'; }
+  }
+}
+
+// O PDF exige o token, então não dá pra abrir por link direto: baixa como blob.
+async function remBaixarPDF() {
+  const id = _remDetalheAbertaId;
+  if (!id) return;
+  const btn = document.getElementById('remDetBtnPdf');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const r = await fetch(`${API}/laudos/remessas/${encodeURIComponent(id)}/pdf`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.erro || 'Erro ao gerar o PDF', 'error'); return; }
+    window.open(URL.createObjectURL(await r.blob()), '_blank');
+  } catch {
+    toast('Erro ao gerar o PDF', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🖨️ PDF'; }
+  }
+}
+
 async function abrirModalNovaRemessa() {
   const selecionados = recupItensSelecionadosComoLista();
   if (!selecionados.length) { toast('Selecione ao menos um item com serial','warn'); return; }
@@ -16981,6 +17114,9 @@ async function abrirModalNovaRemessa() {
   document.getElementById('remNovaEmpresa').value = ultimaEmpresa;
   document.getElementById('remNovaObservacao').value = '';
   document.getElementById('remNovaValorPago').value = '';
+  _remNovaFotos.forEach(f => URL.revokeObjectURL(f.url));
+  _remNovaFotos = [];
+  remNovaRenderFotos();
 
   const selColab = document.getElementById('remNovaColaborador');
   selColab.innerHTML = '<option value="">Selecione...</option>' +
@@ -17000,22 +17136,40 @@ async function confirmarNovaRemessa() {
   if (!data_envio || !colaborador_id || !empresa) { toast('Preencha data, empresa e quem levou','warn'); return; }
   if (!selecionados.length) { toast('Nenhum item selecionado','warn'); return; }
 
-  const res = await api('/laudos/remessas', {
-    method: 'POST',
-    body: JSON.stringify({
-      data_envio, empresa, colaborador_id, observacao: observacao || null,
-      valor_pago: valor_pago || null,
-      itens: selecionados.map(r => ({ id_ativo: r.id_ativo })),
-    }),
-  });
+  if (!_remNovaFotos.length) { toast('Anexe pelo menos 1 foto da remessa', 'warn'); return; }
+
+  // Multipart: os dados vão em "dados" e as fotos em "fotos" — a remessa só é criada se as
+  // fotos subirem.
+  const fd = new FormData();
+  fd.append('dados', JSON.stringify({
+    data_envio, empresa, colaborador_id, observacao: observacao || null,
+    valor_pago: valor_pago || null,
+    itens: selecionados.map(r => ({ id_ativo: r.id_ativo })),
+  }));
+  _remNovaFotos.forEach((f, i) => fd.append('fotos', f.blob, `foto_${i + 1}.jpg`));
+
+  const btn = document.getElementById('remNovaBtnCriar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando fotos...'; }
+  let res;
+  try {
+    const r = await fetch(`${API}/laudos/remessas`, { method: 'POST', headers: { Authorization: `Bearer ${GCA.token}` }, body: fd });
+    res = await r.json().catch(() => ({ ok: false, erro: 'Resposta inválida do servidor' }));
+  } catch {
+    res = { ok: false, erro: 'Falha de conexão ao enviar a remessa' };
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📦 Criar Remessa'; }
+  }
 
   if (res?.ok) {
-    toast('Remessa criada!','success');
+    toast('Remessa criada! Use 🖨️ PDF para imprimir.','success', 6000);
     document.getElementById('modalNovaRemessa').classList.add('hidden');
+    _remNovaFotos.forEach(f => URL.revokeObjectURL(f.url));
+    _remNovaFotos = [];
     _recupSelecionados.clear();
     carregarRecuperados();
-    carregarRemessas();
-  } else toast(res?.erro || 'Erro ao criar remessa','error');
+    await carregarRemessas();
+    abrirDetalheRemessa(res.id);
+  } else toast(res?.erro || 'Erro ao criar remessa','error', 7000);
 }
 
 function abrirDetalheRemessa(id) {
@@ -17054,6 +17208,7 @@ function abrirDetalheRemessa(id) {
   const acoes = document.getElementById('remDetAcoesItens');
   if (acoes) acoes.innerHTML = `<button class="btn btn-ghost" style="font-size:11px" onclick="abrirAddItensRemessa()">➕ Adicionar itens</button>`;
 
+  remCarregarFotos(id);
   document.getElementById('modalDetalheRemessa').classList.remove('hidden');
 }
 
