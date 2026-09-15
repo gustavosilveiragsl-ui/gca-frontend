@@ -1288,6 +1288,24 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
+<!-- MODAL: ENVIAR PARA LOGÍSTICA um atendimento concluído sem ela (só antes da assinatura) -->
+<div class="modal-overlay hidden" id="modalAssLogistica">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-header">
+      <div class="modal-title">🚚 Enviar para logística</div>
+      <button class="modal-close" onclick="document.getElementById('modalAssLogistica').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:12px"><b id="assLogColab">—</b></div>
+      <div style="font-size:11px;color:var(--blue);background:var(--blue-soft);border-radius:8px;padding:8px 10px;margin-bottom:12px">O atendimento entra na fila da Logística para montar a viagem. O link de assinatura continua o mesmo: o colaborador assina quando receber o material na base.</div>
+      <label class="form-label">Destino de entrega</label>
+      <select id="assLogDestino" class="form-input"></select>
+      <div id="assLogSemDestino" class="hidden" style="font-size:11px;color:var(--red);margin-top:6px">Nenhum destino cadastrado — cadastre na tela de Logística.</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="assConfirmarEnviarLogistica(this)">Enviar para logística</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: ALTERAR DESTINO de um atendimento (base errada) — só antes da coleta -->
 <div class="modal-overlay hidden" id="modalLogisticaDestino">
   <div class="modal-box" style="max-width:400px">
@@ -7992,6 +8010,7 @@ function renderAssinaturas(lista) {
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
         <button class="row-action" style="color:var(--accent);border-color:var(--accent)" onclick="regerarLink('${a.id}')">🔄 Regerar</button>
+        ${assBotaoLogistica(a)}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${escHtml((a.nomeColaborador||'').replace(/"/g,'&quot;'))}">Cancelar</button>
       </div>` : `
       <div style="display:flex;gap:6px">
@@ -7999,6 +8018,7 @@ function renderAssinaturas(lista) {
           ? `<button class="row-action" onclick="reenviarLink('${a.id}','${a.token}')">↺ Reenviar</button>`
           : `<button class="row-action" style="color:var(--accent);border-color:var(--accent)" onclick="regerarLink('${a.id}')">🔄 Gerar link</button>`}
         <button class="row-action" onclick="verItensAtendimento('${a.id}')">Ver itens</button>
+        ${assBotaoLogistica(a)}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},false)" data-nome="${escHtml((a.nomeColaborador||'').replace(/"/g,'&quot;'))}">Cancelar</button>
       </div>`;
 
@@ -8007,7 +8027,7 @@ function renderAssinaturas(lista) {
       a.statusCalc === 'EXPIRADO' ? 'border-left:4px solid var(--red)!important;background:rgba(248,113,113,.05)!important' :
       'border-left:4px solid transparent'
     }">
-      <td class="td-main">${escHtml(a.nomeColaborador||'—')}</td>
+      <td class="td-main">${escHtml(a.nomeColaborador||'—')}${a.necessitaLogistica ? `<div style="font-size:10px;font-weight:500;color:var(--accent-text);margin-top:2px">🚚 Logística · ${escHtml(a.destinoEntrega||'—')}</div>` : ''}</td>
       <td style="font-size:11px;color:var(--text-2)">${setor}</td>
       <td>${formatarData(a.data)}</td>
       <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
@@ -8057,6 +8077,58 @@ function formatarTempoRestante(data) {
 }
 
 // ── Reenviar link ──
+// ── Logística depois do atendimento (só antes da assinatura) ──
+// Concluiu sem marcar logística: "Enviar para logística" coloca na fila com o destino.
+// Marcou por engano: "Tirar da logística" (se já estiver numa carga aguardando coleta, sai
+// dela; depois da coleta o backend bloqueia).
+function assBotaoLogistica(a) {
+  if (!temPermissao('logistica_gerenciar_viagens')) return '';
+  return a.necessitaLogistica
+    ? `<button class="row-action" onclick="assTirarLogistica('${escJs(a.id)}')">🚫 Tirar da logística</button>`
+    : `<button class="row-action" onclick="assAbrirEnviarLogistica('${escJs(a.id)}')">🚚 Enviar p/ logística</button>`;
+}
+
+let _assLogAtendId = null;
+
+async function assAbrirEnviarLogistica(id) {
+  const atend = (_assinaturas || []).find(a => a.id === id);
+  if (!atend) return;
+  _assLogAtendId = id;
+  await carregarDestinosEntrega();
+  popularSelectDestinos('assLogDestino');
+  document.getElementById('assLogDestino').value = '';
+  document.getElementById('assLogSemDestino').classList.toggle('hidden', _destinos.some(d => d.ativo !== false));
+  document.getElementById('assLogColab').textContent = atend.nomeColaborador || '—';
+  document.getElementById('modalAssLogistica').classList.remove('hidden');
+}
+
+async function assConfirmarEnviarLogistica(btn) {
+  const destinoId = document.getElementById('assLogDestino').value;
+  if (!destinoId) { toast('Selecione o destino de entrega', 'warn'); return; }
+  if (!_assLogAtendId) return;
+  btn.disabled = true;
+  const res = await api(`/logistica/atendimentos/${encodeURIComponent(_assLogAtendId)}/logistica`,
+    { method: 'PUT', body: JSON.stringify({ necessita_logistica: true, destino_entrega_id: destinoId }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao enviar para a logística', 'error'); return; }
+  toast(`Enviado para a logística — destino ${res.destino}.`, 'success');
+  document.getElementById('modalAssLogistica').classList.add('hidden');
+  _assLogAtendId = null;
+  await carregarAssinaturas();
+}
+
+async function assTirarLogistica(id) {
+  const atend = (_assinaturas || []).find(a => a.id === id);
+  if (!atend) return;
+  if (!confirm(`Tirar ${atend.nomeColaborador || 'este atendimento'} da logística?\n\nEle sai da fila de transporte${atend.destinoEntrega ? ` (destino ${atend.destinoEntrega})` : ''}. Se já estiver numa carga aguardando coleta, sai dela também.`)) return;
+  const res = await api(`/logistica/atendimentos/${encodeURIComponent(id)}/logistica`,
+    { method: 'PUT', body: JSON.stringify({ necessita_logistica: false }) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao tirar da logística', 'error'); return; }
+  toast(res.cargaExcluida ? 'Retirado da logística — era o último da carga, a carga foi excluída.'
+    : res.saiuDaCarga ? 'Retirado da logística e da carga.' : 'Retirado da logística.', 'success');
+  await carregarAssinaturas();
+}
+
 async function regerarLink(id) {
   const atend = _assinaturas.find(a => a.id === id);
   if (!atend) return;
