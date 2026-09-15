@@ -1289,6 +1289,48 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 
+<!-- MODAL: DESCARTAR SERIAL NR10 (rasgou, quebrou...) -->
+<div class="modal-overlay hidden" id="modalNr10Descartar">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div class="modal-title">🗑️ Enviar serial para descarte</div>
+      <button class="modal-close" onclick="document.getElementById('modalNr10Descartar').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:13px;color:var(--text-1);font-weight:600" id="nr10DescItem">—</div>
+      <div style="font-size:12px;color:var(--text-3);margin:2px 0 12px">Serial <b id="nr10DescSerial" style="font-family:var(--font-mono);color:var(--accent-text)">—</b></div>
+      <div id="nr10DescAviso" style="font-size:11px;color:var(--text-2);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px 10px;margin-bottom:12px"></div>
+      <label class="form-label">Motivo *</label>
+      <textarea id="nr10DescMotivo" class="form-input" rows="3" maxlength="300" placeholder="Ex: rasgou, furou, quebrou..." style="resize:vertical"></textarea>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center;background:#ef4444;border-color:#ef4444" onclick="nr10ConfirmarDescarte(this)">Enviar para descarte</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: LIMPAR DESCARTES NR10 — conferir e escolher o que excluir -->
+<div class="modal-overlay hidden" id="modalNr10LimparDescartes">
+  <div class="modal-box" style="max-width:860px;width:100%">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">🗑️ Seriais no descarte</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:2px">Confira e marque os que vão ser excluídos definitivamente</div>
+      </div>
+      <button class="modal-close" onclick="document.getElementById('modalNr10LimparDescartes').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--text-2)"><input type="checkbox" id="nr10LimparTodos" onchange="nr10LimparMarcarTodos(this.checked)"> Selecionar todos</label>
+        <span id="nr10LimparQtd" style="font-size:12px;color:var(--text-2)"></span>
+      </div>
+      <div id="nr10LimparBody" style="overflow:auto;max-height:400px"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:14px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px"><label class="form-label">Sua senha</label><input id="nr10LimparSenha" type="password" class="form-input" autocomplete="current-password"></div>
+        <button id="nr10LimparBtn" class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="nr10ConfirmarLimpeza(this)" disabled>Excluir selecionados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: RECEBIDOS SEM VIAGEM — marcados com logística e assinados sem passar por viagem -->
 <div class="modal-overlay hidden" id="modalLogSemViagem">
   <div class="modal-box" style="max-width:760px;width:100%">
@@ -3525,6 +3567,7 @@ window.addEventListener('pageshow', function(e) {
                 <option value="COM_COLAB">👤 Com Colaborador</option>
                 <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
                 <option value="ENVIADO_LAUDO">📤 Enviado para Laudo</option>
+                <option value="DESCARTE">🗑️ Descarte</option>
               </select>
             </div>
             <div><label class="form-label">Venc. de</label><input id="laudoFiltroVencDe" class="form-input" type="date" onchange="laudosRender_()"></div>
@@ -16117,7 +16160,7 @@ function laudosRender_() {
 
   arr.forEach(grupo => {
     const s = grupo.seriais;
-    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length, enviado=s.filter(x=>x.statusLocal==='ENVIADO_LAUDO').length;
+    const emEst=s.filter(x=>x.statusLocal==='ESTOQUE').length, comColab=s.filter(x=>x.statusLocal==='COM_COLAB').length, aguard=s.filter(x=>x.statusLocal==='AGUARDANDO_LAUDO').length, enviado=s.filter(x=>x.statusLocal==='ENVIADO_LAUDO').length, descartados=s.filter(x=>x.statusLocal==='DESCARTE').length;
     const venc=s.filter(x=>x.status==='VENCIDO').length, alrt=s.filter(x=>x.status==='ALERTA_30').length, sem=s.filter(x=>x.status==='SEM_LAUDO').length;
 
     const pendentes=s.filter(x=>x.status==='PENDENTE_CADASTRO').length;
@@ -16154,7 +16197,7 @@ function laudosRender_() {
     trGrupo.innerHTML = `
       <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${escHtml(grupo.itemNome)}</td>
       <td style="padding:12px;text-align:center"><span style="color:var(--accent-text);font-size:11px;font-weight:700">${s.length} serial(is)</span></td>
-      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}${enviado>0?` · 📤 ${enviado}`:''}</td>
+      <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)">📦 ${emEst} · 👤 ${comColab}${aguard>0?` · 🔬 ${aguard}`:''}${enviado>0?` · 📤 ${enviado}`:''}${descartados>0?` · 🗑️ ${descartados}`:''}</td>
       <td style="padding:12px" colspan="2">${badge}</td>
       <td style="padding:12px" colspan="2">${consist}</td>`;
     tbody.appendChild(trGrupo);
@@ -16198,13 +16241,14 @@ function laudosRender_() {
             :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
           return `<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(x.serial)}</td>
-            <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}</td>
+            <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}${x.statusLocal==='DESCARTE' && x.motivo ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(x.motivo)}</div>` : ''}</td>
             <td style="padding:8px;text-align:center">${stBadge}</td>
             <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
             <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
               ${x.anexoUrl?`<a href="${escHtml(safeUrl(x.anexoUrl))}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
               <button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>
+              ${['ESTOQUE','AGUARDANDO_LAUDO'].includes(x.statusLocal) && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}')">🗑️ Descartar</button>` : ''}
             </td>
           </tr>`;
         }).join('')}</tbody>
@@ -16487,17 +16531,115 @@ async function confirmarDevolucaoNR10() {
   } else toast(res?.erro||'Erro ao devolver','error');
 }
 
-// ── LIMPAR DESCARTES ──
+// ── DESCARTAR SERIAL (rasgou, furou, quebrou...) ──
+// Em estoque dá baixa no saldo do armazém principal (1, ou meio par nos itens em PAR);
+// aguardando laudo só vai para o descarte. As duas contam como perda no Financeiro.
+let _nr10DescarteId = null;
+
+function nr10AbrirDescarte(idAtivo) {
+  const x = (__LAUDOS_NR10__.lista || []).find(a => a.idAtivo === idAtivo);
+  if (!x) return;
+  _nr10DescarteId = idAtivo;
+  const item = (_itens || []).find(i => i.id === x.itemId);
+  const par = String(item?.un_med || '').toUpperCase() === 'PAR';
+  const armPrincipal = (_armazens || []).find(a => a.principal);
+  document.getElementById('nr10DescItem').textContent = x.itemNome || '—';
+  document.getElementById('nr10DescSerial').textContent = x.serial || '—';
+  document.getElementById('nr10DescAviso').textContent = x.statusLocal === 'ESTOQUE'
+    ? `Está em estoque: dá baixa de ${par ? 'meio par (0,5)' : '1'} no saldo ${armPrincipal ? `do ${armPrincipal.nome}` : 'do armazém principal'} e registra como perda no Financeiro.`
+    : 'Está aguardando laudo (fora do saldo): só vai para o descarte e registra como perda no Financeiro.';
+  document.getElementById('nr10DescMotivo').value = '';
+  document.getElementById('modalNr10Descartar').classList.remove('hidden');
+  setTimeout(() => document.getElementById('nr10DescMotivo')?.focus(), 50);
+}
+
+async function nr10ConfirmarDescarte(btn) {
+  const motivo = document.getElementById('nr10DescMotivo').value.trim();
+  if (motivo.length < 3) { toast('Informe o motivo do descarte', 'warn'); return; }
+  if (!_nr10DescarteId) return;
+  btn.disabled = true;
+  const res = await apiMovimentacao('/laudos/nr10/descartar', { id_ativo: _nr10DescarteId, motivo });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao descartar', 'error'); return; }
+  toast(res.baixa_saldo
+    ? `Serial enviado para descarte — baixa de ${String(res.baixa_saldo).replace('.', ',')} no saldo do ${res.armazem}.`
+    : 'Serial enviado para descarte.', 'success');
+  document.getElementById('modalNr10Descartar').classList.add('hidden');
+  _nr10DescarteId = null;
+  laudosCarregar_();
+}
+
+// ── LIMPAR DESCARTES — lista para conferir e escolher o que excluir ──
+let _nr10Descartes = [];
+
 async function limparDescartes() {
-  const totalDesc = __LAUDOS_NR10__.lista.filter(x=>x.statusLocal==='DESCARTE').length;
-  if (!totalDesc) { toast('Nenhum serial com status DESCARTE','info'); return; }
+  const body = document.getElementById('nr10LimparBody');
+  _nr10Descartes = [];
+  body.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  document.getElementById('nr10LimparSenha').value = '';
+  document.getElementById('nr10LimparTodos').checked = false;
+  nr10LimparAtualizarQtd();
+  document.getElementById('modalNr10LimparDescartes').classList.remove('hidden');
 
-  const senha = prompt(`Esta ação irá excluir ${totalDesc} serial(is) com status DESCARTE.\n\nDigite sua senha de login para confirmar:`);
-  if (senha === null) return;
+  const res = await api('/laudos/nr10/descartes');
+  if (!res?.ok) {
+    body.innerHTML = `<div class="empty-state" style="padding:16px"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar os descartes')}</div></div>`;
+    return;
+  }
+  _nr10Descartes = res.data || [];
+  if (!_nr10Descartes.length) {
+    body.innerHTML = '<div class="empty-state" style="padding:16px"><div class="es-icon">🎉</div><div class="es-title">Nenhum serial no descarte</div></div>';
+    nr10LimparAtualizarQtd();
+    return;
+  }
+  const th = 'padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0;background:var(--bg-card)';
+  const td = 'padding:8px;font-size:12px;color:var(--text-2);border-bottom:1px solid var(--border)';
+  const quando = (iso) => iso ? new Date(iso).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) : '—';
+  body.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr><th style="${th};width:28px"></th><th style="${th}">Item</th><th style="${th}">Serial</th><th style="${th}">Motivo</th><th style="${th}">Data</th><th style="${th}">Por</th></tr></thead>
+    <tbody>${_nr10Descartes.map(d => `<tr>
+      <td style="${td}"><input type="checkbox" class="nr10-limpar-cb" data-id="${escHtml(d.id_ativo)}" onchange="nr10LimparAtualizarQtd()"></td>
+      <td style="${td};color:var(--text-1)">${escHtml(d.item || '—')}</td>
+      <td style="${td};font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(d.serial || '—')}</td>
+      <td style="${td}">${escHtml(d.motivo || '—')}</td>
+      <td style="${td};white-space:nowrap">${quando(d.data)}</td>
+      <td style="${td}">${escHtml(d.responsavel || '—')}</td>
+    </tr>`).join('')}</tbody></table>`;
+  nr10LimparAtualizarQtd();
+}
 
-  const res = await api('/laudos/nr10/descartes', { method:'DELETE', body: JSON.stringify({ senha }) });
-  if (res?.ok) { toast(`${res.removidos} serial(is) excluído(s)!`, 'success'); laudosCarregar_(); }
-  else toast(res?.erro||'Erro ao excluir','error');
+function nr10LimparSelecionados() {
+  return [...document.querySelectorAll('.nr10-limpar-cb:checked')].map(cb => cb.dataset.id);
+}
+
+function nr10LimparMarcarTodos(marcado) {
+  document.querySelectorAll('.nr10-limpar-cb').forEach(cb => { cb.checked = marcado; });
+  nr10LimparAtualizarQtd();
+}
+
+function nr10LimparAtualizarQtd() {
+  const sel = nr10LimparSelecionados().length, total = _nr10Descartes.length;
+  const qtd = document.getElementById('nr10LimparQtd');
+  if (qtd) qtd.textContent = total ? `${sel} de ${total} selecionado(s)` : '';
+  const todos = document.getElementById('nr10LimparTodos');
+  if (todos) todos.checked = total > 0 && sel === total;
+  const btn = document.getElementById('nr10LimparBtn');
+  if (btn) btn.disabled = !sel;
+}
+
+async function nr10ConfirmarLimpeza(btn) {
+  const ids = nr10LimparSelecionados();
+  if (!ids.length) { toast('Selecione pelo menos um serial', 'warn'); return; }
+  const senha = document.getElementById('nr10LimparSenha').value;
+  if (!senha) { toast('Digite sua senha para confirmar', 'warn'); return; }
+  if (!confirm(`Excluir definitivamente ${ids.length} serial(is) do descarte?`)) return;
+  btn.disabled = true;
+  const res = await api('/laudos/nr10/descartes', { method: 'DELETE', body: JSON.stringify({ senha, ids_ativos: ids }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao excluir', 'error'); return; }
+  toast(`${res.removidos} serial(is) excluído(s)!`, 'success');
+  document.getElementById('modalNr10LimparDescartes').classList.add('hidden');
+  laudosCarregar_();
 }
 
 // ═══════════════════════════════════════════
@@ -19682,7 +19824,7 @@ const finNum = (n) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFraction
 const finData = (d) => d ? new Date(String(d).length === 10 ? d + 'T12:00:00' : d).toLocaleDateString('pt-BR') : '—';
 const FIN_ORIGEM = {
   LAUDO: 'Aprovado no laudo', SEM_LAUDO: 'Recuperado sem laudo', SEM_SERIAL: 'Recuperado (sem serial)',
-  REPROVADO_LAUDO: 'Reprovado no laudo', INUTILIZADO_RECUPERACAO: 'Inutilizado na recuperação', DIVERGENCIA_SERIAL: 'Divergência de serial',
+  REPROVADO_LAUDO: 'Reprovado no laudo', INUTILIZADO_RECUPERACAO: 'Inutilizado na recuperação', DIVERGENCIA_SERIAL: 'Divergência de serial', DESCARTE_SERIAL: 'Descarte de serial',
 };
 const FIN_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const finNomeMes = (m) => { const [a, mm] = String(m || '').split('-'); return mm ? `${FIN_MESES[Number(mm) - 1]}/${a}` : ''; };
