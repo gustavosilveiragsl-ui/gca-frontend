@@ -3545,7 +3545,7 @@ window.addEventListener('pageshow', function(e) {
         </div>
 
         <!-- KPIs -->
-        <div id="laudosContadores" class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px"></div>
+        <div id="laudosContadores" class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:16px"></div>
 
         <!-- Filtros -->
         <div class="card" style="margin-bottom:12px">
@@ -3558,6 +3558,7 @@ window.addEventListener('pageshow', function(e) {
                 <option value="ALERTA_30">⚠️ Alerta 30d</option>
                 <option value="VENCIDO">❌ Vencido</option>
                 <option value="SEM_LAUDO">📋 Sem Laudo</option>
+                <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
                 <option value="PENDENTE_CADASTRO">⏳ Pendente Cadastro</option>
               </select>
             </div>
@@ -16115,11 +16116,12 @@ function laudosAtualizarContadores_(lista) {
     ok=lista.filter(x=>x.status==='OK').length,
     alerta=lista.filter(x=>x.status==='ALERTA_30').length,
     vencido=lista.filter(x=>x.status==='VENCIDO').length,
-    semLaudo=lista.filter(x=>x.status==='SEM_LAUDO').length;
+    semLaudo=lista.filter(x=>x.status==='SEM_LAUDO').length,
+    aguardandoLaudo=lista.filter(x=>x.status==='AGUARDANDO_LAUDO').length;
   el.innerHTML = [
     ['Seriais Cadastrados',total,'var(--accent-text)'],
     ['✅ OK',ok,'#22c55e'],['⚠️ Alerta 30d',alerta,'#f59e0b'],
-    ['❌ Vencidos',vencido,'#ef4444'],['📋 Sem Laudo',semLaudo,'var(--text-3)'],
+    ['❌ Vencidos',vencido,'#ef4444'],['📋 Sem Laudo',semLaudo,'var(--text-3)'],['🔬 Aguardando Laudo',aguardandoLaudo,'#6366f1'],
     ['⏳ Pendente Cadastro',pendente,'#a855f7'],
   ].map(([l,v,c])=>`<div class="kpi-card"><div class="kpi-value" style="color:${c}">${v}</div><div class="kpi-label">${l}</div></div>`).join('');
 }
@@ -16160,6 +16162,8 @@ function laudosRender_() {
     if(venc>0) badge+=`<span style="color:#ef4444;font-size:10px;font-weight:700;margin-right:4px">🔴 ${venc} vencido(s)</span>`;
     if(alrt>0) badge+=`<span style="color:#f59e0b;font-size:10px;font-weight:700;margin-right:4px">🟡 ${alrt} alerta(s)</span>`;
     if(sem>0)  badge+=`<span style="color:var(--text-3);font-size:10px;font-weight:700;margin-right:4px">📋 ${sem} sem laudo</span>`;
+    const aguardLaudo=s.filter(x=>x.status==='AGUARDANDO_LAUDO').length;
+    if(aguardLaudo>0) badge+=`<span style="color:#6366f1;font-size:10px;font-weight:700;margin-right:4px">🔬 ${aguardLaudo} aguardando laudo</span>`;
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
     // Saldo considerado é sempre o do armazém principal da unidade, nunca soma de satélites
@@ -16226,7 +16230,8 @@ function laudosRender_() {
             </tr>`;
           }
 
-          const stBadge = x.status==='OK'?'<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>'
+          const stBadge = x.status==='AGUARDANDO_LAUDO'?'<span style="color:#6366f1;font-size:10px;font-weight:700">🔬 Aguardando laudo</span>'
+            :x.status==='OK'?'<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>'
             :x.status==='VENCIDO'?'<span style="color:#ef4444;font-size:10px;font-weight:700">❌ Vencido</span>'
             :x.status==='ALERTA_30'?'<span style="color:#f59e0b;font-size:10px;font-weight:700">⚠️ Alerta</span>'
             :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
@@ -16238,7 +16243,7 @@ function laudosRender_() {
             <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
             <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
               ${x.anexoUrl?`<a href="${escHtml(safeUrl(x.anexoUrl))}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
-              <button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>
+              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>`}
               ${['ESTOQUE','AGUARDANDO_LAUDO'].includes(x.statusLocal) && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}')">🗑️ Descartar</button>` : ''}
             </td>
           </tr>`;
@@ -16270,7 +16275,7 @@ function laudosFiltrarLista_() {
 // serial, uma com o resumo por item (a mesma conta de consistência com o saldo da tela)
 // e uma com os filtros usados. ──
 const LAUDOS_LOCAL_TXT = { ESTOQUE: 'Estoque', COM_COLAB: 'Com colaborador', AGUARDANDO_LAUDO: 'Aguardando laudo', ENVIADO_LAUDO: 'Enviado para laudo', DESCARTE: 'Descarte' };
-const LAUDOS_STATUS_TXT = { OK: 'OK', ALERTA_30: 'Alerta 30 dias', VENCIDO: 'Vencido', SEM_LAUDO: 'Sem laudo', PENDENTE_CADASTRO: 'Pendente de cadastro' };
+const LAUDOS_STATUS_TXT = { OK: 'OK', ALERTA_30: 'Alerta 30 dias', VENCIDO: 'Vencido', SEM_LAUDO: 'Sem laudo', AGUARDANDO_LAUDO: 'Aguardando laudo', PENDENTE_CADASTRO: 'Pendente de cadastro' };
 
 // Monta as linhas das abas sem tocar na tela.
 function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincipalId = null } = {}) {
