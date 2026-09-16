@@ -5322,6 +5322,26 @@ const VIEW_TITLES = {
   'consulta-itens':          ['Consulta de Itens','/ Detalhes'],
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
   'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'],
+  // Telas do menu que não tinham título (o topo mostrava o código da tela)
+  'enel-atendimento':['Materiais Cliente','/ Atendimento Material'],
+  'enel-sol-materiais':['Materiais Cliente','/ Solicitações ENEL'],
+  'enel-entrada':['Materiais Cliente','/ Entrada Estoque'],
+  'enel-saida':['Materiais Cliente','/ Saída Estoque'],
+  'enel-medidores':['Materiais Cliente','/ Controle De Medidores'],
+  'enel-transferencia':['Materiais Cliente','/ Transferência de Seriais'],
+  'enel-sucata':['Materiais Cliente','/ Sucata'],
+  'enel-baixa-auto':['Materiais Cliente','/ Baixa Automática'],
+  'enel-baixas':['Materiais Cliente','/ Baixas por TdC'],
+  'enel-controle':['Materiais Cliente','/ Controle De Materiais'],
+  'enel-estoque':['Materiais Cliente','/ Consulta Estoque'],
+  'enel-inventario':['Materiais Cliente','/ Inventário ENEL'],
+  'enel-consulta-saidas':['Materiais Cliente','/ Consulta Saídas'],
+  'enel-cadastro':['Materiais Cliente','/ Cadastrar Material'],
+  'residuos-armazem':['Resíduos por Base',''],
+  'catalogo-armazem':['Catálogo por Armazém',''],
+  'equipes':['Equipes',''],
+  'links-externos':['Links Externos',''],
+  'filiais':['Gestão de Filiais',''],
 };
 
 function showView(nome, btnEl) {
@@ -5408,6 +5428,7 @@ function onViewLoad(nome) {
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
   if (nome === 'enel-inventario')    carregarInventarioEnel();
+  if (nome === 'enel-cadastro')      carregarMateriaisEnel();
   if (nome === 'logistica')          { carregarDestinosEntrega(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
