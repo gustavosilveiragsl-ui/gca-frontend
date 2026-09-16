@@ -3591,6 +3591,7 @@ window.addEventListener('pageshow', function(e) {
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
             <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" data-perm-btn="limpar_descartes" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
+            <button class="btn btn-ghost" onclick="abrirValoresLaudo()">💲 Valores de Laudo</button>
             <button class="btn btn-ghost" style="color:#16a34a;border-color:#16a34a" onclick="laudosExportarExcel()" title="Exporta o que está na tela, com os filtros aplicados">📊 Exportar Excel</button>
             <button class="btn btn-ghost" onclick="toggleConfigNR10()">⚙️ Configurações</button>
           </div>
@@ -3888,6 +3889,7 @@ window.addEventListener('pageshow', function(e) {
             <div class="card-header">
               <div><div class="card-title">📦 Remessas para Laudo</div><div class="card-sub">Controle do que foi enviado à empresa de laudos elétricos e o que já retornou</div></div>
               <div class="card-actions">
+                <button class="btn btn-ghost" style="font-size:11px" onclick="abrirValoresLaudo()">💲 Valores de Laudo</button>
                 <label style="font-size:11px;color:var(--text-3);display:flex;align-items:center;gap:6px">
                   Alertar após
                   <input class="form-input" type="number" min="1" id="remPrazoDias" style="width:60px;font-size:11px" onchange="salvarPrazoRemessa()">
@@ -5002,9 +5004,8 @@ window.addEventListener('pageshow', function(e) {
         <label class="form-label">Observação</label>
         <input id="remNovaObservacao" class="form-input" placeholder="Opcional...">
       </div>
-      <div>
-        <label class="form-label">Valor pago (R$) <span style="color:var(--text-3);font-weight:400;text-transform:none">(se já souber, senão preencha depois)</span></label>
-        <input type="number" step="0.01" min="0" id="remNovaValorPago" class="form-input" placeholder="Opcional...">
+      <div style="font-size:11px;color:var(--text-2);background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px">
+        💲 O valor dos laudos é calculado automaticamente pela <b>Tabela de valores de laudo</b> (itens por par: cada peça soma metade do valor do par).
       </div>
       <div>
         <label class="form-label">Fotos da remessa * <span style="color:var(--text-3);font-weight:400;text-transform:none">(pelo menos 1 · até 10 — o que está sendo enviado)</span></label>
@@ -5016,6 +5017,39 @@ window.addEventListener('pageshow', function(e) {
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalNovaRemessa').classList.add('hidden')">Cancelar</button>
       <button class="btn btn-primary" id="remNovaBtnCriar" onclick="confirmarNovaRemessa()">📦 Criar Remessa</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TABELA DE VALORES DE LAUDO -->
+<div class="modal-overlay hidden" id="modalValoresLaudo">
+  <div class="modal-box modal-alto" style="max-width:780px;width:100%">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">💲 Tabela de valores de laudo</div>
+        <div style="font-size:11px;color:var(--text-3)">Valor fixo do ensaio NR10 de cada item. Itens controlados por par: informe o valor do PAR (cada peça enviada soma metade).</div>
+      </div>
+      <button class="modal-close" onclick="fecharValoresLaudo()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="vlBusca" class="form-input" style="flex:1;min-width:180px" placeholder="Buscar item ou código..." oninput="renderValoresLaudo()">
+        <button class="btn btn-ghost" style="font-size:11px" onclick="exportarModeloValoresLaudo()">📥 Baixar planilha modelo</button>
+        <button class="btn btn-ghost" style="font-size:11px" data-perm-btn="inserir_laudo" onclick="document.getElementById('vlArquivo').click()">📤 Importar planilha</button>
+        <input type="file" id="vlArquivo" accept=".xlsx,.xls,.csv" class="hidden" onchange="importarValoresLaudo(this)">
+      </div>
+      <div id="vlResumo" style="font-size:11px;color:var(--text-3)"></div>
+      <div style="overflow:auto;max-height:430px">
+        <table>
+          <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Un.</th><th style="text-align:right;width:160px">Valor do laudo (R$)</th></tr></thead>
+          <tbody id="vlBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <span id="vlAlteracoes" style="font-size:11px;color:var(--yellow);margin-right:auto"></span>
+      <button class="btn btn-ghost" onclick="fecharValoresLaudo()">Fechar</button>
+      <button class="btn btn-primary" id="vlBtnSalvar" data-perm-btn="inserir_laudo" onclick="salvarValoresLaudo(this)">💾 Salvar valores</button>
     </div>
   </div>
 </div>
@@ -5040,9 +5074,9 @@ window.addEventListener('pageshow', function(e) {
           <label class="form-label">Data de envio</label>
           <input type="date" id="remDetDataEnvio" class="form-input">
         </div>
-        <div style="flex:1;min-width:120px">
-          <label class="form-label">Valor pago (R$)</label>
-          <input type="number" step="0.01" min="0" id="remDetValorPago" class="form-input">
+        <div style="flex:1;min-width:130px">
+          <label class="form-label">Valor dos laudos</label>
+          <div id="remDetValorTotal" class="form-input" style="background:var(--bg);font-weight:700;color:var(--text-1)" title="Soma da Tabela de valores de laudo">—</div>
         </div>
         <div style="flex:2;min-width:180px">
           <label class="form-label">Observação</label>
@@ -5053,11 +5087,12 @@ window.addEventListener('pageshow', function(e) {
           <button class="btn btn-ghost" style="font-size:11px;color:#ef4444;border-color:#ef4444" onclick="excluirRemessaInteira()">🗑️ Excluir Remessa</button>
         </div>
       </div>
+      <div id="remDetValorAviso" class="hidden" style="font-size:11px;color:var(--yellow);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>
       <div id="remDetAcoesItens" style="display:flex;justify-content:flex-end;margin-bottom:8px"></div>
       <div style="overflow-x:auto">
         <table>
           <thead><tr>
-            <th>Item</th><th style="text-align:center">Serial</th><th>Status</th><th>Retorno</th><th></th>
+            <th>Item</th><th style="text-align:center">Serial</th><th style="text-align:right">Valor</th><th>Status</th><th>Retorno</th><th></th>
           </tr></thead>
           <tbody id="remDetItensBody"></tbody>
         </table>
@@ -18169,7 +18204,6 @@ async function abrirModalNovaRemessa() {
   const ultimaEmpresa = _remessasData[0]?.empresa || '';
   document.getElementById('remNovaEmpresa').value = ultimaEmpresa;
   document.getElementById('remNovaObservacao').value = '';
-  document.getElementById('remNovaValorPago').value = '';
   _remNovaFotos.forEach(f => URL.revokeObjectURL(f.url));
   _remNovaFotos = [];
   remNovaRenderFotos();
@@ -18187,7 +18221,6 @@ async function confirmarNovaRemessa() {
   const colaborador_id = document.getElementById('remNovaColaborador').value;
   const empresa = document.getElementById('remNovaEmpresa').value.trim();
   const observacao = document.getElementById('remNovaObservacao').value.trim();
-  const valor_pago = document.getElementById('remNovaValorPago').value;
 
   if (!data_envio || !colaborador_id || !empresa) { toast('Preencha data, empresa e quem levou','warn'); return; }
   if (!selecionados.length) { toast('Nenhum item selecionado','warn'); return; }
@@ -18199,7 +18232,6 @@ async function confirmarNovaRemessa() {
   const fd = new FormData();
   fd.append('dados', JSON.stringify({
     data_envio, empresa, colaborador_id, observacao: observacao || null,
-    valor_pago: valor_pago || null,
     itens: selecionados.map(r => ({ id_ativo: r.id_ativo })),
   }));
   _remNovaFotos.forEach((f, i) => fd.append('fotos', f.blob, `foto_${i + 1}.jpg`));
@@ -18235,7 +18267,14 @@ function abrirDetalheRemessa(id) {
   document.getElementById('remDetInfo').textContent = `${r.empresa} · Enviado em ${formatarData(r.data_envio)} por ${r.nome_colaborador||'—'}`;
   document.getElementById('remDetEmpresa').value = r.empresa || '';
   document.getElementById('remDetDataEnvio').value = r.data_envio || '';
-  document.getElementById('remDetValorPago').value = r.valor_pago != null ? r.valor_pago : '';
+  document.getElementById('remDetValorTotal').textContent = r.valor_pago != null ? `R$ ${Number(r.valor_pago).toFixed(2)}` : '—';
+  const semValor = (r.itens || []).filter(i => i.valor_laudo == null).length;
+  const avisoValor = document.getElementById('remDetValorAviso');
+  avisoValor.classList.toggle('hidden', !semValor);
+  avisoValor.innerHTML = semValor
+    ? `⚠️ ${semValor} serial(is) sem valor na Tabela de valores de laudo — ficaram fora do total.
+       <button class="row-action" onclick="remRecalcularValores()">↻ Recalcular pela tabela</button>
+       <button class="row-action" onclick="abrirValoresLaudo()">💲 Abrir tabela</button>` : '';
   document.getElementById('remDetObservacao').value = r.observacao || '';
 
   const statusMap = { PENDENTE: ['#eab308','Pendente'], APROVADO: ['#22c55e','Aprovado'], REPROVADO: ['#ef4444','Reprovado'] };
@@ -18244,6 +18283,7 @@ function abrirDetalheRemessa(id) {
     return `<tr>
       <td class="td-main">${escHtml(it.item||'—')}</td>
       <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(it.serial||'—')}</td>
+      <td style="text-align:right;font-size:11px;white-space:nowrap">${it.valor_laudo != null ? 'R$ ' + Number(it.valor_laudo).toFixed(2) : '<span style="color:var(--yellow)">sem valor</span>'}</td>
       <td><span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:2px 8px">${label}</span></td>
       <td style="font-size:11px;color:var(--text-3)">${it.data_retorno ? formatarData(it.data_retorno) : '—'}</td>
       <td>
@@ -18336,6 +18376,180 @@ async function confirmarAddItensRemessa() {
   } else toast(res?.erro || 'Erro ao adicionar itens', 'error');
 }
 
+// ── Recalcula os seriais da remessa que ficaram sem valor (item cadastrado na tabela depois) ──
+async function remRecalcularValores() {
+  if (!_remDetalheAbertaId) return;
+  const res = await api(`/laudos/remessas/${encodeURIComponent(_remDetalheAbertaId)}/recalcular-valores`, { method: 'POST' });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao recalcular', 'error'); return; }
+  toast(res.preenchidos
+    ? `${res.preenchidos} serial(is) receberam valor${res.sem_valor ? ` · ${res.sem_valor} ainda sem valor na tabela` : ''}`
+    : 'Nenhum desses itens está na tabela ainda — cadastre o valor e recalcule.', res.preenchidos ? 'success' : 'warn', 6000);
+  await reabrirDetalheRemessaAtualizado();
+}
+
+// ═══════════════════════════════════════════
+// TABELA DE VALORES DE LAUDO — valor fixo do ensaio por item (a remessa soma sozinha)
+// ═══════════════════════════════════════════
+let _vlItens = [];
+let _vlEditados = {}; // item_id → valor digitado ('' = sem valor)
+
+async function abrirValoresLaudo() {
+  document.getElementById('modalValoresLaudo').classList.remove('hidden');
+  document.getElementById('vlBusca').value = '';
+  document.getElementById('vlBody').innerHTML = '<tr><td colspan="4"><div class="spinner" style="margin:14px auto"></div></td></tr>';
+  _vlEditados = {};
+  vlAtualizarResumo();
+  const res = await api('/laudos/valores-laudo');
+  if (!res?.ok) {
+    document.getElementById('vlBody').innerHTML = `<tr><td colspan="4" style="color:var(--red);font-size:12px">${escHtml(res?.erro || 'Erro ao carregar a tabela')}</td></tr>`;
+    return;
+  }
+  _vlItens = res.data || [];
+  renderValoresLaudo();
+  aplicarPermissoesMenu();
+}
+
+function fecharValoresLaudo() {
+  if (Object.keys(_vlEditados).length && !confirm('Há valores alterados que não foram salvos. Fechar mesmo assim?')) return;
+  _vlEditados = {};
+  document.getElementById('modalValoresLaudo').classList.add('hidden');
+}
+
+function vlValorAtual(it) {
+  return Object.prototype.hasOwnProperty.call(_vlEditados, it.item_id) ? _vlEditados[it.item_id] : (it.valor != null ? String(it.valor) : '');
+}
+
+function renderValoresLaudo() {
+  const q = (document.getElementById('vlBusca').value || '').toLowerCase();
+  const lista = q ? _vlItens.filter(i => (i.descricao || '').toLowerCase().includes(q) || (i.codigo || '').toLowerCase().includes(q)) : _vlItens;
+  const pode = temPermissao('inserir_laudo');
+  document.getElementById('vlBody').innerHTML = lista.length ? lista.map(it => {
+    const par = String(it.un_med || '').toUpperCase() === 'PAR';
+    const editado = Object.prototype.hasOwnProperty.call(_vlEditados, it.item_id);
+    return `<tr>
+      <td class="td-main">${escHtml(it.descricao || '—')}</td>
+      <td class="td-mono" style="font-size:11px">${escHtml(it.codigo || '—')}</td>
+      <td style="text-align:center;font-size:11px">${escHtml(it.un_med || 'UN')}${par ? '<div style="font-size:9px;color:var(--text-3)">valor do par</div>' : ''}</td>
+      <td style="text-align:right">
+        <input type="number" min="0" step="0.01" class="form-input" data-item="${escHtml(it.item_id)}"
+          style="width:140px;text-align:right;display:inline-block;${editado ? 'border-color:var(--yellow)' : ''}"
+          value="${escHtml(vlValorAtual(it))}" placeholder="sem valor" ${pode ? '' : 'disabled'}
+          oninput="vlEditar('${escJs(it.item_id)}', this.value); this.style.borderColor = 'var(--yellow)'">
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="4"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum item que exige ensaio encontrado</div></div></td></tr>';
+  vlAtualizarResumo();
+}
+
+function vlEditar(itemId, valor) {
+  const it = _vlItens.find(i => i.item_id === itemId);
+  const original = it?.valor != null ? String(it.valor) : '';
+  const v = String(valor ?? '').trim();
+  if (v === original || (v !== '' && original !== '' && Number(v) === Number(original))) delete _vlEditados[itemId];
+  else _vlEditados[itemId] = v;
+  vlAtualizarResumo();
+}
+
+function vlAtualizarResumo() {
+  const total = _vlItens.length;
+  const comValor = _vlItens.filter(i => vlValorAtual(i) !== '').length;
+  const resumo = document.getElementById('vlResumo');
+  if (resumo) resumo.textContent = total ? `${comValor} de ${total} item(ns) com valor cadastrado` : '';
+  const alt = Object.keys(_vlEditados).length;
+  const txt = document.getElementById('vlAlteracoes');
+  if (txt) txt.textContent = alt ? `${alt} alteração(ões) não salva(s)` : '';
+}
+
+async function salvarValoresLaudo(btn) {
+  const valores = [];
+  for (const [item_id, v] of Object.entries(_vlEditados)) {
+    if (v === '') { valores.push({ item_id, valor: null }); continue; }
+    const n = Number(String(v).replace(',', '.'));
+    if (!Number.isFinite(n) || n < 0) {
+      const it = _vlItens.find(i => i.item_id === item_id);
+      toast(`Valor inválido em ${it?.descricao || item_id}`, 'warn');
+      return;
+    }
+    valores.push({ item_id, valor: n });
+  }
+  if (!valores.length) { toast('Nenhuma alteração para salvar', 'info'); return; }
+  btn.disabled = true;
+  const res = await api('/laudos/valores-laudo', { method: 'PUT', body: JSON.stringify({ valores }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar', 'error'); return; }
+  toast(`Tabela salva: ${res.salvos} valor(es)${res.removidos ? `, ${res.removidos} removido(s)` : ''}`, 'success');
+  await abrirValoresLaudo();
+}
+
+function exportarModeloValoresLaudo() {
+  if (!_vlItens.length) { toast('A tabela ainda não carregou', 'warn'); return; }
+  gcaCarregarSheetJS(() => {
+    const linhas = [['Código', 'Item', 'Unidade', 'Valor do laudo (R$)'],
+      ..._vlItens.map(i => { const v = vlValorAtual(i); return [i.codigo || '', i.descricao || '', i.un_med || 'UN', v === '' ? '' : Number(v)]; })];
+    const ws = XLSX.utils.aoa_to_sheet(linhas);
+    ws['!cols'] = [{ wch: 16 }, { wch: 44 }, { wch: 10 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Valores de laudo');
+    XLSX.writeFile(wb, 'valores_de_laudo.xlsx');
+  });
+}
+
+// Converte o texto da planilha em número: "1.234,56", "150,50", "150.50" e "R$ 80" funcionam.
+function vlNumeroPlanilha(bruto) {
+  if (typeof bruto === 'number') return bruto;
+  let t = String(bruto ?? '').replace(/R\$|\s/gi, '');
+  if (!t) return NaN;
+  if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+  return Number(t);
+}
+
+// Casa cada linha pelo código do item (ou pela descrição exata, se a planilha não tiver código)
+// e só preenche a tela — a pessoa confere e clica em Salvar.
+function vlAplicarPlanilha(linhas) {
+  const norm = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim();
+  const cab = (linhas[0] || []).map(norm);
+  const iCod = cab.findIndex(c => c.startsWith('cod'));
+  const iDesc = cab.findIndex(c => c === 'item' || c.startsWith('descri') || c === 'material');
+  const iVal = cab.findIndex(c => c.includes('valor') || c.includes('preco'));
+  if (iVal < 0 || (iCod < 0 && iDesc < 0)) return { erro: 'A planilha precisa das colunas "Código" (ou "Item") e "Valor do laudo" na primeira linha.' };
+  const porCodigo = {}, porDesc = {};
+  _vlItens.forEach(i => { if (i.codigo) porCodigo[norm(i.codigo)] = i; if (i.descricao) porDesc[norm(i.descricao)] = i; });
+  let aplicados = 0;
+  const naoEncontrados = [], invalidos = [];
+  linhas.slice(1).forEach(l => {
+    const cod = iCod >= 0 ? norm(l[iCod]) : '';
+    const desc = iDesc >= 0 ? norm(l[iDesc]) : '';
+    if (!cod && !desc) return;
+    const it = (cod && porCodigo[cod]) || (desc && porDesc[desc]);
+    if (!it) { naoEncontrados.push(String((iCod >= 0 && l[iCod]) || l[iDesc] || '')); return; }
+    const bruto = l[iVal];
+    if (bruto === '' || bruto == null) return; // célula vazia não apaga o que já existe
+    const valor = vlNumeroPlanilha(bruto);
+    if (!Number.isFinite(valor) || valor < 0) { invalidos.push(it.descricao); return; }
+    vlEditar(it.item_id, String(Math.round(valor * 100) / 100));
+    aplicados++;
+  });
+  return { aplicados, naoEncontrados, invalidos };
+}
+
+function importarValoresLaudo(input) {
+  const arquivo = input.files?.[0];
+  input.value = '';
+  if (!arquivo) return;
+  gcaCarregarSheetJS(async () => {
+    try {
+      const wb = XLSX.read(await arquivo.arrayBuffer(), { type: 'array' });
+      const linhas = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+      const r = vlAplicarPlanilha(linhas);
+      if (r.erro) { toast(r.erro, 'error', 8000); return; }
+      renderValoresLaudo();
+      toast(`${r.aplicados} valor(es) carregado(s) da planilha — confira e clique em Salvar.` +
+        (r.naoEncontrados.length ? ` ${r.naoEncontrados.length} linha(s) sem item correspondente.` : '') +
+        (r.invalidos.length ? ` ${r.invalidos.length} valor(es) inválido(s).` : ''), r.aplicados ? 'success' : 'warn', 9000);
+    } catch (e) { toast('Não foi possível ler a planilha: ' + e.message, 'error', 8000); }
+  });
+}
+
 async function reabrirDetalheRemessaAtualizado() {
   const id = _remDetalheAbertaId;
   const data = await api('/laudos/remessas');
@@ -18348,12 +18562,11 @@ async function salvarEdicaoRemessa() {
   if (!_remDetalheAbertaId) return;
   const empresa = document.getElementById('remDetEmpresa').value.trim();
   const data_envio = document.getElementById('remDetDataEnvio').value;
-  const valor_pago = document.getElementById('remDetValorPago').value;
   const observacao = document.getElementById('remDetObservacao').value.trim();
 
   const res = await api(`/laudos/remessas/${_remDetalheAbertaId}`, {
     method: 'PUT',
-    body: JSON.stringify({ empresa, data_envio, valor_pago: valor_pago || null, observacao: observacao || null }),
+    body: JSON.stringify({ empresa, data_envio, observacao: observacao || null }),
   });
   if (res?.ok) {
     toast('Remessa atualizada!','success');
