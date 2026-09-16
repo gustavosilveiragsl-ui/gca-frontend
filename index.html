@@ -648,6 +648,7 @@ window.addEventListener('pageshow', function(e) {
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon">📋</span> Inventário ENEL</button>
           <button class="nav-item" data-view="enel-consulta-saidas" data-perm="ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon">📤</span> Consulta Saídas</button>
           <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
         </div>
@@ -760,6 +761,14 @@ window.addEventListener('pageshow', function(e) {
             <div style="font-size:12px;color:var(--text-2)" id="dashInventarioTexto">—</div>
           </div>
           <button class="btn btn-primary" style="font-size:11px" onclick="showView('inventario')">Ver Inventário</button>
+        </div>
+        <div id="dashInventarioEnelAlerta" class="hidden" style="margin-bottom:16px;border:1px solid #8b5cf6;background:rgba(139,92,246,.08);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="font-size:22px">⚡</div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-size:13px;font-weight:700;color:#a78bfa">Inventário ENEL pendente</div>
+            <div style="font-size:12px;color:var(--text-2)" id="dashInventarioEnelTexto">—</div>
+          </div>
+          <button class="btn btn-primary" style="font-size:11px;background:#8b5cf6;border-color:#8b5cf6" onclick="showView('enel-inventario')">Ver Inventário ENEL</button>
         </div>
         <div class="card">
           <div class="card-header">
@@ -2579,6 +2588,90 @@ window.addEventListener('pageshow', function(e) {
       </div>
 
       <!-- ENTRADA ESTOQUE -->
+      <div class="view" id="view-enel-inventario">
+        <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Entregues</span><div class="kpi-icon">✅</div></div>
+            <div class="kpi-value" id="ivenKpiEntregues">—</div>
+            <div class="kpi-delta up">meses concluídos</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Mês atual</span><div class="kpi-icon">📅</div></div>
+            <div class="kpi-value" id="ivenKpiMes" style="font-size:18px">—</div>
+            <div class="kpi-delta" style="color:#a78bfa">prazo até o dia 10</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Atrasados</span><div class="kpi-icon">🔴</div></div>
+            <div class="kpi-value" id="ivenKpiAtrasados">—</div>
+            <div class="kpi-delta warn">fora do prazo</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top"><span class="kpi-label">Acurácia média</span><div class="kpi-icon">🎯</div></div>
+            <div class="kpi-value" id="ivenKpiAcuracia">—</div>
+            <div class="kpi-delta">dos meses concluídos</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px;border:1px solid rgba(139,92,246,.35)" data-perm-btn="inventario_gerar_link">
+          <div class="card-header"><div><div class="card-title">⚡ Link de contagem do estoque ENEL</div><div class="card-sub">Um ciclo por mês. Entram todos os materiais ENEL da filial, inclusive os zerados. Material com serial é contado bipando ou por caixa fechada.</div></div></div>
+          <div style="padding:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" style="background:#8b5cf6;border-color:#8b5cf6" onclick="ivenGerarLink()">🔗 Gerar link do mês</button>
+            <span style="font-size:11px;color:var(--text-3)">Depois de gerar, use "Iniciar contagem" no card do mês para congelar o estoque ENEL e liberar o link.</span>
+          </div>
+          <div id="ivenLinkGerado" class="hidden" style="margin:0 16px 16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span id="ivenLinkGeradoTexto" style="flex:1;color:#a78bfa;word-break:break-all"></span>
+            <button class="btn btn-ghost" style="font-size:11px" onclick="ivenCopiarLink()">📋 Copiar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Histórico do Inventário ENEL</div><div class="card-sub">Mês a mês, com acurácia e divergência de seriais</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select class="form-input" id="ivenFiltroMes" style="width:150px;font-size:11px" onchange="renderInventarioEnel()">
+                <option value="">Todos os meses</option>
+              </select>
+              <button class="btn btn-ghost" onclick="carregarInventarioEnel()">↻</button>
+            </div>
+          </div>
+          <div class="inv-grid-hist" id="ivenHistBody"><div class="spinner" style="margin:20px auto"></div></div>
+        </div>
+      </div>
+
+      <!-- MODAL: DETALHE DO INVENTÁRIO ENEL -->
+      <div class="modal-overlay hidden" id="modalIvenDetalhe">
+        <div class="modal-box modal-alto" style="max-width:1120px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title">⚡ Detalhe do Inventário ENEL</div><div style="font-size:11px;color:var(--text-3)" id="ivenDetInfo"></div></div>
+            <button class="modal-close" onclick="document.getElementById('modalIvenDetalhe').classList.add('hidden')">×</button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+            <div id="ivenDetResumo" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <div id="ivenDetSeriaisBox" class="hidden" style="border:1px solid rgba(139,92,246,.35);border-radius:var(--radius-md);padding:10px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
+                <div style="font-size:12px;font-weight:700;color:var(--text-1)" id="ivenDetSeriaisTitulo">—</div>
+                <button class="btn btn-ghost" style="font-size:11px" onclick="document.getElementById('ivenDetSeriaisBox').classList.add('hidden')">Fechar lista</button>
+              </div>
+              <div style="overflow:auto;max-height:320px">
+                <table>
+                  <thead><tr><th>Material</th><th>Serial</th><th>Situação</th><th>Detalhe</th><th>Lido por</th></tr></thead>
+                  <tbody id="ivenDetSeriaisBody"></tbody>
+                </table>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Material</th><th style="text-align:center">Saldo na contagem</th><th style="text-align:center">Contado</th>
+                  <th>Diverg.</th><th>Seriais</th><th>Contado por</th><th></th>
+                </tr></thead>
+                <tbody id="ivenDetItensBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="view" id="view-enel-entrada">
         <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
@@ -5245,7 +5338,7 @@ function showView(nome, btnEl) {
   if (nome !== 'logistica') pararAnimacaoMapa();
   // Saindo do Inventário, para o acompanhamento da contagem — senão fica batendo na API a
   // cada 20s pra atualizar um modal que ninguém está vendo.
-  if (nome !== 'inventario') fecharProgressoInventario();
+  if (nome !== 'inventario' && nome !== 'enel-inventario') fecharProgressoInventario();
   // Se sair da tela de atendimento com atendimento ativo, cancela
   const viewAtual = document.querySelector('.view.active')?.id;
   if (viewAtual === 'view-atendimento' && nome !== 'atendimento' && ATEND.ativo) {
@@ -5314,6 +5407,7 @@ function onViewLoad(nome) {
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
   if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
+  if (nome === 'enel-inventario')    carregarInventarioEnel();
   if (nome === 'logistica')          { carregarDestinosEntrega(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
@@ -6170,13 +6264,30 @@ async function carregarDashboard() {
 
 async function carregarAlertaInventarioDash() {
   const box = document.getElementById('dashInventarioAlerta');
-  if (!box) return;
-  const res = await api('/inventario/dashboard-pendencias');
-  if (!res?.ok || !res.pendentes?.length) { box.classList.add('hidden'); return; }
-  const nomes = res.pendentes.map(p => p.nome_armazem).join(', ');
-  document.getElementById('dashInventarioTexto').textContent =
-    `${res.pendentes.length} armazém(ns) ainda não entregaram: ${nomes}. Prazo: mais ${res.diasRestantes} dia(s) (até dia 10).`;
-  box.classList.remove('hidden');
+  const boxEnel = document.getElementById('dashInventarioEnelAlerta');
+  if (!box && !boxEnel) return;
+  // Armazéns e estoque ENEL são cobrados em linhas separadas, cada um com a sua cor.
+  const [res, resEnel] = await Promise.all([
+    api('/inventario/dashboard-pendencias'),
+    api('/inventario-enel/dashboard-pendencias'),
+  ]);
+  if (box) {
+    if (!res?.ok || !res.pendentes?.length) box.classList.add('hidden');
+    else {
+      const nomes = res.pendentes.map(p => p.nome_armazem).join(', ');
+      document.getElementById('dashInventarioTexto').textContent =
+        `${res.pendentes.length} armazém(ns) ainda não entregaram: ${nomes}. Prazo: mais ${res.diasRestantes} dia(s) (até dia 10).`;
+      box.classList.remove('hidden');
+    }
+  }
+  if (boxEnel) {
+    if (!resEnel?.ok || !resEnel.pendente) boxEnel.classList.add('hidden');
+    else {
+      document.getElementById('dashInventarioEnelTexto').textContent =
+        `O estoque ENEL (materiais do cliente) ainda não entregou o inventário do mês. Prazo: mais ${resEnel.diasRestantes} dia(s) (até dia 10).`;
+      boxEnel.classList.remove('hidden');
+    }
+  }
 }
 
 async function carregarKPIs() {
@@ -11799,8 +11910,10 @@ function agruparPorFamilia(nomes) {
 // modal estiver aberto.
 let _invProgId = null, _invProgTimer = null;
 
-async function abrirProgressoInventario(id) {
+let _invProgBase = '/inventario';
+async function abrirProgressoInventario(id, base = '/inventario') {
   _invProgId = id;
+  _invProgBase = base;
   document.getElementById('invProgBody').innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
   document.getElementById('modalInvProgresso').classList.remove('hidden');
   await carregarProgressoInventario();
@@ -11816,7 +11929,7 @@ function fecharProgressoInventario() {
 
 async function carregarProgressoInventario() {
   if (!_invProgId) return;
-  const res = await api(`/inventario/${_invProgId}/progresso`);
+  const res = await api(`${_invProgBase}/${_invProgId}/progresso`);
   if (!res?.ok) { document.getElementById('invProgBody').innerHTML = `<div style="color:var(--text-3);font-size:12px">${escHtml(res?.erro || 'Erro ao carregar')}</div>`; return; }
 
   const inv = res.inventario;
@@ -11836,7 +11949,7 @@ async function carregarProgressoInventario() {
   document.getElementById('invProgBody').innerHTML = `
     <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
       <div style="font-size:26px;font-weight:800;color:var(--accent-text)">${res.percentual}%</div>
-      <div style="font-size:12px;color:var(--text-2)">${res.contados} de ${res.total} itens contados</div>
+      <div style="font-size:12px;color:var(--text-2)">${res.contados} de ${res.total} itens contados${res.seriais_lidos != null ? ` · ${res.seriais_lidos} serial(is) lido(s)` : ''}</div>
     </div>
     <div class="inv-prog-barra" style="height:10px"><div class="inv-prog-fill" style="width:${res.percentual}%"></div></div>
     <div class="inv-prog-txt" style="margin-bottom:16px">
@@ -11986,6 +12099,242 @@ async function verPdfInventario(id) {
     if (!r.ok) { toast('Erro ao gerar PDF', 'error'); return; }
     const blob = await r.blob();
     window.open(URL.createObjectURL(blob), '_blank');
+  } catch { toast('Erro ao gerar PDF', 'error'); }
+}
+
+// ═══════════════════════════════════════════
+// INVENTÁRIO ENEL — estoque de materiais do cliente, um ciclo por filial por mês.
+// Mesmo fluxo do inventário dos armazéns; seriais contados por bipagem ou caixa fechada e
+// divergência de serial só como relatório (faltando / sobrando).
+// ═══════════════════════════════════════════
+let _ivenHist = [];
+let _ivenDet = null;
+
+async function carregarInventarioEnel() {
+  const cont = document.getElementById('ivenHistBody');
+  if (cont) cont.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  const res = await api('/inventario-enel/historico');
+  if (res && !res.ok) toast(res.erro || 'Erro ao carregar o inventário ENEL', 'error');
+  _ivenHist = res?.data || [];
+
+  const entregues = _ivenHist.filter(r => r.status === 'ENTREGUE');
+  const atrasados = _ivenHist.filter(r => r.status !== 'ENTREGUE' && r.bloqueado);
+  const comAcuracia = entregues.filter(r => r.acuracia_pct != null);
+  const media = comAcuracia.length ? comAcuracia.reduce((t, r) => t + Number(r.acuracia_pct), 0) / comAcuracia.length : null;
+  const hoje = new Date();
+  const mesAtual = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`;
+  const doMes = _ivenHist.find(r => r.ano_mes === mesAtual);
+  document.getElementById('ivenKpiEntregues').textContent = entregues.length;
+  document.getElementById('ivenKpiAtrasados').textContent = atrasados.length;
+  document.getElementById('ivenKpiAcuracia').textContent = media != null ? media.toFixed(1) + '%' : '—';
+  document.getElementById('ivenKpiMes').textContent = !doMes
+    ? (res?.tem_materiais === false ? 'Sem materiais' : 'Não gerado')
+    : doMes.status === 'ENTREGUE' ? '✅ Entregue'
+    : doMes.bloqueado ? '🔴 Atrasado'
+    : doMes.congelado ? '🔒 Contando' : '⏳ Aguardando início';
+
+  const sel = document.getElementById('ivenFiltroMes');
+  if (sel) {
+    const atual = sel.value;
+    const meses = [...new Set(_ivenHist.map(r => r.ano_mes).filter(Boolean))].sort().reverse();
+    sel.innerHTML = '<option value="">Todos os meses</option>' + meses.map(m => `<option value="${escHtml(m)}">${escHtml(formatarMesAno(m))}</option>`).join('');
+    sel.value = meses.includes(atual) ? atual : '';
+  }
+  renderInventarioEnel();
+}
+
+function renderInventarioEnel() {
+  const cont = document.getElementById('ivenHistBody');
+  if (!cont) return;
+  const mes = document.getElementById('ivenFiltroMes')?.value || '';
+  const lista = mes ? _ivenHist.filter(r => r.ano_mes === mes) : _ivenHist;
+  if (!lista.length) {
+    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">⚡</div><div class="es-title">${mes ? 'Nenhum inventário ENEL em ' + escHtml(formatarMesAno(mes)) : 'Nenhum inventário ENEL registrado ainda'}</div></div>`;
+    return;
+  }
+  const badge = (r) => r.status === 'ENTREGUE' ? '<span class="log-badge log-badge-verde">✅ Entregue</span>'
+    : r.bloqueado ? '<span class="log-badge" style="color:var(--red);border:1px solid var(--red)">🔴 Atrasado</span>'
+    : r.congelado ? '<span class="log-badge" style="color:#a78bfa;border:1px solid #a78bfa">🔒 Contando</span>'
+    : '<span class="log-badge log-badge-azul">⏳ Aguardando início</span>';
+
+  cont.innerHTML = lista.map((r, i) => {
+    const classe = r.status === 'ENTREGUE' ? 'entregue' : r.bloqueado ? 'atrasado' : 'andamento';
+    const seriais = r.status === 'ENTREGUE'
+      ? `<div class="inv-hist-meta" style="margin-top:4px">Seriais: <b style="color:var(--green)">${r.seriais_conferidos ?? 0}</b> conferidos · <b style="color:#ef4444">${r.seriais_faltando ?? 0}</b> faltando · <b style="color:#f59e0b">${r.seriais_sobrando ?? 0}</b> sobrando</div>` : '';
+    let acoes;
+    if (r.status === 'ENTREGUE') {
+      acoes = `<button class="row-action" onclick="ivenAbrirDetalhe('${escJs(r.id)}')">Ver</button>
+        <button class="row-action" onclick="ivenPdf('${escJs(r.id)}')">📄 PDF</button>`;
+    } else if (r.bloqueado) {
+      acoes = `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="ivenLiberarAtraso('${escJs(r.ano_mes)}')">🔓 Liberar atraso</button>`;
+    } else {
+      acoes = `${r.congelado ? `<button class="row-action" onclick="abrirProgressoInventario('${escJs(r.id)}','/inventario-enel')">📊 Andamento</button>` : ''}
+        ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','Estoque ENEL')">🔗 Link / QR</button>` : ''}
+        ${r.congelado
+          ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="ivenDescongelar('${escJs(r.id)}')">🔓 Descongelar</button>`
+          : r.link ? `<button class="row-action" style="color:#a78bfa;border-color:#a78bfa" data-perm-btn="inventario_gerar_link" onclick="ivenIniciar('${escJs(r.id)}')">▶️ Iniciar contagem</button>` : ''}`;
+    }
+    return `<div class="inv-hist-card ${classe}" style="animation-delay:${Math.min(i * 0.03, 0.3)}s;border-top:3px solid #8b5cf6">
+      <div class="inv-hist-top">
+        <div><div class="inv-hist-armazem">⚡ Estoque ENEL</div><div class="inv-hist-mes">${formatarMesAno(r.ano_mes)}</div></div>
+        ${badge(r)}
+      </div>
+      <div class="inv-hist-stats">
+        <div class="inv-hist-stat"><b>${r.acuracia_pct != null ? Number(r.acuracia_pct).toFixed(1) + '%' : '—'}</b><span>Acurácia</span></div>
+        <div class="inv-hist-stat"><b>${r.qtd_divergencias != null ? r.qtd_divergencias : '—'}</b><span>Divergências</span></div>
+      </div>
+      <div class="inv-hist-meta">${r.finalizado_em ? '✓ ' + formatarData(r.finalizado_em.slice(0, 10)) + ' · ' + escHtml(r.finalizado_por || '') : 'Ainda não finalizado'}</div>
+      ${seriais}
+      <div class="inv-hist-acoes">${acoes}</div>
+    </div>`;
+  }).join('');
+  aplicarPermissoesMenu();
+}
+
+async function ivenGerarLink() {
+  const res = await api('/inventario-enel/gerar-link', { method: 'POST', body: JSON.stringify({}) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao gerar o link', 'error'); return; }
+  const box = document.getElementById('ivenLinkGerado');
+  document.getElementById('ivenLinkGeradoTexto').textContent = res.link;
+  box.dataset.link = res.link;
+  box.classList.remove('hidden');
+  toast('Link do inventário ENEL gerado!', 'success');
+  carregarInventarioEnel();
+}
+
+function ivenCopiarLink() {
+  const link = document.getElementById('ivenLinkGerado').dataset.link;
+  if (link) navigator.clipboard?.writeText(link).then(() => toast('Link copiado!', 'success')).catch(() => {});
+}
+
+async function ivenIniciar(id) {
+  const ok = confirm(
+    'Iniciar a contagem do estoque ENEL?\n\n' +
+    'A partir de agora ficam bloqueadas: entrada, saída, devolução, atendimento ENEL, transferência de seriais e baixa automática — até a contagem terminar.\n\n' +
+    'Quem tiver permissão pode liberar exceções com justificativa.\n' +
+    'O saldo e os seriais de referência passam a ser os de agora.');
+  if (!ok) return;
+  const res = await api(`/inventario-enel/${encodeURIComponent(id)}/iniciar-contagem`, { method: 'POST' });
+  if (res?.ok) { toast(`Contagem iniciada — estoque ENEL congelado (${res.itens_atualizados} materiais)`, 'success'); carregarInventarioEnel(); }
+  else toast(res?.erro || 'Erro ao iniciar a contagem', 'error');
+}
+
+async function ivenDescongelar(id) {
+  if (!confirm('Descongelar o estoque ENEL?\n\nAs movimentações voltam ao normal, mas a contagem continua aberta — o que se mexer daqui para frente a contagem já feita não sabe.\n\nUse só se a operação não puder esperar.')) return;
+  const res = await api(`/inventario-enel/${encodeURIComponent(id)}/descongelar`, { method: 'POST' });
+  if (res?.ok) { toast('Estoque ENEL descongelado', 'success'); carregarInventarioEnel(); }
+  else toast(res?.erro || 'Erro ao descongelar', 'error');
+}
+
+async function ivenLiberarAtraso(anoMes) {
+  if (!confirm('Liberar o inventário ENEL deste mês para contar e finalizar mesmo com o prazo vencido?')) return;
+  const res = await api('/inventario-enel/liberar-atraso', { method: 'POST', body: JSON.stringify({ ano_mes: anoMes }) });
+  if (res?.ok) { toast('Atraso liberado! Gere o link normalmente.', 'success'); carregarInventarioEnel(); }
+  else toast(res?.erro || 'Erro ao liberar', 'error');
+}
+
+async function ivenAbrirDetalhe(id) {
+  const res = await api(`/inventario-enel/${encodeURIComponent(id)}/itens`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar o detalhe', 'error'); return; }
+  _ivenDet = { id, inventario: res.inventario, itens: res.itens };
+  document.getElementById('ivenDetSeriaisBox').classList.add('hidden');
+  ivenRenderDetalhe();
+  document.getElementById('modalIvenDetalhe').classList.remove('hidden');
+}
+
+function ivenRenderDetalhe() {
+  const { inventario: inv, itens } = _ivenDet;
+  document.getElementById('ivenDetInfo').textContent =
+    `Estoque ENEL · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
+  const chip = (txt, cor, acao) => `<button class="row-action" style="color:${cor};border-color:${cor}" ${acao ? `onclick="${acao}"` : 'disabled'}>${txt}</button>`;
+  document.getElementById('ivenDetResumo').innerHTML = [
+    chip(`🎯 Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`, '#a78bfa', null),
+    chip(`⚖️ ${inv.qtd_divergencias ?? 0} de ${inv.qtd_itens_contados ?? itens.length} com divergência`, 'var(--text-2)', null),
+    chip(`✅ ${inv.seriais_conferidos ?? 0} seriais conferidos`, 'var(--green)', "ivenVerSeriais('CONFERIDO')"),
+    chip(`❌ ${inv.seriais_faltando ?? 0} faltando`, '#ef4444', "ivenVerSeriais('FALTANDO')"),
+    chip(`⚠️ ${inv.seriais_sobrando ?? 0} sobrando`, '#f59e0b', "ivenVerSeriais('SOBRANDO')"),
+    chip('📄 PDF', 'var(--accent-text)', `ivenPdf('${escJs(inv.id)}')`),
+  ].join('');
+
+  document.getElementById('ivenDetItensBody').innerHTML = itens.map(it => {
+    const moveu = Number(it.delta_apos_contagem || 0);
+    const libs = it.liberacoes || [];
+    const avisos = [
+      moveu ? `<div style="font-size:10px;color:var(--yellow);margin-top:2px">⚠️ ${moveu > 0 ? '+' : ''}${moveu} após a contagem (liberado)</div>` : '',
+      (libs.length && it.divergencia) ? `<div style="font-size:10px;color:var(--yellow);margin-top:3px">⚠️ ${libs.length} movimentação(ões) liberada(s) durante o inventário</div>` : '',
+      it.divergencia_reclassificada ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px">✔️ Não é divergência — ${escHtml(it.reclassificada_motivo || '')}${it.reclassificada_por ? ' · ' + escHtml(it.reclassificada_por) : ''}</div>` : '',
+    ].join('');
+    const diverg = !it.divergencia ? '<span style="color:var(--text-3);font-size:11px">não</span>'
+      : it.divergencia_reclassificada ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">justificada</span>'
+      : '<span style="color:#ef4444;font-weight:700;font-size:11px">SIM</span>';
+    const s = it.seriais;
+    const seriais = !it.possui_serie ? '<span style="color:var(--text-3);font-size:11px">—</span>'
+      : `<div style="font-size:11px;white-space:nowrap">${s.lidos} lido(s)${s.faltando ? ` · <b style="color:#ef4444">${s.faltando} falt.</b>` : ''}${s.sobrando ? ` · <b style="color:#f59e0b">${s.sobrando} sobr.</b>` : ''}</div>
+         <button class="row-action" style="margin-top:3px" onclick="ivenVerSeriais(null,'${escJs(it.id)}','${escJs(it.descricao || '')}')">Ver seriais</button>`;
+    return `<tr>
+      <td class="td-main">${escHtml(it.descricao || '—')}${it.possui_serie ? ' <span style="font-size:9px;font-weight:700;color:#a78bfa;border:1px solid #a78bfa;border-radius:4px;padding:0 4px">SERIAL</span>' : ''}${avisos}</td>
+      <td style="text-align:center">${it.saldo_na_contagem ?? it.saldo_sistema ?? '—'}</td>
+      <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
+      <td>${diverg}</td>
+      <td>${seriais}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador || '—')}</td>
+      <td style="white-space:nowrap">${it.divergencia ? (it.divergencia_reclassificada
+        ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="ivenReclassificar('${escJs(it.id)}', true)">Desfazer</button>`
+        : `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="ivenReclassificar('${escJs(it.id)}', false)">Não é divergência</button>`) : ''}</td>
+    </tr>`;
+  }).join('');
+  aplicarPermissoesMenu();
+}
+
+async function ivenReclassificar(itemId, desfazer) {
+  let motivo = '';
+  if (!desfazer) {
+    motivo = (prompt('Por que esta divergência não é diferença real de estoque?') || '').trim();
+    if (!motivo) return;
+    if (motivo.length < 5) { toast('Explique com pelo menos 5 caracteres', 'warn'); return; }
+  }
+  const res = await api(`/inventario-enel/${encodeURIComponent(_ivenDet.id)}/itens/${encodeURIComponent(itemId)}/reclassificar`,
+    { method: 'POST', body: JSON.stringify(desfazer ? { desfazer: true } : { motivo }) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao reclassificar', 'error'); return; }
+  toast(`Acurácia agora: ${Number(res.acuracia_pct).toFixed(1)}%`, 'success');
+  await ivenAbrirDetalhe(_ivenDet.id);
+  carregarInventarioEnel();
+}
+
+const IVEN_SITUACAO = { CONFERIDO: ['Conferido', 'var(--green)'], FALTANDO: ['Faltando', '#ef4444'], SOBRANDO: ['Sobrando', '#f59e0b'] };
+
+async function ivenVerSeriais(situacao, itemId, nomeItem) {
+  if (!_ivenDet) return;
+  const qs = new URLSearchParams();
+  if (situacao) qs.set('situacao', situacao);
+  if (itemId) qs.set('item_id', itemId);
+  const box = document.getElementById('ivenDetSeriaisBox');
+  const body = document.getElementById('ivenDetSeriaisBody');
+  body.innerHTML = '<tr><td colspan="5"><div class="spinner" style="margin:12px auto"></div></td></tr>';
+  box.classList.remove('hidden');
+  const res = await api(`/inventario-enel/${encodeURIComponent(_ivenDet.id)}/seriais?${qs}`);
+  if (!res?.ok) { body.innerHTML = `<tr><td colspan="5">${escHtml(res?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  const lista = res.data || [];
+  document.getElementById('ivenDetSeriaisTitulo').textContent =
+    `${situacao ? IVEN_SITUACAO[situacao][0] : 'Seriais'}${nomeItem ? ' · ' + nomeItem : ''} (${lista.length})`;
+  body.innerHTML = lista.length ? lista.map(sr => {
+    const [txt, cor] = IVEN_SITUACAO[sr.situacao] || ['Em contagem', 'var(--text-3)'];
+    return `<tr>
+      <td style="font-size:11px">${escHtml(sr.descricao || '—')}</td>
+      <td style="font-family:var(--font-mono);font-weight:700">${escHtml(sr.numero_serie)}${sr.modo === 'LOTE' ? ' <span style="font-size:9px;color:#a78bfa">📦</span>' : ''}</td>
+      <td style="color:${cor};font-weight:600;font-size:11px">${txt}</td>
+      <td style="font-size:11px;color:var(--text-2)">${escHtml(sr.situacao_detalhe || '—')}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(sr.nome_contador || '—')}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="5" style="color:var(--text-3);font-size:12px;padding:12px">Nenhum serial nesta lista.</td></tr>';
+  box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function ivenPdf(id) {
+  try {
+    const r = await fetch(`${API}/inventario-enel/${encodeURIComponent(id)}/pdf`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) { toast('Erro ao gerar PDF', 'error'); return; }
+    window.open(URL.createObjectURL(await r.blob()), '_blank');
   } catch { toast('Erro ao gerar PDF', 'error'); }
 }
 
@@ -18315,11 +18664,11 @@ async function registrarEntradaEnel() {
   if (mat?.possui_numero_serie && _entSeriaisAtual.length!==qtd) {
     msg.style.color='#ef4444'; msg.textContent=`Faltam seriais: ${_entSeriaisAtual.length}/${qtd}`; return;
   }
-  const res = await api('/enel/entrada', { method:'POST', body: JSON.stringify({
+  const res = await apiMovimentacao('/enel/entrada', {
     material_id:matId, descricao:mat?.descricao||'', codigo:mat?.codigo||'',
     unidade_med:mat?.unidade_med||'UN', motivo, data, quantidade:qtd,
     seriais:mat?.possui_numero_serie?_entSeriaisAtual:[], observacao:obs,
-  })});
+  });
   if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Entrada registrada!'; _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); limparEntradaEnel(); setTimeout(()=>msg.textContent='',3000); }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
 }
@@ -18406,10 +18755,10 @@ async function registrarSaidaEnel() {
   const msg    = document.getElementById('enelSaiMsg');
   if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
   const mat = _enelMateriais.find(m=>m.id===matId);
-  const res = await api('/enel/saida', { method:'POST', body: JSON.stringify({
+  const res = await apiMovimentacao('/enel/saida', {
     material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
     tipo_saida:motivo, destino:equipe, data, quantidade:qtd, obs,
-  })});
+  });
   if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); limparSaidaEnel(); setTimeout(()=>msg.textContent='',3000); }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
 }
@@ -18818,13 +19167,13 @@ async function enelFinalizarAtendimento() {
   const agora = new Date();
   const at = window.__ENEL__.atendimento;
   enelMsg('Finalizando...', true);
-  const res = await api('/enel/atendimentos', { method:'POST', body: JSON.stringify({
+  const res = await apiMovimentacao('/enel/atendimentos', {
     equipe_id: equipeId, nome_equipe: equipeNome,
     data: document.getElementById('enelData').value,
     hora_inicio: new Date(at.inicio).toLocaleTimeString('pt-BR'),
     hora_fim: agora.toLocaleTimeString('pt-BR'),
     tempo_segundos: at.seg, itens,
-  })});
+  });
   if (res?.ok) {
     toast('Atendimento ENEL finalizado!','success');
     if (res.avisos?.length) {
@@ -19003,7 +19352,7 @@ async function devEnelConfirmar() {
   devEnelMsg('⏳ Devolvendo...', true);
   const equipeId = document.getElementById('devEnelEquipeId').value;
   const equipeNome = document.getElementById('devEnelEquipeBusca').value.trim();
-  const res = await api('/enel/devolucao', {method:'POST', body:JSON.stringify({seriais, equipeId, equipeNome})});
+  const res = await apiMovimentacao('/enel/devolucao', {seriais, equipeId, equipeNome});
   if (res?.ok) { devEnelMsg(`✅ ${res.devolvidos} serial(is) devolvido(s)!`, true); devEnelLimpar(); carregarEstoqueEnel(); }
   else devEnelMsg(res?.erro||'Erro na devolução', false);
 }
@@ -19048,10 +19397,10 @@ async function trfConfirmar() {
   if (!destino) { msg.style.color='#ef4444';msg.textContent='Selecione o material destino.'; return; }
   if (!_trfSeriaisVerificados.length) { msg.style.color='#ef4444';msg.textContent='Verifique os seriais primeiro.'; return; }
   msg.style.color='var(--text-3)';msg.textContent='⏳ Transferindo...';
-  const res = await api('/enel/transferencia/confirmar', {method:'POST', body:JSON.stringify({
+  const res = await apiMovimentacao('/enel/transferencia/confirmar', {
     seriais: _trfSeriaisVerificados.map(s=>s.numero_serie), material_destino_id: destino, observacao: obs,
     usuario: GCA.usuario?.nome||GCA.usuario?.username,
-  })});
+  });
   if (res?.ok) {
     msg.style.color='#22c55e'; msg.textContent=`✅ ${_trfSeriaisVerificados.length} serial(is) transferido(s)!`;
     _trfSeriaisVerificados=[]; document.getElementById('trfSerialLista').value='';
@@ -22095,7 +22444,18 @@ async function baProcessar() {
       headers: { 'Authorization': 'Bearer ' + GCA.token },
       body: fd,
     });
-    const data = await res.json();
+    let data = await res.json();
+    // Estoque ENEL em contagem de inventário: quem pode liberar justifica e reenvia.
+    if (data?.codigo === 'INVENTARIO_CONGELADO' && data.pode_liberar) {
+      const justificativa = await pedirLiberacaoInventario(data);
+      if (justificativa) {
+        fd.append('liberacao_inventario', JSON.stringify({ justificativa }));
+        const res2 = await fetch(API + '/importacao-enel/processar', {
+          method: 'POST', headers: { 'Authorization': 'Bearer ' + GCA.token }, body: fd,
+        });
+        data = await res2.json();
+      }
+    }
     if (!data.ok) throw new Error(data.erro || 'Erro no servidor');
 
     _baImportIdAtual = data.importacao_id;

@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GCA — Inventário ENEL</title>
+<link rel="icon" type="image/png" href="./icon-v3.png">
+<meta name="mobile-web-app-capable" content="yes">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent:#8b5cf6;--accent-hover:#7c3aed;--accent-text:#a78bfa;
+  --green:#22c55e;--green-soft:#052e16;--yellow:#fbbf24;--yellow-soft:#1c1300;
+  --red:#f87171;--red-soft:#1c0a0a;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
+  --font-main:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;
+  --bg:#0a0a0f;--bg-card:#0f0f17;--bg-hover:#0f172a;
+  --border:#1e1e2e;--border-mid:#2a2a3e;
+  --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;}
+button{font-family:var(--font-main);cursor:pointer;}
+input{font-family:var(--font-main);}
+.hidden{display:none!important;}
+
+.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+.card{width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;}
+.logo{display:block;height:40px;margin:0 auto 14px;object-fit:contain;}
+.titulo{font-size:16px;font-weight:700;text-align:center;margin-bottom:2px;}
+.sub{font-size:12px;color:var(--text-3);text-align:center;margin-bottom:22px;}
+.form-label{display:block;font-size:11px;font-weight:500;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
+.form-group{margin-bottom:14px;}
+.form-input{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;outline:none;}
+.form-input:focus{border-color:var(--accent);}
+.btn{padding:11px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;border:none;cursor:pointer;width:100%;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);}
+.btn-perigo{background:transparent;color:var(--red);border:1px solid rgba(248,113,113,.4);}
+.erro-box{margin-top:12px;padding:10px 12px;background:var(--red-soft);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);color:var(--red);font-size:12px;}
+
+.app{display:none;flex-direction:column;min-height:100vh;}
+.app.ativo{display:flex;}
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:10;}
+.header-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.header-titulo{font-size:14px;font-weight:700;}
+.header-sub{font-size:11px;color:var(--text-3);}
+.header-nome{font-size:11px;color:var(--accent-text);text-align:right;}
+.progresso-bar{height:5px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden;}
+.progresso-fill{height:100%;background:var(--green);transition:width .3s ease;}
+.progresso-txt{font-size:10px;color:var(--text-3);margin-top:4px;}
+
+.busca-box{padding:10px 16px;background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px;}
+.busca-input{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:13px;}
+.chips{display:flex;gap:6px;overflow-x:auto;}
+.chip{padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:11px;white-space:nowrap;}
+.chip.ativo{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+.lista{flex:1;overflow-y:auto;padding:10px 12px 90px;}
+.item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.item-card.contado{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.04);}
+.item-nome{font-size:13px;font-weight:600;}
+.item-cod{font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px;}
+.item-status{font-size:10px;color:var(--text-3);margin-top:3px;}
+.item-status.contado{color:var(--green);font-weight:600;}
+.tag-serial{display:inline-block;font-size:9px;font-weight:700;color:var(--accent-text);border:1px solid var(--accent-text);border-radius:4px;padding:0 4px;margin-left:4px;vertical-align:middle;}
+.item-btn{padding:8px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;border:none;background:var(--accent);color:#fff;white-space:nowrap;}
+.item-btn.editar{background:transparent;border:1px solid var(--border-mid);color:var(--text-2);}
+
+.footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;}
+.footer .btn{width:auto;flex:1;}
+.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:12px;}
+
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
+.modal-box{width:100%;max-width:520px;background:var(--bg-card);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:20px;border:1px solid var(--border);border-bottom:none;max-height:94vh;overflow-y:auto;}
+.modal-item-nome{font-size:14px;font-weight:700;margin-bottom:2px;}
+.modal-item-cod{font-size:11px;color:var(--text-3);margin-bottom:14px;}
+.qtd-input{width:100%;padding:14px;font-size:22px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);margin-bottom:14px;}
+
+.contador{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+.contador b{font-size:30px;color:var(--accent-text);}
+.contador span{font-size:12px;color:var(--text-2);}
+.bip-input{width:100%;padding:14px;font-size:20px;letter-spacing:1px;text-align:center;font-family:var(--font-mono);text-transform:uppercase;background:var(--bg);border:2px solid var(--accent);border-radius:var(--radius-sm);color:var(--text-1);}
+.retorno{min-height:38px;margin:8px 0 12px;padding:8px 10px;border-radius:var(--radius-sm);font-size:12px;display:flex;align-items:center;}
+.retorno.ok{background:var(--green-soft);color:var(--green);}
+.retorno.aviso{background:var(--yellow-soft);color:var(--yellow);}
+.retorno.erro{background:var(--red-soft);color:var(--red);}
+.linha-botoes{display:flex;gap:8px;margin-bottom:14px;}
+.linha-botoes .btn{flex:1;}
+.secao-titulo{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin:6px 0 6px;}
+.seriais-lista{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto;}
+.serial-linha{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 8px;}
+.serial-num{font-family:var(--font-mono);font-size:13px;font-weight:600;}
+.serial-info{font-size:10px;color:var(--text-3);}
+.serial-x{background:transparent;border:1px solid var(--border-mid);color:var(--red);border-radius:6px;padding:3px 8px;font-size:12px;}
+
+.lote-box{border:1px dashed var(--accent);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;}
+.lote-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.previa-resumo{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0;}
+.previa-chip{font-size:10px;padding:3px 8px;border-radius:999px;border:1px solid var(--border-mid);color:var(--text-2);}
+.previa-lista{max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;margin-bottom:10px;}
+.previa-linha{display:flex;align-items:center;gap:8px;font-size:12px;padding:4px 6px;border-radius:6px;background:var(--bg);}
+.previa-linha.recusado{opacity:.55;}
+.previa-linha input{width:16px;height:16px;accent-color:var(--accent);}
+.st{font-size:10px;margin-left:auto;text-align:right;}
+.st.NOVO{color:var(--green);} .st.FORA_DO_ESTOQUE,.st.NAO_CADASTRADO{color:var(--yellow);} .st.JA_CONTADO,.st.OUTRO_MATERIAL{color:var(--red);}
+
+.tela-final{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;}
+.tela-final.ativo{display:flex;}
+.final-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0;width:100%;max-width:380px;}
+.final-stat{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;}
+.final-stat b{display:block;font-size:18px;}
+.final-stat span{font-size:10px;color:var(--text-3);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="wrap" id="telaLogin">
+  <div class="card">
+    <img class="logo" src="./logo-gca.png" alt="GCA">
+    <div class="titulo">⚡ Inventário ENEL</div>
+    <div class="sub" id="loginSub">Carregando...</div>
+    <div class="form-group">
+      <label class="form-label">Matrícula</label>
+      <input class="form-input" id="loginMatricula" placeholder="Sua matrícula" autocomplete="off" inputmode="numeric">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" id="loginSenha" type="password" placeholder="Sua senha" autocomplete="off" onkeydown="if(event.key==='Enter')fazerLogin()">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="fazerLogin()">Entrar</button>
+    <div id="loginErro" class="erro-box hidden"></div>
+  </div>
+</div>
+
+<!-- CONTAGEM -->
+<div class="app" id="telaApp">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-titulo">⚡ Estoque ENEL</div>
+        <div class="header-sub" id="appSub">—</div>
+      </div>
+      <div class="header-nome" id="appNome">—</div>
+    </div>
+    <div class="progresso-bar"><div class="progresso-fill" id="progressoFill" style="width:0%"></div></div>
+    <div class="progresso-txt" id="progressoTxt">0 de 0 contados</div>
+  </div>
+  <div class="busca-box">
+    <input class="busca-input" id="buscaInput" placeholder="🔍 Buscar material ou código..." oninput="renderLista()">
+    <div class="chips" id="chipsFiltro">
+      <button class="chip ativo" data-filtro="todos" onclick="mudarFiltro('todos')">Todos</button>
+      <button class="chip" data-filtro="pendentes" onclick="mudarFiltro('pendentes')">Não contados</button>
+      <button class="chip" data-filtro="serial" onclick="mudarFiltro('serial')">Com serial</button>
+      <button class="chip" data-filtro="quantidade" onclick="mudarFiltro('quantidade')">Sem serial</button>
+    </div>
+  </div>
+  <div class="lista" id="listaItens"></div>
+  <div class="footer">
+    <button class="btn btn-ghost" onclick="carregarItens()">↻ Atualizar</button>
+    <button class="btn btn-primary" onclick="tentarFinalizar()">✅ Finalizar</button>
+  </div>
+</div>
+
+<!-- TELA FINAL -->
+<div class="tela-final" id="telaFinal">
+  <div style="font-size:48px;margin-bottom:12px">✅</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px">Inventário ENEL finalizado!</div>
+  <div style="font-size:13px;color:var(--text-2)" id="telaFinalResumo">—</div>
+  <div class="final-stats hidden" id="telaFinalSeriais"></div>
+  <div style="font-size:11px;color:var(--text-3);margin-top:8px">Pode fechar esta página.</div>
+</div>
+
+<!-- MODAL: MATERIAL SEM SERIAL -->
+<div class="modal-overlay hidden" id="modalQtd">
+  <div class="modal-box">
+    <div class="modal-item-nome" id="qtdNome">—</div>
+    <div class="modal-item-cod" id="qtdCod">—</div>
+    <label class="form-label">Quantidade encontrada fisicamente</label>
+    <input class="qtd-input" id="qtdInput" type="number" min="0" step="any" inputmode="decimal" placeholder="0" onkeydown="if(event.key==='Enter')confirmarQtd()">
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost" onclick="fecharModal('modalQtd')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarQtd()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MATERIAL COM SERIAL -->
+<div class="modal-overlay hidden" id="modalSerial">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div>
+        <div class="modal-item-nome" id="serNome">—</div>
+        <div class="modal-item-cod" id="serCod">—</div>
+      </div>
+      <button class="btn btn-ghost" style="width:auto;padding:6px 12px" onclick="fecharModalSerial()">Fechar</button>
+    </div>
+    <div class="contador"><b id="serTotal">0</b><span id="serTotalTxt">serial(is) lido(s)</span></div>
+
+    <label class="form-label">Bipe o serial (ou digite e aperte Enter)</label>
+    <input class="bip-input" id="bipInput" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();biparSerial();}">
+    <div class="retorno" id="bipRetorno">Pronto para ler.</div>
+
+    <div class="linha-botoes">
+      <button class="btn btn-ghost" id="btnAbrirLote" onclick="abrirLote()">📦 Contar caixa fechada</button>
+      <button class="btn btn-perigo hidden" id="btnNenhum" onclick="marcarNenhum()">Nenhum encontrado</button>
+    </div>
+
+    <!-- LOTE -->
+    <div class="lote-box hidden" id="loteBox">
+      <div class="secao-titulo" style="margin-top:0">Caixa fechada — bipe o primeiro e o último serial da etiqueta</div>
+      <div class="lote-campos">
+        <div><label class="form-label">Inicial</label><input class="form-input" id="loteInicial" style="font-family:var(--font-mono);text-transform:uppercase" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('loteFinal').focus();}"></div>
+        <div><label class="form-label">Final</label><input class="form-input" id="loteFinal" style="font-family:var(--font-mono);text-transform:uppercase" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();verPrevia();}"></div>
+      </div>
+      <div class="linha-botoes" style="margin-bottom:0">
+        <button class="btn btn-ghost" onclick="fecharLote()">Cancelar</button>
+        <button class="btn btn-primary" onclick="verPrevia()">Ver prévia</button>
+      </div>
+      <div id="previaBox" class="hidden" style="margin-top:12px">
+        <div id="previaTitulo" style="font-size:14px;font-weight:700"></div>
+        <div class="previa-resumo" id="previaResumo"></div>
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Desmarque o que não estiver na caixa. Já contados e de outro material ficam de fora.</div>
+        <div class="previa-lista" id="previaLista"></div>
+        <button class="btn btn-primary" id="btnConfirmarLote" onclick="confirmarLote()">Contar</button>
+      </div>
+    </div>
+
+    <div class="secao-titulo">Seriais lidos neste material</div>
+    <div class="seriais-lista" id="serLista"><div class="empty">Nenhum serial lido ainda.</div></div>
+  </div>
+</div>
+
+<script>
+const API = 'https://gca-backend-production.up.railway.app';
+
+const TOKEN_LINK = new URLSearchParams(location.search).get('token') || '';
+let TOKEN_SESSAO = sessionStorage.getItem('invenel_sessao_' + TOKEN_LINK) || '';
+let NOME_SESSAO = sessionStorage.getItem('invenel_nome_' + TOKEN_LINK) || '';
+
+let _itens = [];
+let _filtro = 'todos';
+let _itemAtual = null;
+let _previa = null;
+let _pollTimer = null;
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, {
+      ...opts,
+      headers: { 'Content-Type': 'application/json', ...(TOKEN_SESSAO ? { Authorization: 'Bearer ' + TOKEN_SESSAO } : {}), ...(opts.headers || {}) },
+    });
+    const json = await res.json().catch(() => ({ ok: false, erro: 'Erro de resposta' }));
+    if (res.status === 401 && TOKEN_SESSAO) {
+      sessionStorage.removeItem('invenel_sessao_' + TOKEN_LINK);
+      location.reload();
+    }
+    return json;
+  } catch (err) {
+    return { ok: false, erro: 'Erro de conexão: ' + err.message };
+  }
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+const mesBR = (am) => { const [a, m] = String(am || '').split('-'); return m ? `${m}/${a}` : ''; };
+const fmtNum = (n) => Number(n || 0).toLocaleString('pt-BR');
+function vibrar(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch {} }
+function fecharModal(id) { document.getElementById(id).classList.add('hidden'); }
+function algumModalAberto() { return !document.getElementById('modalQtd').classList.contains('hidden') || !document.getElementById('modalSerial').classList.contains('hidden'); }
+
+// ── Login ──
+async function iniciar() {
+  if (!TOKEN_LINK) {
+    document.getElementById('loginSub').textContent = 'Link inválido — peça um novo link ao almoxarifado.';
+    document.getElementById('loginBtn').disabled = true;
+    return;
+  }
+  const info = await fetch(`${API}/inventario-enel/contagem/info/${encodeURIComponent(TOKEN_LINK)}`).then(r => r.json()).catch(() => null);
+  if (!info?.ok) {
+    document.getElementById('loginSub').textContent = info?.erro || 'Link inválido ou expirado.';
+    document.getElementById('loginBtn').disabled = true;
+    return;
+  }
+  document.getElementById('loginSub').textContent = `Materiais do cliente — ${mesBR(info.ano_mes)}`;
+  if (TOKEN_SESSAO) mostrarApp(info.ano_mes, NOME_SESSAO);
+}
+
+async function fazerLogin() {
+  const matricula = document.getElementById('loginMatricula').value.trim();
+  const senha = document.getElementById('loginSenha').value.trim();
+  const erroBox = document.getElementById('loginErro');
+  erroBox.classList.add('hidden');
+  if (!matricula || !senha) { erroBox.textContent = 'Preencha matrícula e senha.'; erroBox.classList.remove('hidden'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const res = await api('/inventario-enel/contagem/login', { method: 'POST', body: JSON.stringify({ token: TOKEN_LINK, matricula, senha }) });
+  btn.disabled = false; btn.textContent = 'Entrar';
+  if (!res.ok) { erroBox.textContent = res.erro || 'Erro ao entrar'; erroBox.classList.remove('hidden'); return; }
+  TOKEN_SESSAO = res.token; NOME_SESSAO = res.nome;
+  sessionStorage.setItem('invenel_sessao_' + TOKEN_LINK, TOKEN_SESSAO);
+  sessionStorage.setItem('invenel_nome_' + TOKEN_LINK, NOME_SESSAO);
+  mostrarApp(res.ano_mes, res.nome);
+}
+
+function mostrarApp(anoMes, nome) {
+  document.getElementById('telaLogin').classList.add('hidden');
+  document.getElementById('telaApp').classList.add('ativo');
+  document.getElementById('appSub').textContent = `Inventário ${mesBR(anoMes)}`;
+  document.getElementById('appNome').textContent = '👤 ' + (nome || '');
+  carregarItens();
+  if (_pollTimer) clearInterval(_pollTimer);
+  // Várias pessoas contando ao mesmo tempo veem o progresso umas das outras. Não atualiza
+  // com um material aberto, para não atrapalhar quem está bipando.
+  _pollTimer = setInterval(() => { if (!algumModalAberto()) carregarItens(); }, 8000);
+}
+
+// ── Lista ──
+async function carregarItens() {
+  const res = await api('/inventario-enel/contagem/itens');
+  if (!res.ok) {
+    if (/finalizad/.test(res.erro || '')) mostrarTelaFinal('Este inventário já foi finalizado.');
+    return;
+  }
+  _itens = res.itens || [];
+  document.getElementById('progressoTxt').textContent = `${res.contados} de ${res.total} materiais contados`;
+  document.getElementById('progressoFill').style.width = res.total ? `${(res.contados / res.total) * 100}%` : '0%';
+  renderLista();
+}
+
+function mudarFiltro(f) {
+  _filtro = f;
+  document.querySelectorAll('#chipsFiltro .chip').forEach(c => c.classList.toggle('ativo', c.dataset.filtro === f));
+  renderLista();
+}
+
+function renderLista() {
+  const q = document.getElementById('buscaInput').value.trim().toLowerCase();
+  let lista = _itens;
+  if (_filtro === 'pendentes') lista = lista.filter(i => i.saldo_contado == null);
+  if (_filtro === 'serial') lista = lista.filter(i => i.possui_serie);
+  if (_filtro === 'quantidade') lista = lista.filter(i => !i.possui_serie);
+  if (q) lista = lista.filter(i => (i.descricao || '').toLowerCase().includes(q) || (i.codigo || '').toLowerCase().includes(q));
+
+  const cont = document.getElementById('listaItens');
+  if (!lista.length) { cont.innerHTML = '<div class="empty">Nenhum material encontrado</div>'; return; }
+  cont.innerHTML = lista.map(it => {
+    const contado = it.saldo_contado != null;
+    const sistema = it.possui_serie
+      ? `Sistema: <strong>${fmtNum(it.saldo_sistema)}</strong> · ${fmtNum(it.seriais_sistema)} serial(is) em estoque`
+      : `Sistema: <strong>${fmtNum(it.saldo_sistema)}</strong> ${escHtml(it.un_med || '')}`;
+    const status = contado
+      ? `✓ ${fmtNum(it.saldo_contado)}${it.possui_serie ? ' serial(is)' : ''} — ${escHtml(it.nome_contador || '')}`
+      : 'Não contado';
+    const acao = it.possui_serie
+      ? `<button class="item-btn ${contado ? 'editar' : ''}" onclick="abrirSerial('${escHtml(it.id)}')">${contado ? 'Seriais' : 'Bipar'}</button>`
+      : `<button class="item-btn ${contado ? 'editar' : ''}" onclick="abrirQtd('${escHtml(it.id)}')">${contado ? 'Editar' : 'Contar'}</button>`;
+    return `<div class="item-card ${contado ? 'contado' : ''}">
+      <div style="flex:1;min-width:0">
+        <div class="item-nome">${escHtml(it.descricao || '—')}${it.possui_serie ? '<span class="tag-serial">SERIAL</span>' : ''}</div>
+        <div class="item-cod">${escHtml(it.codigo || '')} · ${sistema}</div>
+        <div class="item-status ${contado ? 'contado' : ''}">${status}</div>
+      </div>
+      ${acao}
+    </div>`;
+  }).join('');
+}
+
+// ── Sem serial ──
+function abrirQtd(id) {
+  _itemAtual = _itens.find(i => i.id === id);
+  if (!_itemAtual) return;
+  document.getElementById('qtdNome').textContent = _itemAtual.descricao || '—';
+  document.getElementById('qtdCod').textContent = `${_itemAtual.codigo || ''} · Sistema: ${fmtNum(_itemAtual.saldo_sistema)} ${_itemAtual.un_med || ''}`;
+  document.getElementById('qtdInput').value = _itemAtual.saldo_contado != null ? _itemAtual.saldo_contado : '';
+  document.getElementById('modalQtd').classList.remove('hidden');
+  setTimeout(() => { const el = document.getElementById('qtdInput'); el.focus(); el.select(); }, 100);
+}
+
+async function confirmarQtd() {
+  const v = document.getElementById('qtdInput').value;
+  if (v === '' || Number(v) < 0) { alert('Informe uma quantidade válida.'); return; }
+  const res = await api('/inventario-enel/contagem/contar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, quantidade: Number(v) }) });
+  if (!res.ok) { alert(res.erro || 'Erro ao registrar'); return; }
+  fecharModal('modalQtd');
+  carregarItens();
+}
+
+// ── Com serial ──
+function abrirSerial(id) {
+  _itemAtual = _itens.find(i => i.id === id);
+  if (!_itemAtual) return;
+  document.getElementById('serNome').textContent = _itemAtual.descricao || '—';
+  document.getElementById('serCod').textContent = `${_itemAtual.codigo || ''} · Sistema: ${fmtNum(_itemAtual.saldo_sistema)} · ${fmtNum(_itemAtual.seriais_sistema)} serial(is) em estoque`;
+  retorno('Pronto para ler.', '');
+  fecharLote();
+  document.getElementById('modalSerial').classList.remove('hidden');
+  carregarSeriais();
+  setTimeout(() => document.getElementById('bipInput').focus(), 100);
+}
+
+function fecharModalSerial() {
+  fecharModal('modalSerial');
+  _itemAtual = null;
+  carregarItens();
+}
+
+function retorno(texto, tipo) {
+  const el = document.getElementById('bipRetorno');
+  el.className = 'retorno' + (tipo ? ' ' + tipo : '');
+  el.textContent = texto;
+}
+
+function atualizarTotal(total) {
+  document.getElementById('serTotal').textContent = fmtNum(total);
+  const sis = Number(_itemAtual?.seriais_sistema || 0);
+  document.getElementById('serTotalTxt').textContent = `serial(is) lido(s) · ${fmtNum(sis)} no estoque do sistema`;
+  document.getElementById('btnNenhum').classList.toggle('hidden', total > 0 || _itemAtual?.saldo_contado === 0);
+}
+
+async function carregarSeriais() {
+  if (!_itemAtual) return;
+  const res = await api(`/inventario-enel/contagem/itens/${encodeURIComponent(_itemAtual.id)}/seriais`);
+  const box = document.getElementById('serLista');
+  if (!res.ok) { box.innerHTML = `<div class="empty">${escHtml(res.erro || 'Erro ao carregar')}</div>`; return; }
+  atualizarTotal(res.total);
+  if (!res.seriais.length) { box.innerHTML = '<div class="empty">Nenhum serial lido ainda.</div>'; return; }
+
+  // Agrupa as caixas: uma linha por lote, com botão de desfazer a caixa inteira.
+  const lotes = {};
+  const avulsos = [];
+  res.seriais.forEach(s => { if (s.lote_id) (lotes[s.lote_id] ||= []).push(s); else avulsos.push(s); });
+  const hora = (d) => d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const linhasLote = Object.entries(lotes).map(([loteId, lista]) => {
+    const nums = lista.map(s => s.numero_serie).sort();
+    return `<div class="serial-linha" style="border-color:rgba(139,92,246,.4)">
+      <div><div class="serial-num">📦 ${escHtml(nums[0])} … ${escHtml(nums[nums.length - 1])}</div>
+      <div class="serial-info">Caixa com ${lista.length} serial(is) · ${escHtml(lista[0].nome_contador || '')} · ${hora(lista[0].contado_em)}</div></div>
+      <button class="serial-x" onclick="desfazerLote('${escHtml(loteId)}', ${lista.length})">Desfazer caixa</button>
+    </div>`;
+  });
+  const linhasAvulsas = avulsos.map(s => `<div class="serial-linha">
+      <div><div class="serial-num">${escHtml(s.numero_serie)}</div>
+      <div class="serial-info">${escHtml(s.nome_contador || '')} · ${hora(s.contado_em)}</div></div>
+      <button class="serial-x" title="Remover" onclick="removerSerial('${escHtml(s.id)}','${escHtml(s.numero_serie)}')">✕</button>
+    </div>`);
+  box.innerHTML = [...linhasLote, ...linhasAvulsas].join('');
+}
+
+let _bipando = false;
+async function biparSerial(forcarMaterial = false, serialForcado = null) {
+  if (_bipando || !_itemAtual) return;
+  const input = document.getElementById('bipInput');
+  const serial = (serialForcado || input.value).trim().toUpperCase();
+  if (!serial) return;
+  _bipando = true;
+  input.value = '';
+  const res = await api('/inventario-enel/contagem/bipar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, serial, forcar_material: forcarMaterial }) });
+  _bipando = false;
+  input.focus();
+
+  if (res.ok) {
+    if (res.aviso) { retorno(`⚠️ ${serial} contado — ${res.aviso}`, 'aviso'); vibrar(120); }
+    else retorno(`✓ ${serial} contado`, 'ok');
+    atualizarTotal(res.total_item);
+    carregarSeriais();
+    return;
+  }
+  vibrar([80, 60, 80]);
+  if (res.codigo === 'OUTRO_MATERIAL') {
+    retorno(`✕ ${serial}: ${res.erro}`, 'erro');
+    if (confirm(`${serial}: ${res.erro}.\n\nEle está fisicamente junto deste material e deve ser contado AQUI mesmo assim?`)) {
+      biparSerial(true, serial);
+    }
+    return;
+  }
+  retorno(`✕ ${serial}: ${res.erro || 'não foi possível contar'}`, 'erro');
+}
+
+async function removerSerial(id, numero) {
+  if (!confirm(`Tirar o serial ${numero} da contagem?`)) return;
+  const res = await api(`/inventario-enel/contagem/seriais/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  if (!res.ok) { alert(res.erro || 'Erro ao remover'); return; }
+  retorno(`${numero} removido da contagem`, '');
+  carregarSeriais();
+}
+
+async function desfazerLote(loteId, qtd) {
+  if (!confirm(`Desfazer a caixa inteira (${qtd} seriais)?`)) return;
+  const res = await api(`/inventario-enel/contagem/lotes/${encodeURIComponent(loteId)}`, { method: 'DELETE' });
+  if (!res.ok) { alert(res.erro || 'Erro ao desfazer'); return; }
+  retorno(`Caixa desfeita (${res.removidos} seriais)`, '');
+  carregarSeriais();
+}
+
+async function marcarNenhum() {
+  if (!confirm('Confirmar que NENHUM serial deste material foi encontrado?')) return;
+  const res = await api('/inventario-enel/contagem/contar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, quantidade: 0 }) });
+  if (!res.ok) { alert(res.erro || 'Erro ao registrar'); return; }
+  _itemAtual.saldo_contado = 0;
+  retorno('Marcado como nenhum encontrado', 'aviso');
+  atualizarTotal(0);
+}
+
+// ── Lote (caixa fechada) ──
+function abrirLote() {
+  document.getElementById('loteBox').classList.remove('hidden');
+  document.getElementById('previaBox').classList.add('hidden');
+  document.getElementById('loteInicial').value = '';
+  document.getElementById('loteFinal').value = '';
+  _previa = null;
+  setTimeout(() => document.getElementById('loteInicial').focus(), 50);
+}
+
+function fecharLote() {
+  document.getElementById('loteBox').classList.add('hidden');
+  _previa = null;
+  const bip = document.getElementById('bipInput');
+  if (bip && !document.getElementById('modalSerial').classList.contains('hidden')) bip.focus();
+}
+
+const TEXTO_STATUS = { NOVO: 'no estoque', FORA_DO_ESTOQUE: 'fora do estoque', NAO_CADASTRADO: 'não cadastrado', JA_CONTADO: 'já contado', OUTRO_MATERIAL: 'outro material' };
+
+async function verPrevia() {
+  const inicial = document.getElementById('loteInicial').value.trim();
+  const final = document.getElementById('loteFinal').value.trim();
+  if (!inicial || !final) { alert('Bipe o serial inicial e o final da caixa.'); return; }
+  const res = await api('/inventario-enel/contagem/lote/previa', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, inicial, final }) });
+  if (!res.ok) { alert(res.erro || 'Erro na prévia'); return; }
+  _previa = res;
+  document.getElementById('previaTitulo').textContent = `${res.quantidade} serial(is): ${res.inicial} até ${res.final}`;
+  document.getElementById('previaResumo').innerHTML = Object.entries(res.resumo).filter(([, n]) => n > 0)
+    .map(([k, n]) => `<span class="previa-chip">${n} ${TEXTO_STATUS[k]}</span>`).join('');
+  document.getElementById('previaLista').innerHTML = res.seriais.map(s => {
+    const recusado = s.status === 'JA_CONTADO' || s.status === 'OUTRO_MATERIAL';
+    return `<label class="previa-linha ${recusado ? 'recusado' : ''}" title="${escHtml(s.detalhe || '')}">
+      <input type="checkbox" data-serial="${escHtml(s.serial)}" ${recusado ? 'disabled' : 'checked'} onchange="atualizarBotaoLote()">
+      <span class="serial-num">${escHtml(s.serial)}</span>
+      <span class="st ${s.status}">${TEXTO_STATUS[s.status]}</span>
+    </label>`;
+  }).join('');
+  document.getElementById('previaBox').classList.remove('hidden');
+  atualizarBotaoLote();
+}
+
+function atualizarBotaoLote() {
+  const marcados = document.querySelectorAll('#previaLista input:not(:disabled):checked').length;
+  const btn = document.getElementById('btnConfirmarLote');
+  btn.textContent = `Contar ${marcados} serial(is)`;
+  btn.disabled = marcados === 0;
+}
+
+async function confirmarLote() {
+  if (!_previa) return;
+  const excluir = [...document.querySelectorAll('#previaLista input:not(:disabled):not(:checked)')].map(c => c.dataset.serial);
+  const btn = document.getElementById('btnConfirmarLote');
+  btn.disabled = true;
+  const res = await api('/inventario-enel/contagem/lote/confirmar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, inicial: _previa.inicial, final: _previa.final, excluir }) });
+  btn.disabled = false;
+  if (!res.ok) { alert(res.erro || 'Erro ao contar a caixa'); return; }
+  retorno(`📦 Caixa contada: ${res.inseridos} serial(is)${res.recusados.length ? ` · ${res.recusados.length} ficaram de fora` : ''}`, res.recusados.length || res.avisos ? 'aviso' : 'ok');
+  fecharLote();
+  atualizarTotal(res.total_item);
+  carregarSeriais();
+}
+
+// ── Finalizar ──
+async function tentarFinalizar() {
+  await carregarItens();
+  const faltam = _itens.filter(i => i.saldo_contado == null).length;
+  const msg = faltam > 0
+    ? `Ainda faltam ${faltam} material(is) sem contagem — vão entrar como 0. Finalizar mesmo assim?`
+    : 'Finalizar o inventário ENEL? Depois disso não dá mais para contar nada.';
+  if (!confirm(msg)) return;
+  const res = await api('/inventario-enel/contagem/finalizar', { method: 'POST' });
+  if (!res.ok) { alert(res.erro || 'Erro ao finalizar'); return; }
+  mostrarTelaFinal(null, res);
+}
+
+function mostrarTelaFinal(mensagem, r) {
+  if (_pollTimer) clearInterval(_pollTimer);
+  document.getElementById('telaApp').classList.remove('ativo');
+  document.getElementById('telaLogin').classList.add('hidden');
+  document.getElementById('telaFinal').classList.add('ativo');
+  document.getElementById('telaFinalResumo').textContent = mensagem
+    || `Acurácia: ${Number(r.acuracia_pct).toFixed(1)}% — ${r.divergencias} de ${r.total} material(is) com divergência.`;
+  if (r) {
+    const box = document.getElementById('telaFinalSeriais');
+    box.innerHTML = `
+      <div class="final-stat"><b style="color:var(--green)">${fmtNum(r.seriais_conferidos)}</b><span>seriais conferidos</span></div>
+      <div class="final-stat"><b style="color:var(--red)">${fmtNum(r.seriais_faltando)}</b><span>faltando</span></div>
+      <div class="final-stat"><b style="color:var(--yellow)">${fmtNum(r.seriais_sobrando)}</b><span>sobrando</span></div>`;
+    box.classList.remove('hidden');
+  }
+}
+
+iniciar();
+</script>
+</body>
+</html>
