@@ -6084,6 +6084,40 @@ function safeUrl(u, opts) {
   return '#';
 }
 
+// ── QR code gerado pelo próprio sistema ──
+// Antes vinha de um serviço externo (api.qrserver.com): em celular sem internet aberta, ou
+// em rede que bloqueia domínio desconhecido, o quadrado ficava vazio. Agora sai do backend
+// (biblioteca qrcode) e vem como imagem embutida. Guarda o que já gerou para não repetir.
+const _qrCache = new Map();
+
+async function gcaQrDataUrl(link, tamanho = 160) {
+  if (!link) return '';
+  const chave = `${tamanho}|${link}`;
+  if (_qrCache.has(chave)) return _qrCache.get(chave);
+  try {
+    const res = await fetch(`${API}/atendimentos/qrcode?size=${tamanho}&url=${encodeURIComponent(link)}`, { cache: 'no-store' });
+    const data = await res.json();
+    if (!data?.ok || !data.dataUrl) return '';
+    _qrCache.set(chave, data.dataUrl);
+    return data.dataUrl;
+  } catch { return ''; }
+}
+
+// Preenche um <img> (ou uma caixa) com o QR do link. Se não vier, avisa em vez de deixar vazio.
+async function gcaMostrarQr(alvo, link, tamanho = 160) {
+  const el = typeof alvo === 'string' ? document.getElementById(alvo) : alvo;
+  if (!el) return;
+  const dataUrl = await gcaQrDataUrl(link, tamanho);
+  if (el.tagName === 'IMG') {
+    el.src = dataUrl || '';
+    el.alt = dataUrl ? 'QR code do link' : 'QR indisponível — use o link';
+    return;
+  }
+  el.innerHTML = dataUrl
+    ? `<img src="${dataUrl}" style="width:${tamanho}px;height:${tamanho}px" alt="QR code do link">`
+    : '<div style="font-size:11px;color:var(--text-3);padding:12px">QR indisponível agora — use o link</div>';
+}
+
 async function api(path, opts={}) {
   _apiCallsAtivas++; _atualizarBarraCarregamento();
   try {
@@ -7507,7 +7541,7 @@ function abrirModalFinalizado(registro, opts = {}) {
         <button class="btn btn-primary" onclick="regerarTokenModalFinalizado('${registro.id}')">🔄 Tentar Gerar Link Novamente</button>
       </div>`;
   } else if (ATEND.linkGerado) {
-    qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(ATEND.linkGerado)}" style="width:160px;height:160px">`;
+    gcaMostrarQr(qrDiv, ATEND.linkGerado, 160);
   } else {
     qrDiv.textContent = 'Link não disponível';
   }
@@ -7521,7 +7555,7 @@ async function regerarTokenModalFinalizado(atendId) {
     ATEND.tokenGerado = res.token;
     ATEND.linkGerado  = res.link;
     document.getElementById('finalizadoTitulo').textContent = '✓ Atendimento Registrado';
-    document.getElementById('finalizadoQR').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(res.link)}" style="width:160px;height:160px">`;
+    gcaMostrarQr('finalizadoQR', res.link, 160);
     toast('Link gerado com sucesso!', 'success');
   } else {
     toast('Ainda não foi possível gerar o link: ' + (res?.erro || 'tente novamente em instantes'), 'error');
@@ -8257,7 +8291,7 @@ async function reenviarLink(id, token) {
   document.getElementById('finalizadoResumo').textContent  = 'Escaneie ou compartilhe o link abaixo';
   document.getElementById('btnNovoAtendimento').style.display = 'none';
   const qrDiv = document.getElementById('finalizadoQR');
-  qrDiv.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}" style="width:160px;height:160px">`;
+  gcaMostrarQr(qrDiv, link, 160);
   document.getElementById('modalFinalizado').classList.remove('hidden');
 }
 
@@ -11610,7 +11644,7 @@ function copiarLinkInventario() {
 function abrirLinkInventario(link, nomeArmazem) {
   document.getElementById('logLinkModalTitulo').textContent = '📦 Link da contagem';
   document.getElementById('logLinkModalSub').textContent = `${nomeArmazem} — envie para quem vai contar`;
-  document.getElementById('logLinkModalQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(link)}`;
+  gcaMostrarQr('logLinkModalQR', link, 160);
   document.getElementById('logLinkModalUrl').value = link;
   document.getElementById('modalLogisticaLink').classList.remove('hidden');
 }
@@ -12184,7 +12218,7 @@ function abrirLinkLogistica(token, titulo, sub) {
   const url = `${window.location.origin}${window.location.pathname}#/logistica-link?token=${token}`;
   document.getElementById('logLinkModalTitulo').textContent = titulo || '🚚 Link do transportador';
   document.getElementById('logLinkModalSub').textContent = sub || 'Compartilhe esse link ou QR com o transportador';
-  document.getElementById('logLinkModalQR').src = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(url)}`;
+  gcaMostrarQr('logLinkModalQR', url, 160);
   document.getElementById('logLinkModalUrl').value = url;
   document.getElementById('modalLogisticaLink').classList.remove('hidden');
 }
@@ -17046,16 +17080,15 @@ function abrirQrViatura(placa) {
   document.body.appendChild(modal);
   modal.onclick = e => { if (e.target === modal) modal.remove(); };
 
-  // Gera o QR usando API pública (sem biblioteca extra)
-  const qrEl = document.getElementById('qrCodeViatura');
-  const imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}&format=svg&margin=0`;
-  qrEl.innerHTML = `<img src="${imgUrl}" width="220" height="220" alt="QR Code ${escHtml(placa)}" style="display:block">`;
+  // QR gerado pelo próprio sistema (antes era uma API pública de fora)
+  gcaMostrarQr(document.getElementById('qrCodeViatura'), url, 220);
 }
 
-function imprimirQrViatura(placa) {
+async function imprimirQrViatura(placa) {
   const unidade = GCA.unidade || 'marica';
   const url = `https://app.gcasistema.com.br/viatura.html?placa=${encodeURIComponent(placa)}&unidade=${unidade}`;
-  const imgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}&format=svg&margin=10`;
+  const dataUrl = await gcaQrDataUrl(url, 300);
+  if (!dataUrl) { toast('Não foi possível gerar o QR agora — tente de novo', 'error'); return; }
   const win = window.open('', '_blank');
   win.document.write(`<!DOCTYPE html><html><head><title>QR — ${escHtml(placa)}</title>
     <style>body{font-family:sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
@@ -17067,7 +17100,7 @@ function imprimirQrViatura(placa) {
     </style></head><body>
     <h2>${escHtml(placa)}</h2>
     <p>Escaneie para ver laudos e equipamentos desta viatura</p>
-    <img src="${imgUrl}" width="300" height="300" alt="QR">
+    <img src="${dataUrl}" width="300" height="300" alt="QR">
     <br><button onclick="window.print()">🖨️ Imprimir</button>
   </body></html>`);
   win.document.close();
