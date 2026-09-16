@@ -96,6 +96,12 @@ input{font-family:var(--font-main);}
 .serial-num{font-family:var(--font-mono);font-size:13px;font-weight:600;}
 .serial-info{font-size:10px;color:var(--text-3);}
 .serial-x{background:transparent;border:1px solid var(--border-mid);color:var(--red);border-radius:6px;padding:3px 8px;font-size:12px;}
+.serial-linha.pendente{border-style:dashed;opacity:.75;}
+.serial-linha.recusado{border-color:var(--red);background:var(--red-soft);}
+.serial-linha.recusado .serial-info{color:var(--red);}
+.serial-aviso{font-size:10px;color:var(--yellow);}
+.fila-status{margin-top:6px;font-size:11px;font-weight:600;padding:5px 8px;border-radius:var(--radius-sm);background:var(--yellow-soft);color:var(--yellow);}
+.fila-status.erro{background:var(--red-soft);color:var(--red);}
 
 .lote-box{border:1px dashed var(--accent);border-radius:var(--radius-md);padding:12px;margin-bottom:14px;}
 .lote-campos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
@@ -149,6 +155,7 @@ input{font-family:var(--font-main);}
     </div>
     <div class="progresso-bar"><div class="progresso-fill" id="progressoFill" style="width:0%"></div></div>
     <div class="progresso-txt" id="progressoTxt">0 de 0 contados</div>
+    <div class="fila-status hidden" id="filaStatus"></div>
   </div>
   <div class="busca-box">
     <input class="busca-input" id="buscaInput" placeholder="🔍 Buscar material ou código..." oninput="renderLista()">
@@ -200,8 +207,9 @@ input{font-family:var(--font-main);}
       <button class="btn btn-ghost" style="width:auto;padding:6px 12px" onclick="fecharModalSerial()">Fechar</button>
     </div>
     <div class="contador"><b id="serTotal">0</b><span id="serTotalTxt">serial(is) lido(s)</span></div>
+    <div class="fila-status hidden" id="serFila" style="margin:-6px 0 10px"></div>
 
-    <label class="form-label">Bipe o serial (ou digite e aperte Enter)</label>
+    <label class="form-label">Bipe os seriais em sequência (ou digite e aperte Enter)</label>
     <input class="bip-input" id="bipInput" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter'){event.preventDefault();biparSerial();}">
     <div class="retorno" id="bipRetorno">Pronto para ler.</div>
 
@@ -259,9 +267,10 @@ async function api(path, opts = {}) {
       sessionStorage.removeItem('invenel_sessao_' + TOKEN_LINK);
       location.reload();
     }
+    json._status = res.status;
     return json;
   } catch (err) {
-    return { ok: false, erro: 'Erro de conexão: ' + err.message };
+    return { ok: false, rede: true, erro: 'Erro de conexão: ' + err.message };
   }
 }
 
@@ -314,6 +323,7 @@ function mostrarApp(anoMes, nome) {
   document.getElementById('appSub').textContent = `Inventário ${mesBR(anoMes)}`;
   document.getElementById('appNome').textContent = '👤 ' + (nome || '');
   carregarItens();
+  restaurarFila();
   if (_pollTimer) clearInterval(_pollTimer);
   // Várias pessoas contando ao mesmo tempo veem o progresso umas das outras. Não atualiza
   // com um material aberto, para não atrapalhar quem está bipando.
@@ -399,6 +409,8 @@ function abrirSerial(id) {
   document.getElementById('serCod').textContent = `${_itemAtual.codigo || ''} · Sistema: ${fmtNum(_itemAtual.saldo_sistema)} · ${fmtNum(_itemAtual.seriais_sistema)} serial(is) em estoque`;
   retorno('Pronto para ler.', '');
   fecharLote();
+  _seriaisItem = [];
+  renderSeriais();
   document.getElementById('modalSerial').classList.remove('hidden');
   carregarSeriais();
   setTimeout(() => document.getElementById('bipInput').focus(), 100);
@@ -417,85 +429,278 @@ function retorno(texto, tipo) {
 }
 
 function atualizarTotal(total) {
+  _totalItem = Number(total || 0);
   document.getElementById('serTotal').textContent = fmtNum(total);
   const sis = Number(_itemAtual?.seriais_sistema || 0);
-  document.getElementById('serTotalTxt').textContent = `serial(is) lido(s) · ${fmtNum(sis)} no estoque do sistema`;
-  document.getElementById('btnNenhum').classList.toggle('hidden', total > 0 || _itemAtual?.saldo_contado === 0);
+  document.getElementById('serTotalTxt').textContent = `serial(is) contado(s) · ${fmtNum(sis)} no estoque do sistema`;
+  const naFila = _itemAtual ? _fila.filter(f => f.itemId === _itemAtual.id).length : 0;
+  document.getElementById('btnNenhum').classList.toggle('hidden', total > 0 || naFila > 0 || _itemAtual?.saldo_contado === 0);
+}
+
+// ── Fila de bipagem ──
+// Cada bip entra na fila na hora e o campo já fica livre para o próximo; a fila é enviada em
+// pacotes. Serial repetido é barrado na tela (já contado ou já na fila) e, de qualquer forma,
+// o servidor e o banco não aceitam o mesmo serial duas vezes no inventário. A fila fica salva
+// no aparelho: se a internet cair, nada se perde e o envio continua quando voltar.
+const FILA_KEY = 'invenel_fila_' + TOKEN_LINK;
+const MAX_POR_ENVIO = 100;
+let _fila = [];          // { serial, itemId, estado: 'pendente' | 'enviando', tentativas }
+let _recusas = [];       // { serial, itemId, motivo } — o que o servidor não aceitou
+let _seriaisItem = [];   // seriais já contados no material aberto
+let _totalItem = 0;
+let _enviando = false;
+let _timerFila = null;
+let _semConexao = false;
+
+const normalizarSerial = (v) => String(v ?? '').trim().toUpperCase().replace(/\s+/g, '');
+
+function salvarFila() {
+  try { localStorage.setItem(FILA_KEY, JSON.stringify(_fila.map(f => ({ serial: f.serial, itemId: f.itemId, tentativas: f.tentativas || 0 })))); } catch {}
+}
+
+function restaurarFila() {
+  try {
+    const salva = JSON.parse(localStorage.getItem(FILA_KEY) || '[]');
+    if (Array.isArray(salva)) {
+      const vistos = new Set(_fila.map(f => f.serial));
+      salva.filter(f => f && f.serial && f.itemId && !vistos.has(f.serial))
+        .forEach(f => _fila.push({ serial: f.serial, itemId: f.itemId, estado: 'pendente', tentativas: f.tentativas || 0 }));
+    }
+  } catch {}
+  atualizarIndicadorFila();
+  if (_fila.length) agendarEnvio(0);
+}
+
+function agendarEnvio(ms) {
+  if (_timerFila && ms > 0) return; // já tem envio marcado: bipes seguidos entram no mesmo pacote
+  clearTimeout(_timerFila);
+  _timerFila = setTimeout(() => { _timerFila = null; enviarFila(); }, ms);
+}
+
+function biparSerial() {
+  if (!_itemAtual) return;
+  const input = document.getElementById('bipInput');
+  const serial = normalizarSerial(input.value);
+  input.value = '';
+  input.focus();
+  if (!serial) return;
+  if (serial.length > 60) { recusarNaHora(serial, 'Serial inválido'); return; }
+  if (_seriaisItem.some(x => x.numero_serie === serial)) { recusarNaHora(serial, 'Já contado neste material'); return; }
+  if (_fila.some(f => f.serial === serial)) { recusarNaHora(serial, 'Já bipado, aguardando envio'); return; }
+
+  _fila.push({ serial, itemId: _itemAtual.id, estado: 'pendente', tentativas: 0 });
+  _recusas = _recusas.filter(r => r.serial !== serial);
+  salvarFila();
+  retorno(`⏳ ${serial} bipado`, '');
+  agendarRender();
+  const pendentes = _fila.filter(f => f.estado === 'pendente').length;
+  agendarEnvio(pendentes >= 25 ? 0 : 800);
+}
+
+// Leitor rápido: redesenha a lista uma vez por quadro, não a cada bip.
+let _renderMarcado = false;
+function agendarRender() {
+  if (_renderMarcado) return;
+  _renderMarcado = true;
+  requestAnimationFrame(() => { _renderMarcado = false; renderSeriais(); });
+}
+
+function recusarNaHora(serial, motivo) {
+  vibrar([80, 60, 80]);
+  retorno(`✕ ${serial}: ${motivo}`, 'erro');
+}
+
+function registrarRecusa(serial, itemId, motivo) {
+  _recusas = _recusas.filter(r => r.serial !== serial);
+  _recusas.unshift({ serial, itemId, motivo });
+  _recusas = _recusas.slice(0, 50);
+}
+
+function dispensarRecusa(serial) {
+  _recusas = _recusas.filter(r => r.serial !== serial);
+  renderSeriais();
+  atualizarIndicadorFila();
+  const bip = document.getElementById('bipInput');
+  if (bip) bip.focus();
+}
+
+async function enviarFila() {
+  if (_enviando) return;
+  const pendentes = _fila.filter(f => f.estado === 'pendente');
+  if (!pendentes.length) return;
+  const itemId = pendentes[0].itemId;
+  const pacote = pendentes.filter(f => f.itemId === itemId).slice(0, MAX_POR_ENVIO);
+
+  _enviando = true;
+  pacote.forEach(f => { f.estado = 'enviando'; });
+  renderSeriais();
+  const res = await api('/inventario-enel/contagem/bipar-varios', { method: 'POST', body: JSON.stringify({ item_id: itemId, seriais: pacote.map(f => f.serial) }) });
+  _enviando = false;
+  const tirar = (f) => { _fila = _fila.filter(x => x !== f); };
+
+  if (!res.ok && (res.rede || res._status >= 500)) {
+    // Sem internet ou servidor instável: continua na fila e tenta de novo.
+    pacote.forEach(f => { f.estado = 'pendente'; f.tentativas = (f.tentativas || 0) + 1; });
+    _semConexao = true;
+    salvarFila();
+    renderSeriais();
+    atualizarIndicadorFila();
+    agendarEnvio(4000);
+    return;
+  }
+
+  _semConexao = false;
+  if (!res.ok) {
+    // O pacote inteiro foi recusado (inventário finalizado, material inválido...).
+    pacote.forEach(f => { tirar(f); registrarRecusa(f.serial, f.itemId, res.erro || 'Não foi possível contar'); });
+    vibrar([80, 60, 80]);
+    if (_itemAtual && _itemAtual.id === itemId) retorno(`✕ ${res.erro || 'Não foi possível contar'}`, 'erro');
+  } else {
+    let contados = 0, avisos = 0, recusados = 0, ultimaRecusa = null, ultimoContado = null;
+    (res.resultados || []).forEach((r, i) => {
+      const f = pacote[i];
+      if (!f) return;
+      tirar(f);
+      if (r.ok) {
+        contados++;
+        if (r.aviso) avisos++;
+        ultimoContado = r;
+        adicionarContado(itemId, { id: r.id, numero_serie: r.serial, aviso: r.aviso });
+      } else if (r.codigo === 'JA_CONTADO' && r.mesmo_item && r.id_existente && f.tentativas > 0) {
+        // Reenvio depois de queda de conexão: o primeiro envio já tinha gravado este serial.
+        contados++;
+        ultimoContado = r;
+        adicionarContado(itemId, { id: r.id_existente, numero_serie: r.serial });
+      } else {
+        recusados++;
+        ultimaRecusa = r;
+        registrarRecusa(r.serial, itemId, r.motivo);
+      }
+    });
+    const item = _itens.find(i => i.id === itemId);
+    if (item) item.saldo_contado = res.total_item;
+    if (_itemAtual && _itemAtual.id === itemId) {
+      atualizarTotal(res.total_item);
+      if (recusados) retorno(`✕ ${ultimaRecusa.serial}: ${ultimaRecusa.motivo}${recusados > 1 ? ` (+${recusados - 1} recusado(s))` : ''}`, 'erro');
+      else if (contados === 1 && avisos) retorno(`⚠️ ${ultimoContado.serial} contado — ${ultimoContado.aviso}`, 'aviso');
+      else if (contados === 1) retorno(`✓ ${ultimoContado.serial} contado`, 'ok');
+      else if (avisos) retorno(`✓ ${contados} contados (último ${ultimoContado.serial}) · ⚠️ ${avisos} com aviso`, 'aviso');
+      else if (contados) retorno(`✓ ${contados} contados (último ${ultimoContado.serial})`, 'ok');
+    }
+    if (recusados) vibrar([80, 60, 80]);
+    else if (avisos) vibrar(120);
+  }
+  salvarFila();
+  renderSeriais();
+  atualizarIndicadorFila();
+  if (_fila.some(f => f.estado === 'pendente')) agendarEnvio(0);
+}
+
+function adicionarContado(itemId, s) {
+  if (!_itemAtual || _itemAtual.id !== itemId) return;
+  if (_seriaisItem.some(x => x.numero_serie === s.numero_serie)) return;
+  _seriaisItem.unshift({ modo: 'BIPADO', lote_id: null, nome_contador: NOME_SESSAO, contado_em: new Date().toISOString(), _local: Date.now(), ...s });
+}
+
+function atualizarIndicadorFila() {
+  const total = _fila.length;
+  const recusasFora = _recusas.filter(r => !_itemAtual || r.itemId !== _itemAtual.id).length;
+  const topo = document.getElementById('filaStatus');
+  if (total) {
+    topo.textContent = _semConexao ? `📵 Sem conexão — ${total} serial(is) guardado(s), envio automático quando voltar` : `⏳ Enviando ${total} serial(is) bipado(s)...`;
+    topo.className = 'fila-status';
+  } else if (recusasFora) {
+    topo.textContent = `✕ ${recusasFora} serial(is) recusado(s) — abra o material para ver`;
+    topo.className = 'fila-status erro';
+  } else {
+    topo.className = 'fila-status hidden';
+  }
+  const doItem = _itemAtual ? _fila.filter(f => f.itemId === _itemAtual.id).length : 0;
+  const box = document.getElementById('serFila');
+  if (doItem) {
+    box.textContent = _semConexao ? `📵 Sem conexão — ${doItem} guardado(s) no aparelho, envio automático` : `⏳ ${doItem} na fila de envio`;
+    box.className = 'fila-status';
+  } else {
+    box.className = 'fila-status hidden';
+  }
+  if (_itemAtual) document.getElementById('btnNenhum').classList.toggle('hidden', _totalItem > 0 || doItem > 0 || _itemAtual.saldo_contado === 0);
 }
 
 async function carregarSeriais() {
   if (!_itemAtual) return;
-  const res = await api(`/inventario-enel/contagem/itens/${encodeURIComponent(_itemAtual.id)}/seriais`);
+  const itemId = _itemAtual.id;
+  const inicio = Date.now();
+  const res = await api(`/inventario-enel/contagem/itens/${encodeURIComponent(itemId)}/seriais`);
+  if (!_itemAtual || _itemAtual.id !== itemId) return;
+  if (!res.ok) {
+    document.getElementById('serLista').innerHTML = `<div class="empty">${escHtml(res.erro || 'Erro ao carregar')}</div>`;
+    return;
+  }
+  // Mantém o que foi confirmado enquanto a lista carregava.
+  const recentes = _seriaisItem.filter(x => x._local && x._local >= inicio && !res.seriais.some(y => y.numero_serie === x.numero_serie));
+  _seriaisItem = [...recentes, ...res.seriais];
+  atualizarTotal(res.total + recentes.length);
+  renderSeriais();
+}
+
+function renderSeriais() {
   const box = document.getElementById('serLista');
-  if (!res.ok) { box.innerHTML = `<div class="empty">${escHtml(res.erro || 'Erro ao carregar')}</div>`; return; }
-  atualizarTotal(res.total);
-  if (!res.seriais.length) { box.innerHTML = '<div class="empty">Nenhum serial lido ainda.</div>'; return; }
+  if (!_itemAtual || !box) return;
+  const itemId = _itemAtual.id;
+  const hora = (d) => d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+
+  const naFila = _fila.filter(f => f.itemId === itemId).slice().reverse().map(f => `<div class="serial-linha pendente">
+      <div><div class="serial-num">${escHtml(f.serial)}</div>
+      <div class="serial-info">${f.estado === 'enviando' ? '⏳ enviando...' : _semConexao ? '📵 aguardando conexão' : '⏳ na fila'}</div></div>
+    </div>`);
+  const recusadas = _recusas.filter(r => r.itemId === itemId).map(r => `<div class="serial-linha recusado">
+      <div><div class="serial-num">✕ ${escHtml(r.serial)}</div>
+      <div class="serial-info">${escHtml(r.motivo || 'Recusado')}</div></div>
+      <button class="serial-x" title="Dispensar" onclick="dispensarRecusa('${escHtml(r.serial)}')">OK</button>
+    </div>`);
 
   // Agrupa as caixas: uma linha por lote, com botão de desfazer a caixa inteira.
   const lotes = {};
   const avulsos = [];
-  res.seriais.forEach(s => { if (s.lote_id) (lotes[s.lote_id] ||= []).push(s); else avulsos.push(s); });
-  const hora = (d) => d ? new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '';
+  _seriaisItem.forEach(x => { if (x.lote_id) (lotes[x.lote_id] ||= []).push(x); else avulsos.push(x); });
   const linhasLote = Object.entries(lotes).map(([loteId, lista]) => {
-    const nums = lista.map(s => s.numero_serie).sort();
+    const nums = lista.map(x => x.numero_serie).sort();
     return `<div class="serial-linha" style="border-color:rgba(139,92,246,.4)">
       <div><div class="serial-num">📦 ${escHtml(nums[0])} … ${escHtml(nums[nums.length - 1])}</div>
       <div class="serial-info">Caixa com ${lista.length} serial(is) · ${escHtml(lista[0].nome_contador || '')} · ${hora(lista[0].contado_em)}</div></div>
       <button class="serial-x" onclick="desfazerLote('${escHtml(loteId)}', ${lista.length})">Desfazer caixa</button>
     </div>`;
   });
-  const linhasAvulsas = avulsos.map(s => `<div class="serial-linha">
-      <div><div class="serial-num">${escHtml(s.numero_serie)}</div>
-      <div class="serial-info">${escHtml(s.nome_contador || '')} · ${hora(s.contado_em)}</div></div>
-      <button class="serial-x" title="Remover" onclick="removerSerial('${escHtml(s.id)}','${escHtml(s.numero_serie)}')">✕</button>
+  const linhasAvulsas = avulsos.map(x => `<div class="serial-linha">
+      <div><div class="serial-num">${escHtml(x.numero_serie)}</div>
+      <div class="serial-info">${escHtml(x.nome_contador || '')} · ${hora(x.contado_em)}</div>
+      ${x.aviso ? `<div class="serial-aviso">⚠️ ${escHtml(x.aviso)}</div>` : ''}</div>
+      <button class="serial-x" title="Remover" onclick="removerSerial('${escHtml(x.id)}','${escHtml(x.numero_serie)}')">✕</button>
     </div>`);
-  box.innerHTML = [...linhasLote, ...linhasAvulsas].join('');
-}
 
-let _bipando = false;
-async function biparSerial(forcarMaterial = false, serialForcado = null) {
-  if (_bipando || !_itemAtual) return;
-  const input = document.getElementById('bipInput');
-  const serial = (serialForcado || input.value).trim().toUpperCase();
-  if (!serial) return;
-  _bipando = true;
-  input.value = '';
-  const res = await api('/inventario-enel/contagem/bipar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, serial, forcar_material: forcarMaterial }) });
-  _bipando = false;
-  input.focus();
-
-  if (res.ok) {
-    if (res.aviso) { retorno(`⚠️ ${serial} contado — ${res.aviso}`, 'aviso'); vibrar(120); }
-    else retorno(`✓ ${serial} contado`, 'ok');
-    atualizarTotal(res.total_item);
-    carregarSeriais();
-    return;
-  }
-  vibrar([80, 60, 80]);
-  if (res.codigo === 'OUTRO_MATERIAL') {
-    retorno(`✕ ${serial}: ${res.erro}`, 'erro');
-    if (confirm(`${serial}: ${res.erro}.\n\nEle está fisicamente junto deste material e deve ser contado AQUI mesmo assim?`)) {
-      biparSerial(true, serial);
-    }
-    return;
-  }
-  retorno(`✕ ${serial}: ${res.erro || 'não foi possível contar'}`, 'erro');
+  const linhas = [...recusadas, ...naFila, ...linhasLote, ...linhasAvulsas];
+  box.innerHTML = linhas.length ? linhas.join('') : '<div class="empty">Nenhum serial lido ainda.</div>';
+  atualizarIndicadorFila();
 }
 
 async function removerSerial(id, numero) {
   if (!confirm(`Tirar o serial ${numero} da contagem?`)) return;
   const res = await api(`/inventario-enel/contagem/seriais/${encodeURIComponent(id)}`, { method: 'DELETE' });
   if (!res.ok) { alert(res.erro || 'Erro ao remover'); return; }
+  _seriaisItem = _seriaisItem.filter(x => x.id !== id);
   retorno(`${numero} removido da contagem`, '');
-  carregarSeriais();
+  atualizarTotal(res.total_item);
+  renderSeriais();
 }
 
 async function desfazerLote(loteId, qtd) {
   if (!confirm(`Desfazer a caixa inteira (${qtd} seriais)?`)) return;
   const res = await api(`/inventario-enel/contagem/lotes/${encodeURIComponent(loteId)}`, { method: 'DELETE' });
   if (!res.ok) { alert(res.erro || 'Erro ao desfazer'); return; }
+  _seriaisItem = _seriaisItem.filter(x => x.lote_id !== loteId);
   retorno(`Caixa desfeita (${res.removidos} seriais)`, '');
-  carregarSeriais();
+  atualizarTotal(res.total_item);
+  renderSeriais();
 }
 
 async function marcarNenhum() {
@@ -571,6 +776,11 @@ async function confirmarLote() {
 
 // ── Finalizar ──
 async function tentarFinalizar() {
+  if (_fila.length) {
+    alert(`Ainda há ${_fila.length} serial(is) bipado(s) sendo enviado(s)${_semConexao ? ' (sem conexão no momento)' : ''}. Aguarde terminar o envio para finalizar.`);
+    enviarFila();
+    return;
+  }
   await carregarItens();
   const faltam = _itens.filter(i => i.saldo_contado == null).length;
   const msg = faltam > 0
