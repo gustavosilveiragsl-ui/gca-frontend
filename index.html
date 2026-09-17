@@ -2785,6 +2785,36 @@ window.addEventListener('pageshow', function(e) {
 
       <!-- CONSULTA ESTOQUE ENEL -->
       <div class="view" id="view-enel-estoque">
+
+        <!-- KPIs -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px;gap:8px">
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">Críticos</span></div>
+            <div class="kpi-value" id="enelEstKpiCritico" style="color:#ef4444;font-size:22px">—</div>
+            <div class="kpi-delta down" style="font-size:10px">sem estoque</div>
+          </div>
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">Baixos</span></div>
+            <div class="kpi-value" id="enelEstKpiBaixo" style="color:#f59e0b;font-size:22px">—</div>
+            <div class="kpi-delta warn" style="font-size:10px">abaixo do mínimo</div>
+          </div>
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">OK</span></div>
+            <div class="kpi-value" id="enelEstKpiOk" style="color:#22c55e;font-size:22px">—</div>
+            <div class="kpi-delta up" style="font-size:10px">nível adequado</div>
+          </div>
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">Total itens</span></div>
+            <div class="kpi-value" id="enelEstKpiTotal" style="font-size:22px">—</div>
+            <div class="kpi-delta" style="font-size:10px">com saldo</div>
+          </div>
+          <div class="kpi-card" style="padding:12px">
+            <div class="kpi-top"><span class="kpi-label">Valor total</span></div>
+            <div class="kpi-value" id="enelEstKpiValor" style="font-size:14px;font-weight:700">—</div>
+            <div class="kpi-delta up" style="font-size:10px">estoque valorizado</div>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
@@ -2801,8 +2831,8 @@ window.addEventListener('pageshow', function(e) {
             </div>
           </div>
           <table>
-            <thead><tr><th>Material</th><th>Código</th><th>Categoria</th><th style="text-align:center">Un.</th><th style="text-align:center">Saldo</th><th style="text-align:center">Mín.</th><th>Status</th></tr></thead>
-            <tbody id="enelEstBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+            <thead><tr><th>Material</th><th>Código</th><th>Categoria</th><th style="text-align:center">Un.</th><th style="text-align:center">Saldo</th><th style="text-align:center">Mín.</th><th style="text-align:right">Valor Un.</th><th style="text-align:right">Valor Total</th><th>Status</th></tr></thead>
+            <tbody id="enelEstBody"><tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr></tbody>
           </table>
         </div>
       </div>
@@ -19017,7 +19047,7 @@ async function carregarHistSaidas() {
 async function carregarEstoqueEnel() {
   const tbody = document.getElementById('enelEstBody');
   if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML='<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
   const [matData, saldData] = await Promise.all([api('/enel/materiais'), api('/enel/saldos')]);
   _enelMateriais = matData?.data||[];
   _enelSaldos    = saldData?.data||[];
@@ -19033,10 +19063,21 @@ function filtrarEstoqueEnel(q) {
     const qtd   = Number(saldo?.saldo||0);
     const min   = Number(m.estoque_minimo||0);
     const st    = qtd<=0?'critico':qtd<=min?'baixo':'ok';
-    return {...m, qtd, st};
+    const valorUn = Number(m.valor_unitario||0);
+    return {...m, qtd, st, valorUn, valorTotal: qtd * valorUn};
   });
+
+  // KPIs do que está sendo mostrado (respeita a busca e o filtro de status)
+  const dinheiro = (v) => Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   if (q) lista = lista.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase()));
   if (filtro) lista = lista.filter(m=>m.st===filtro);
+
+  document.getElementById('enelEstKpiCritico').textContent = lista.filter(m=>m.st==='critico').length;
+  document.getElementById('enelEstKpiBaixo').textContent   = lista.filter(m=>m.st==='baixo').length;
+  document.getElementById('enelEstKpiOk').textContent      = lista.filter(m=>m.st==='ok').length;
+  document.getElementById('enelEstKpiTotal').textContent   = lista.filter(m=>m.qtd>0).length;
+  document.getElementById('enelEstKpiValor').textContent   = dinheiro(lista.reduce((acc,m)=>acc+m.valorTotal,0));
+
   tbody.innerHTML = lista.length ? lista.map(m=>{
     const stTag = m.st==='critico'?'<span style="color:#ef4444;font-weight:700;font-size:10px">🔴 Crítico</span>'
       :m.st==='baixo'?'<span style="color:#f59e0b;font-weight:700;font-size:10px">🟡 Baixo</span>'
@@ -19048,9 +19089,11 @@ function filtrarEstoqueEnel(q) {
       <td style="text-align:center;font-size:11px">${m.unidade_med||'UN'}</td>
       <td style="text-align:center;font-weight:600;color:${m.st==='critico'?'#ef4444':m.st==='baixo'?'#f59e0b':'var(--text-1)'}">${m.qtd}</td>
       <td style="text-align:center;font-size:11px;color:var(--text-3)">${m.estoque_minimo||0}</td>
+      <td style="text-align:right;font-size:11px;color:var(--text-2)">${dinheiro(m.valorUn)}</td>
+      <td style="text-align:right;font-size:11px;font-weight:600;color:var(--text-1)">${dinheiro(m.valorTotal)}</td>
       <td>${stTag}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum material</div></div></td></tr>`;
+  }).join('') : `<tr><td colspan="9"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum material</div></div></td></tr>`;
 }
 
 // ── BAIXAS ──
@@ -20373,8 +20416,10 @@ function exportarEstoqueEnel() {
     const qtd   = Number(saldo?.saldo || 0);
     const min   = Number(m.estoque_minimo || 0);
     const st    = qtd <= 0 ? 'CRÍTICO' : qtd <= min ? 'BAIXO' : 'OK';
+    const valorUn = Number(m.valor_unitario || 0);
     return { descricao: m.descricao || '', codigo: m.codigo || '', categoria: m.categoria || '',
-             unidade_med: m.unidade_med || 'UN', saldo: qtd, estoque_minimo: min, status: st };
+             unidade_med: m.unidade_med || 'UN', saldo: qtd, estoque_minimo: min,
+             valor_unitario: valorUn, valor_total: qtd * valorUn, status: st };
   });
   if (filtroStatus) lista = lista.filter(r =>
     (filtroStatus === 'critico' && r.status === 'CRÍTICO') ||
@@ -20388,6 +20433,8 @@ function exportarEstoqueEnel() {
     { key:'unidade_med',    label:'Un. Med.' },
     { key:'saldo',          label:'Saldo Atual' },
     { key:'estoque_minimo', label:'Estoque Mínimo' },
+    { key:'valor_unitario', label:'Valor Unitário (R$)' },
+    { key:'valor_total',    label:'Valor Total (R$)' },
     { key:'status',         label:'Status' },
   ]);
 }
