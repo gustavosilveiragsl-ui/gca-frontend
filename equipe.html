@@ -234,6 +234,59 @@ input[type=number]{-moz-appearance:textfield;}
 .hist-entregue{background:rgba(14,165,233,.12);color:#38bdf8;}
 .hist-recusado{background:rgba(248,113,113,.12);color:#f87171;}
 
+/* ── MODELO (accordion de seriais) ───────────────── */
+.modelo-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:10px;overflow:hidden;}
+.modelo-card.bloq{border-color:rgba(248,113,113,.45);}
+.modelo-head{display:flex;align-items:center;gap:12px;padding:14px;cursor:pointer;}
+.modelo-head:active{background:var(--bg-hover);}
+.modelo-nome{font-size:14px;font-weight:700;color:var(--text-1);line-height:1.3;}
+.modelo-sub{font-size:11px;color:var(--text-3);margin-top:3px;}
+.modelo-qtd{min-width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;background:rgba(56,189,248,.12);color:var(--accent-text);flex-shrink:0;}
+.modelo-card.bloq .modelo-qtd{background:rgba(248,113,113,.14);color:#f87171;}
+.modelo-seta{font-size:13px;color:var(--text-3);transition:transform .2s;flex-shrink:0;}
+.modelo-card.aberto .modelo-seta{transform:rotate(90deg);}
+.modelo-corpo{border-top:1px solid var(--border);padding:10px 14px 14px;display:none;}
+.modelo-card.aberto .modelo-corpo{display:block;animation:abreCorpo .2s ease;}
+@keyframes abreCorpo{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.serial-item{padding:12px 0;border-bottom:1px solid var(--border);}
+.serial-item:last-child{border-bottom:none;padding-bottom:0;}
+.serial-num{font-size:16px;font-weight:800;font-family:var(--font-mono);color:var(--text-1);letter-spacing:.5px;}
+.serial-dias{font-size:11px;color:var(--text-3);margin-top:3px;}
+.serial-status{margin-top:8px;font-size:12px;font-weight:700;padding:8px 10px;border-radius:var(--radius-sm);line-height:1.4;display:flex;gap:8px;align-items:flex-start;}
+.serial-status.ok{background:rgba(34,197,94,.10);color:#4ade80;}
+.serial-status.atencao{background:rgba(251,191,36,.12);color:#fbbf24;}
+.serial-status.bloqueado{background:rgba(248,113,113,.12);color:#f87171;}
+.contador{font-size:13px;font-weight:800;}
+.contador.ok{color:#4ade80;} .contador.atencao{color:#fbbf24;} .contador.bloqueado{color:#f87171;}
+
+/* ── CATEGORIAS (solicitar) ──────────────────────── */
+.busca-wrap{position:relative;margin-bottom:12px;}
+.busca-wrap input{width:100%;padding:14px 14px 14px 42px;font-size:15px;background:var(--bg-card);
+  border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-1);outline:none;}
+.busca-wrap input:focus{border-color:var(--accent);}
+.busca-wrap .lupa{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;opacity:.7;}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cat-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 12px;text-align:center;cursor:pointer;}
+.cat-card:active{background:var(--bg-hover);}
+.cat-icone{font-size:28px;}
+.cat-nome{font-size:13px;font-weight:700;color:var(--text-1);margin-top:6px;line-height:1.3;}
+.cat-qtd{font-size:11px;color:var(--text-3);margin-top:2px;}
+.cat-voltar{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--accent-text);
+  background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:12px;cursor:pointer;}
+.carrinho-barra{position:sticky;bottom:0;background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius-md);
+  padding:12px 14px;margin-top:14px;display:flex;align-items:center;gap:12px;}
+
+/* ── MODAL ───────────────────────────────────────── */
+.eq-modal{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:400;display:flex;align-items:flex-end;justify-content:center;}
+.eq-modal.hidden{display:none;}
+.eq-modal-box{background:var(--bg-card);border-top-left-radius:18px;border-top-right-radius:18px;width:100%;max-width:520px;
+  max-height:86vh;overflow-y:auto;padding:20px 18px calc(20px + env(safe-area-inset-bottom,0));animation:sobeModal .25s ease;}
+@keyframes sobeModal{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+.eq-modal-tit{font-size:17px;font-weight:800;color:var(--text-1);margin-bottom:4px;}
+.eq-conf-linha{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);}
+.eq-conf-linha:last-of-type{border-bottom:none;}
+
 /* ── UTILITÁRIOS ─────────────────────────────────── */
 .empty{text-align:center;padding:56px 24px;color:var(--text-3);}
 .empty-icon{font-size:40px;margin-bottom:14px;}
@@ -308,7 +361,7 @@ input[type=number]{-moz-appearance:textfield;}
   <div class="tabs">
     <button class="tab active" onclick="irTab('medidores',this)">
       <span class="tab-icon">📟</span>
-      <span>Medidores</span>
+      <span>Seriais</span>
       <span class="badge-count" id="badgeMedVencidos"></span>
     </button>
     <button class="tab" onclick="irTab('materiais',this)">
@@ -351,8 +404,10 @@ input[type=number]{-moz-appearance:textfield;}
 
     <!-- SOLICITAR -->
     <div id="sec-solicitar" class="section">
-      <div style="font-size:12px;color:var(--text-3);margin-bottom:14px">
-        Selecione os materiais e quantidades que deseja solicitar ao almoxarifado.
+      <div class="busca-wrap">
+        <span class="lupa">🔍</span>
+        <input id="solBusca" placeholder="Buscar por nome ou código..." autocomplete="off"
+          oninput="clearTimeout(this._t);this._t=setTimeout(renderCatalogo,200)">
       </div>
       <div id="catalogoContent">
         <div class="loading"><div class="spinner"></div><p>Carregando catálogo...</p></div>
@@ -361,12 +416,15 @@ input[type=number]{-moz-appearance:textfield;}
         <label class="form-label">Observação (opcional)</label>
         <textarea id="solObs" class="form-input" rows="2" placeholder="Urgência, local de entrega, etc."></textarea>
       </div>
-      <div style="margin-top:14px">
-        <button class="btn btn-primary" id="btnSolicitar" onclick="enviarSolicitacao()" style="background:var(--green);border-color:var(--green)">
-          📤 Enviar Solicitação
-        </button>
-        <div class="err-msg" id="solErr"></div>
+      <div id="barraCarrinho" class="carrinho-barra hidden">
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--text-3)">Na solicitação</div>
+          <div id="carrinhoResumo" style="font-size:14px;font-weight:800;color:var(--text-1)">—</div>
+        </div>
+        <button class="btn btn-primary" style="width:auto;padding:12px 18px;background:var(--green);border-color:var(--green)"
+          onclick="abrirConfirmacao()">Revisar e enviar</button>
       </div>
+      <div class="err-msg" id="solErr"></div>
     </div>
 
     <!-- HISTÓRICO -->
@@ -378,6 +436,26 @@ input[type=number]{-moz-appearance:textfield;}
 
   </div><!-- /tab-content -->
 </div><!-- /app -->
+
+<!-- ═══ CONFIRMAÇÃO DA SOLICITAÇÃO ═══ -->
+<div class="eq-modal hidden" id="modalConfirmarSol">
+  <div class="eq-modal-box">
+    <div class="eq-modal-tit">Confira antes de enviar</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Estes itens vão para o almoxarifado:</div>
+    <div id="confItens"></div>
+    <div style="display:flex;justify-content:space-between;margin:14px 0;padding-top:12px;border-top:1px solid var(--border)">
+      <span style="font-size:13px;color:var(--text-3)">Total</span>
+      <span id="confTotal" style="font-size:15px;font-weight:800;color:var(--text-1)">—</span>
+    </div>
+    <div id="confObs" style="font-size:12px;color:var(--text-3);margin-bottom:12px"></div>
+    <button class="btn btn-primary" id="btnSolicitar" onclick="enviarSolicitacao()"
+      style="background:var(--green);border-color:var(--green)">📤 Confirmar e enviar</button>
+    <button class="btn" onclick="fecharConfirmacao()" style="background:transparent;border:1px solid var(--border);color:var(--text-2);margin-top:8px">
+      Voltar e ajustar
+    </button>
+    <div class="err-msg" id="confErr"></div>
+  </div>
+</div>
 
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
@@ -469,40 +547,60 @@ function irTab(nome, btn) {
 }
 
 // ═══════════════════════════════════════
-// MEDIDORES
+// SERIAIS COM A EQUIPE
 // ═══════════════════════════════════════
+// Cada modelo abre e fecha; dentro dele, um serial por linha com o tempo em mãos e o que fazer.
+let _modelosAbertos = {};
+
+// 10 dias é o prazo do medidor com a equipe.
+function situacaoSerial(m) {
+  const restam = m.diasRestantesEquipe;
+  if (m.vencidoEquipe || restam === 0) {
+    return { classe: 'bloqueado', titulo: 'Bloqueado para novas solicitações deste modelo',
+      texto: 'Instale ou devolva ao almoxarifado para liberar novas solicitações deste modelo.', icone: '🚫' };
+  }
+  if (restam !== null && restam <= 5) {
+    return { classe: 'atencao', titulo: 'Priorize a instalação',
+      texto: 'Instale nos próximos dias ou devolva ao almoxarifado.', icone: '⏳' };
+  }
+  return { classe: 'ok', titulo: 'Disponível para instalação', texto: 'Dentro do prazo.', icone: '✅' };
+}
+
+window.toggleModelo = function (matId) {
+  _modelosAbertos[matId] = !_modelosAbertos[matId];
+  const card = document.getElementById('modelo_' + matId);
+  if (card) card.classList.toggle('aberto', _modelosAbertos[matId]);
+};
+
 async function carregarMedidores() {
   const el = document.getElementById('medidoresContent');
   const data = await api('/equipe-app/medidores');
-  if (!data?.ok) { el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar medidores</div></div>`; return; }
+  if (!data?.ok) { el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar seriais</div></div>`; return; }
 
   const meds = data.data || [];
   const bloqueados = data.modelosBloqueados || {};
 
-  // Alerta de bloqueio
   const temBloqueio = Object.values(bloqueados).some(b => b);
   const alertaEl = document.getElementById('alertaBloqueio');
   if (temBloqueio) {
-    const modelos = Object.entries(bloqueados).filter(([,b])=>b).map(([k])=>k);
+    const modelos = Object.entries(bloqueados).filter(([, b]) => b).map(([k]) => k);
     alertaEl.classList.remove('hidden');
     document.getElementById('alertaBloqueioTxt').textContent =
-      `Prazo vencido em ${modelos.length} modelo(s) de medidor. Não será possível solicitar mais desses modelos.`;
+      `${modelos.length} modelo(s) com prazo estourado. Instale ou devolva esses seriais para voltar a solicitar esses modelos.`;
   } else {
     alertaEl.classList.add('hidden');
   }
 
-  // Badge na tab
-  const vencidos = meds.filter(m => m.statusPrazo === 'VENCIDO').length;
+  const vencidos = meds.filter(m => m.vencidoEquipe).length;
   const badgeEl = document.getElementById('badgeMedVencidos');
   if (vencidos > 0) { badgeEl.textContent = vencidos; badgeEl.classList.add('show'); }
   else badgeEl.classList.remove('show');
 
   if (!meds.length) {
-    el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-txt">Nenhum medidor em aberto com esta equipe</div></div>`;
+    el.innerHTML = `<div class="empty"><div class="empty-icon">✅</div><div class="empty-txt">Nenhum serial com a sua equipe</div></div>`;
     return;
   }
 
-  // Agrupar por modelo
   const porModelo = {};
   meds.forEach(m => {
     const k = m.id_material;
@@ -511,47 +609,47 @@ async function carregarMedidores() {
   });
 
   el.innerHTML = Object.entries(porModelo).map(([matId, grp]) => {
-    const bloq = bloqueados[matId];
-    const serialsHtml = grp.meds.map(m => {
-      const dEq = m.diasNaEquipe; const dGl = m.diasGlobal;
-      const restEq = m.diasRestantesEquipe; const restGl = m.diasRestantesGlobal;
-      const sp = m.statusPrazo;
-      const statusHtml = sp === 'VENCIDO' ? '<span class="status-badge status-vencido">🔴 Vencido</span>'
-        : sp === 'PROXIMO' ? '<span class="status-badge status-proximo">🟡 Próx. vencimento</span>'
-        : '<span class="status-badge status-em-dia">🟢 Em dia</span>';
+    const bloq = !!bloqueados[matId];
+    const emAtencao = grp.meds.filter(m => !m.vencidoEquipe && m.diasRestantesEquipe !== null && m.diasRestantesEquipe <= 5).length;
+    const vencidosModelo = grp.meds.filter(m => m.vencidoEquipe || m.diasRestantesEquipe === 0).length;
+    const resumo = bloq
+      ? `<span style="color:#f87171;font-weight:700">🚫 ${vencidosModelo} vencido(s) — modelo bloqueado</span>`
+      : emAtencao
+        ? `<span style="color:#fbbf24;font-weight:700">⏳ ${emAtencao} perto do prazo</span>`
+        : '<span style="color:#4ade80;font-weight:700">✅ todos no prazo</span>';
 
-      return `<div class="medidor-card">
-        <div style="display:flex;align-items:center;justify-content:space-between">
+    const seriaisHtml = grp.meds.map(m => {
+      const st = situacaoSerial(m);
+      const desde = m.data_entrega_equipe ? new Date(m.data_entrega_equipe + 'T12:00:00').toLocaleDateString('pt-BR') : null;
+      const emMaos = m.diasNaEquipe !== null ? `${m.diasNaEquipe} dia(s) com você${desde ? ` · desde ${desde}` : ''}` : 'Sem data de entrega registrada';
+      const contador = m.vencidoEquipe
+        ? `${m.diasNaEquipe - 10} dia(s) em atraso`
+        : m.diasRestantesEquipe !== null ? `Faltam ${m.diasRestantesEquipe} dia(s)` : '—';
+      return `<div class="serial-item">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
           <div>
-            <div class="medidor-serial">${escHtml(m.numero_serie)}</div>
-            <div class="medidor-desc">${escHtml(m.material_descricao)}</div>
+            <div class="serial-num">${escHtml(m.numero_serie)}</div>
+            <div class="serial-dias">${escHtml(emMaos)}</div>
           </div>
-          ${statusHtml}
+          <div class="contador ${st.classe}" style="text-align:right;white-space:nowrap">${escHtml(contador)}</div>
         </div>
-        <div class="medidor-prazos">
-          <div class="prazo-box">
-            <div class="prazo-label">Prazo na equipe (10d)</div>
-            <div class="prazo-val ${m.vencidoEquipe?'danger':dEq!==null&&dEq>=7?'warn':'ok'}">
-              ${dEq !== null ? (m.vencidoEquipe ? `${dEq}d ❌` : `${restEq}d restam`) : '—'}
-            </div>
-          </div>
-          <div class="prazo-box">
-            <div class="prazo-label">Prazo global (50d)</div>
-            <div class="prazo-val ${m.vencidoGlobal?'danger':dGl!==null&&dGl>=40?'warn':'ok'}">
-              ${dGl !== null ? (m.vencidoGlobal ? `${dGl}d ❌` : `${restGl}d restam`) : '—'}
-            </div>
-          </div>
+        <div class="serial-status ${st.classe}">
+          <span>${st.icone}</span>
+          <span><strong>${escHtml(st.titulo)}</strong><br><span style="font-weight:500">${escHtml(st.texto)}</span></span>
         </div>
       </div>`;
     }).join('');
 
-    return `<div style="margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <span style="font-size:12px;font-weight:700;color:var(--text-1)">${escHtml(grp.desc)}</span>
-        <span style="font-size:10px;color:var(--text-3)">${grp.meds.length} serial(is)</span>
-        ${bloq ? '<span style="font-size:10px;font-weight:700;color:var(--red);background:var(--red-soft);padding:2px 7px;border-radius:10px">🚫 BLOQUEADO</span>' : ''}
+    return `<div class="modelo-card ${bloq ? 'bloq' : ''} ${_modelosAbertos[matId] ? 'aberto' : ''}" id="modelo_${escHtml(matId)}">
+      <div class="modelo-head" onclick="toggleModelo('${escJs(matId)}')">
+        <div class="modelo-qtd">${grp.meds.length}</div>
+        <div style="flex:1;min-width:0">
+          <div class="modelo-nome">${escHtml(grp.desc)}</div>
+          <div class="modelo-sub">${grp.meds.length} serial(is) · ${resumo}</div>
+        </div>
+        <div class="modelo-seta">▶</div>
       </div>
-      ${serialsHtml}
+      <div class="modelo-corpo">${seriaisHtml}</div>
     </div>`;
   }).join('');
 }
@@ -589,40 +687,101 @@ async function carregarMateriais() {
 // ═══════════════════════════════════════
 // CATÁLOGO + SOLICITAR
 // ═══════════════════════════════════════
+// Primeiro as categorias; a lista completa só aparece dentro da categoria ou na busca.
+let _catalogo = [];
+let _categoriaAberta = null;
+
+const ICONE_CATEGORIA = {
+  'medidores': '📟', 'cabo': '🧵', 'cabos': '🧵', 'disjuntor': '🔌', 'disjuntores': '🔌',
+  'conectores': '🔗', 'alças': '🪢', 'alcas': '🪢', 'diversos': '📦',
+};
+const iconeDe = (cat) => ICONE_CATEGORIA[String(cat || '').toLowerCase()] || '📦';
+
 async function carregarCatalogo() {
   const el = document.getElementById('catalogoContent');
   const data = await api('/equipe-app/catalogo');
   _carretos.catalogo = true;
   if (!data?.ok) { el.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><div class="empty-txt">Erro ao carregar catálogo</div></div>`; return; }
 
-  const itens = data.data || [];
-  if (!itens.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-txt">Nenhum material disponível para solicitar</div></div>`; return; }
-
+  _catalogo = data.data || [];
   _qtds = {};
-  itens.forEach(it => { _qtds[it.codigo] = { qtd: 0, ...it }; });
-
+  _catalogo.forEach(it => { _qtds[it.codigo] = { qtd: 0, ...it }; });
+  _categoriaAberta = null;
   document.getElementById('obsWrap').classList.remove('hidden');
-  el.innerHTML = `
-    <div style="background:rgba(14,165,233,.07);border:1px solid rgba(14,165,233,.2);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--accent-text)">
-      ℹ️ Se algum item não aparecer nesta lista, significa que não há estoque disponível no momento. Contate o almoxarifado.
-    </div>
-    <div class="card"><div class="card-body">
-    ${itens.map(it => `
-      <div class="item-solicitar">
-        <div style="flex:1;min-width:0">
-          <div class="material-name">${escHtml(it.descricao)}</div>
-          <div class="material-cod">${it.codigo}${it.tem_serial?' · 📟 serial':''}</div>
-        </div>
-        <div class="qty-ctrl" style="flex-shrink:0;margin-left:10px">
-          <input type="number" min="0" max="${it.saldo}" step="${it.unidade_med==='MT'?10:1}"
-            value="0" id="qty_${it.codigo}"
-            class="qty-input"
-            oninput="setQtd('${it.codigo}',this.value)" placeholder="0">
-          <span style="font-size:10px;color:var(--text-3)">${it.unidade_med||'un.'}</span>
-        </div>
-      </div>`).join('')}
-  </div></div>`;
+  renderCatalogo();
 }
+
+function renderCatalogo() {
+  const el = document.getElementById('catalogoContent');
+  if (!_catalogo.length) { el.innerHTML = `<div class="empty"><div class="empty-icon">📦</div><div class="empty-txt">Nenhum material disponível para solicitar</div></div>`; return; }
+  const busca = (document.getElementById('solBusca')?.value || '').trim().toLowerCase();
+
+  // Buscando: mostra o resultado direto, sem categoria
+  if (busca) {
+    const achados = _catalogo.filter(it =>
+      (it.descricao || '').toLowerCase().includes(busca) || String(it.codigo || '').toLowerCase().includes(busca));
+    el.innerHTML = achados.length
+      ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:8px">${achados.length} item(ns) para "${escHtml(busca)}"</div>
+         <div class="card"><div class="card-body">${achados.map(linhaItem).join('')}</div></div>`
+      : `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-txt">Nada encontrado para "${escHtml(busca)}"<br><span style="font-size:12px">Se o item não aparece, é porque não há saldo no almoxarifado.</span></div></div>`;
+    atualizarCarrinho();
+    return;
+  }
+
+  // Dentro de uma categoria
+  if (_categoriaAberta) {
+    const itens = _catalogo.filter(it => (it.categoria || 'Diversos') === _categoriaAberta);
+    el.innerHTML = `
+      <div class="cat-voltar" onclick="abrirCategoria(null)">← Todas as categorias</div>
+      <div style="font-size:14px;font-weight:800;color:var(--text-1);margin-bottom:8px">${iconeDe(_categoriaAberta)} ${escHtml(_categoriaAberta)}</div>
+      <div class="card"><div class="card-body">${itens.map(linhaItem).join('')}</div></div>`;
+    atualizarCarrinho();
+    return;
+  }
+
+  // Lista de categorias
+  const porCat = {};
+  _catalogo.forEach(it => {
+    const c = it.categoria || 'Diversos';
+    if (!porCat[c]) porCat[c] = 0;
+    porCat[c]++;
+  });
+  el.innerHTML = `
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:12px">Escolha a categoria do que você precisa:</div>
+    <div class="cat-grid">
+      ${Object.entries(porCat).sort((a, b) => a[0].localeCompare(b[0], 'pt-BR')).map(([cat, n]) => `
+        <div class="cat-card" onclick="abrirCategoria('${escJs(cat)}')">
+          <div class="cat-icone">${iconeDe(cat)}</div>
+          <div class="cat-nome">${escHtml(cat)}</div>
+          <div class="cat-qtd">${n} item(ns)</div>
+        </div>`).join('')}
+    </div>`;
+  atualizarCarrinho();
+}
+
+function linhaItem(it) {
+  const escolhido = _qtds[it.codigo]?.qtd || 0;
+  return `<div class="item-solicitar">
+    <div style="flex:1;min-width:0">
+      <div class="material-name">${escHtml(it.descricao)}</div>
+      <div class="material-cod">${escHtml(it.codigo)}${it.tem_serial ? ' · 📟 serial' : ''} · ${it.saldo} disponível(is)</div>
+    </div>
+    <div class="qty-ctrl" style="flex-shrink:0;margin-left:10px">
+      <input type="number" min="0" max="${it.saldo}" step="${it.unidade_med === 'MT' ? 10 : 1}"
+        value="${escolhido}" id="qty_${escHtml(it.codigo)}" class="qty-input"
+        oninput="setQtd('${escJs(it.codigo)}',this.value)" placeholder="0">
+      <span style="font-size:10px;color:var(--text-3)">${escHtml(it.unidade_med || 'un.')}</span>
+    </div>
+  </div>`;
+}
+
+window.abrirCategoria = function (cat) {
+  _categoriaAberta = cat;
+  const busca = document.getElementById('solBusca');
+  if (busca) busca.value = '';
+  renderCatalogo();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 function setQtd(cod, val) {
   const item = _qtds[cod];
@@ -630,39 +789,77 @@ function setQtd(cod, val) {
   item.qtd = Math.max(0, Math.min(Number(val) || 0, item.saldo));
   const el = document.getElementById(`qty_${cod}`);
   if (el) el.value = item.qtd;
+  atualizarCarrinho();
+}
+
+function itensEscolhidos() {
+  return Object.values(_qtds).filter(it => it.qtd > 0);
+}
+
+function atualizarCarrinho() {
+  const escolhidos = itensEscolhidos();
+  const barra = document.getElementById('barraCarrinho');
+  if (!barra) return;
+  barra.classList.toggle('hidden', !escolhidos.length);
+  const total = escolhidos.reduce((t, it) => t + Number(it.qtd), 0);
+  document.getElementById('carrinhoResumo').textContent =
+    `${escolhidos.length} item(ns) · ${total} unidade(s)`;
+}
+
+function abrirConfirmacao() {
+  const escolhidos = itensEscolhidos();
+  const errEl = document.getElementById('solErr');
+  if (!escolhidos.length) { errEl.textContent = 'Selecione ao menos 1 item'; return; }
+  errEl.textContent = '';
+  document.getElementById('confItens').innerHTML = escolhidos.map(it => `
+    <div class="eq-conf-linha">
+      <div style="flex:1;min-width:0">
+        <div class="material-name">${escHtml(it.descricao)}</div>
+        <div class="material-cod">${escHtml(it.codigo)}</div>
+      </div>
+      <div style="text-align:right;white-space:nowrap">
+        <div style="font-size:18px;font-weight:800;color:var(--accent-text)">${it.qtd}</div>
+        <div style="font-size:10px;color:var(--text-3)">${escHtml(it.unidade_med || 'un.')}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('confTotal').textContent =
+    `${escolhidos.length} item(ns) · ${escolhidos.reduce((t, it) => t + Number(it.qtd), 0)} unidade(s)`;
+  const obs = document.getElementById('solObs').value.trim();
+  document.getElementById('confObs').textContent = obs ? `Observação: ${obs}` : '';
+  document.getElementById('confErr').textContent = '';
+  document.getElementById('modalConfirmarSol').classList.remove('hidden');
+}
+
+function fecharConfirmacao() {
+  document.getElementById('modalConfirmarSol').classList.add('hidden');
 }
 
 async function enviarSolicitacao() {
-  const itens = Object.values(_qtds).filter(it => it.qtd > 0).map(it => ({
-    codigo:      it.codigo,
-    descricao:   it.descricao,
-    item_id:     it.item_id || it.id_material,
-    quantidade:  it.qtd,
+  const itens = itensEscolhidos().map(it => ({
+    codigo: it.codigo,
+    descricao: it.descricao,
+    item_id: it.item_id || it.id_material,
+    quantidade: it.qtd,
     unidade_med: it.unidade_med,
-    tem_serial:  it.tem_serial || false,
+    tem_serial: it.tem_serial || false,
   }));
-
-  const errEl = document.getElementById('solErr');
+  const errEl = document.getElementById('confErr');
   if (!itens.length) { errEl.textContent = 'Selecione ao menos 1 item'; return; }
   errEl.textContent = '';
 
   const btn = document.getElementById('btnSolicitar');
   btn.disabled = true; btn.textContent = 'Enviando...';
-
-  const obs  = document.getElementById('solObs').value.trim();
-  const data = await api('/equipe-app/solicitar', {
-    method: 'POST',
-    body: JSON.stringify({ itens, observacao: obs })
-  });
-
-  btn.disabled = false;
-  btn.innerHTML = '📤 Enviar Solicitação';
+  const obs = document.getElementById('solObs').value.trim();
+  const data = await api('/equipe-app/solicitar', { method: 'POST', body: JSON.stringify({ itens, observacao: obs }) });
+  btn.disabled = false; btn.innerHTML = '📤 Confirmar e enviar';
 
   if (!data?.ok) { errEl.textContent = data?.erro || 'Erro ao enviar'; return; }
 
-  // Reset quantidades
-  Object.keys(_qtds).forEach(k => { _qtds[k].qtd = 0; const el = document.getElementById(`qty_${k}`); if(el) el.value = '0'; });
+  Object.keys(_qtds).forEach(k => { _qtds[k].qtd = 0; const el = document.getElementById(`qty_${k}`); if (el) el.value = '0'; });
   document.getElementById('solObs').value = '';
+  fecharConfirmacao();
+  atualizarCarrinho();
+  renderCatalogo();
   mostrarToast('✅ Solicitação enviada com sucesso!', 'success');
   _carretos.historico = false;
 }
