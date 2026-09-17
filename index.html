@@ -434,7 +434,8 @@ tbody tr:hover td{background:var(--bg-hover);}
 @keyframes eaBrilho{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}100%{box-shadow:0 0 0 14px rgba(34,197,94,0)}}
 @keyframes eaTremor{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(3px)}50%{transform:translateX(-3px)}}
 
-.ea-passo{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:14px;animation:eaEntra .25s ease both;}
+.ea-passo{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:14px;position:relative;z-index:1;}
+.ea-passo:focus-within{z-index:70;}
 .ea-passo.ativo{border-color:rgba(99,102,241,.55);box-shadow:0 0 0 3px rgba(99,102,241,.10);}
 .ea-passo.pronto{border-color:rgba(34,197,94,.45);}
 .ea-passo-cab{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);}
@@ -3230,21 +3231,68 @@ window.addEventListener('pageshow', function(e) {
         <!-- HISTÓRICO -->
         <div id="areaConsultaAtendEnel" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div style="font-size:13px;font-weight:600;color:var(--text-1)">Histórico de Atendimentos ENEL</div>
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text-1)">Atendimentos realizados</div>
+              <div style="font-size:11px;color:var(--text-3)">Consulte, reimprima a ficha ou cancele um atendimento</div>
+            </div>
             <button class="btn btn-ghost" onclick="enelAbrirAtendimento()">← Voltar</button>
           </div>
+
+          <div class="ea-resumo" id="eaHistResumo"></div>
+
           <div class="card">
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+              <div class="card-title">Histórico</div>
+              <div class="card-actions" style="flex-wrap:wrap">
+                <input type="date" id="eaHistDe" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
+                <input type="date" id="eaHistAte" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
+                <input type="text" id="eaHistEquipe" class="search-box" placeholder="Equipe..." oninput="clearTimeout(this._t);this._t=setTimeout(carregarHistAtendEnel,400)">
+                <select id="eaHistStatus" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
+                  <option value="">Todos</option>
+                  <option value="ATIVO" selected>Somente válidos</option>
+                  <option value="CANCELADO">Somente cancelados</option>
+                </select>
+                <button class="btn btn-ghost" onclick="carregarHistAtendEnel()">↻ Atualizar</button>
+              </div>
+            </div>
             <table id="tbHistAtendEnel">
               <thead><tr>
                 <th>Data/Hora</th>
                 <th>Equipe</th>
-                <th style="text-align:center">Itens</th>
+                <th style="text-align:center">Materiais</th>
+                <th style="text-align:center">Unidades</th>
+                <th style="text-align:center">Seriais</th>
                 <th style="text-align:center">Tempo</th>
                 <th>Atendente</th>
+                <th>Status</th>
                 <th></th>
               </tr></thead>
               <tbody id="tbodyHistAtendEnel"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: CANCELAR ATENDIMENTO ENEL -->
+      <div class="modal-overlay hidden" id="modalCancelAtendEnel">
+        <div class="modal-box" style="max-width:520px">
+          <div class="modal-header">
+            <div class="modal-title">✕ Cancelar atendimento</div>
+            <button class="modal-close" onclick="document.getElementById('modalCancelAtendEnel').classList.add('hidden')">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="ea-banner aviso" style="margin-bottom:14px">
+              <span style="font-size:18px">⚠️</span>
+              <span>O material volta para o estoque, sai do saldo da equipe e os medidores voltam para o estoque.</span>
+            </div>
+            <div id="eaCancelResumo" style="font-size:12px;color:var(--text-2);margin-bottom:12px"></div>
+            <label class="form-label">Motivo do cancelamento *</label>
+            <textarea id="eaCancelMotivo" class="form-input" rows="3" placeholder="Ex.: entrega lançada para a equipe errada"></textarea>
+            <div id="eaCancelErro" style="color:var(--red);font-size:12px;min-height:16px;margin-top:6px"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="document.getElementById('modalCancelAtendEnel').classList.add('hidden')">Voltar</button>
+            <button class="btn btn-primary" id="eaCancelBtn" style="background:var(--red);border-color:var(--red)" onclick="eaConfirmarCancelamento()">Cancelar atendimento</button>
           </div>
         </div>
       </div>
@@ -19951,6 +19999,10 @@ function eaAbrirFicha() {
   const totalUn = d.itens.reduce((a, it) => a + Number(it.quantidade), 0);
   document.getElementById('fichaEnelSub').textContent = `Equipe ${d.equipe} · ${formatarData(d.data)} · ${eaTempoFmt(d.tempo_segundos)}`;
   document.getElementById('fichaEnelCorpo').innerHTML = `
+    ${d.cancelado ? `<div class="ea-banner erro" style="animation:none">
+      <span style="font-size:18px">✕</span>
+      <span>Atendimento CANCELADO por ${escHtml(d.cancelado_por || '—')}${d.cancelado_em ? ' em ' + d.cancelado_em.replace('T', ' ').slice(0, 16) : ''}${d.motivo_cancelamento ? ` — ${escHtml(d.motivo_cancelamento)}` : ''}</span>
+    </div>` : ''}
     <div class="ea-resumo" style="margin-bottom:16px">
       <div class="ea-resumo-card"><b>${d.itens.length}</b><span>materiais</span></div>
       <div class="ea-resumo-card"><b>${totalUn}</b><span>unidades</span></div>
@@ -20021,23 +20073,107 @@ function imprimirFichaEnel() {
   abrirJanelaPDF(html, 'Ficha de Entrega ENEL');
 }
 
+let _eaHist = [];
+
 async function carregarHistAtendEnel() {
   const tbody = document.getElementById('tbodyHistAtendEnel');
   if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-  const data = await api('/enel/atendimentos');
-  const lista = data?.data||[];
-  tbody.innerHTML = lista.length ? lista.map(a=>{
-    const seg = Number(a.tempo_segundos||0);
-    const tempo = `${String(Math.floor(seg/3600)).padStart(2,'0')}:${String(Math.floor((seg%3600)/60)).padStart(2,'0')}:${String(seg%60).padStart(2,'0')}`;
-    return `<tr>
-      <td style="font-size:11px">${a.criado_em?a.criado_em.replace('T',' ').slice(0,16):'—'}</td>
-      <td class="td-main">${escHtml(a.nome_equipe||'—')}</td>
-      <td style="text-align:center;font-weight:600">${a.qtd_itens||0}</td>
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="9"><div class="spinner"></div></td></tr>';
+  const params = [];
+  const de = document.getElementById('eaHistDe')?.value;
+  const ate = document.getElementById('eaHistAte')?.value;
+  const equipe = document.getElementById('eaHistEquipe')?.value.trim();
+  const status = document.getElementById('eaHistStatus')?.value;
+  if (de) params.push(`data_inicio=${de}`);
+  if (ate) params.push(`data_fim=${ate}`);
+  if (equipe) params.push(`equipe=${encodeURIComponent(equipe)}`);
+  if (status) params.push(`status=${status}`);
+  const data = await api('/enel/atendimentos' + (params.length ? '?' + params.join('&') : ''));
+  _eaHist = (data?.data || []).map(a => {
+    let itens = [];
+    try { itens = JSON.parse(a.itens_json || '[]'); } catch {}
+    const unidades = itens.reduce((t, it) => t + Number(it.quantidade || 0), 0);
+    const seriais = itens.reduce((t, it) => t + (it.seriais || []).length, 0);
+    return { ...a, itens, unidades, seriais, status: a.status || 'ATIVO' };
+  });
+
+  const validos = _eaHist.filter(a => a.status !== 'CANCELADO');
+  document.getElementById('eaHistResumo').innerHTML = `
+    <div class="ea-resumo-card"><b>${validos.length}</b><span>atendimentos</span></div>
+    <div class="ea-resumo-card"><b>${validos.reduce((t, a) => t + a.unidades, 0)}</b><span>unidades entregues</span></div>
+    <div class="ea-resumo-card"><b>${validos.reduce((t, a) => t + a.seriais, 0)}</b><span>medidores entregues</span></div>
+    <div class="ea-resumo-card"><b style="color:${_eaHist.length - validos.length ? '#fca5a5' : 'var(--text-1)'}">${_eaHist.length - validos.length}</b><span>cancelados</span></div>`;
+
+  tbody.innerHTML = _eaHist.length ? _eaHist.map((a, idx) => {
+    const seg = Number(a.tempo_segundos || 0);
+    const tempo = `${String(Math.floor(seg / 3600)).padStart(2, '0')}:${String(Math.floor((seg % 3600) / 60)).padStart(2, '0')}:${String(seg % 60).padStart(2, '0')}`;
+    const cancelado = a.status === 'CANCELADO';
+    const tag = cancelado
+      ? `<span style="color:#fca5a5;font-size:11px;font-weight:700" title="${escHtml(a.motivo_cancelamento || '')}">✕ Cancelado</span>`
+      : '<span style="color:#4ade80;font-size:11px;font-weight:700">✓ Válido</span>';
+    return `<tr style="${cancelado ? 'opacity:.6' : ''}">
+      <td style="font-size:11px">${a.criado_em ? a.criado_em.replace('T', ' ').slice(0, 16) : formatarData(a.data)}</td>
+      <td class="td-main" style="font-family:var(--font-mono)">${escHtml(a.nome_equipe || '—')}</td>
+      <td style="text-align:center;font-weight:600">${a.itens.length}</td>
+      <td style="text-align:center">${a.unidades}</td>
+      <td style="text-align:center">${a.seriais || '—'}</td>
       <td style="text-align:center;font-family:var(--font-mono);font-size:11px">${tempo}</td>
-      <td style="font-size:11px;color:var(--text-3)">${a.usuario||'—'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(a.usuario || '—')}</td>
+      <td>${tag}</td>
+      <td style="display:flex;gap:4px;justify-content:flex-end">
+        <button class="row-action" onclick="eaVerAtendimento(${idx})">Ver</button>
+        ${cancelado ? '' : `<button class="row-action" style="color:var(--red)" onclick="eaAbrirCancelamento(${idx})">Cancelar</button>`}
+      </td>
     </tr>`;
-  }).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhum atendimento</td></tr>`;
+  }).join('') : '<tr><td colspan="9" style="padding:18px;text-align:center;color:var(--text-3)">Nenhum atendimento no período</td></tr>';
+}
+
+function eaAtendParaFicha(a) {
+  return {
+    id: a.id, equipe: a.nome_equipe, data: a.data, hora_inicio: a.hora_inicio, hora_fim: a.hora_fim,
+    tempo_segundos: a.tempo_segundos, atendente: a.usuario, itens: a.itens,
+    cancelado: a.status === 'CANCELADO', motivo_cancelamento: a.motivo_cancelamento,
+    cancelado_por: a.cancelado_por, cancelado_em: a.cancelado_em,
+  };
+}
+
+window.eaVerAtendimento = function (idx) {
+  const a = _eaHist[idx];
+  if (!a) return;
+  window.__EA_ULTIMO__ = eaAtendParaFicha(a);
+  eaAbrirFicha();
+};
+
+window.eaAbrirCancelamento = function (idx) {
+  const a = _eaHist[idx];
+  if (!a) return;
+  window.__EA_CANCELAR__ = a;
+  document.getElementById('eaCancelResumo').innerHTML =
+    `<strong>Equipe ${escHtml(a.nome_equipe || '—')}</strong> · ${formatarData(a.data)} · ${a.itens.length} material(is) · ${a.unidades} unidade(s)` +
+    (a.seriais ? ` · ${a.seriais} medidor(es) voltam ao estoque` : '');
+  document.getElementById('eaCancelMotivo').value = '';
+  document.getElementById('eaCancelErro').textContent = '';
+  document.getElementById('modalCancelAtendEnel').classList.remove('hidden');
+  setTimeout(() => document.getElementById('eaCancelMotivo')?.focus(), 120);
+};
+
+async function eaConfirmarCancelamento() {
+  const a = window.__EA_CANCELAR__;
+  if (!a) return;
+  const motivo = document.getElementById('eaCancelMotivo').value.trim();
+  const erro = document.getElementById('eaCancelErro');
+  if (motivo.length < 5) { erro.textContent = 'Escreva o motivo do cancelamento.'; return; }
+  const btn = document.getElementById('eaCancelBtn');
+  btn.disabled = true; btn.textContent = 'Cancelando...';
+  const res = await apiMovimentacao(`/enel/atendimentos/${encodeURIComponent(a.id)}/cancelar`, { motivo });
+  btn.disabled = false; btn.textContent = 'Cancelar atendimento';
+  if (!res?.ok) { erro.textContent = res?.erro || 'Não foi possível cancelar.'; return; }
+  document.getElementById('modalCancelAtendEnel').classList.add('hidden');
+  window.__EA_CANCELAR__ = null;
+  toast(`Atendimento cancelado${res.seriais_devolvidos ? ` — ${res.seriais_devolvidos} medidor(es) voltaram ao estoque` : ''}`, 'success', 6000);
+  if (res.avisos?.length) toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
+  carregarHistAtendEnel();
+  carregarEstoqueEnel();
 }
 
 // ── PRÉ-BAIXAS ──
