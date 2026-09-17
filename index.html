@@ -19806,6 +19806,11 @@ window.eaAlterarQtd = function (idx, delta) {
 function eaRenderItens() {
   const box = document.getElementById('enelListaItens');
   if (!box) return;
+  // A lista é redesenhada a cada bip: guarda o campo que estava em uso para devolver o foco
+  // (senão o leitor bipa o serial seguinte com o campo já destruído).
+  const focado = document.activeElement;
+  const focoId = focado && /^eaBip\d+$/.test(focado.id || '') ? focado.id : null;
+  const focoValor = focoId ? focado.value : '';
   const itens = window.__ENEL__.itens || [];
   const totalUn = itens.reduce((a, it) => a + Number(it.quantidade), 0);
   const totalSeriais = itens.reduce((a, it) => a + (it.seriais || []).length, 0);
@@ -19872,6 +19877,11 @@ function eaRenderItens() {
       ${blocoSerial}
     </div>`;
   }).join('');
+  if (focoId) {
+    const volta = document.getElementById(focoId);
+    if (volta) { volta.value = focoValor; volta.focus(); }
+    else { const proximo = box.querySelector('.ea-bip input'); if (proximo) proximo.focus(); }
+  }
   eaAtualizarFilaStatus();
 }
 // Mantido: a tela de solicitações chama enelRenderItens()
