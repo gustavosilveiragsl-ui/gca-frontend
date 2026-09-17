@@ -421,6 +421,88 @@ tbody tr:hover td{background:var(--bg-hover);}
 .toast-error{background:#991b1b;border-color:#ef4444;color:#fee2e2;}
 .toast-info{background:#1e40af;border-color:#3b82f6;color:#dbeafe;}
 .toast-warn{background:#92400e;border-color:#f59e0b;color:#fef3c7;}
+/* ── Atendimento ENEL ─────────────────────────────────────────────── */
+.ea-topo{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  background:linear-gradient(135deg,rgba(245,158,11,.14),rgba(139,92,246,.10));
+  border:1px solid rgba(245,158,11,.35);border-radius:var(--radius-md);padding:14px 18px;margin-bottom:16px;}
+.ea-crono{font-family:var(--font-mono);font-size:30px;font-weight:800;color:var(--yellow);line-height:1;letter-spacing:1px;}
+.ea-topo-eq{font-size:15px;font-weight:800;color:var(--text-1);}
+.ea-topo-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-3);}
+.ea-pontinho{width:8px;height:8px;border-radius:50%;background:var(--yellow);display:inline-block;animation:eaPisca 1.4s ease-in-out infinite;}
+@keyframes eaPisca{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.8)}}
+@keyframes eaEntra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes eaBrilho{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}100%{box-shadow:0 0 0 14px rgba(34,197,94,0)}}
+@keyframes eaTremor{10%,90%{transform:translateX(-2px)}30%,70%{transform:translateX(3px)}50%{transform:translateX(-3px)}}
+
+.ea-passo{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:14px;animation:eaEntra .25s ease both;}
+.ea-passo.ativo{border-color:rgba(99,102,241,.55);box-shadow:0 0 0 3px rgba(99,102,241,.10);}
+.ea-passo.pronto{border-color:rgba(34,197,94,.45);}
+.ea-passo-cab{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--border);}
+.ea-num{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;
+  background:rgba(99,102,241,.16);color:#a5b4fc;border:1px solid rgba(99,102,241,.4);flex:0 0 auto;}
+.ea-passo.pronto .ea-num{background:rgba(34,197,94,.16);color:#4ade80;border-color:rgba(34,197,94,.45);}
+.ea-passo-tit{font-size:14px;font-weight:700;color:var(--text-1);}
+.ea-passo-sub{font-size:11px;color:var(--text-3);margin-top:1px;}
+.ea-passo-corpo{padding:16px 18px;}
+
+.ea-busca{position:relative;}
+.ea-busca input{width:100%;padding:16px 16px 16px 46px;font-size:15px;font-weight:600;border-radius:var(--radius-md);
+  background:var(--bg);border:2px solid var(--border-mid);color:var(--text-1);transition:border-color .15s,box-shadow .15s;}
+.ea-busca input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(99,102,241,.14);}
+.ea-busca .ea-icone{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:18px;opacity:.85;pointer-events:none;}
+.ea-busca.equipe input{border-color:rgba(56,189,248,.45);}
+.ea-busca.equipe input:focus{border-color:#38bdf8;box-shadow:0 0 0 4px rgba(56,189,248,.16);}
+.ea-busca.material input{border-color:rgba(245,158,11,.45);}
+.ea-busca.material input:focus{border-color:var(--yellow);box-shadow:0 0 0 4px rgba(245,158,11,.16);}
+.ea-sug{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;max-height:260px;overflow-y:auto;
+  background:var(--bg-card);border:1px solid var(--border-mid);border-radius:var(--radius-md);box-shadow:0 18px 40px rgba(0,0,0,.45);}
+.ea-sug-item{padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.ea-sug-item:last-child{border-bottom:0;}
+.ea-sug-item:hover,.ea-sug-item.sel{background:rgba(99,102,241,.14);}
+.ea-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;border:1px solid var(--border-mid);
+  background:var(--bg);color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;transition:transform .12s,border-color .12s;}
+.ea-chip:hover{transform:translateY(-1px);border-color:var(--accent);color:var(--text-1);}
+.ea-sel{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:var(--radius-md);
+  background:linear-gradient(135deg,rgba(34,197,94,.12),rgba(56,189,248,.08));border:1px solid rgba(34,197,94,.35);}
+.ea-sel-nome{font-size:20px;font-weight:800;color:var(--text-1);font-family:var(--font-mono);letter-spacing:.5px;}
+
+.ea-item{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg);margin-bottom:12px;overflow:hidden;animation:eaEntra .25s ease both;}
+.ea-item.completo{border-color:rgba(34,197,94,.45);}
+.ea-item.serial{border-left:4px solid var(--yellow);}
+.ea-item-cab{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg-hover);}
+.ea-item-nome{font-size:14px;font-weight:700;color:var(--text-1);}
+.ea-item-cod{font-size:11px;color:var(--text-3);font-family:var(--font-mono);}
+.ea-qtd-badge{font-size:16px;font-weight:800;color:var(--accent-text);white-space:nowrap;}
+.ea-barra{height:6px;background:var(--bg-card);border-radius:999px;overflow:hidden;margin:10px 0 12px;}
+.ea-barra-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#f59e0b,#22c55e);transition:width .3s ease;}
+.ea-bip{display:flex;gap:8px;align-items:center;}
+.ea-bip input{flex:1;padding:13px 14px;font-size:16px;font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase;
+  background:var(--bg-card);border:2px dashed rgba(245,158,11,.5);border-radius:var(--radius-sm);color:var(--text-1);}
+.ea-bip input:focus{outline:none;border-style:solid;border-color:var(--yellow);box-shadow:0 0 0 4px rgba(245,158,11,.14);}
+.ea-serial{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:700;
+  font-family:var(--font-mono);border:1px solid;}
+.ea-serial.ok{background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.45);color:#4ade80;animation:eaBrilho .7s ease-out;}
+.ea-serial.pendente{background:rgba(148,163,184,.10);border-color:var(--border-mid);color:var(--text-3);}
+.ea-serial.erro{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.5);color:#fca5a5;animation:eaTremor .4s ease;}
+.ea-serial button{background:none;border:0;color:inherit;cursor:pointer;font-size:13px;opacity:.75;}
+.ea-serial button:hover{opacity:1;}
+.ea-erro-motivo{font-size:11px;font-weight:500;color:#fca5a5;}
+
+.ea-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--radius-md);font-size:14px;font-weight:700;
+  border:1px solid;margin-bottom:14px;animation:eaEntra .2s ease both;}
+.ea-banner.ok{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.45);color:#4ade80;}
+.ea-banner.erro{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.5);color:#fca5a5;animation:eaTremor .4s ease;}
+.ea-banner.info{background:rgba(56,189,248,.12);border-color:rgba(56,189,248,.4);color:#7dd3fc;}
+.ea-banner.aviso{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.45);color:#fcd34d;}
+.ea-resumo{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px;}
+.ea-resumo-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;}
+.ea-resumo-card b{display:block;font-size:24px;font-weight:800;color:var(--text-1);line-height:1.1;}
+.ea-resumo-card span{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);}
+.ea-btn-grande{padding:16px 22px;font-size:15px;font-weight:800;}
+@media (max-width:820px){
+  .ea-topo{position:static;}
+  .ea-crono{font-size:24px;}
+}
 </style>
 <script>
 // Remove todos os Service Workers registrados (causavam cache stale)
@@ -3010,87 +3092,142 @@ window.addEventListener('pageshow', function(e) {
 
       <!-- ATENDIMENTO MATERIAL ENEL -->
       <div class="view" id="view-enel-atendimento">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:18px">
           <div>
-            <div class="page-title">Atendimento ENEL</div>
-            <div class="page-sub">Entregas por equipe com controle de tempo e seriais</div>
+            <div class="page-title">⚡ Atendimento ENEL</div>
+            <div class="page-sub">Entrega de materiais e medidores por equipe</div>
           </div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="enelIniciarAtendimento()">▶️ Iniciar Atendimento</button>
+            <button class="btn btn-primary ea-btn-grande" onclick="enelIniciarAtendimento()">▶️ Iniciar Atendimento</button>
             <button class="btn btn-ghost" onclick="enelAbrirConsulta()">📋 Histórico</button>
           </div>
         </div>
 
-        <!-- Área atendimento em andamento -->
+        <!-- EM ANDAMENTO -->
         <div id="areaAtendEnelAndamento" style="display:none">
-          <div class="card" style="margin-bottom:14px">
-            <!-- Cronômetro -->
-            <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,.04)">
-              <div>
-                <div style="font-size:13px;font-weight:600;color:var(--yellow)">⏱️ Atendimento em Andamento</div>
-                <div style="font-size:11px;color:var(--text-3);margin-top:2px">Iniciado às <span id="enelHoraInicio"></span></div>
+
+          <div class="ea-topo">
+            <div>
+              <div class="ea-topo-lbl"><span class="ea-pontinho"></span> Atendimento em andamento</div>
+              <div class="ea-crono" id="enelCronometro">00:00:00</div>
+              <div style="font-size:10px;color:var(--text-3)">Início às <span id="enelHoraInicio">—</span></div>
+            </div>
+            <div style="border-left:1px solid var(--border-mid);padding-left:16px">
+              <div class="ea-topo-lbl">Equipe</div>
+              <div class="ea-topo-eq" id="eaTopoEquipe">— selecione —</div>
+            </div>
+            <div style="border-left:1px solid var(--border-mid);padding-left:16px">
+              <div class="ea-topo-lbl">Entrega</div>
+              <div class="ea-topo-eq" id="eaTopoResumo">0 itens</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn btn-primary ea-btn-grande" onclick="enelFinalizarAtendimento()">✓ Finalizar</button>
+              <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
+            </div>
+          </div>
+
+          <div id="eaBanner" class="ea-banner info hidden"></div>
+
+          <!-- PASSO 1 — EQUIPE -->
+          <div class="ea-passo ativo" id="eaPasso1">
+            <div class="ea-passo-cab">
+              <div class="ea-num">1</div>
+              <div style="flex:1">
+                <div class="ea-passo-tit">Equipe que vai receber</div>
+                <div class="ea-passo-sub">Busque pelo prefixo da equipe (ex.: NI202LLP-B)</div>
               </div>
-              <div style="text-align:right">
-                <div id="enelCronometro" style="font-size:26px;font-weight:800;color:var(--yellow);font-family:var(--font-mono)">00:00:00</div>
-                <div style="font-size:10px;color:var(--text-3)">Tempo decorrido</div>
+              <input id="enelData" class="form-input" type="date" readonly style="width:150px;color:var(--text-3);font-size:12px">
+            </div>
+            <div class="ea-passo-corpo">
+              <div id="eaEquipeBusca">
+                <div class="ea-busca equipe">
+                  <span class="ea-icone">🔍</span>
+                  <input id="enelEquipeBusca" placeholder="Digite o prefixo da equipe..." autocomplete="off"
+                    oninput="enelFiltrarEquipe()" onkeydown="eaTeclaEquipe(event)"
+                    onblur="setTimeout(()=>{const e=document.getElementById('enelEquipeSug'); if(e) e.style.display='none'},200)">
+                  <div id="enelEquipeSug" class="ea-sug" style="display:none"></div>
+                  <input type="hidden" id="enelEquipeId">
+                </div>
+                <div id="eaRecentes" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
+              </div>
+              <div id="eaEquipeEscolhida" style="display:none">
+                <div class="ea-sel">
+                  <div style="font-size:26px">👷</div>
+                  <div style="flex:1">
+                    <div class="ea-topo-lbl">Equipe selecionada</div>
+                    <div class="ea-sel-nome" id="eaEquipeNome">—</div>
+                  </div>
+                  <button class="btn btn-ghost" onclick="eaTrocarEquipe()">Trocar equipe</button>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
-              <!-- Equipe e data -->
-              <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px">
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Equipe *</label>
-                  <div style="position:relative">
-                    <input id="enelEquipeBusca" class="form-input" placeholder="Digite o nome/prefixo da equipe..." autocomplete="off"
-                      oninput="enelFiltrarEquipe()" onblur="setTimeout(()=>document.getElementById('enelEquipeSug').style.display='none',200)">
-                    <div id="enelEquipeSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:200px;overflow-y:auto"></div>
-                    <input type="hidden" id="enelEquipeId">
+          <!-- PASSO 2 — MATERIAIS -->
+          <div class="ea-passo" id="eaPasso2">
+            <div class="ea-passo-cab">
+              <div class="ea-num">2</div>
+              <div style="flex:1">
+                <div class="ea-passo-tit">Materiais da entrega</div>
+                <div class="ea-passo-sub">Escolha o material, informe a quantidade e bipe os seriais dos medidores</div>
+              </div>
+              <div id="eaFilaStatus" style="font-size:11px;font-weight:700;color:var(--yellow)"></div>
+            </div>
+            <div class="ea-passo-corpo">
+              <div style="display:grid;grid-template-columns:1fr 190px auto;gap:12px;align-items:end">
+                <div>
+                  <label class="form-label">Material</label>
+                  <div class="ea-busca material">
+                    <span class="ea-icone">📦</span>
+                    <input id="enelMatBusca" placeholder="Descrição ou código do material..." autocomplete="off"
+                      oninput="enelFiltrarMaterial()" onkeydown="eaTeclaMaterial(event)"
+                      onblur="setTimeout(()=>{const e=document.getElementById('enelMatSug'); if(e) e.style.display='none'},200)">
+                    <div id="enelMatSug" class="ea-sug" style="display:none"></div>
+                    <input type="hidden" id="enelMatId">
                   </div>
                 </div>
-                <div class="form-group" style="margin:0">
-                  <label class="form-label">Data</label>
-                  <input id="enelData" class="form-input" type="date" readonly style="color:var(--text-3)">
-                </div>
-              </div>
-
-              <!-- Adicionar material -->
-              <div style="background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px">
-                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📦 Adicionar Material</div>
-                <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end">
-                  <div class="form-group" style="margin:0">
-                    <label class="form-label">Material</label>
-                    <div style="position:relative">
-                      <input id="enelMatBusca" class="form-input" placeholder="Descrição ou código..." autocomplete="off"
-                        oninput="enelFiltrarMaterial()" onblur="setTimeout(()=>document.getElementById('enelMatSug').style.display='none',200)">
-                      <div id="enelMatSug" class="autocomplete-list hidden" style="position:absolute;top:100%;left:0;right:0;z-index:50;max-height:180px;overflow-y:auto"></div>
-                      <input type="hidden" id="enelMatId">
-                    </div>
+                <div>
+                  <label class="form-label">Quantidade</label>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <button class="btn btn-ghost" style="padding:12px 14px;font-size:16px" onclick="eaSomarQtd(-1)">−</button>
+                    <input id="enelMatQtd" class="form-input" type="number" min="1" value="1" inputmode="numeric"
+                      style="text-align:center;font-size:18px;font-weight:800;padding:12px" onkeydown="if(event.key==='Enter')enelAdicionarMaterial()">
+                    <button class="btn btn-ghost" style="padding:12px 14px;font-size:16px" onclick="eaSomarQtd(1)">+</button>
                   </div>
-                  <div class="form-group" style="margin:0"><label class="form-label">Qtd</label><input id="enelMatQtd" class="form-input" type="number" min="1" placeholder="0"></div>
-                  <input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
-                  <button class="btn btn-primary" onclick="enelAdicionarMaterial()" style="align-self:end">+ Adicionar</button>
                 </div>
+                <input type="hidden" id="enelMatMotivo" value="ATENDIMENTO_ENEL">
+                <button class="btn btn-primary ea-btn-grande" id="eaBtnAdd" onclick="enelAdicionarMaterial()">+ Adicionar</button>
               </div>
+              <div id="eaMatInfo" style="margin-top:10px;font-size:12px;color:var(--text-3)"></div>
 
-              <!-- Lista de itens -->
-              <div>
-                <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Materiais da Entrega</div>
-                <div id="enelListaItens" style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;min-height:80px">
-                  <div style="color:var(--text-3);text-align:center;padding:16px;font-size:12px">Nenhum item adicionado</div>
+              <div style="margin-top:18px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                  <div style="font-size:11px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens adicionados</div>
+                  <div style="font-size:11px;color:var(--text-3)" id="eaContagemItens"></div>
                 </div>
+                <div id="enelListaItens"></div>
               </div>
+            </div>
+          </div>
 
-              <div id="msgAtendimentoEnel" style="text-align:center;font-size:12px;min-height:16px;color:var(--red)"></div>
-              <div style="display:flex;gap:8px">
-                <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="enelFinalizarAtendimento()">✓ Finalizar Atendimento</button>
-                <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
+          <!-- PASSO 3 — CONFERIR -->
+          <div class="ea-passo" id="eaPasso3">
+            <div class="ea-passo-cab">
+              <div class="ea-num">3</div>
+              <div style="flex:1">
+                <div class="ea-passo-tit">Conferir e finalizar</div>
+                <div class="ea-passo-sub">Confira o que vai sair antes de encerrar o atendimento</div>
               </div>
+            </div>
+            <div class="ea-passo-corpo">
+              <div class="ea-resumo" id="eaResumo"></div>
+              <div id="msgAtendimentoEnel" style="font-size:12px;min-height:16px;color:var(--red);margin-bottom:10px"></div>
+              <button class="btn btn-primary ea-btn-grande" style="width:100%;justify-content:center" onclick="enelFinalizarAtendimento()">✓ Finalizar atendimento</button>
             </div>
           </div>
         </div>
 
-        <!-- Histórico -->
+        <!-- HISTÓRICO -->
         <div id="areaConsultaAtendEnel" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
             <div style="font-size:13px;font-weight:600;color:var(--text-1)">Histórico de Atendimentos ENEL</div>
@@ -3104,9 +3241,28 @@ window.addEventListener('pageshow', function(e) {
                 <th style="text-align:center">Itens</th>
                 <th style="text-align:center">Tempo</th>
                 <th>Atendente</th>
+                <th></th>
               </tr></thead>
               <tbody id="tbodyHistAtendEnel"></tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: FICHA DO ATENDIMENTO ENEL -->
+      <div class="modal-overlay hidden" id="modalFichaEnel">
+        <div class="modal-box" style="max-width:640px">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title">✅ Atendimento concluído</div>
+              <div style="font-size:11px;color:var(--text-3)" id="fichaEnelSub">—</div>
+            </div>
+            <button class="modal-close" onclick="fecharFichaEnel()">✕</button>
+          </div>
+          <div class="modal-body" id="fichaEnelCorpo" style="max-height:60vh;overflow-y:auto"></div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="fecharFichaEnel()">Fechar</button>
+            <button class="btn btn-primary ea-btn-grande" onclick="imprimirFichaEnel()">🖨️ Imprimir ficha de entrega</button>
           </div>
         </div>
       </div>
@@ -5505,7 +5661,7 @@ function onViewLoad(nome) {
   if (nome === 'financeiro')         finIniciar();
   if (nome === 'protheus')           { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarProtheus(); }
   if (nome === 'ficha-epi')          { if (!_colaboradores.length) carregarColaboradoresAtendimento().then(carregarFichaEPI); else carregarFichaEPI(); }
-  if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); enelAbrirAtendimento(); }
+  if (nome === 'enel-atendimento')   { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); if (!_enelSaldos.length) eaCarregarSaldos(); enelAbrirAtendimento(); }
   if (nome === 'enel-devolucao')     { if (!_equipes.length) carregarEquipes(); devEnelRender(); }
   if (nome === 'enel-transferencia') { if (!_enelMateriais.length) carregarMateriaisEnel(); }
   if (nome === 'enel-medidores')     { /* user clicks tab */ }
@@ -19204,9 +19360,16 @@ async function carregarBaixas() {
 window.__ENEL__ = { atendimento: null, itens: [], cronInt: null };
 window.__PRE_BAIXAS__ = { medidoresSelecionados: new Set(), materiaisQtd: {}, _mediadoresLista: [] };
 
+// Saldo do estoque ENEL: a tela de atendimento mostra quanto tem antes de adicionar.
+async function eaCarregarSaldos() {
+  const data = await api('/enel/saldos');
+  _enelSaldos = data?.data || [];
+  if (window.__ENEL__?.itens?.length) eaRenderItens();
+}
+
 function enelAbrirAtendimento() {
-  document.getElementById('areaAtendEnelAndamento').style.display = 'none';
   document.getElementById('areaConsultaAtendEnel').style.display = 'none';
+  document.getElementById('areaAtendEnelAndamento').style.display = window.__ENEL__.atendimento ? '' : 'none';
 }
 function enelAbrirConsulta() {
   document.getElementById('areaAtendEnelAndamento').style.display = 'none';
@@ -19214,260 +19377,638 @@ function enelAbrirConsulta() {
   carregarHistAtendEnel();
 }
 
+// ── Estado da tela ──
+// Cada item: { materialId, descricao, codigo, quantidade, motivo, obs, usaSerial,
+//              seriais: [], pendentes: [], erros: [{serial, motivo}] }
+const EA_RECENTES = 'gca_enel_equipes_recentes';
+let _eaFilaTimer = null;
+let _eaEnviando = false;
+let _eaSemConexao = false;
+let _eaSugIdx = -1;
+window.__EA_ULTIMO__ = null;
+
+function eaRecentes() { try { return JSON.parse(localStorage.getItem(EA_RECENTES) || '[]'); } catch { return []; } }
+function eaGuardarRecente(nome) {
+  if (!nome) return;
+  try {
+    const lista = [nome, ...eaRecentes().filter(x => x !== nome)].slice(0, 6);
+    localStorage.setItem(EA_RECENTES, JSON.stringify(lista));
+  } catch {}
+}
+
+function eaMsg(txt, tipo) {
+  const el = document.getElementById('eaBanner');
+  if (!el) return;
+  if (!txt) { el.className = 'ea-banner hidden'; el.textContent = ''; return; }
+  const icone = tipo === 'ok' ? '✅' : tipo === 'erro' ? '🚫' : tipo === 'aviso' ? '⚠️' : 'ℹ️';
+  el.className = 'ea-banner ' + (tipo || 'info');
+  el.innerHTML = `<span style="font-size:18px">${icone}</span><span>${escHtml(txt)}</span>`;
+}
+// Mantido: outras telas chamam enelMsg(texto, ok)
+function enelMsg(txt, ok) { eaMsg(txt, ok === false ? 'erro' : ok === true ? 'ok' : 'info'); }
+
 function enelIniciarAtendimento() {
   if (!_enelMateriais.length) carregarMateriaisEnel();
   const agora = new Date();
-  window.__ENEL__.atendimento = { id: 'enel_'+Date.now(), inicio: agora.toISOString(), seg: 0 };
+  window.__ENEL__.atendimento = { id: 'enel_' + Date.now(), inicio: agora.toISOString(), seg: 0 };
   window.__ENEL__.itens = [];
+  window.__ENEL__.equipe = null;
   document.getElementById('enelData').value = agora.toISOString().split('T')[0];
   document.getElementById('enelHoraInicio').textContent = agora.toLocaleTimeString('pt-BR');
   document.getElementById('enelCronometro').textContent = '00:00:00';
   document.getElementById('enelEquipeBusca').value = '';
   document.getElementById('enelEquipeId').value = '';
+  document.getElementById('enelMatBusca').value = '';
+  document.getElementById('enelMatId').value = '';
+  document.getElementById('enelMatQtd').value = 1;
+  document.getElementById('eaMatInfo').textContent = '';
   if (window.__ENEL__.cronInt) clearInterval(window.__ENEL__.cronInt);
   window.__ENEL__.cronInt = setInterval(() => {
     const seg = Math.floor((new Date() - new Date(window.__ENEL__.atendimento.inicio)) / 1000);
     window.__ENEL__.atendimento.seg = seg;
-    const h = String(Math.floor(seg/3600)).padStart(2,'0');
-    const m = String(Math.floor((seg%3600)/60)).padStart(2,'0');
-    const s = String(seg%60).padStart(2,'0');
+    const h = String(Math.floor(seg / 3600)).padStart(2, '0');
+    const m = String(Math.floor((seg % 3600) / 60)).padStart(2, '0');
+    const s = String(seg % 60).padStart(2, '0');
     document.getElementById('enelCronometro').textContent = `${h}:${m}:${s}`;
   }, 1000);
-  enelRenderItens();
+  eaRenderEquipe();
+  eaRenderItens();
+  document.getElementById('areaConsultaAtendEnel').style.display = 'none';
   document.getElementById('areaAtendEnelAndamento').style.display = '';
-  enelMsg('Atendimento iniciado.', true);
+  eaMsg('Atendimento iniciado — escolha a equipe que vai receber.', 'info');
+  setTimeout(() => document.getElementById('enelEquipeBusca')?.focus(), 150);
 }
 
 function enelCancelarAtendimento() {
-  if (!confirm('Cancelar atendimento?')) return;
-  window.__ENEL__.atendimento = null; window.__ENEL__.itens = [];
+  const temCoisa = (window.__ENEL__.itens || []).length;
+  if (!confirm(temCoisa ? `Cancelar o atendimento e perder os ${temCoisa} item(ns) adicionados?` : 'Cancelar atendimento?')) return;
+  window.__ENEL__.atendimento = null;
+  window.__ENEL__.itens = [];
+  window.__ENEL__.equipe = null;
   if (window.__ENEL__.cronInt) { clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null; }
   document.getElementById('areaAtendEnelAndamento').style.display = 'none';
+  eaMsg('', '');
 }
 
-function enelMsg(txt, ok) {
-  const el = document.getElementById('msgAtendimentoEnel');
-  if (!el) return;
-  el.style.color = ok ? '#22c55e' : '#ef4444';
-  el.textContent = txt || '';
+// ══ PASSO 1 — EQUIPE ══
+function eaRenderEquipe() {
+  const eq = window.__ENEL__.equipe;
+  const busca = document.getElementById('eaEquipeBusca');
+  const escolhida = document.getElementById('eaEquipeEscolhida');
+  const passo = document.getElementById('eaPasso1');
+  if (eq) {
+    busca.style.display = 'none';
+    escolhida.style.display = '';
+    document.getElementById('eaEquipeNome').textContent = eq.prefixo || eq.nome;
+    document.getElementById('eaTopoEquipe').textContent = eq.prefixo || eq.nome;
+    passo.classList.remove('ativo'); passo.classList.add('pronto');
+    document.getElementById('eaPasso2').classList.add('ativo');
+  } else {
+    busca.style.display = '';
+    escolhida.style.display = 'none';
+    document.getElementById('eaTopoEquipe').textContent = '— selecione —';
+    passo.classList.add('ativo'); passo.classList.remove('pronto');
+    document.getElementById('eaPasso2').classList.remove('ativo');
+    const chips = eaRecentes();
+    document.getElementById('eaRecentes').innerHTML = chips.length
+      ? `<span style="font-size:11px;color:var(--text-3);align-self:center">Recentes:</span>` +
+        chips.map(n => `<button class="ea-chip" onclick="eaEscolherRecente('${escJs(n)}')">👷 ${escHtml(n)}</button>`).join('')
+      : '';
+  }
+}
+
+function eaEscolherRecente(nome) {
+  const e = (_equipes || []).find(x => (x.prefixo || '') === nome || (x.nomeEquipe || x.nome_equipe || '') === nome);
+  if (!e) { document.getElementById('enelEquipeBusca').value = nome; enelFiltrarEquipe(); return; }
+  enelSelecionarEquipe(e.id, e.nomeEquipe || e.nome_equipe || nome, e.prefixo || '');
 }
 
 function enelFiltrarEquipe() {
-  const q = (document.getElementById('enelEquipeBusca').value||'').toLowerCase();
+  const q = (document.getElementById('enelEquipeBusca').value || '').toLowerCase().trim();
   const sug = document.getElementById('enelEquipeSug');
   document.getElementById('enelEquipeId').value = '';
-  if (!q) { sug.style.display='none'; return; }
-  const lista = (_equipes||[]).filter(e=>(e.nomeEquipe||e.nome_equipe||'').toLowerCase().includes(q)||(e.prefixo||'').toLowerCase().includes(q)).slice(0,15);
-  if (!lista.length) { sug.style.display='none'; return; }
-  sug.innerHTML = lista.map(e=>{
-    const nm = e.nomeEquipe||e.nome_equipe||'';
-    const pf = e.prefixo||'';
-    return `<div class="autocomplete-item" onmousedown="enelSelecionarEquipe('${e.id}','${escJs(nm)}','${escJs(pf)}')"><strong>${escHtml(nm)}</strong><span style="font-size:10px;color:var(--text-3);margin-left:8px">${escHtml(pf)}</span></div>`;
+  _eaSugIdx = -1;
+  if (!q) { sug.style.display = 'none'; return; }
+  const lista = (_equipes || []).filter(e => (e.nomeEquipe || e.nome_equipe || '').toLowerCase().includes(q) || (e.prefixo || '').toLowerCase().includes(q)).slice(0, 12);
+  if (!lista.length) {
+    sug.innerHTML = `<div class="ea-sug-item" style="color:var(--text-3);cursor:default">Nenhuma equipe encontrada para "${escHtml(q)}"</div>`;
+    sug.style.display = ''; return;
+  }
+  sug.innerHTML = lista.map((e, i) => {
+    const nm = e.nomeEquipe || e.nome_equipe || '';
+    const pf = e.prefixo || '';
+    return `<div class="ea-sug-item" data-i="${i}" onmousedown="enelSelecionarEquipe('${e.id}','${escJs(nm)}','${escJs(pf)}')">
+      <span style="font-size:16px">👷</span>
+      <div style="flex:1"><div style="font-weight:800;font-family:var(--font-mono)">${escHtml(pf || nm)}</div>
+      <div style="font-size:10px;color:var(--text-3)">${escHtml(e.atividades || 'equipe de campo')}</div></div>
+    </div>`;
   }).join('');
   sug.style.display = '';
-  sug.classList.remove('hidden');
+}
+
+function eaTeclaEquipe(ev) { eaNavegarSug(ev, 'enelEquipeSug'); }
+function eaTeclaMaterial(ev) { eaNavegarSug(ev, 'enelMatSug'); }
+function eaNavegarSug(ev, idSug) {
+  const sug = document.getElementById(idSug);
+  if (!sug || sug.style.display === 'none') return;
+  const itens = [...sug.querySelectorAll('.ea-sug-item[data-i]')];
+  if (!itens.length) return;
+  if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+    ev.preventDefault();
+    _eaSugIdx = ev.key === 'ArrowDown' ? Math.min(_eaSugIdx + 1, itens.length - 1) : Math.max(_eaSugIdx - 1, 0);
+    itens.forEach((el, i) => el.classList.toggle('sel', i === _eaSugIdx));
+    itens[_eaSugIdx].scrollIntoView({ block: 'nearest' });
+  } else if (ev.key === 'Enter') {
+    ev.preventDefault();
+    (itens[_eaSugIdx] || itens[0]).dispatchEvent(new MouseEvent('mousedown'));
+  }
 }
 
 function enelSelecionarEquipe(id, nome, prefixo) {
-  document.getElementById('enelEquipeBusca').value = nome;
+  window.__ENEL__.equipe = { id, nome, prefixo: prefixo || nome };
+  document.getElementById('enelEquipeBusca').value = prefixo || nome;
   document.getElementById('enelEquipeId').value = id;
   document.getElementById('enelEquipeSug').style.display = 'none';
+  eaGuardarRecente(prefixo || nome);
+  eaRenderEquipe();
+  eaMsg(`Equipe ${prefixo || nome} selecionada. Agora escolha os materiais.`, 'ok');
+  setTimeout(() => document.getElementById('enelMatBusca')?.focus(), 120);
 }
 
+function eaTrocarEquipe() {
+  window.__ENEL__.equipe = null;
+  document.getElementById('enelEquipeBusca').value = '';
+  document.getElementById('enelEquipeId').value = '';
+  eaRenderEquipe();
+  setTimeout(() => document.getElementById('enelEquipeBusca')?.focus(), 80);
+}
+
+// ══ PASSO 2 — MATERIAIS ══
 function enelFiltrarMaterial() {
-  const q = (document.getElementById('enelMatBusca').value||'').toLowerCase();
+  const q = (document.getElementById('enelMatBusca').value || '').toLowerCase().trim();
   const sug = document.getElementById('enelMatSug');
-  if (!q) { sug.style.display='none'; return; }
-  const lista = _enelMateriais.filter(m=>(m.descricao||'').toLowerCase().includes(q)||(m.codigo||'').toLowerCase().includes(q)).slice(0,15);
-  if (!lista.length) { sug.style.display='none'; return; }
-  sug.innerHTML = lista.map(m=>`<div class="autocomplete-item" onmousedown="enelSelecionarMaterial('${m.id}')">
-    <strong>${escHtml(m.descricao)}</strong> <span style="font-size:10px;color:var(--text-3)">${m.codigo}</span>
-    ${m.possui_numero_serie?'<span style="color:#f59e0b;font-size:10px;margin-left:6px;border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px">Serial</span>':''}
-  </div>`).join('');
-  sug.style.display = 'block'; sug.classList.remove('hidden');
+  _eaSugIdx = -1;
+  if (!q) { sug.style.display = 'none'; return; }
+  const lista = _enelMateriais.filter(m => (m.descricao || '').toLowerCase().includes(q) || (m.codigo || '').toLowerCase().includes(q)).slice(0, 12);
+  if (!lista.length) {
+    sug.innerHTML = `<div class="ea-sug-item" style="color:var(--text-3);cursor:default">Nenhum material encontrado para "${escHtml(q)}"</div>`;
+    sug.style.display = ''; return;
+  }
+  sug.innerHTML = lista.map((m, i) => {
+    const saldo = eaSaldoDe(m.id);
+    return `<div class="ea-sug-item" data-i="${i}" onmousedown="enelSelecionarMaterial('${m.id}')">
+      <span style="font-size:16px">${m.possui_numero_serie ? '🔢' : '📦'}</span>
+      <div style="flex:1"><div style="font-weight:700">${escHtml(m.descricao)}</div>
+      <div style="font-size:10px;color:var(--text-3)"><span style="font-family:var(--font-mono)">${escHtml(m.codigo || '')}</span> · ${escHtml(m.categoria || 'sem categoria')}</div></div>
+      <div style="text-align:right">
+        <div style="font-size:13px;font-weight:800;color:${saldo > 0 ? '#22c55e' : '#ef4444'}">${saldo}</div>
+        <div style="font-size:9px;color:var(--text-3)">em estoque</div>
+      </div>
+      ${m.possui_numero_serie ? '<span style="font-size:9px;color:#fcd34d;border:1px solid rgba(245,158,11,.4);padding:2px 6px;border-radius:4px">SERIAL</span>' : ''}
+    </div>`;
+  }).join('');
+  sug.style.display = '';
+}
+
+function eaSaldoDe(materialId) {
+  const s = (_enelSaldos || []).find(x => x.id_material === materialId);
+  return Number(s?.saldo || 0);
 }
 
 function enelSelecionarMaterial(id) {
-  const m = _enelMateriais.find(x=>x.id===id);
+  const m = _enelMateriais.find(x => x.id === id);
   if (!m) return;
-  document.getElementById('enelMatBusca').value = `${escHtml(m.descricao)} (${m.codigo})`;
+  document.getElementById('enelMatBusca').value = `${m.descricao} (${m.codigo || '—'})`;
   document.getElementById('enelMatId').value = id;
   document.getElementById('enelMatSug').style.display = 'none';
+  const saldo = eaSaldoDe(id);
+  document.getElementById('eaMatInfo').innerHTML = m.possui_numero_serie
+    ? `🔢 Material com <strong>serial</strong> — você vai bipar ${document.getElementById('enelMatQtd').value || 1} medidor(es). Saldo em estoque: <strong style="color:${saldo > 0 ? '#22c55e' : '#ef4444'}">${saldo}</strong>`
+    : `📦 Material por quantidade · Un.: <strong>${escHtml(m.unidade_med || 'UN')}</strong> · Saldo em estoque: <strong style="color:${saldo > 0 ? '#22c55e' : '#ef4444'}">${saldo}</strong>`;
+  document.getElementById('enelMatQtd').focus();
+  document.getElementById('enelMatQtd').select();
+}
+
+function eaSomarQtd(delta) {
+  const el = document.getElementById('enelMatQtd');
+  el.value = Math.max(1, (Number(el.value) || 0) + delta);
+  el.focus();
 }
 
 window.__ENEL_BLOQUEIO_ITEM__ = null;
 
 async function enelAdicionarMaterial() {
-  if (!window.__ENEL__.atendimento) { enelMsg('Clique em Iniciar Atendimento.', false); return; }
-  const matId  = document.getElementById('enelMatId').value;
-  const qtd    = Number(document.getElementById('enelMatQtd').value||0);
+  if (!window.__ENEL__.atendimento) { eaMsg('Clique em "Iniciar Atendimento" antes de adicionar materiais.', 'erro'); return; }
+  const matId = document.getElementById('enelMatId').value;
+  const qtd = Number(document.getElementById('enelMatQtd').value || 0);
   const motivo = document.getElementById('enelMatMotivo').value;
-  const obs    = '';
-  if (!matId||qtd<=0) { enelMsg('Preencha material e quantidade.', false); return; }
-  const mat = _enelMateriais.find(x=>x.id===matId);
-  if (!mat) { enelMsg('Material inválido.', false); return; }
+  if (!matId) { eaMsg('Escolha o material na lista antes de adicionar.', 'erro'); document.getElementById('enelMatBusca').focus(); return; }
+  if (!(qtd > 0)) { eaMsg('Informe uma quantidade maior que zero.', 'erro'); document.getElementById('enelMatQtd').focus(); return; }
+  const mat = _enelMateriais.find(x => x.id === matId);
+  if (!mat) { eaMsg('Material inválido — busque de novo.', 'erro'); return; }
+  const saldo = eaSaldoDe(matId);
+  const jaNoAtendimento = (window.__ENEL__.itens || []).filter(i => i.materialId === matId).reduce((a, i) => a + Number(i.quantidade), 0);
+  if (qtd + jaNoAtendimento > saldo) {
+    eaMsg(`Estoque insuficiente de ${mat.descricao}: saldo ${saldo}${jaNoAtendimento ? `, já neste atendimento ${jaNoAtendimento}` : ''}.`, 'erro');
+    return;
+  }
 
-  // Verifica bloqueio se for material com serial (medidor)
+  // Bloqueio de medidor parado com a equipe há mais de 10 dias
   if (mat.possui_numero_serie) {
-    const equipeNome = document.getElementById('enelEquipeBusca').value.trim();
+    const equipeNome = window.__ENEL__.equipe?.prefixo || document.getElementById('enelEquipeBusca').value.trim();
     if (equipeNome) {
-      enelMsg('⏳ Verificando bloqueio...', true);
-      const bloq = await api('/enel/verificar-bloqueio', { method:'POST', body: JSON.stringify({ equipeNome, materialId: mat.id }) });
+      eaMsg('Verificando pendências da equipe...', 'info');
+      const bloq = await api('/enel/verificar-bloqueio', { method: 'POST', body: JSON.stringify({ equipeNome, materialId: mat.id }) });
       if (bloq?.bloqueado) {
-        // Mostra modal de bloqueio
         document.getElementById('enelBloqueioDesc').innerHTML =
-          `A equipe <strong>${equipeNome}</strong> possui <strong style="color:#ef4444">${bloq.quantidade}</strong> medidor(es) deste tipo há mais de 10 dias sem instalar:<br><br>` +
-          (bloq.medidores||[]).map(m=>`<span style="font-family:monospace;color:#00B8E6">${escHtml(m.serial)}</span> — ${m.diasNaEquipe} dias (entregue em ${formatarData(m.dataEntrega)})`).join('<br>');
-        window.__ENEL_BLOQUEIO_ITEM__ = { mat, qtd, motivo, obs };
+          `A equipe <strong>${escHtml(equipeNome)}</strong> possui <strong style="color:#ef4444">${bloq.quantidade}</strong> medidor(es) deste tipo há mais de 10 dias sem instalar:<br><br>` +
+          (bloq.medidores || []).map(m => `<span style="font-family:monospace;color:#00B8E6">${escHtml(m.serial)}</span> — ${m.diasNaEquipe} dias (entregue em ${formatarData(m.dataEntrega)})`).join('<br>');
+        window.__ENEL_BLOQUEIO_ITEM__ = { mat, qtd, motivo, obs: '' };
         document.getElementById('enelBloqueioSenha').value = '';
         document.getElementById('enelBloqueioJustificativa').value = '';
         document.getElementById('enelBloqueioMsg').textContent = '';
         document.getElementById('modalEnelBloqueio').classList.remove('hidden');
-        enelMsg('', false);
+        eaMsg('', '');
         return;
       }
-      enelMsg('', false);
+      eaMsg('', '');
     }
   }
+  _enelAdicionarItemFinal(mat, qtd, motivo, '');
+}
 
-  _enelAdicionarItemFinal(mat, qtd, motivo, obs);
+async function confirmarDesbloqueioEnel() {
+  const senha = document.getElementById('enelBloqueioSenha').value;
+  const just = document.getElementById('enelBloqueioJustificativa').value.trim();
+  const msg = document.getElementById('enelBloqueioMsg');
+  if (!senha) { msg.style.color = '#ef4444'; msg.textContent = '❌ Digite sua senha de login.'; return; }
+  if (!just) { msg.style.color = '#ef4444'; msg.textContent = '❌ Informe a justificativa.'; return; }
+  const item = window.__ENEL_BLOQUEIO_ITEM__;
+  if (!item) { document.getElementById('modalEnelBloqueio').classList.add('hidden'); return; }
+  const res = await api('/enel/registrar-desbloqueio', { method: 'POST', body: JSON.stringify({
+    equipe: window.__ENEL__.equipe?.prefixo || document.getElementById('enelEquipeBusca').value,
+    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(), senha,
+  })});
+  if (!res?.ok) { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + (res?.erro || 'Erro ao confirmar desbloqueio.'); return; }
+  document.getElementById('modalEnelBloqueio').classList.add('hidden');
+  _enelAdicionarItemFinal(item.mat, item.qtd, item.motivo, item.obs);
+  window.__ENEL_BLOQUEIO_ITEM__ = null;
+  eaMsg('Item adicionado com desbloqueio — ' + just, 'aviso');
 }
 
 function _enelAdicionarItemFinal(mat, qtd, motivo, obs) {
   window.__ENEL__.itens.push({
     materialId: mat.id, descricao: mat.descricao, codigo: mat.codigo,
     quantidade: Math.floor(qtd), motivo, obs,
-    usaSerial: !!mat.possui_numero_serie, seriais: []
+    usaSerial: !!mat.possui_numero_serie, seriais: [], pendentes: [], erros: [],
   });
-  document.getElementById('enelMatBusca').value=''; document.getElementById('enelMatId').value='';
-  document.getElementById('enelMatQtd').value='';
-  enelRenderItens(); enelMsg('Material adicionado.', true);
+  document.getElementById('enelMatBusca').value = '';
+  document.getElementById('enelMatId').value = '';
+  document.getElementById('enelMatQtd').value = 1;
+  document.getElementById('eaMatInfo').textContent = '';
+  eaRenderItens();
+  const idx = window.__ENEL__.itens.length - 1;
+  if (window.__ENEL__.itens[idx].usaSerial) {
+    eaMsg(`${mat.descricao} adicionado — bipe os ${qtd} serial(is).`, 'ok');
+    setTimeout(() => document.getElementById('eaBip' + idx)?.focus(), 120);
+  } else {
+    eaMsg(`${mat.descricao} adicionado (${qtd} ${mat.unidade_med || 'un'}).`, 'ok');
+    setTimeout(() => document.getElementById('enelMatBusca')?.focus(), 120);
+  }
 }
 
-async function confirmarDesbloqueioEnel() {
-  const senha = document.getElementById('enelBloqueioSenha').value;
-  const just  = document.getElementById('enelBloqueioJustificativa').value.trim();
-  const msg   = document.getElementById('enelBloqueioMsg');
-  if (!senha) { msg.style.color='#ef4444'; msg.textContent='❌ Digite sua senha de login.'; return; }
-  if (!just) { msg.style.color='#ef4444'; msg.textContent='❌ Informe a justificativa.'; return; }
-  const item = window.__ENEL_BLOQUEIO_ITEM__;
-  if (!item) { document.getElementById('modalEnelBloqueio').classList.add('hidden'); return; }
-  // Registra desbloqueio
-  const res = await api('/enel/registrar-desbloqueio', { method:'POST', body: JSON.stringify({
-    equipe: document.getElementById('enelEquipeBusca').value,
-    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(), senha,
-  })});
-  if (!res?.ok) { msg.style.color='#ef4444'; msg.textContent='❌ '+(res?.erro||'Erro ao confirmar desbloqueio.'); return; }
-  document.getElementById('modalEnelBloqueio').classList.add('hidden');
-  _enelAdicionarItemFinal(item.mat, item.qtd, item.motivo, item.obs);
-  window.__ENEL_BLOQUEIO_ITEM__ = null;
-  enelMsg('⚠️ Item adicionado com desbloqueio — ' + just, true);
+// ══ BIPAGEM EM FILA ══
+// O bip entra na hora, o campo já fica livre, e a conferência com o servidor vai em pacote.
+// Serial repetido é barrado na tela; serial de outro modelo é recusado pelo servidor.
+window.eaBipar = function (idx) {
+  const it = window.__ENEL__.itens[idx];
+  const input = document.getElementById('eaBip' + idx);
+  if (!it || !input) return;
+  const serial = String(input.value || '').trim().toUpperCase().replace(/\s+/g, '');
+  input.value = '';
+  input.focus();
+  if (!serial) return;
+  const usados = window.__ENEL__.itens.flatMap(x => [...(x.seriais || []), ...(x.pendentes || [])]);
+  if (usados.includes(serial)) { eaMsg(`${serial} já foi bipado neste atendimento.`, 'erro'); eaBip(false); return; }
+  const lidos = (it.seriais || []).length + (it.pendentes || []).length;
+  if (lidos >= Number(it.quantidade)) { eaMsg(`${it.descricao}: os ${it.quantidade} serial(is) já foram bipados.`, 'aviso'); return; }
+  it.pendentes.push(serial);
+  it.erros = (it.erros || []).filter(e => e.serial !== serial);
+  eaRenderItens();
+  eaAgendarEnvio(it.pendentes.length >= 15 ? 0 : 800);
+};
+
+function eaAgendarEnvio(ms) {
+  if (_eaFilaTimer && ms > 0) return;
+  clearTimeout(_eaFilaTimer);
+  _eaFilaTimer = setTimeout(() => { _eaFilaTimer = null; eaEnviarFila(); }, ms);
 }
 
-window.enelAddSerial = async function(idx, serial) {
-  const it = window.__ENEL__.itens[idx]; const s = String(serial||'').trim().toUpperCase();
-  if (!it||!s) return;
-  if ((it.seriais||[]).includes(s)) { enelMsg(`Serial duplicado: ${s}`, false); return; }
-  const all = window.__ENEL__.itens.flatMap(x=>x.seriais||[]);
-  if (all.includes(s)) { enelMsg(`Serial já usado em outro item: ${s}`, false); return; }
-  if ((it.seriais||[]).length >= it.quantidade) { enelMsg(`Seriais completos para ${escHtml(it.descricao)}`, false); return; }
+async function eaEnviarFila() {
+  if (_eaEnviando) return;
+  const idx = (window.__ENEL__.itens || []).findIndex(it => (it.pendentes || []).length);
+  if (idx < 0) { eaAtualizarFilaStatus(); return; }
+  const it = window.__ENEL__.itens[idx];
+  const pacote = it.pendentes.slice(0, 100);
+  _eaEnviando = true;
+  eaAtualizarFilaStatus();
+  const res = await api('/enel/medidores/conferir', { method: 'POST', body: JSON.stringify({ material_id: it.materialId, seriais: pacote }) });
+  _eaEnviando = false;
 
-  // Valida serial no controle de medidores
-  const res = await api(`/enel/medidores/buscar/${encodeURIComponent(s)}`);
-  if (!res?.medidor) { enelMsg(`🚫 Serial ${s} não encontrado no controle de medidores`, false); return; }
-  if (res.medidor.status_atual === 'INSTALADO') { enelMsg(`🚫 Serial ${s} já está INSTALADO`, false); return; }
-  if (res.medidor.localizacao !== 'ESTOQUE') { enelMsg(`🚫 Serial ${s} não está em estoque (${res.medidor.localizacao})`, false); return; }
+  if (!res?.ok && (res?.rede || !res)) {
+    _eaSemConexao = true;
+    eaAtualizarFilaStatus();
+    eaAgendarEnvio(4000);
+    return;
+  }
+  _eaSemConexao = false;
+  if (!res.ok) {
+    pacote.forEach(serial => {
+      it.pendentes = it.pendentes.filter(x => x !== serial);
+      it.erros.push({ serial, motivo: res.erro || 'Não foi possível conferir' });
+    });
+    eaMsg(res.erro || 'Não foi possível conferir os seriais.', 'erro');
+  } else {
+    let okN = 0, ultimoOk = null, erroN = 0, ultimoErro = null;
+    (res.resultados || []).forEach(r => {
+      it.pendentes = it.pendentes.filter(x => x !== r.serial);
+      if (r.ok) { it.seriais.push(r.serial); okN++; ultimoOk = r.serial; }
+      else { it.erros.push({ serial: r.serial, motivo: r.motivo }); erroN++; ultimoErro = r; }
+    });
+    if (erroN) { eaMsg(`${ultimoErro.serial}: ${ultimoErro.motivo}${erroN > 1 ? ` (+${erroN - 1} recusado(s))` : ''}`, 'erro'); eaBip(false); }
+    else if (okN === 1) eaMsg(`${ultimoOk} conferido e adicionado.`, 'ok');
+    else if (okN) eaMsg(`${okN} seriais conferidos (último ${ultimoOk}).`, 'ok');
+    if (okN && (it.seriais || []).length === Number(it.quantidade)) {
+      eaMsg(`${it.descricao}: ${it.quantidade} de ${it.quantidade} seriais — item completo.`, 'ok');
+      eaBip(true);
+    }
+  }
+  eaRenderItens();
+  if ((window.__ENEL__.itens || []).some(x => (x.pendentes || []).length)) eaAgendarEnvio(0);
+}
 
-  it.seriais.push(s); enelRenderItens(); enelMsg(`✅ Serial ${s} adicionado`, true);
-  setTimeout(()=>{ const inputs=document.querySelectorAll('.enel-serial-input'); if(inputs[idx])inputs[idx].focus(); },50);
+// Bipe curto de retorno (sem arquivo de som: usa o próprio navegador)
+function eaBip(sucesso) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator(); const g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.frequency.value = sucesso ? 880 : 220;
+    g.gain.setValueAtTime(.06, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime + (sucesso ? .18 : .32));
+    osc.start(); osc.stop(ctx.currentTime + (sucesso ? .2 : .34));
+    setTimeout(() => ctx.close(), 600);
+  } catch {}
+}
+
+function eaAtualizarFilaStatus() {
+  const el = document.getElementById('eaFilaStatus');
+  if (!el) return;
+  const pend = (window.__ENEL__.itens || []).reduce((a, it) => a + (it.pendentes || []).length, 0);
+  el.textContent = !pend ? '' : _eaSemConexao ? `📵 sem conexão — ${pend} aguardando` : `⏳ conferindo ${pend} serial(is)...`;
+}
+
+window.enelRemSerial = function (idx, serial) {
+  const it = window.__ENEL__.itens[idx];
+  if (!it) return;
+  it.seriais = (it.seriais || []).filter(x => x !== serial);
+  it.pendentes = (it.pendentes || []).filter(x => x !== serial);
+  eaRenderItens();
 };
-window.enelRemSerial = function(idx, serial) {
-  const it = window.__ENEL__.itens[idx]; if (!it) return;
-  it.seriais = (it.seriais||[]).filter(x=>x!==serial); enelRenderItens();
+window.eaDispensarErro = function (idx, serial) {
+  const it = window.__ENEL__.itens[idx];
+  if (!it) return;
+  it.erros = (it.erros || []).filter(e => e.serial !== serial);
+  eaRenderItens();
+  document.getElementById('eaBip' + idx)?.focus();
 };
-window.enelRemItem = function(idx) {
-  if (!confirm('Remover item?')) return;
-  window.__ENEL__.itens.splice(idx,1); enelRenderItens();
+window.enelRemItem = function (idx) {
+  const it = window.__ENEL__.itens[idx];
+  if (!it) return;
+  if (!confirm(`Remover ${it.descricao} da entrega?`)) return;
+  window.__ENEL__.itens.splice(idx, 1);
+  eaRenderItens();
+};
+window.eaAlterarQtd = function (idx, delta) {
+  const it = window.__ENEL__.itens[idx];
+  if (!it) return;
+  const nova = Number(it.quantidade) + delta;
+  if (nova < 1) return;
+  const lidos = (it.seriais || []).length + (it.pendentes || []).length;
+  if (it.usaSerial && nova < lidos) { eaMsg(`Já existem ${lidos} serial(is) bipados — remova um serial antes de diminuir.`, 'aviso'); return; }
+  const saldo = eaSaldoDe(it.materialId);
+  const outros = window.__ENEL__.itens.filter((_, i) => i !== idx).filter(x => x.materialId === it.materialId).reduce((a, x) => a + Number(x.quantidade), 0);
+  if (nova + outros > saldo) { eaMsg(`Estoque insuficiente: saldo de ${it.descricao} é ${saldo}.`, 'erro'); return; }
+  it.quantidade = nova;
+  eaRenderItens();
 };
 
-function enelRenderItens() {
+function eaRenderItens() {
   const box = document.getElementById('enelListaItens');
-  const itens = window.__ENEL__.itens||[];
-  if (!itens.length) { box.innerHTML='<p style="color:var(--text-3);text-align:center;padding:16px;margin:0;font-size:12px">Nenhum item adicionado</p>'; return; }
-  box.innerHTML = '';
-  itens.forEach((it,idx) => {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;margin-bottom:8px';
-    const serialBlock = it.usaSerial ? `
-      <div style="margin-top:10px;background:rgba(245,158,11,.04);border:1px dashed rgba(245,158,11,.3);border-radius:var(--radius-sm);padding:10px">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px">
-          <span style="font-size:11px;font-weight:700;color:#fcd34d">Seriais (${(it.seriais||[]).length}/${it.quantidade})</span>
-          <span style="font-size:11px;color:${(it.seriais||[]).length===it.quantidade?'#22c55e':'#ef4444'}">${(it.seriais||[]).length===it.quantidade?'Completo':'Pendente'}</span>
-        </div>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input type="text" placeholder="Bipar e Enter..." class="form-input enel-serial-input" style="flex:1;font-family:var(--font-mono)"
-            oninput="clearTimeout(this._t);this._t=setTimeout(()=>{if(this.value.length>=4){window.enelAddSerial(${idx},this.value);this.value=''}},300)">
-          <button class="btn btn-ghost" onclick="const i=this.previousElementSibling;window.enelAddSerial(${idx},i.value);i.value=''">+</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">${(it.seriais||[]).map(s=>`
-          <span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${s}
-            <button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="window.enelRemSerial(${idx},'${s.replace(/'/g,"\\'")}')">✕</button>
-          </span>`).join('')}</div>
-      </div>` : '';
-    wrap.innerHTML = `<div style="display:flex;justify-content:space-between;gap:12px">
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:13px">${escHtml(it.descricao)} <span style="color:var(--text-3);font-size:11px">(${it.codigo})</span>
-          ${it.usaSerial?'<span style="color:#f59e0b;font-size:10px;border:1px solid rgba(245,158,11,.3);padding:1px 6px;border-radius:4px;margin-left:6px">Serial</span>':''}
-        </div>
-        <div style="font-size:11px;color:var(--text-3);margin-top:4px">Qtd: <strong>${it.quantidade}</strong> · ${escHtml(it.motivo)}${it.obs?` · ${escHtml(it.obs)}`:''}</div>
-        ${serialBlock}
-      </div>
-      <button onclick="window.enelRemItem(${idx})" style="background:rgba(239,68,68,.8);border:0;color:#fff;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;align-self:flex-start">✕</button>
-    </div>`;
-    box.appendChild(wrap);
-  });
-}
+  if (!box) return;
+  const itens = window.__ENEL__.itens || [];
+  const totalUn = itens.reduce((a, it) => a + Number(it.quantidade), 0);
+  const totalSeriais = itens.reduce((a, it) => a + (it.seriais || []).length, 0);
+  const pendentes = itens.filter(it => it.usaSerial && (it.seriais || []).length !== Number(it.quantidade)).length;
 
+  document.getElementById('eaContagemItens').textContent = itens.length ? `${itens.length} material(is) · ${totalUn} unidade(s)` : '';
+  document.getElementById('eaTopoResumo').textContent = `${itens.length} ${itens.length === 1 ? 'item' : 'itens'} · ${totalUn} un.`;
+  document.getElementById('eaResumo').innerHTML = `
+    <div class="ea-resumo-card"><b>${itens.length}</b><span>materiais</span></div>
+    <div class="ea-resumo-card"><b>${totalUn}</b><span>unidades</span></div>
+    <div class="ea-resumo-card"><b style="color:${totalSeriais ? '#4ade80' : 'var(--text-1)'}">${totalSeriais}</b><span>seriais conferidos</span></div>
+    <div class="ea-resumo-card"><b style="color:${pendentes ? '#fcd34d' : '#4ade80'}">${pendentes}</b><span>itens pendentes</span></div>`;
+  document.getElementById('eaPasso3').classList.toggle('pronto', !!itens.length && !pendentes);
+
+  if (!itens.length) {
+    box.innerHTML = `<div style="text-align:center;padding:28px;border:1px dashed var(--border-mid);border-radius:var(--radius-md);color:var(--text-3)">
+      <div style="font-size:28px;margin-bottom:6px">📦</div>
+      <div style="font-size:13px;font-weight:600">Nenhum material adicionado</div>
+      <div style="font-size:11px">Busque o material acima, informe a quantidade e clique em Adicionar</div></div>`;
+    eaAtualizarFilaStatus();
+    return;
+  }
+
+  box.innerHTML = itens.map((it, idx) => {
+    const lidos = (it.seriais || []).length;
+    const completo = !it.usaSerial || lidos === Number(it.quantidade);
+    const pct = it.usaSerial ? Math.min(100, (lidos / Number(it.quantidade)) * 100) : 100;
+    const chips = [
+      ...(it.seriais || []).map(s => `<span class="ea-serial ok">✓ ${escHtml(s)}
+        <button title="Remover" onclick="enelRemSerial(${idx},'${escJs(s)}')">✕</button></span>`),
+      ...(it.pendentes || []).map(s => `<span class="ea-serial pendente">⏳ ${escHtml(s)}</span>`),
+      ...(it.erros || []).map(e => `<span class="ea-serial erro" title="${escHtml(e.motivo || '')}">✕ ${escHtml(e.serial)}
+        <span class="ea-erro-motivo">${escHtml(e.motivo || '')}</span>
+        <button title="Dispensar" onclick="eaDispensarErro(${idx},'${escJs(e.serial)}')">OK</button></span>`),
+    ].join('');
+    const blocoSerial = it.usaSerial ? `
+      <div style="padding:0 14px 14px">
+        <div class="ea-barra"><div class="ea-barra-fill" style="width:${pct}%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px">
+          <span style="font-weight:700;color:${completo ? '#4ade80' : '#fcd34d'}">${lidos} de ${it.quantidade} seriais</span>
+          <span style="color:var(--text-3)">${completo ? 'Completo' : 'Bipe os seriais deste modelo'}</span>
+        </div>
+        ${completo ? '' : `<div class="ea-bip">
+          <input id="eaBip${idx}" placeholder="Bipe o serial e aperte Enter..." autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();eaBipar(${idx});}">
+          <button class="btn btn-ghost" onclick="eaBipar(${idx})">Adicionar</button>
+        </div>`}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${chips}</div>
+      </div>` : '';
+    return `<div class="ea-item ${it.usaSerial ? 'serial' : ''} ${completo ? 'completo' : ''}">
+      <div class="ea-item-cab">
+        <span style="font-size:20px">${it.usaSerial ? '🔢' : '📦'}</span>
+        <div style="flex:1;min-width:0">
+          <div class="ea-item-nome">${escHtml(it.descricao)} ${completo ? '<span style="color:#4ade80;font-size:12px">✓</span>' : ''}</div>
+          <div class="ea-item-cod">${escHtml(it.codigo || '—')}${it.obs ? ' · ' + escHtml(it.obs) : ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button class="btn btn-ghost" style="padding:6px 10px" onclick="eaAlterarQtd(${idx},-1)">−</button>
+          <span class="ea-qtd-badge">${it.quantidade}</span>
+          <button class="btn btn-ghost" style="padding:6px 10px" onclick="eaAlterarQtd(${idx},1)">+</button>
+        </div>
+        <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelRemItem(${idx})">✕</button>
+      </div>
+      ${blocoSerial}
+    </div>`;
+  }).join('');
+  eaAtualizarFilaStatus();
+}
+// Mantido: a tela de solicitações chama enelRenderItens()
+function enelRenderItens() { eaRenderItens(); }
+
+// ══ PASSO 3 — FINALIZAR ══
 async function enelFinalizarAtendimento() {
-  if (!window.__ENEL__.atendimento) { enelMsg('Nenhum atendimento em andamento.', false); return; }
-  const equipeId = document.getElementById('enelEquipeId').value;
-  if (!equipeId) { enelMsg('Selecione uma equipe.', false); return; }
-  const itens = window.__ENEL__.itens||[];
-  if (!itens.length) { enelMsg('Adicione pelo menos 1 material.', false); return; }
-  const pend = itens.find(it=>it.usaSerial&&(it.seriais||[]).length!==Number(it.quantidade));
-  if (pend) { enelMsg(`Falta seriais em: ${escHtml(pend.descricao)} (${(pend.seriais||[]).length}/${pend.quantidade})`, false); return; }
-  const equipeObj = (_equipes||[]).find(x=>x.id===equipeId);
-  const equipeNome = document.getElementById('enelEquipeBusca').value.trim();
+  if (!window.__ENEL__.atendimento) { eaMsg('Nenhum atendimento em andamento.', 'erro'); return; }
+  const equipe = window.__ENEL__.equipe;
+  if (!equipe?.id) { eaMsg('Selecione a equipe que vai receber.', 'erro'); document.getElementById('enelEquipeBusca')?.focus(); return; }
+  const itens = window.__ENEL__.itens || [];
+  if (!itens.length) { eaMsg('Adicione pelo menos 1 material.', 'erro'); return; }
+  if (itens.some(it => (it.pendentes || []).length)) { eaMsg('Aguarde a conferência dos seriais bipados terminar.', 'aviso'); eaAgendarEnvio(0); return; }
+  const pend = itens.find(it => it.usaSerial && (it.seriais || []).length !== Number(it.quantidade));
+  if (pend) { eaMsg(`Faltam seriais em ${pend.descricao} (${(pend.seriais || []).length} de ${pend.quantidade}).`, 'erro'); document.getElementById('eaBip' + itens.indexOf(pend))?.focus(); return; }
+
   const agora = new Date();
   const at = window.__ENEL__.atendimento;
-  enelMsg('Finalizando...', true);
-  const res = await apiMovimentacao('/enel/atendimentos', {
-    equipe_id: equipeId, nome_equipe: equipeNome,
+  eaMsg('Finalizando atendimento...', 'info');
+  const corpo = {
+    equipe_id: equipe.id, nome_equipe: equipe.prefixo || equipe.nome,
     data: document.getElementById('enelData').value,
     hora_inicio: new Date(at.inicio).toLocaleTimeString('pt-BR'),
     hora_fim: agora.toLocaleTimeString('pt-BR'),
-    tempo_segundos: at.seg, itens,
-  });
-  if (res?.ok) {
-    toast('Atendimento ENEL finalizado!','success');
-    if (res.avisos?.length) {
-      toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
-    }
-    clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null;
-    window.__ENEL__.atendimento = null; window.__ENEL__.itens = [];
-    document.getElementById('enelCronometro').textContent='00:00:00';
-    document.getElementById('enelEquipeBusca').value=''; document.getElementById('enelEquipeId').value='';
-    enelRenderItens();
-    document.getElementById('areaAtendEnelAndamento').style.display='none';
-    carregarEstoqueEnel();
-    // Se veio de uma solicitação, marca como ENTREGUE automaticamente
-    if (window.__ENEL_SOL_PENDENTE__) {
-      const solId = window.__ENEL_SOL_PENDENTE__.id;
-      window.__ENEL_SOL_PENDENTE__ = null;
-      api(`/equipe-app/admin/solicitacoes/${solId}`, { method:'PUT', body: JSON.stringify({ status:'ATENDIDO' }) });
-      toast('✅ Solicitação marcada como Atendida', 'success', 4000);
-    }
-  } else enelMsg(res?.erro||'Erro ao finalizar', false);
+    tempo_segundos: at.seg,
+    itens: itens.map(it => ({ materialId: it.materialId, descricao: it.descricao, codigo: it.codigo,
+      quantidade: it.quantidade, motivo: it.motivo, obs: it.obs, usaSerial: it.usaSerial, seriais: it.seriais })),
+  };
+  const res = await apiMovimentacao('/enel/atendimentos', corpo);
+  if (!res?.ok) { eaMsg(res?.erro || 'Erro ao finalizar o atendimento.', 'erro'); return; }
+
+  toast('Atendimento ENEL finalizado!', 'success');
+  if (res.avisos?.length) toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
+
+  window.__EA_ULTIMO__ = {
+    id: res.id, equipe: equipe.prefixo || equipe.nome, data: corpo.data,
+    hora_inicio: corpo.hora_inicio, hora_fim: corpo.hora_fim, tempo_segundos: at.seg,
+    atendente: GCA.usuario?.nome || GCA.usuario?.username || '—', itens: corpo.itens,
+  };
+  clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null;
+  window.__ENEL__.atendimento = null; window.__ENEL__.itens = []; window.__ENEL__.equipe = null;
+  document.getElementById('enelCronometro').textContent = '00:00:00';
+  document.getElementById('areaAtendEnelAndamento').style.display = 'none';
+  eaMsg('', '');
+  eaAbrirFicha();
+  carregarEstoqueEnel();
+
+  if (window.__ENEL_SOL_PENDENTE__) {
+    const solId = window.__ENEL_SOL_PENDENTE__.id;
+    window.__ENEL_SOL_PENDENTE__ = null;
+    api(`/equipe-app/admin/solicitacoes/${solId}`, { method: 'PUT', body: JSON.stringify({ status: 'ATENDIDO' }) });
+    toast('✅ Solicitação marcada como Atendida', 'success', 4000);
+  }
+}
+
+function eaTempoFmt(seg) {
+  const s = Number(seg || 0);
+  const m = Math.floor(s / 60);
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}min` : `${m}min ${String(s % 60).padStart(2, '0')}s`;
+}
+
+function fecharFichaEnel() { document.getElementById('modalFichaEnel').classList.add('hidden'); }
+
+function eaAbrirFicha() {
+  const d = window.__EA_ULTIMO__;
+  if (!d) return;
+  const totalUn = d.itens.reduce((a, it) => a + Number(it.quantidade), 0);
+  document.getElementById('fichaEnelSub').textContent = `Equipe ${d.equipe} · ${formatarData(d.data)} · ${eaTempoFmt(d.tempo_segundos)}`;
+  document.getElementById('fichaEnelCorpo').innerHTML = `
+    <div class="ea-resumo" style="margin-bottom:16px">
+      <div class="ea-resumo-card"><b>${d.itens.length}</b><span>materiais</span></div>
+      <div class="ea-resumo-card"><b>${totalUn}</b><span>unidades</span></div>
+      <div class="ea-resumo-card"><b>${d.itens.reduce((a, it) => a + (it.seriais || []).length, 0)}</b><span>seriais</span></div>
+    </div>
+    ${d.itens.map(it => `<div class="ea-item" style="margin-bottom:8px">
+      <div class="ea-item-cab">
+        <span style="font-size:18px">${it.usaSerial ? '🔢' : '📦'}</span>
+        <div style="flex:1"><div class="ea-item-nome">${escHtml(it.descricao)}</div>
+        <div class="ea-item-cod">${escHtml(it.codigo || '—')}</div></div>
+        <span class="ea-qtd-badge">${it.quantidade}</span>
+      </div>
+      ${(it.seriais || []).length ? `<div style="padding:10px 14px;display:flex;flex-wrap:wrap;gap:6px">
+        ${it.seriais.map(s => `<span class="ea-serial ok" style="animation:none">${escHtml(s)}</span>`).join('')}</div>` : ''}
+    </div>`).join('')}`;
+  document.getElementById('modalFichaEnel').classList.remove('hidden');
+}
+
+// Ficha de entrega em PDF (mesmo padrão das outras fichas do sistema)
+function imprimirFichaEnel() {
+  const d = window.__EA_ULTIMO__;
+  if (!d) { toast('Nenhum atendimento para imprimir', 'warn'); return; }
+  const LOGO_GCA = new URL('logo-gca.png', location.href).href;
+  const LOGO_CEN = new URL('logo-ceneged.png', location.href).href;
+  const totalUn = d.itens.reduce((a, it) => a + Number(it.quantidade), 0);
+  const linhas = d.itens.map((it, i) => `<tr>
+    <td style="text-align:center">${i + 1}</td>
+    <td>${escHtml(it.descricao)}</td>
+    <td style="font-family:monospace">${escHtml(it.codigo || '—')}</td>
+    <td style="text-align:center;font-weight:700">${it.quantidade}</td>
+    <td style="font-family:monospace;font-size:10px">${(it.seriais || []).length ? it.seriais.map(escHtml).join(' · ') : '—'}</td>
+  </tr>`).join('');
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
+  <title>Ficha de Entrega ENEL — ${escHtml(d.equipe)}</title>
+  <style>${CSS_PDF_BASE}
+    .ficha-top{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:18px;}
+    .ficha-top img{height:42px;}
+  </style></head><body>
+    <div class="ficha-top">
+      <img src="${LOGO_GCA}" alt="GCA">
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:800;color:#1e3a8a">Ficha de Entrega — Materiais ENEL</div>
+        <div style="font-size:11px;color:#6b7280">Atendimento ${escHtml(d.id || '')}</div>
+      </div>
+      <img src="${LOGO_CEN}" alt="Ceneged">
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="lbl">Equipe</div><div class="val">${escHtml(d.equipe)}</div></div>
+      <div class="card"><div class="lbl">Data</div><div class="val">${formatarData(d.data)}</div></div>
+      <div class="card"><div class="lbl">Horário</div><div class="val">${escHtml(d.hora_inicio || '')} às ${escHtml(d.hora_fim || '')}</div></div>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="lbl">Atendente</div><div class="val">${escHtml(d.atendente)}</div></div>
+      <div class="card"><div class="lbl">Tempo de atendimento</div><div class="val">${eaTempoFmt(d.tempo_segundos)}</div></div>
+      <div class="card"><div class="lbl">Total entregue</div><div class="val">${d.itens.length} material(is) · ${totalUn} un.</div></div>
+    </div>
+    <h2>Materiais entregues</h2>
+    <table>
+      <thead><tr><th style="width:30px">#</th><th>Material</th><th style="width:90px">Código</th><th style="width:50px">Qtd</th><th>Seriais</th></tr></thead>
+      <tbody>${linhas}</tbody>
+    </table>
+    <div class="assinatura">
+      <div class="linha-ass">${escHtml(d.atendente)}<br>Almoxarifado (entrega)</div>
+      <div class="linha-ass">Equipe ${escHtml(d.equipe)}<br>Recebimento (nome e assinatura)</div>
+    </div>
+    <div class="rodape">GCA — Gestão de Almoxarifado · Ceneged · Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
+  </body></html>`;
+  abrirJanelaPDF(html, 'Ficha de Entrega ENEL');
 }
 
 async function carregarHistAtendEnel() {
