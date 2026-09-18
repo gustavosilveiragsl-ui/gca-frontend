@@ -4158,10 +4158,69 @@ window.addEventListener('pageshow', function(e) {
           <button data-aba="compras" onclick="finMudarAba('compras')">🛒 Compras</button>
           <button data-aba="consumo" onclick="finMudarAba('consumo')">📤 Consumo</button>
           <button data-aba="recuperacao" onclick="finMudarAba('recuperacao')">♻️ Recuperação e laudos</button>
+          <button data-aba="avulsos" onclick="finMudarAba('avulsos')">🧾 Outros custos</button>
           <button data-aba="precos" onclick="finMudarAba('precos')">💲 Histórico de preços</button>
           <button data-aba="config" onclick="finMudarAba('config')">⚙️ Configurações</button>
         </div>
         <div id="finConteudo"></div>
+      </div>
+
+      <!-- MODAL: LANÇAR CUSTO NO MÊS -->
+      <div class="modal-overlay hidden" id="modalCustoAvulso">
+        <div class="modal-box" style="max-width:560px">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title" id="custoTitulo">🧾 Lançar custo no mês</div>
+              <div style="font-size:11px;color:var(--text-3)">Gasto que não passa por SC nem por remessa de laudo</div>
+            </div>
+            <button class="modal-close" onclick="finFecharCusto()">✕</button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="custoId">
+            <div style="display:grid;grid-template-columns:150px 1fr;gap:12px;margin-bottom:12px">
+              <div><label class="form-label">Data *</label><input type="date" id="custoData" class="form-input"></div>
+              <div><label class="form-label">Tipo *</label>
+                <select id="custoTipo" class="form-input" onchange="finDicaTipoCusto()">
+                  <option value="LAUDO">Laudo (entra junto com as remessas)</option>
+                  <option value="COMPRA_DIRETA">Compra direta (sem SC)</option>
+                  <option value="OUTROS" selected>Outros</option>
+                </select>
+              </div>
+            </div>
+            <div id="custoDicaTipo" style="font-size:11px;color:var(--text-3);margin:-6px 0 12px"></div>
+            <div style="margin-bottom:12px">
+              <label class="form-label">Descrição *</label>
+              <input id="custoDescricao" class="form-input" placeholder="Ex.: 3 alicates amperímetros que voltaram do laudo">
+            </div>
+            <div style="margin-bottom:12px">
+              <label class="form-label">Item do cadastro (opcional)</label>
+              <div style="position:relative">
+                <input id="custoItemBusca" class="form-input" placeholder="Busque o item para preencher categoria e valor..." autocomplete="off"
+                  oninput="finBuscarItemCusto()" onblur="setTimeout(()=>{const e=document.getElementById('custoItemSug'); if(e) e.style.display='none'},200)">
+                <div id="custoItemSug" class="ea-sug" style="display:none"></div>
+                <input type="hidden" id="custoItemId">
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 120px 1fr;gap:12px;margin-bottom:12px">
+              <div><label class="form-label">Categoria</label><input id="custoCategoria" class="form-input" placeholder="Ex.: FERRAMENTAS"></div>
+              <div><label class="form-label">Quantidade</label><input type="number" id="custoQtd" class="form-input" min="0" step="any" placeholder="—" oninput="finCalcularValorCusto()"></div>
+              <div><label class="form-label">Valor unitário</label><input type="number" id="custoValorUn" class="form-input" min="0" step="0.01" placeholder="—" oninput="finCalcularValorCusto()"></div>
+            </div>
+            <div style="margin-bottom:12px">
+              <label class="form-label">Valor total (R$) *</label>
+              <input type="number" id="custoValor" class="form-input" min="0" step="0.01" placeholder="0,00" style="font-size:18px;font-weight:800">
+            </div>
+            <div>
+              <label class="form-label">Observação</label>
+              <input id="custoObs" class="form-input" placeholder="Nota fiscal, processo, quem autorizou...">
+            </div>
+            <div id="custoErro" style="color:var(--red);font-size:12px;min-height:16px;margin-top:8px"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="finFecharCusto()">Cancelar</button>
+            <button class="btn btn-primary" id="custoBtnSalvar" onclick="finSalvarCusto()">Lançar custo</button>
+          </div>
+        </div>
       </div>
 
       <div class="view" id="view-indicadores">
@@ -21432,7 +21491,7 @@ function finRender() {
     document.getElementById('finConteudo').innerHTML = '<div class="empty-state"><div class="es-icon">📊</div><div class="es-title">Escolha o mês e clique em Buscar</div></div>';
     return;
   }
-  ({ resumo: finRenderResumo, compras: finRenderCompras, consumo: finRenderConsumo, recuperacao: finRenderRecuperacao })[_finAba]?.();
+  ({ resumo: finRenderResumo, compras: finRenderCompras, consumo: finRenderConsumo, recuperacao: finRenderRecuperacao, avulsos: finRenderAvulsos })[_finAba]?.();
 }
 
 function finKpi(rotulo, valor, sub, cor) {
@@ -21468,7 +21527,7 @@ function finRenderResumo() {
   }
   html += `
     <div class="fin-kpis">
-      ${finKpi('Gasto do mês', finR$(a.gasto.total), `compras ${finR$(c.fechamento)} + laudos ${finR$(a.gasto.laudos)}<br>${finVariacao(a.gasto.total, ant.gasto)}`)}
+      ${finKpi('Gasto do mês', finR$(a.gasto.total), `compras ${finR$(c.fechamento)} + laudos ${finR$(a.gasto.laudos)}${a.gasto.avulsos_fora_laudo ? ` + outros ${finR$(a.gasto.avulsos_fora_laudo)}` : ''}<br>${finVariacao(a.gasto.total, ant.gasto)}`)}
       ${finKpi('Compras — real', finR$(c.real), 'preço confirmado na NF', 'var(--green)')}
       ${finKpi('Compras — a receber (estimado)', finR$(aReceber), 'ainda sem NF: preço do cadastro na abertura da SC', 'var(--yellow)')}
       ${finKpi('Meta mensal', a.meta ? finR$(a.meta) : '—', a.meta
@@ -21477,10 +21536,13 @@ function finRenderResumo() {
     </div>
     <div class="fin-kpis">
       ${finKpi('Real × estimado', finR$(c.economia), c.economia >= 0 ? 'pagou menos que o estimado no que já chegou' : 'pagou mais que o estimado no que já chegou', c.economia >= 0 ? 'var(--green)' : 'var(--red)')}
-      ${finKpi('Custo com laudos', finR$(a.recuperacao.custo_laudos), a.recuperacao.remessas_sem_valor ? `⚠️ ${a.recuperacao.remessas_sem_valor} remessa(s) sem valor pago` : `${a.recuperacao.remessas.length} remessa(s) enviada(s)`)}
+      ${finKpi('Custo com laudos', finR$(a.recuperacao.custo_laudos), (a.recuperacao.remessas_sem_valor ? `⚠️ ${a.recuperacao.remessas_sem_valor} remessa(s) sem valor pago` : `${a.recuperacao.remessas.length} remessa(s) enviada(s)`) + (a.recuperacao.custo_laudos_avulso ? `<br>inclui ${finR$(a.recuperacao.custo_laudos_avulso)} lançado à mão` : ''))}
       ${finKpi('Economia com recuperação', finR$(a.recuperacao.economia), `resultado ${finR$(a.recuperacao.resultado)} (economia − laudos)`, 'var(--green)')}
       ${finKpi('Perdas', finR$(a.perdas.total || 0), `recuperação ${finR$(a.perdas.recuperacao || 0)} · inventário ${finR$(a.perdas.ajuste_inventario || 0)}`, 'var(--red)')}
       ${finKpi('Consumo (saídas)', finR$(a.consumo.total), `${a.consumo.movimentos} saídas<br>${finVariacao(a.consumo.total, ant.consumo)}`)}
+      ${finKpi('Custos lançados à mão', finR$(a.gasto.avulsos || 0), (a.avulsos?.lancamentos?.length || 0)
+        ? `${a.avulsos.lancamentos.length} lançamento(s)<br><span style="cursor:pointer;color:var(--accent-text)" onclick="finMudarAba('avulsos')">ver e lançar</span>`
+        : '<span style="cursor:pointer;color:var(--accent-text)" onclick="finMudarAba(\'avulsos\')">lançar um custo</span>')}
     </div>`;
 
   if (d.consolidado) {
@@ -21512,6 +21574,159 @@ function finRenderResumo() {
         plugins: { tooltip: { callbacks: { label: (i) => `${i.dataset.label}: ${finR$(i.raw)}` } } } },
     });
   }
+}
+
+const FIN_TIPO_CUSTO = { LAUDO: '♻️ Laudo', COMPRA_DIRETA: '🛒 Compra direta', OUTROS: '🧾 Outros' };
+
+// Custos que não passam por SC nem por remessa: lançados à mão para o mês fechar certo.
+function finRenderAvulsos() {
+  const d = _finDados, a = d.atual;
+  const av = a.avulsos || { total: 0, por_tipo: {}, por_categoria: [], lancamentos: [] };
+  const lista = av.lancamentos || [];
+  const podeLancar = !d.consolidado;
+
+  let html = `
+    <div class="fin-kpis">
+      ${finKpi('Lançado em ' + finNomeMes(d.mes), finR$(av.total), `${lista.length} lançamento(s)`)}
+      ${finKpi('Laudo', finR$(av.por_tipo?.LAUDO || 0), 'soma no custo de laudos e no resultado da recuperação')}
+      ${finKpi('Compra direta', finR$(av.por_tipo?.COMPRA_DIRETA || 0), 'compra do setor sem SC')}
+      ${finKpi('Outros', finR$(av.por_tipo?.OUTROS || 0), 'demais custos do mês')}
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+      <div style="font-size:12px;color:var(--text-3)">Esses valores entram no gasto do mês, na meta e no Excel.</div>
+      ${podeLancar
+        ? '<button class="btn btn-primary" style="margin-left:auto" onclick="finAbrirCusto()">+ Lançar custo</button>'
+        : '<div style="margin-left:auto;font-size:12px;color:var(--yellow)">Escolha uma filial (sem ser "todas") para lançar</div>'}
+    </div>`;
+
+  html += finCard('Lançamentos do mês', '', finTabela(
+    [{ t: 'Data' }, { t: 'Tipo' }, { t: 'Descrição' }, { t: 'Categoria' }, { t: 'Qtd', d: 1 }, { t: 'Valor', d: 1 }, { t: 'Lançado por' }, { t: '' }],
+    lista.map((l, i) => `<tr>
+      <td style="white-space:nowrap">${formatarData(l.data)}</td>
+      <td style="font-size:11px">${FIN_TIPO_CUSTO[l.tipo] || l.tipo}</td>
+      <td class="td-main">${escHtml(l.descricao)}${l.observacao ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.observacao)}</div>` : ''}</td>
+      <td style="font-size:11px">${escHtml(l.categoria || '—')}</td>
+      ${finTd(l.quantidade ?? '—')}
+      ${finTd(finR$(l.valor), 'font-weight:700')}
+      <td style="font-size:11px;color:var(--text-3)">${escHtml(l.criado_por || '—')}${l.filial ? `<div>${escHtml(l.filial)}</div>` : ''}</td>
+      <td style="text-align:right;white-space:nowrap">${podeLancar ? `
+        <button class="row-action" onclick="finAbrirCusto(${i})">Editar</button>
+        <button class="row-action" style="color:var(--red)" onclick="finExcluirCusto(${i})">✕</button>` : ''}</td>
+    </tr>`),
+    'Nenhum custo lançado neste mês'));
+
+  if (av.por_categoria?.length) {
+    html += finCard('Por categoria', '', finTabela([{ t: 'Categoria' }, { t: 'Lançamentos', d: 1 }, { t: 'Valor', d: 1 }],
+      av.por_categoria.map(c => `<tr><td class="td-main">${escHtml(c.categoria)}</td>${finTd(c.lancamentos)}${finTd(finR$(c.valor), 'font-weight:700')}</tr>`)));
+  }
+  document.getElementById('finConteudo').innerHTML = html;
+}
+
+function finDicaTipoCusto() {
+  const tipo = document.getElementById('custoTipo').value;
+  document.getElementById('custoDicaTipo').textContent = tipo === 'LAUDO'
+    ? 'Entra no custo com laudos, junto com as remessas, e no resultado da recuperação.'
+    : tipo === 'COMPRA_DIRETA'
+      ? 'Compra do setor que não passou por solicitação de compra.'
+      : 'Qualquer outro custo que precisa aparecer no mês.';
+}
+
+function finBuscarItemCusto() {
+  const q = document.getElementById('custoItemBusca').value.trim().toLowerCase();
+  const sug = document.getElementById('custoItemSug');
+  document.getElementById('custoItemId').value = '';
+  if (q.length < 2) { sug.style.display = 'none'; return; }
+  const lista = (_itens || []).filter(i => (i.nome || i.descricao || '').toLowerCase().includes(q) || String(i.codigo || '').toLowerCase().includes(q)).slice(0, 10);
+  if (!lista.length) { sug.style.display = 'none'; return; }
+  sug.innerHTML = lista.map(i => `<div class="ea-sug-item" onmousedown="finEscolherItemCusto('${escJs(i.id)}')">
+    <div style="flex:1"><div style="font-weight:700">${escHtml(i.nome || i.descricao)}</div>
+    <div style="font-size:10px;color:var(--text-3)">${escHtml(i.codigo || '')} · ${escHtml(i.categoria || 'sem categoria')} · ${finR$(i.valor_un || 0)}</div></div>
+  </div>`).join('');
+  sug.style.display = '';
+}
+
+function finEscolherItemCusto(id) {
+  const i = (_itens || []).find(x => x.id === id);
+  if (!i) return;
+  document.getElementById('custoItemId').value = id;
+  document.getElementById('custoItemBusca').value = `${i.nome || i.descricao} (${i.codigo || '—'})`;
+  document.getElementById('custoItemSug').style.display = 'none';
+  if (i.categoria) document.getElementById('custoCategoria').value = i.categoria;
+  if (i.valor_un) {
+    document.getElementById('custoValorUn').value = Number(i.valor_un);
+    if (!document.getElementById('custoQtd').value) document.getElementById('custoQtd').value = 1;
+    finCalcularValorCusto();
+  }
+  if (!document.getElementById('custoDescricao').value.trim()) {
+    document.getElementById('custoDescricao').value = i.nome || i.descricao || '';
+  }
+}
+
+function finCalcularValorCusto() {
+  const qtd = Number(document.getElementById('custoQtd').value || 0);
+  const un = Number(document.getElementById('custoValorUn').value || 0);
+  if (qtd > 0 && un > 0) document.getElementById('custoValor').value = (qtd * un).toFixed(2);
+}
+
+function finAbrirCusto(idx) {
+  const l = idx === undefined ? null : (_finDados?.atual?.avulsos?.lancamentos || [])[idx];
+  document.getElementById('custoTitulo').textContent = l ? '🧾 Editar custo lançado' : '🧾 Lançar custo no mês';
+  document.getElementById('custoBtnSalvar').textContent = l ? 'Salvar alterações' : 'Lançar custo';
+  document.getElementById('custoId').value = l?.id || '';
+  const mes = document.getElementById('finMes').value;
+  document.getElementById('custoData').value = l?.data || `${mes}-${String(new Date().getDate()).padStart(2, '0')}`;
+  document.getElementById('custoTipo').value = l?.tipo || 'OUTROS';
+  document.getElementById('custoDescricao').value = l?.descricao || '';
+  document.getElementById('custoCategoria').value = l?.categoria || '';
+  document.getElementById('custoItemId').value = l?.item_id || '';
+  document.getElementById('custoItemBusca').value = '';
+  document.getElementById('custoQtd').value = l?.quantidade ?? '';
+  document.getElementById('custoValorUn').value = l?.valor_unitario ?? '';
+  document.getElementById('custoValor').value = l?.valor ?? '';
+  document.getElementById('custoObs').value = l?.observacao || '';
+  document.getElementById('custoErro').textContent = '';
+  finDicaTipoCusto();
+  if (!(_itens || []).length) carregarItens?.();
+  document.getElementById('modalCustoAvulso').classList.remove('hidden');
+  setTimeout(() => document.getElementById('custoDescricao')?.focus(), 120);
+}
+
+function finFecharCusto() { document.getElementById('modalCustoAvulso').classList.add('hidden'); }
+
+async function finSalvarCusto() {
+  const id = document.getElementById('custoId').value;
+  const corpo = {
+    data: document.getElementById('custoData').value,
+    tipo: document.getElementById('custoTipo').value,
+    descricao: document.getElementById('custoDescricao').value.trim(),
+    categoria: document.getElementById('custoCategoria').value.trim(),
+    item_id: document.getElementById('custoItemId').value,
+    quantidade: document.getElementById('custoQtd').value,
+    valor: Number(document.getElementById('custoValor').value || 0),
+    observacao: document.getElementById('custoObs').value.trim(),
+  };
+  const erro = document.getElementById('custoErro');
+  if (!corpo.descricao) { erro.textContent = 'Escreva a descrição do custo.'; return; }
+  if (!(corpo.valor > 0)) { erro.textContent = 'Informe o valor do custo.'; return; }
+  const btn = document.getElementById('custoBtnSalvar');
+  btn.disabled = true;
+  const res = await api(id ? `/financeiro/custos/${encodeURIComponent(id)}` : '/financeiro/custos',
+    { method: id ? 'PUT' : 'POST', body: JSON.stringify(corpo) });
+  btn.disabled = false;
+  if (!res?.ok) { erro.textContent = res?.erro || 'Não foi possível salvar.'; return; }
+  finFecharCusto();
+  toast(id ? 'Custo atualizado!' : 'Custo lançado no mês!', 'success');
+  finCarregar();
+}
+
+async function finExcluirCusto(idx) {
+  const l = (_finDados?.atual?.avulsos?.lancamentos || [])[idx];
+  if (!l) return;
+  if (!confirm(`Apagar o lançamento "${l.descricao}" de ${finR$(l.valor)}?`)) return;
+  const res = await api(`/financeiro/custos/${encodeURIComponent(l.id)}`, { method: 'DELETE' });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao apagar', 'error'); return; }
+  toast('Lançamento apagado', 'success');
+  finCarregar();
 }
 
 function finRenderCompras() {
