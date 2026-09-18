@@ -22313,9 +22313,12 @@ function indRenderEnel(d){
   el.innerHTML=`
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">
       ${indKpi(k.medidoresInstalados,'Medidores Instalados','#22c55e')}
-      ${indKpi(k.tempoMedioEnelHoras!=null ? k.tempoMedioEnelHoras+'h' : '—','Tempo Médio Atend.','#f59e0b',k.tempoMedioEnelHoras!=null?'da solic. ao atend.':'sem dados')}
+      ${indKpi(k.tempoMedioAtendEnelSeg!=null ? `${Math.floor(k.tempoMedioAtendEnelSeg/60)}min ${String(k.tempoMedioAtendEnelSeg%60).padStart(2,'0')}s` : '—','Tempo Médio Atend.','#f59e0b',
+        k.tempoMedioAtendEnelSeg!=null
+          ? `${k.totalAtendimentosEnel} atendimento(s)${k.tempoMedioEnelHoras!=null ? ` · espera do portal ${k.tempoMedioEnelHoras}h` : ''}`
+          : 'sem atendimentos no período')}
       ${indKpi(k.cabosEntregues+'m','Cabo Entregue','#0ea5e9')}${indKpi(k.cabosConsumidos+'m','Cabo Instalado','#f59e0b')}
-      ${indKpi(k.totalSaidasEstoque,'Saídas Estoque','#8b5cf6')}${indKpi(k.totalSolEquipes,'Solicitações Equipes','#f87171')}
+      ${indKpi(k.totalSaidasEstoque,'Saídas Estoque','#8b5cf6',k.totalAjustesInventario ? `+ ${k.totalAjustesInventario} ajuste(s) de inventário` : 'entregas para equipes')}${indKpi(k.totalSolEquipes,'Solicitações Equipes','#f87171')}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       ${indCardChart('🚛 Equipes que mais Retiram (qtd)','chartEquipeRetira',220)}${indCardChart('📟 Equipes que mais Instalam Medidores','chartEquipeInstala',220)}
