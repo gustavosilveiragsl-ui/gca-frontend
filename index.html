@@ -9130,6 +9130,9 @@ function renderSolicitacoes() {
       <td>
         <div class="td-main">${escHtml(nome)}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${escHtml(s.id)}</div>
+        ${s.base_colaborador ? `<div style="font-size:10px;color:var(--text-2);margin-top:2px" title="Base do colaborador que vai receber">📍 ${escHtml(s.base_colaborador)}${
+          s.base_solicitante && s.base_origem === 'solicitante' && s.base_colaborador !== s.base_solicitante
+            ? ` <span style="color:#f59e0b;font-weight:700" title="O colaborador é de uma base diferente da de quem pediu">⚠️ outra base que o solicitante</span>` : ''}</div>` : ''}
         ${s.nome_armazem ? `<div style="font-size:10px;color:var(--accent-text);margin-top:2px">📦 ${escHtml(s.nome_armazem)}</div>` : ''}
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
