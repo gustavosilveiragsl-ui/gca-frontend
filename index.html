@@ -15945,6 +15945,26 @@ function abrirVerSC(id) {
 
   // Tabela de itens (somente visualização)
   const tbody = document.getElementById('verSCItensBody');
+  // Valor estimado da SC: quantidade solicitada × estimado unitário (congelado na abertura;
+  // SC antiga sem ele usa o valor atual do cadastro).
+  const brl = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const estUn = (it) => Number(it.valorEstimadoUn ?? (_itens || []).find(i => i.id === it.itemId)?.valor_un ?? 0);
+  let estTotal = 0, estRecebido = 0, estPendente = 0;
+  itens.forEach(it => {
+    const sol = Number(it.qtdSolicitada || it.qtd || 1);
+    const rec = Math.min(Number(it.qtdRecebida || 0), sol);
+    estTotal += sol * estUn(it);
+    estRecebido += rec * estUn(it);
+    estPendente += (sol - rec) * estUn(it);
+  });
+  const caixaTotal = (rotulo, valor, cor, sub) => `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;background:var(--bg)">
+    <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">${rotulo}</div>
+    <div style="font-size:18px;font-weight:800;color:${cor};margin-top:2px">${brl(valor)}</div>
+    <div style="font-size:10px;color:var(--text-3)">${sub}</div></div>`;
+  document.getElementById('verSCTotais').innerHTML =
+    caixaTotal('Valor estimado da SC', estTotal, 'var(--text-1)', `${itens.length} item(ns)`) +
+    caixaTotal('Já recebido (estimado)', estRecebido, '#22c55e', 'pelo valor estimado') +
+    caixaTotal('Pendente (estimado)', estPendente, '#f59e0b', 'ainda a receber');
   tbody.innerHTML = itens.map((it, idx) => {
     const qtdSol = Number(it.qtdSolicitada||it.qtd||1);
     const qtdRec = Number(it.qtdRecebida||0);
@@ -15970,6 +15990,9 @@ function abrirVerSC(id) {
       <td style="padding:8px;text-align:center;font-size:12px;color:${pendente>0?'#f59e0b':'var(--text-3)'};font-weight:600;border-bottom:1px solid var(--border)">${pendente}</td>
       <td style="padding:8px;text-align:right;font-size:11px;border-bottom:1px solid var(--border)">
         ${Number(it.valorEstimadoUn ?? itemLocal?.valor_un ?? 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+      </td>
+      <td style="padding:8px;text-align:right;font-size:12px;font-weight:700;border-bottom:1px solid var(--border)">
+        ${(qtdSol * Number(it.valorEstimadoUn ?? itemLocal?.valor_un ?? 0)).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
       </td>
       <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
         <span style="font-size:10px;font-weight:700;color:${stColor}">${status}</span>
@@ -24148,6 +24171,9 @@ async function baExcluirEquipe(id) {
       <!-- Info NF se já recebeu -->
       <div id="verSCNfInfo" style="display:none;border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;background:var(--bg)"></div>
 
+      <!-- Valor estimado da SC -->
+      <div id="verSCTotais" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px"></div>
+
       <!-- Itens (somente visualização) -->
       <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📦 Itens</div>
       <div style="overflow-x:auto">
@@ -24158,6 +24184,7 @@ async function baExcluirEquipe(id) {
           <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e;border-bottom:1px solid var(--border)">Recebido</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:#f59e0b;border-bottom:1px solid var(--border)">Pendente</th>
           <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Estimado Un.</th>
+          <th style="padding:8px;text-align:right;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Estimado Total</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
           <th style="padding:8px;text-align:left;font-size:10px;color:#3b82f6;border-bottom:1px solid var(--border)">Pedido Compra</th>
         </tr></thead>
