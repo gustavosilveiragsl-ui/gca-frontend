@@ -718,20 +718,20 @@ window.addEventListener('pageshow', function(e) {
         <div class="nav-group-items">
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px">Operações</div>
           <button class="nav-item" data-view="enel-atendimento" data-perm="atendimento_enel" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
-          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> Solicitações ENEL</button>
+          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> <span>Solicitações <span class="nome-conc">Concessionária</span></span></button>
           <button class="nav-item" data-view="enel-entrada" data-perm="ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
           <button class="nav-item" data-view="enel-saida" data-perm="ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Medidores</div>
           <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
           <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
           <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
-          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / ENEL</div>
+          <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / <span class="nome-conc">Concessionária</span></div>
           <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
-          <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon">📋</span> Inventário ENEL</button>
+          <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon">📋</span> <span>Inventário <span class="nome-conc">Concessionária</span></span></button>
           <button class="nav-item" data-view="enel-consulta-saidas" data-perm="ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon">📤</span> Consulta Saídas</button>
           <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
         </div>
@@ -848,10 +848,10 @@ window.addEventListener('pageshow', function(e) {
         <div id="dashInventarioEnelAlerta" class="hidden" style="margin-bottom:16px;border:1px solid #8b5cf6;background:rgba(139,92,246,.08);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <div style="font-size:22px">⚡</div>
           <div style="flex:1;min-width:200px">
-            <div style="font-size:13px;font-weight:700;color:#a78bfa">Inventário ENEL pendente</div>
+            <div style="font-size:13px;font-weight:700;color:#a78bfa">Inventário <span class="nome-conc">Concessionária</span> pendente</div>
             <div style="font-size:12px;color:var(--text-2)" id="dashInventarioEnelTexto">—</div>
           </div>
-          <button class="btn btn-primary" style="font-size:11px;background:#8b5cf6;border-color:#8b5cf6" onclick="showView('enel-inventario')">Ver Inventário ENEL</button>
+          <button class="btn btn-primary" style="font-size:11px;background:#8b5cf6;border-color:#8b5cf6" onclick="showView('enel-inventario')">Ver Inventário <span class="nome-conc">Concessionária</span></button>
         </div>
         <div class="card">
           <div class="card-header">
@@ -2608,7 +2608,7 @@ window.addEventListener('pageshow', function(e) {
         <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header">
-              <div><div class="card-title">Cadastrar Material</div><div class="card-sub">Materiais para uso com equipes ENEL</div></div>
+              <div><div class="card-title">Cadastrar Material</div><div class="card-sub">Materiais para uso com equipes <span class="nome-conc">Concessionária</span></div></div>
             </div>
             <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
               <input type="hidden" id="enelMatEditId">
@@ -2696,10 +2696,10 @@ window.addEventListener('pageshow', function(e) {
         </div>
 
         <div class="card" style="margin-bottom:16px;border:1px solid rgba(139,92,246,.35)" data-perm-btn="inventario_gerar_link">
-          <div class="card-header"><div><div class="card-title">⚡ Link de contagem do estoque ENEL</div><div class="card-sub">Um ciclo por mês. Entram todos os materiais ENEL da filial, inclusive os zerados. Material com serial é contado bipando ou por caixa fechada.</div></div></div>
+          <div class="card-header"><div><div class="card-title">⚡ Link de contagem do estoque <span class="nome-conc">Concessionária</span></div><div class="card-sub">Um ciclo por mês. Entram todos os materiais <span class="nome-conc">Concessionária</span> da filial, inclusive os zerados. Material com serial é contado bipando ou por caixa fechada.</div></div></div>
           <div style="padding:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <button class="btn btn-primary" style="background:#8b5cf6;border-color:#8b5cf6" onclick="ivenGerarLink()">🔗 Gerar link do mês</button>
-            <span style="font-size:11px;color:var(--text-3)">Depois de gerar, use "Iniciar contagem" no card do mês para congelar o estoque ENEL e liberar o link.</span>
+            <span style="font-size:11px;color:var(--text-3)">Depois de gerar, use "Iniciar contagem" no card do mês para congelar o estoque <span class="nome-conc">Concessionária</span> e liberar o link.</span>
           </div>
           <div id="ivenLinkGerado" class="hidden" style="margin:0 16px 16px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span id="ivenLinkGeradoTexto" style="flex:1;color:#a78bfa;word-break:break-all"></span>
@@ -2709,7 +2709,7 @@ window.addEventListener('pageshow', function(e) {
 
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Histórico do Inventário ENEL</div><div class="card-sub">Mês a mês, com acurácia e divergência de seriais</div></div>
+            <div><div class="card-title">Histórico do Inventário <span class="nome-conc">Concessionária</span></div><div class="card-sub">Mês a mês, com acurácia e divergência de seriais</div></div>
             <div style="display:flex;align-items:center;gap:8px">
               <select class="form-input" id="ivenFiltroMes" style="width:150px;font-size:11px" onchange="renderInventarioEnel()">
                 <option value="">Todos os meses</option>
@@ -2725,7 +2725,7 @@ window.addEventListener('pageshow', function(e) {
       <div class="modal-overlay hidden" id="modalIvenDetalhe">
         <div class="modal-box modal-alto" style="max-width:1120px;width:100%">
           <div class="modal-header">
-            <div><div class="modal-title">⚡ Detalhe do Inventário ENEL</div><div style="font-size:11px;color:var(--text-3)" id="ivenDetInfo"></div></div>
+            <div><div class="modal-title">⚡ Detalhe do Inventário <span class="nome-conc">Concessionária</span></div><div style="font-size:11px;color:var(--text-3)" id="ivenDetInfo"></div></div>
             <button class="modal-close" onclick="document.getElementById('modalIvenDetalhe').classList.add('hidden')">×</button>
           </div>
           <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
@@ -2900,7 +2900,7 @@ window.addEventListener('pageshow', function(e) {
 
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Consulta de Estoque ENEL</div><div class="card-sub">Saldo atual de materiais</div></div>
+            <div><div class="card-title">Consulta de Estoque <span class="nome-conc">Concessionária</span></div><div class="card-sub">Saldo atual de materiais</div></div>
             <div class="card-actions">
               <input class="search-box" placeholder="Buscar material..." oninput="filtrarEstoqueEnel(this.value)">
               <button class="btn btn-ghost" onclick="exportarEstoqueEnel()">📥 Excel</button>
@@ -3029,7 +3029,7 @@ window.addEventListener('pageshow', function(e) {
       <!-- SOLICITAÇÕES MATERIAIS ENEL (do portal das equipes) -->
       <div class="view" id="view-enel-sol-materiais">
         <div style="margin-bottom:16px">
-          <div class="page-title">📋 Solicitações de Materiais ENEL</div>
+          <div class="page-title">📋 Solicitações de Materiais <span class="nome-conc">Concessionária</span></div>
           <div class="page-sub">Pedidos feitos pelas equipes via Portal da Equipe</div>
         </div>
         <div class="card" style="margin-bottom:14px">
@@ -3095,7 +3095,7 @@ window.addEventListener('pageshow', function(e) {
       <div class="view" id="view-enel-atendimento">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:18px">
           <div>
-            <div class="page-title">⚡ Atendimento ENEL</div>
+            <div class="page-title">⚡ Atendimento <span class="nome-conc">Concessionária</span></div>
             <div class="page-sub">Entrega de materiais e medidores por equipe</div>
           </div>
           <div style="display:flex;gap:8px">
@@ -3547,7 +3547,7 @@ window.addEventListener('pageshow', function(e) {
       <!-- ── BAIXA AUTOMÁTICA ENEL ── -->
       <div class="view" id="view-enel-baixa-auto">
         <div style="margin-bottom:16px">
-          <div class="page-title">Baixa Automática ENEL</div>
+          <div class="page-title">Baixa Automática <span class="nome-conc">Concessionária</span></div>
           <div class="page-sub">Importe o relatório EORDE e o sistema dá baixa automaticamente nos materiais e medidores</div>
         </div>
 
@@ -3694,9 +3694,9 @@ window.addEventListener('pageshow', function(e) {
             <div class="card">
               <div class="card-header"><div class="card-title">Novo Mapeamento</div></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-                <div class="form-group"><label class="form-label">Código ENEL *</label>
+                <div class="form-group"><label class="form-label">Código <span class="nome-conc">Concessionária</span> *</label>
                   <input class="form-input" id="ba-cod-enel" placeholder="Ex: 6790663"></div>
-                <div class="form-group"><label class="form-label">Descrição ENEL</label>
+                <div class="form-group"><label class="form-label">Descrição <span class="nome-conc">Concessionária</span></label>
                   <input class="form-input" id="ba-desc-enel" placeholder="Ex: CABO CONCENTRICO BIP AL 10MM"></div>
                 <div class="form-group"><label class="form-label">Item GCA *</label>
                   <div style="position:relative">
@@ -3716,7 +3716,7 @@ window.addEventListener('pageshow', function(e) {
                 <div class="card-actions"><button class="btn btn-ghost" onclick="baCarregarCodigos()">↻</button></div>
               </div>
               <table>
-                <thead><tr><th>Código ENEL</th><th>Descrição ENEL</th><th>Item GCA</th><th></th></tr></thead>
+                <thead><tr><th>Código <span class="nome-conc">Concessionária</span></th><th>Descrição <span class="nome-conc">Concessionária</span></th><th>Item GCA</th><th></th></tr></thead>
                 <tbody id="ba-cod-body"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
               </table>
             </div>
@@ -3729,9 +3729,9 @@ window.addEventListener('pageshow', function(e) {
             <div class="card">
               <div class="card-header"><div class="card-title">Novo Mapeamento</div></div>
               <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
-                <div class="form-group"><label class="form-label">Código Equipe ENEL *</label>
+                <div class="form-group"><label class="form-label">Código Equipe <span class="nome-conc">Concessionária</span> *</label>
                   <input class="form-input" id="ba-eq-cod-enel" placeholder="Ex: SOC-001"></div>
-                <div class="form-group"><label class="form-label">Nome Equipe ENEL</label>
+                <div class="form-group"><label class="form-label">Nome Equipe <span class="nome-conc">Concessionária</span></label>
                   <input class="form-input" id="ba-eq-nome-enel" placeholder="Como aparece no EORDE"></div>
                 <div class="form-group"><label class="form-label">Equipe GCA *</label>
                   <div style="position:relative">
@@ -3752,7 +3752,7 @@ window.addEventListener('pageshow', function(e) {
                 <div class="card-actions"><button class="btn btn-ghost" onclick="baCarregarEquipes()">↻</button></div>
               </div>
               <table>
-                <thead><tr><th>Código ENEL</th><th>Nome ENEL</th><th>Equipe GCA</th><th></th></tr></thead>
+                <thead><tr><th>Código <span class="nome-conc">Concessionária</span></th><th>Nome <span class="nome-conc">Concessionária</span></th><th>Equipe GCA</th><th></th></tr></thead>
                 <tbody id="ba-eq-body"><tr><td colspan="4" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
               </table>
             </div>
@@ -4241,7 +4241,7 @@ window.addEventListener('pageshow', function(e) {
         <!-- Abas EPI / ENEL -->
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px">
           <button id="indTabEpi" onclick="indAba('epi')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer">🧰 EPI / Almoxarifado</button>
-          <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ ENEL / Materiais</button>
+          <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ <span class="nome-conc">Concessionária</span> / Materiais</button>
           <button id="indTabMateriais" onclick="indAba('materiais')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📦 Solicitações</button>
           <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⏰ Fora do Prazo</button>
           <button id="indTabPrevAnual" onclick="indAba('prevanual')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📅 Previsão Anual</button>
@@ -5514,7 +5514,27 @@ async function carregarFiliais() {
   if (data?.ok && data.data?.length) {
     _filiais = data.data;
     popularSelectsFiliais();
+    aplicarNomeConc();
   }
+}
+
+// Nome da concessionária da filial ativa (ENEL, Equatorial...). Sem cadastro: "Concessionária".
+// Cadastra em Configurações → Filiais → Editar.
+function nomeConc() {
+  const f = (_filiais || []).find(x => x.slug === GCA.unidade);
+  return String(f?.nome_concessionaria || '').trim() || 'Concessionária';
+}
+function aplicarNomeConc() {
+  const n = nomeConc();
+  document.querySelectorAll('.nome-conc').forEach(el => { el.textContent = n; });
+}
+// Códigos gravados no banco com o nome antigo, só para mostrar em tela/planilha
+function txtConc(s) {
+  return String(s ?? '')
+    .replace(/ATENDIMENTO_ENEL/g, 'ATENDIMENTO')
+    .replace(/DEVOLUCAO_EQUIPE/g, 'DEVOLUÇÃO DA EQUIPE')
+    .replace(/DEVOLUCAO_ENEL/g, 'DEVOLUÇÃO')
+    .replace(/Solicitação ENEL/g, 'Solicitação');
 }
 
 function popularSelectsFiliais() {
@@ -5599,6 +5619,7 @@ window.addEventListener('load', async () => {
         // Restaura lista de unidades do usuário (necessário para o seletor de filial)
         GCA.unidades = GCA.usuario.unidades || [];
       } catch { GCA.usuario = {}; }
+      carregarFiliais(); // nome da concessionária da filial, entre outros
       esconderLoading(); iniciarApp();
     } else { esconderLoading(); mostrarTela('login'); }
   }, 1200);
@@ -5728,11 +5749,12 @@ function showView(nome, btnEl) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const target = document.getElementById('view-' + nome);
   if (target) target.classList.add('active');
-  const info = VIEW_TITLES[nome] || [nome,''];
+  const info = (VIEW_TITLES[nome] || [nome,'']).map(t => String(t).replace(/\bENEL\b/g, nomeConc()));
   document.getElementById('topbarTitle').textContent = info[0];
   document.getElementById('topbarCrumb').textContent = info[1];
   // Atualiza a URL sem recarregar a página
   // URL limpa — sem hash
+  aplicarNomeConc();
   onViewLoad(nome);
 }
 
@@ -6633,7 +6655,7 @@ async function carregarAlertaInventarioDash() {
     if (!resEnel?.ok || !resEnel.pendente) boxEnel.classList.add('hidden');
     else {
       document.getElementById('dashInventarioEnelTexto').textContent =
-        `O estoque ENEL (materiais do cliente) ainda não entregou o inventário do mês. Prazo: mais ${resEnel.diasRestantes} dia(s) (até dia 10).`;
+        `O estoque ${nomeConc()} (materiais do cliente) ainda não entregou o inventário do mês. Prazo: mais ${resEnel.diasRestantes} dia(s) (até dia 10).`;
       boxEnel.classList.remove('hidden');
     }
   }
@@ -11567,7 +11589,7 @@ async function atenderSolEnel(id) {
           m.id === it.codigo
         );
         if (mat) {
-          _enelAdicionarItemFinal(mat, it.quantidade, 'Atendimento via Solicitação ENEL', '');
+          _enelAdicionarItemFinal(mat, it.quantidade, 'Atendimento via Solicitação', '');
         }
       });
 
@@ -12463,7 +12485,7 @@ async function carregarInventarioEnel() {
   const cont = document.getElementById('ivenHistBody');
   if (cont) cont.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
   const res = await api('/inventario-enel/historico');
-  if (res && !res.ok) toast(res.erro || 'Erro ao carregar o inventário ENEL', 'error');
+  if (res && !res.ok) toast(res.erro || 'Erro ao carregar o inventário ' + nomeConc(), 'error');
   _ivenHist = res?.data || [];
 
   const entregues = _ivenHist.filter(r => r.status === 'ENTREGUE');
@@ -12498,7 +12520,7 @@ function renderInventarioEnel() {
   const mes = document.getElementById('ivenFiltroMes')?.value || '';
   const lista = mes ? _ivenHist.filter(r => r.ano_mes === mes) : _ivenHist;
   if (!lista.length) {
-    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">⚡</div><div class="es-title">${mes ? 'Nenhum inventário ENEL em ' + escHtml(formatarMesAno(mes)) : 'Nenhum inventário ENEL registrado ainda'}</div></div>`;
+    cont.innerHTML = `<div class="empty-state" style="padding:24px;grid-column:1/-1"><div class="es-icon">⚡</div><div class="es-title">${mes ? 'Nenhum inventário ' + escHtml(nomeConc()) + ' em ' + escHtml(formatarMesAno(mes)) : 'Nenhum inventário ' + escHtml(nomeConc()) + ' registrado ainda'}</div></div>`;
     return;
   }
   const badge = (r) => r.status === 'ENTREGUE' ? '<span class="log-badge log-badge-verde">✅ Entregue</span>'
@@ -12518,14 +12540,14 @@ function renderInventarioEnel() {
       acoes = `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="ivenLiberarAtraso('${escJs(r.ano_mes)}')">🔓 Liberar atraso</button>`;
     } else {
       acoes = `${r.congelado ? `<button class="row-action" onclick="abrirProgressoInventario('${escJs(r.id)}','/inventario-enel')">📊 Andamento</button>` : ''}
-        ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','Estoque ENEL')">🔗 Link / QR</button>` : ''}
+        ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','Estoque ' + nomeConc())">🔗 Link / QR</button>` : ''}
         ${r.congelado
           ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="ivenDescongelar('${escJs(r.id)}')">🔓 Descongelar</button>`
           : r.link ? `<button class="row-action" style="color:#a78bfa;border-color:#a78bfa" data-perm-btn="inventario_gerar_link" onclick="ivenIniciar('${escJs(r.id)}')">▶️ Iniciar contagem</button>` : ''}`;
     }
     return `<div class="inv-hist-card ${classe}" style="animation-delay:${Math.min(i * 0.03, 0.3)}s;border-top:3px solid #8b5cf6">
       <div class="inv-hist-top">
-        <div><div class="inv-hist-armazem">⚡ Estoque ENEL</div><div class="inv-hist-mes">${formatarMesAno(r.ano_mes)}</div></div>
+        <div><div class="inv-hist-armazem">⚡ Estoque ${escHtml(nomeConc())}</div><div class="inv-hist-mes">${formatarMesAno(r.ano_mes)}</div></div>
         ${badge(r)}
       </div>
       <div class="inv-hist-stats">
@@ -12547,7 +12569,7 @@ async function ivenGerarLink() {
   document.getElementById('ivenLinkGeradoTexto').textContent = res.link;
   box.dataset.link = res.link;
   box.classList.remove('hidden');
-  toast('Link do inventário ENEL gerado!', 'success');
+  toast(`Link do inventário ${nomeConc()} gerado!`, 'success');
   carregarInventarioEnel();
 }
 
@@ -12558,25 +12580,25 @@ function ivenCopiarLink() {
 
 async function ivenIniciar(id) {
   const ok = confirm(
-    'Iniciar a contagem do estoque ENEL?\n\n' +
-    'A partir de agora ficam bloqueadas: entrada, saída, devolução, atendimento ENEL, transferência de seriais e baixa automática — até a contagem terminar.\n\n' +
+    `Iniciar a contagem do estoque ${nomeConc()}?\n\n` +
+    'A partir de agora ficam bloqueadas: entrada, saída, devolução, atendimento, transferência de seriais e baixa automática — até a contagem terminar.\n\n' +
     'Quem tiver permissão pode liberar exceções com justificativa.\n' +
     'O saldo e os seriais de referência passam a ser os de agora.');
   if (!ok) return;
   const res = await api(`/inventario-enel/${encodeURIComponent(id)}/iniciar-contagem`, { method: 'POST' });
-  if (res?.ok) { toast(`Contagem iniciada — estoque ENEL congelado (${res.itens_atualizados} materiais)`, 'success'); carregarInventarioEnel(); }
+  if (res?.ok) { toast(`Contagem iniciada — estoque ${nomeConc()} congelado (${res.itens_atualizados} materiais)`, 'success'); carregarInventarioEnel(); }
   else toast(res?.erro || 'Erro ao iniciar a contagem', 'error');
 }
 
 async function ivenDescongelar(id) {
-  if (!confirm('Descongelar o estoque ENEL?\n\nAs movimentações voltam ao normal, mas a contagem continua aberta — o que se mexer daqui para frente a contagem já feita não sabe.\n\nUse só se a operação não puder esperar.')) return;
+  if (!confirm(`Descongelar o estoque ${nomeConc()}?\n\n` + 'As movimentações voltam ao normal, mas a contagem continua aberta — o que se mexer daqui para frente a contagem já feita não sabe.\n\nUse só se a operação não puder esperar.')) return;
   const res = await api(`/inventario-enel/${encodeURIComponent(id)}/descongelar`, { method: 'POST' });
-  if (res?.ok) { toast('Estoque ENEL descongelado', 'success'); carregarInventarioEnel(); }
+  if (res?.ok) { toast(`Estoque ${nomeConc()} descongelado`, 'success'); carregarInventarioEnel(); }
   else toast(res?.erro || 'Erro ao descongelar', 'error');
 }
 
 async function ivenLiberarAtraso(anoMes) {
-  if (!confirm('Liberar o inventário ENEL deste mês para contar e finalizar mesmo com o prazo vencido?')) return;
+  if (!confirm(`Liberar o inventário ${nomeConc()} deste mês` + ' para contar e finalizar mesmo com o prazo vencido?')) return;
   const res = await api('/inventario-enel/liberar-atraso', { method: 'POST', body: JSON.stringify({ ano_mes: anoMes }) });
   if (res?.ok) { toast('Atraso liberado! Gere o link normalmente.', 'success'); carregarInventarioEnel(); }
   else toast(res?.erro || 'Erro ao liberar', 'error');
@@ -12594,7 +12616,7 @@ async function ivenAbrirDetalhe(id) {
 function ivenRenderDetalhe() {
   const { inventario: inv, itens } = _ivenDet;
   document.getElementById('ivenDetInfo').textContent =
-    `Estoque ENEL · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
+    `Estoque ${nomeConc()} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
   const chip = (txt, cor, acao) => `<button class="row-action" style="color:${cor};border-color:${cor}" ${acao ? `onclick="${acao}"` : 'disabled'}>${txt}</button>`;
   document.getElementById('ivenDetResumo').innerHTML = [
     chip(`🎯 Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`, '#a78bfa', null),
@@ -13870,9 +13892,9 @@ const PERMISSOES_SCHEMA = {
     ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais',
     limpar_descartes:'Excluir seriais de descarte'
   }},
-  enel: { label:'ENEL', icon:'⚡', itens:{
-    ver_enel:'Ver módulo ENEL', marcar_instalado:'Marcar como instalado',
-    desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento ENEL'
+  enel: { label:'Concessionária', icon:'⚡', itens:{
+    ver_enel:'Ver módulo Concessionária', marcar_instalado:'Marcar como instalado',
+    desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento Concessionária'
   }},
   gestao: { label:'Gestão', icon:'📊', itens:{
     ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
@@ -20046,7 +20068,7 @@ async function enelFinalizarAtendimento() {
   const res = await apiMovimentacao('/enel/atendimentos', corpo);
   if (!res?.ok) { eaMsg(res?.erro || 'Erro ao finalizar o atendimento.', 'erro'); return; }
 
-  toast('Atendimento ENEL finalizado!', 'success');
+  toast('Atendimento finalizado!', 'success');
   if (res.avisos?.length) toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
 
   window.__EA_ULTIMO__ = {
@@ -20121,7 +20143,7 @@ function imprimirFichaEnel() {
     <td style="font-family:monospace;font-size:10px">${(it.seriais || []).length ? it.seriais.map(escHtml).join(' · ') : '—'}</td>
   </tr>`).join('');
   const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">
-  <title>Ficha de Entrega ENEL — ${escHtml(d.equipe)}</title>
+  <title>Ficha de Entrega ${escHtml(nomeConc())} — ${escHtml(d.equipe)}</title>
   <style>${CSS_PDF_BASE}
     .ficha-top{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1e3a8a;padding-bottom:12px;margin-bottom:18px;}
     .ficha-top img{height:42px;}
@@ -20129,7 +20151,7 @@ function imprimirFichaEnel() {
     <div class="ficha-top">
       <img src="${LOGO_GCA}" alt="GCA">
       <div style="flex:1">
-        <div style="font-size:18px;font-weight:800;color:#1e3a8a">Ficha de Entrega — Materiais ENEL</div>
+        <div style="font-size:18px;font-weight:800;color:#1e3a8a">Ficha de Entrega — Materiais ${escHtml(nomeConc())}</div>
         <div style="font-size:11px;color:#6b7280">Atendimento ${escHtml(d.id || '')}</div>
       </div>
       <img src="${LOGO_CEN}" alt="Ceneged">
@@ -20155,7 +20177,7 @@ function imprimirFichaEnel() {
     </div>
     <div class="rodape">GCA — Gestão de Almoxarifado · Ceneged · Documento gerado em ${new Date().toLocaleString('pt-BR')}</div>
   </body></html>`;
-  abrirJanelaPDF(html, 'Ficha de Entrega ENEL');
+  abrirJanelaPDF(html, 'Ficha de Entrega');
 }
 
 let _eaHist = [];
@@ -20724,7 +20746,7 @@ async function cmBuscarSerial() {
         ${[
           ['Modelo', med.material_descricao||'—'],
           ['Status', `<span style="color:${stCor};font-weight:700">${med.status_atual||'—'}</span>`],
-          ['Localização', med.localizacao||'—'],
+          ['Localização', txtConc(med.localizacao)||'—'],
           ['Equipe', equipe],
           ['Entrada Estoque', med.data_entrada?formatarData(med.data_entrada):'—'],
           ['Saída p/ Equipe', med.data_entrega_equipe?formatarData(med.data_entrega_equipe):'—'],
@@ -20750,7 +20772,7 @@ async function cmBuscarSerial() {
 
     <!-- Instalação ENEL -->
     ${med.status_atual === 'INSTALADO' ? `<div style="border:1px solid rgba(34,197,94,.3);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;background:rgba(34,197,94,.04)">
-      <div style="font-size:10px;font-weight:700;color:#22c55e;text-transform:uppercase;margin-bottom:8px">✅ Instalação ENEL</div>
+      <div style="font-size:10px;font-weight:700;color:#22c55e;text-transform:uppercase;margin-bottom:8px">✅ Instalação ${escHtml(nomeConc())}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         ${[
           ['Código TdC', med.os_instalacao||'—'],
@@ -20951,7 +20973,7 @@ async function cseBuscar() {
       ${eq.movs.map(mv => `
         <div style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;padding:5px 12px 5px 24px;background:rgba(0,0,0,.06)">
           <span style="font-size:10px;color:var(--text-3);white-space:nowrap">${mv.data ? formatarData(mv.data) : '—'}</span>
-          <span style="font-size:10px;color:var(--text-3)">${mv.tipo||''} ${mv.usuario?'· '+mv.usuario:''}</span>
+          <span style="font-size:10px;color:var(--text-3)">${escHtml(txtConc(mv.tipo))} ${mv.usuario?'· '+escHtml(mv.usuario):''}</span>
           <span style="font-size:12px;font-weight:700;color:var(--text-1)">${mv.quantidade} un.</span>
         </div>`).join('')}
     `).join('');
@@ -21029,7 +21051,7 @@ function exportarBtdc() {
   });
   gcaExportarExcel('Baixas_por_TdC', rows, [
     { key:'material',   label:'Material' },
-    { key:'codigo',     label:'Código ENEL' },
+    { key:'codigo',     label:'Código ' + nomeConc() },
     { key:'equipe',     label:'Equipe' },
     { key:'tdc',        label:'TdC / OS' },
     { key:'quantidade', label:'Quantidade' },
@@ -21058,7 +21080,7 @@ function exportarCse() {
   });
   gcaExportarExcel('Consulta_Saidas_Estoque', rows, [
     { key:'material',   label:'Material' },
-    { key:'codigo',     label:'Código ENEL' },
+    { key:'codigo',     label:'Código ' + nomeConc() },
     { key:'equipe',     label:'Destino' },
     { key:'quantidade', label:'Quantidade' },
     { key:'data',       label:'Data' },
@@ -21097,7 +21119,7 @@ function exportarMedidores() {
     material: m.material_descricao || '',
     status: m.status_atual || '',
     equipe: m.equipe_atual || '',
-    localizacao: m.localizacao || '',
+    localizacao: txtConc(m.localizacao),
     data_entrega: m.data_entrega_equipe ? formatarData(m.data_entrega_equipe) : '',
     data_instalacao: m.data_hora_instalacao ? formatarData(m.data_hora_instalacao) : '',
     dias_restantes: m.dias_restantes ?? '',
@@ -21157,7 +21179,7 @@ function exportarProtheus() {
   if (!_prData?.length) { toast('Nenhum lançamento carregado', 'warn'); return; }
   const rows = _prData.map(m => ({
     data: m.data ? formatarData(m.data) : '',
-    tipo: m.tipo || '',
+    tipo: txtConc(m.tipo),
     descricao: m.descricao || m.item_descricao || '',
     codigo: m.codigo || m.item_codigo || '',
     quantidade: m.quantidade || 0,
@@ -21198,9 +21220,9 @@ function exportarEstoqueEnel() {
     (filtroStatus === 'baixo'   && r.status === 'BAIXO')   ||
     (filtroStatus === 'ok'      && r.status === 'OK')
   );
-  gcaExportarExcel('Consulta_Estoque_ENEL', lista, [
+  gcaExportarExcel('Consulta_Estoque', lista, [
     { key:'descricao',      label:'Material' },
-    { key:'codigo',         label:'Código ENEL' },
+    { key:'codigo',         label:'Código ' + nomeConc() },
     { key:'categoria',      label:'Categoria' },
     { key:'unidade_med',    label:'Un. Med.' },
     { key:'saldo',          label:'Saldo Atual' },
@@ -21402,6 +21424,8 @@ async function editarFilial(id) {
         ${campo('efNome', 'Nome da filial *', f.nome)}
         <div class="form-group" style="margin:0"><label class="form-label">Status</label>
           <select id="efStatus" class="form-input"><option value="ativa" ${f.status === 'ativa' ? 'selected' : ''}>Ativa</option><option value="inativa" ${f.status !== 'ativa' ? 'selected' : ''}>Inativa</option></select></div>
+        <div style="grid-column:1/-1">${campo('efConc', 'Nome da concessionária', f.nome_concessionaria, 'placeholder="Ex.: ENEL, Equatorial, Light" maxlength="60"')}
+          <div style="font-size:10px;color:var(--text-3);margin-top:3px">Aparece no lugar de "Concessionária" nas telas de materiais do cliente desta filial (estoque, atendimento, inventário, fichas).</div></div>
         <div style="grid-column:1/-1" class="tfl-secao">Dados fiscais</div>
         <div style="grid-column:1/-1">${campo('efRazao', 'Razão social', f.razao_social)}</div>
         ${campo('efCnpj', 'CNPJ', f.cnpj)}
@@ -21431,6 +21455,7 @@ async function salvarEdicaoFilial(id) {
     razao_social: v('efRazao'), cnpj: v('efCnpj'), inscricao_estadual: v('efIE'),
     endereco: v('efEndereco'), numero: v('efNumero'), complemento: v('efCompl'),
     bairro: v('efBairro'), cidade: v('efCidade'), uf: v('efUf'), cep: v('efCep'), telefone: v('efTelefone'),
+    nome_concessionaria: v('efConc'),
   };
   const res = await api(`/filiais/${id}`, { method: 'PUT', body: JSON.stringify(corpo) });
   if (res?.ok) {
@@ -22384,9 +22409,12 @@ let _controleEquipes = [];
 async function carregarControleMateriaisEquipe() {
   const el = document.getElementById('listaEquipesControle');
   if (!el) return;
+  // Guarda quais equipes estavam abertas: depois de recarregar (ex.: devolução) elas continuam abertas
+  const gruposAbertos = [...el.querySelectorAll('[id^="ceq_"]')].filter(d => d.style.display === '').map(d => `<div id="${d.id}" style="display:"></div>`).join('');
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>';
   const res = await api('/enel/controle-equipes');
   _controleEquipes = res?.data||[];
+  el.innerHTML = gruposAbertos;
   filtrarControleEquipe();
 }
 
@@ -22397,12 +22425,14 @@ function filtrarControleEquipe() {
   if (!el) return;
   const sum = document.getElementById('sumControleEquipe');
   if (!lista.length) { el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-3)">Nenhuma equipe encontrada</div>'; return; }
+  const podeDevolver = temPermissao('atendimento_enel');
+  const abertos = new Set([...el.querySelectorAll('[id^="ceq_"]')].filter(d => d.style.display === '').map(d => d.id));
   el.innerHTML = lista.map(eq=>{
     const gid = 'ceq_'+(eq.nomeEquipe||'').replace(/\W/g,'_');
     const itens = eq.itens||[];
     return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
       <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer" onclick="document.getElementById('${gid}').style.display=document.getElementById('${gid}').style.display===''?'none':'';this.querySelector('.ceq-arrow').textContent=document.getElementById('${gid}').style.display===''?'▼':'▶'">
-        <span class="ceq-arrow" style="font-size:11px;color:var(--text-3)">▶</span>
+        <span class="ceq-arrow" style="font-size:11px;color:var(--text-3)">${abertos.has(gid)?'▼':'▶'}</span>
         <div style="flex:1">
           <div style="font-size:14px;font-weight:700">${escHtml(eq.nomeEquipe)}</div>
           <div style="font-size:11px;color:var(--text-3)">${itens.length} tipo(s) de material</div>
@@ -22411,23 +22441,96 @@ function filtrarControleEquipe() {
           ${(()=>{const total=itens.reduce((s,i)=>s+(i.entregue||0),0);const saldo=itens.reduce((s,i)=>s+(i.saldoReal||0),0);const sem=itens.filter(i=>(i.saldoReal||0)===0&&(i.entregue||0)>0).length;return sem>0?'<span style="font-size:10px;color:var(--red);font-weight:700;background:var(--red-soft);padding:2px 8px;border-radius:4px">⚠️ '+sem+' item(ns) zerado(s)</span>':'<span style="font-size:10px;color:var(--green);font-weight:700">✅ Em dia</span>';})()}
         </div>
       </div>
-      <div id="${gid}" style="display:none;border-top:1px solid var(--border)">
+      <div id="${gid}" style="display:${abertos.has(gid)?'':'none'};border-top:1px solid var(--border)">
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:rgba(0,0,0,.1)">
             <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Código</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Entregue</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Devolvido</th>
+            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Consumido (OS)</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo Atual</th>
+            ${podeDevolver ? '<th style="padding:8px"></th>' : ''}
           </tr></thead>
           <tbody>${itens.map(it=>`<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px;font-size:12px;font-weight:600">${it.materialDesc}</td>
-            <td style="padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${it.materialCod||'—'}</td>
+            <td style="padding:8px;font-size:12px;font-weight:600">${escHtml(it.materialDesc)}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${escHtml(it.materialCod||'—')}</td>
+            <td style="padding:8px;text-align:center;font-size:12px">${it.entregue||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px;color:${it.devolvido?'#f59e0b':'var(--text-3)'}">${it.devolvido||0}</td>
+            <td style="padding:8px;text-align:center;font-size:12px">${it.baixado||0}</td>
             <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:${(it.saldoReal||0)===0?'var(--red)':'#22c55e'}">${it.saldoReal||0}</td>
+            ${podeDevolver ? `<td style="padding:8px;text-align:right">${(it.saldoEquipe||0) > 0
+              ? `<button class="row-action" style="color:#f59e0b" onclick="abrirDevolucaoEquipe('${escJs(eq.nomeEquipe)}','${escJs(it.materialId)}')">↩️ Devolver</button>` : ''}</td>` : ''}
           </tr>`).join('')}</tbody>
         </table>
       </div>
     </div>`;
   }).join('');
   if (sum) sum.textContent = `Total: ${lista.length} equipe(s)`;
+}
+
+// Devolução de material (sem serial) da equipe para o estoque — corrige entrega errada
+function abrirDevolucaoEquipe(equipe, materialId) {
+  const eq = _controleEquipes.find(e => e.nomeEquipe === equipe);
+  const it = eq?.itens.find(i => i.materialId === materialId);
+  if (!it) return;
+  const saldo = Number(it.saldoEquipe || 0);
+  document.getElementById('modalDevEquipe')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalDevEquipe';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <div><div class="modal-title">↩️ Devolver ao estoque</div><div style="font-size:11px;color:var(--text-3)">A equipe devolve e o material volta para o estoque ${escHtml(nomeConc())}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalDevEquipe').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-hover);font-size:12px;line-height:1.6">
+          <div><strong>Equipe:</strong> ${escHtml(equipe)}</div>
+          <div><strong>Material:</strong> ${escHtml(it.materialDesc)} ${it.materialCod ? `<span style="color:var(--text-3)">(${escHtml(it.materialCod)})</span>` : ''}</div>
+          <div><strong>Saldo da equipe:</strong> <span style="color:#22c55e;font-weight:700">${saldo}</span></div>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">Quantidade a devolver *</label>
+          <input id="devEqQtd" class="form-input" type="number" min="0" step="any" max="${saldo}" placeholder="Máx. ${saldo}" oninput="devEqResumo(${saldo})"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Motivo *</label>
+          <textarea id="devEqMotivo" class="form-input" rows="3" placeholder="Ex.: erro de digitação no atendimento — era 130 m, foi lançado 1300 m"></textarea></div>
+        <div id="devEqResumo" style="font-size:12px;color:var(--text-3);min-height:16px"></div>
+        <div id="devEqErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalDevEquipe').remove()">Cancelar</button>
+        <button class="btn btn-primary" id="devEqBtn" onclick="confirmarDevolucaoEquipe('${escJs(equipe)}','${escJs(materialId)}',${saldo})">↩️ Confirmar devolução</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('devEqQtd')?.focus(), 50);
+}
+
+function devEqResumo(saldo) {
+  const q = Number(document.getElementById('devEqQtd')?.value || 0);
+  const el = document.getElementById('devEqResumo');
+  if (!el) return;
+  document.getElementById('devEqErro').textContent = '';
+  el.textContent = q > 0 && q <= saldo ? `A equipe fica com ${+(saldo - q).toFixed(4)} e o estoque recebe ${q}.` : '';
+}
+
+async function confirmarDevolucaoEquipe(equipe, materialId, saldo) {
+  const erro = document.getElementById('devEqErro');
+  const quantidade = Number(document.getElementById('devEqQtd')?.value || 0);
+  const motivo = (document.getElementById('devEqMotivo')?.value || '').trim();
+  if (!(quantidade > 0)) { erro.textContent = 'Informe a quantidade.'; return; }
+  if (quantidade > saldo) { erro.textContent = `A equipe só tem ${saldo}.`; return; }
+  if (motivo.length < 5) { erro.textContent = 'Informe o motivo (mínimo 5 letras).'; return; }
+  const btn = document.getElementById('devEqBtn');
+  btn.disabled = true; erro.textContent = '';
+  const res = await apiMovimentacao('/enel/controle-equipes/devolver', { equipe, material_id: materialId, quantidade, motivo });
+  btn.disabled = false;
+  if (res?.ok) {
+    document.getElementById('modalDevEquipe')?.remove();
+    toast(`✅ ${quantidade} devolvido(s) ao estoque. A equipe ficou com ${res.saldo_equipe}.`, 'success');
+    await carregarControleMateriaisEquipe();
+  } else erro.textContent = res?.erro || 'Erro na devolução';
 }
 
 function abrirBaixaDiretaOS() { toast('Baixa Direta por OS em breve','info'); }
@@ -23580,7 +23683,7 @@ function sucataImprimirManifestoById(manId, numManifesto) {
     </div>
     <div style="text-align:center">
       <div style="border-bottom:1px solid #000;padding-bottom:4px;margin-bottom:6px;height:40px"></div>
-      <div style="font-size:11px;color:#555">Recebido por (ENEL)</div>
+      <div style="font-size:11px;color:#555">Recebido por (${escHtml(nomeConc())})</div>
     </div>
   </div>
   ${scriptTag}
@@ -23862,7 +23965,7 @@ async function baSalvarCodigo() {
   const desc = document.getElementById('ba-desc-enel').value.trim();
   const item = document.getElementById('ba-item-id').value;
   const msg  = document.getElementById('ba-cod-msg');
-  if (!cod || !item) { msg.textContent = 'Preencha o código ENEL e selecione o item GCA.'; return; }
+  if (!cod || !item) { msg.textContent = 'Preencha o código da concessionária e selecione o item GCA.'; return; }
   const res = await api('/importacao-enel/mapeamento-codigos', { method:'POST',
     body: JSON.stringify({ codigo_enel: cod, descricao_enel: desc, item_id: item, unidade: GCA.unidade }) });
   if (res?.ok) {
@@ -23921,7 +24024,7 @@ async function baSalvarEquipe() {
   const eqId     = document.getElementById('ba-eq-id').value;
   const eqNome   = document.getElementById('ba-eq-nome-gca').value;
   const msg      = document.getElementById('ba-eq-msg');
-  if (!cod || !eqId) { msg.textContent = 'Preencha o código ENEL e selecione a equipe GCA.'; return; }
+  if (!cod || !eqId) { msg.textContent = 'Preencha o código da concessionária e selecione a equipe GCA.'; return; }
   const res = await api('/importacao-enel/mapeamento-equipes', { method:'POST',
     body: JSON.stringify({ codigo_equipe_enel: cod, nome_equipe_enel: nomeEnel, equipe_id: eqId, equipe_nome_gca: eqNome, unidade: GCA.unidade }) });
   if (res?.ok) {

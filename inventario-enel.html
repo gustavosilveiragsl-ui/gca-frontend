@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>GCA — Inventário ENEL</title>
+<title>GCA — Inventário</title>
 <link rel="icon" type="image/png" href="./icon-v3.png">
 <meta name="mobile-web-app-capable" content="yes">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -128,7 +128,7 @@ input{font-family:var(--font-main);}
 <div class="wrap" id="telaLogin">
   <div class="card">
     <img class="logo" src="./logo-gca.png" alt="GCA">
-    <div class="titulo">⚡ Inventário ENEL</div>
+    <div class="titulo">⚡ Inventário <span class="nome-conc"></span></div>
     <div class="sub" id="loginSub">Carregando...</div>
     <div class="form-group">
       <label class="form-label">Matrícula</label>
@@ -148,7 +148,7 @@ input{font-family:var(--font-main);}
   <div class="header">
     <div class="header-top">
       <div>
-        <div class="header-titulo">⚡ Estoque ENEL</div>
+        <div class="header-titulo">⚡ Estoque <span class="nome-conc"></span></div>
         <div class="header-sub" id="appSub">—</div>
       </div>
       <div class="header-nome" id="appNome">—</div>
@@ -176,7 +176,7 @@ input{font-family:var(--font-main);}
 <!-- TELA FINAL -->
 <div class="tela-final" id="telaFinal">
   <div style="font-size:48px;margin-bottom:12px">✅</div>
-  <div style="font-size:18px;font-weight:700;margin-bottom:6px">Inventário ENEL finalizado!</div>
+  <div style="font-size:18px;font-weight:700;margin-bottom:6px">Inventário finalizado!</div>
   <div style="font-size:13px;color:var(--text-2)" id="telaFinalResumo">—</div>
   <div class="final-stats hidden" id="telaFinalSeriais"></div>
   <div style="font-size:11px;color:var(--text-3);margin-top:8px">Pode fechar esta página.</div>
@@ -297,6 +297,9 @@ async function iniciar() {
     return;
   }
   document.getElementById('loginSub').textContent = `Materiais do cliente — ${mesBR(info.ano_mes)}`;
+  const nomeConc = info.nome_concessionaria || 'Concessionária';
+  document.querySelectorAll('.nome-conc').forEach(el => { el.textContent = nomeConc; });
+  document.title = `GCA — Inventário ${nomeConc}`;
   if (TOKEN_SESSAO) mostrarApp(info.ano_mes, NOME_SESSAO);
 }
 
@@ -785,7 +788,7 @@ async function tentarFinalizar() {
   const faltam = _itens.filter(i => i.saldo_contado == null).length;
   const msg = faltam > 0
     ? `Ainda faltam ${faltam} material(is) sem contagem — vão entrar como 0. Finalizar mesmo assim?`
-    : 'Finalizar o inventário ENEL? Depois disso não dá mais para contar nada.';
+    : 'Finalizar o inventário? Depois disso não dá mais para contar nada.';
   if (!confirm(msg)) return;
   const res = await api('/inventario-enel/contagem/finalizar', { method: 'POST' });
   if (!res.ok) { alert(res.erro || 'Erro ao finalizar'); return; }
