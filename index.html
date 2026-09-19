@@ -3770,7 +3770,14 @@ window.addEventListener('pageshow', function(e) {
           <button class="btn btn-ghost" onclick="carregarControleMateriaisEquipe()">↻ Recarregar</button>
           <button class="btn btn-ghost" onclick="exportarControleEquipes()">📥 Excel</button>
         </div>
-        <input class="search-box" id="buscaControleEquipe" placeholder="Buscar equipe..." oninput="filtrarControleEquipe()" style="margin-bottom:12px;width:100%">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+          <input class="search-box" id="buscaControleEquipe" placeholder="Buscar equipe..." oninput="filtrarControleEquipe()" style="flex:1;min-width:200px">
+          <span style="font-size:11px;color:var(--text-3)">Período:</span>
+          <input type="date" id="ceqDe" class="form-input" style="width:150px;font-size:11px" onchange="carregarControleMateriaisEquipe()" title="De">
+          <input type="date" id="ceqAte" class="form-input" style="width:150px;font-size:11px" onchange="carregarControleMateriaisEquipe()" title="Até">
+          <button class="btn btn-ghost" id="ceqLimparPeriodo" style="display:none" onclick="document.getElementById('ceqDe').value='';document.getElementById('ceqAte').value='';carregarControleMateriaisEquipe()">✕ Limpar período</button>
+        </div>
+        <div id="ceqAvisoPeriodo" style="display:none;font-size:11px;color:var(--text-3);margin:-4px 0 10px"></div>
         <div id="listaEquipesControle" style="display:flex;flex-direction:column;gap:8px">
           <div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>
         </div>
@@ -21098,14 +21105,25 @@ function exportarControleEquipes() {
         equipe: eq.nomeEquipe || '',
         material: it.materialDesc || '',
         codigo: it.materialCod || '',
+        p_entregue: it.periodo?.entregue ?? '', p_devolvido: it.periodo?.devolvido ?? '', p_consumido: it.periodo?.baixado ?? '',
+        entregue: it.entregue || 0, devolvido: it.devolvido || 0, consumido: it.baixado || 0,
         saldo: it.saldoReal ?? 0,
       });
     });
   });
+  const pp = _controlePeriodo ? ` (${ceqTextoPeriodo()})` : '';
   gcaExportarExcel('Controle_Materiais_Equipe', rows, [
     { key:'equipe',   label:'Equipe' },
     { key:'material', label:'Material' },
     { key:'codigo',   label:'Código' },
+    ...(_controlePeriodo ? [
+      { key:'p_entregue',  label:'Entregue no período' + pp },
+      { key:'p_devolvido', label:'Devolvido no período' },
+      { key:'p_consumido', label:'Consumido no período' },
+    ] : []),
+    { key:'entregue',  label:'Entregue (total)' },
+    { key:'devolvido', label:'Devolvido (total)' },
+    { key:'consumido', label:'Consumido (total)' },
     { key:'saldo',    label:'Saldo Atual' },
   ]);
 }
@@ -22405,6 +22423,12 @@ function indRenderMateriais(d){
 // ENEL — CONTROLE DE MATERIAIS POR EQUIPE
 // ═══════════════════════════════════════════
 let _controleEquipes = [];
+let _controlePeriodo = null;
+function ceqTextoPeriodo() {
+  const p = _controlePeriodo; if (!p) return '';
+  const f = (d) => d.split('-').reverse().join('/');
+  return p.de && p.ate ? `de ${f(p.de)} a ${f(p.ate)}` : p.de ? `a partir de ${f(p.de)}` : `até ${f(p.ate)}`;
+}
 
 async function carregarControleMateriaisEquipe() {
   const el = document.getElementById('listaEquipesControle');
@@ -22412,8 +22436,17 @@ async function carregarControleMateriaisEquipe() {
   // Guarda quais equipes estavam abertas: depois de recarregar (ex.: devolução) elas continuam abertas
   const gruposAbertos = [...el.querySelectorAll('[id^="ceq_"]')].filter(d => d.style.display === '').map(d => `<div id="${d.id}" style="display:"></div>`).join('');
   el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-3)"><div class="spinner" style="margin:0 auto 12px"></div>Carregando...</div>';
-  const res = await api('/enel/controle-equipes');
+  const de = document.getElementById('ceqDe')?.value || '', ate = document.getElementById('ceqAte')?.value || '';
+  const qs = new URLSearchParams(); if (de) qs.set('de', de); if (ate) qs.set('ate', ate);
+  const res = await api('/enel/controle-equipes' + (qs.toString() ? '?' + qs : ''));
   _controleEquipes = res?.data||[];
+  _controlePeriodo = res?.periodo || null;
+  const aviso = document.getElementById('ceqAvisoPeriodo');
+  document.getElementById('ceqLimparPeriodo').style.display = _controlePeriodo ? '' : 'none';
+  if (aviso) {
+    aviso.style.display = _controlePeriodo ? '' : 'none';
+    aviso.textContent = _controlePeriodo ? `Mostrando só os materiais que se mexeram ${ceqTextoPeriodo()}. Clique no material para ver entregue, devolvido e consumido no período. O saldo é sempre o atual.` : '';
+  }
   el.innerHTML = gruposAbertos;
   filtrarControleEquipe();
 }
@@ -22453,6 +22486,7 @@ function filtrarControleEquipe() {
             // Clicar no nome do material abre o detalhe (entregue, devolvido, consumido)
             const did = 'ceqd_' + (eq.nomeEquipe + '_' + it.materialId).replace(/\W/g, '_');
             const cols = podeDevolver ? 4 : 3;
+            const pe = it.periodo;
             const caixa = (rotulo, valor, cor) => `<div style="flex:1;min-width:110px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
                 <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">${rotulo}</div>
                 <div style="font-size:15px;font-weight:700;color:${cor}">${valor}</div></div>`;
@@ -22467,6 +22501,13 @@ function filtrarControleEquipe() {
           </tr>
           <tr id="${did}" class="ceq-detalhe" style="display:none;border-bottom:1px solid var(--border);background:var(--bg-hover)">
             <td colspan="${cols}" style="padding:10px 12px">
+              ${pe ? `<div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">No período ${escHtml(ceqTextoPeriodo())}</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+                ${caixa('Entregue', pe.entregue||0, 'var(--text)')}
+                ${caixa('Devolvido', pe.devolvido||0, pe.devolvido ? '#f59e0b' : 'var(--text-3)')}
+                ${caixa('Consumido (OS)', pe.baixado||0, 'var(--text)')}
+              </div>
+              <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Desde o início</div>` : ''}
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 ${caixa('Entregue', it.entregue||0, 'var(--text)')}
                 ${caixa('Devolvido', it.devolvido||0, it.devolvido ? '#f59e0b' : 'var(--text-3)')}
