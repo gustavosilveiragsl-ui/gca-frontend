@@ -22446,22 +22446,36 @@ function filtrarControleEquipe() {
           <thead><tr style="background:rgba(0,0,0,.1)">
             <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Código</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Entregue</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Devolvido</th>
-            <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Consumido (OS)</th>
             <th style="padding:8px;text-align:center;font-size:10px;color:#22c55e">Saldo Atual</th>
             ${podeDevolver ? '<th style="padding:8px"></th>' : ''}
           </tr></thead>
-          <tbody>${itens.map(it=>`<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px;font-size:12px;font-weight:600">${escHtml(it.materialDesc)}</td>
+          <tbody>${itens.map(it=>{
+            // Clicar no nome do material abre o detalhe (entregue, devolvido, consumido)
+            const did = 'ceqd_' + (eq.nomeEquipe + '_' + it.materialId).replace(/\W/g, '_');
+            const cols = podeDevolver ? 4 : 3;
+            const caixa = (rotulo, valor, cor) => `<div style="flex:1;min-width:110px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+                <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">${rotulo}</div>
+                <div style="font-size:15px;font-weight:700;color:${cor}">${valor}</div></div>`;
+            return `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;font-size:12px;font-weight:600">
+              <span class="ceq-mat" style="cursor:pointer;border-bottom:1px dashed var(--text-3)" title="Ver entregue, devolvido e consumido"
+                onclick="const d=document.getElementById('${did}');d.style.display=d.style.display==='none'?'':'none'">${escHtml(it.materialDesc)}</span></td>
             <td style="padding:8px;text-align:center;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${escHtml(it.materialCod||'—')}</td>
-            <td style="padding:8px;text-align:center;font-size:12px">${it.entregue||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px;color:${it.devolvido?'#f59e0b':'var(--text-3)'}">${it.devolvido||0}</td>
-            <td style="padding:8px;text-align:center;font-size:12px">${it.baixado||0}</td>
             <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:${(it.saldoReal||0)===0?'var(--red)':'#22c55e'}">${it.saldoReal||0}</td>
             ${podeDevolver ? `<td style="padding:8px;text-align:right">${(it.saldoEquipe||0) > 0
               ? `<button class="row-action" style="color:#f59e0b" onclick="abrirDevolucaoEquipe('${escJs(eq.nomeEquipe)}','${escJs(it.materialId)}')">↩️ Devolver</button>` : ''}</td>` : ''}
-          </tr>`).join('')}</tbody>
+          </tr>
+          <tr id="${did}" class="ceq-detalhe" style="display:none;border-bottom:1px solid var(--border);background:var(--bg-hover)">
+            <td colspan="${cols}" style="padding:10px 12px">
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${caixa('Entregue', it.entregue||0, 'var(--text)')}
+                ${caixa('Devolvido', it.devolvido||0, it.devolvido ? '#f59e0b' : 'var(--text-3)')}
+                ${caixa('Consumido (OS)', it.baixado||0, 'var(--text)')}
+                ${caixa('Saldo atual', it.saldoReal||0, (it.saldoReal||0)===0 ? 'var(--red)' : '#22c55e')}
+              </div>
+            </td>
+          </tr>`;
+          }).join('')}</tbody>
         </table>
       </div>
     </div>`;
