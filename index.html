@@ -24170,7 +24170,7 @@ function baFiltrarEquipe(q) {
   sug.innerHTML = res.map(e => `<div class="ac-item"
     onmousedown="document.getElementById('ba-eq-busca').value='${escJs(nomeDe(e))}';document.getElementById('ba-eq-id').value='${e.id}';document.getElementById('ba-eq-nome-gca').value='${escJs(nomeDe(e))}';document.getElementById('ba-eq-sug').classList.add('hidden')">
     <div class="ac-item-nome">${escHtml(nomeDe(e))}</div>
-    <div class="ac-item-sub">${escHtml(e.prefixo||e.codigo||'')}</div>
+    ${(e.prefixo||e.codigo) && (e.prefixo||e.codigo) !== nomeDe(e) ? `<div class="ac-item-sub">${escHtml(e.prefixo||e.codigo)}</div>` : ''}
   </div>`).join('');
   sug.classList.remove('hidden');
 }
