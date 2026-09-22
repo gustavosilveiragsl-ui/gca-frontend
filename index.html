@@ -8587,6 +8587,7 @@ function renderAssinaturas(lista) {
   }
 
   const total    = lista.length;
+  if (_assPagina > Math.ceil(total / _assPorPagina)) _assPagina = 1;  // a lista encolheu
   const inicio   = (_assPagina - 1) * _assPorPagina;
   const fim      = Math.min(inicio + _assPorPagina, total);
   const pagina   = lista.slice(inicio, fim);
@@ -8667,6 +8668,14 @@ function renderPaginacaoAss(total, lista) {
     </div>`;
 
   document.getElementById('assBody').closest('table').parentElement.appendChild(div);
+}
+
+// Data e hora de um registro do banco (vem em UTC) no horário de Brasília: 22/09/2026 09:46
+function formatarDataHora(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (isNaN(d)) return String(iso).replace('T', ' ').slice(0, 16);
+  return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '');
 }
 
 function formatarData(data) {
@@ -9128,6 +9137,7 @@ function renderSolicitacoes() {
   }
 
   const total  = lista.length;
+  if (_solPagina > Math.ceil(total / _solPorPagina)) _solPagina = 1;  // a lista encolheu
   const inicio = (_solPagina - 1) * _solPorPagina;
   const fim    = Math.min(inicio + _solPorPagina, total);
   const pagina = lista.slice(inicio, fim);
@@ -10895,7 +10905,9 @@ function selecionarArmazemEst(id) {
   renderEstoque();
 }
 
-function renderEstoque() {
+// manterPagina = clique nos botões de página. Sem ele (filtro, busca, recarregar) volta ao início.
+function renderEstoque(manterPagina) {
+  if (!manterPagina) _estPagina = 1;
   let _estOrdemIconeEl = document.getElementById('estOrdemIcone');
   if (_estOrdemIconeEl) _estOrdemIconeEl.textContent = _estOrdemNome === 'asc' ? '▲ A-Z' : _estOrdemNome === 'desc' ? '▼ Z-A' : '';
 
@@ -10946,6 +10958,7 @@ function renderEstoque() {
   }
 
   const total  = lista.length;
+  if (_estPagina > Math.ceil(total / _estPorPag)) _estPagina = 1;  // a lista encolheu
   const inicio = (_estPagina - 1) * _estPorPag;
   const pagina = lista.slice(inicio, inicio + _estPorPag);
 
@@ -10993,9 +11006,9 @@ function renderEstoque() {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
       <span>Exibindo ${inicio+1}–${Math.min(inicio+_estPorPag,total)} de ${total}</span>
       <div style="display:flex;gap:6px">
-        <button class="row-action" ${_estPagina===1?'disabled':''} onclick="_estPagina--;renderEstoque()">← Anterior</button>
+        <button class="row-action" ${_estPagina===1?'disabled':''} onclick="_estPagina--;renderEstoque(true)">← Anterior</button>
         <span style="padding:4px 10px;font-weight:600">${_estPagina} / ${totalPag}</span>
-        <button class="row-action" ${_estPagina===totalPag?'disabled':''} onclick="_estPagina++;renderEstoque()">Próxima →</button>
+        <button class="row-action" ${_estPagina===totalPag?'disabled':''} onclick="_estPagina++;renderEstoque(true)">Próxima →</button>
       </div>
     </div>` : '';
 }
@@ -11138,6 +11151,8 @@ async function buscarMovimentacoes() {
   _movData = data.registros || [];
   const total     = data.total || 0;
   const totalPags = data.totalPaginas || 1;
+  // Filtro deixou menos páginas do que a página aberta: volta para a primeira
+  if (_movPagina > totalPags) { _movPagina = 1; return buscarMovimentacoes(); }
 
   document.getElementById('movKpiEntradas').textContent = _movData.filter(m => m.tipo?.toUpperCase() === 'ENTRADA').length;
   document.getElementById('movKpiSaidas').textContent   = _movData.filter(m => m.tipo?.toUpperCase() === 'SAIDA').length;
@@ -14636,7 +14651,8 @@ async function carregarConsultaItens() {
   renderConsultaItens();
 }
 
-function renderConsultaItens() {
+function renderConsultaItens(manterPagina) {
+  if (!manterPagina) _ciPagina = 1;
   const container = document.getElementById('consultaItensBody');
   const busca = (document.getElementById('consultaItensBusca')?.value||'').toLowerCase();
   const cat   = document.getElementById('consultaItensCategoria')?.value||'';
@@ -14651,6 +14667,7 @@ function renderConsultaItens() {
   document.getElementById('subConsultaItens').textContent = `${lista.length} de ${_consultaItensData.length} itens`;
 
   const total  = lista.length;
+  if (_ciPagina > Math.ceil(total / _ciPorPag)) _ciPagina = 1;  // a lista encolheu
   const inicio = (_ciPagina-1)*_ciPorPag;
   const pagina = lista.slice(inicio, inicio+_ciPorPag);
 
@@ -14677,9 +14694,9 @@ function renderConsultaItens() {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
       <span>Exibindo ${inicio+1}–${Math.min(inicio+_ciPorPag,total)} de ${total}</span>
       <div style="display:flex;gap:6px">
-        <button class="row-action" ${_ciPagina===1?'disabled':''} onclick="_ciPagina--;renderConsultaItens()">← Anterior</button>
+        <button class="row-action" ${_ciPagina===1?'disabled':''} onclick="_ciPagina--;renderConsultaItens(true)">← Anterior</button>
         <span style="padding:4px 10px;font-weight:600">${_ciPagina}/${totalPag}</span>
-        <button class="row-action" ${_ciPagina===totalPag?'disabled':''} onclick="_ciPagina++;renderConsultaItens()">Próxima →</button>
+        <button class="row-action" ${_ciPagina===totalPag?'disabled':''} onclick="_ciPagina++;renderConsultaItens(true)">Próxima →</button>
       </div>
     </div>` : '';
 }
@@ -16680,7 +16697,8 @@ let _prData = [];
 let _prPagina = 1; const _prPorPag = 50;
 let _prSelecionados = new Set();
 
-async function carregarProtheus() {
+async function carregarProtheus(manterPagina) {
+  if (!manterPagina) _prPagina = 1;
   const tbody = document.getElementById('prBody');
   if (!tbody) return;
   tbody.innerHTML = '<tr class="loading-row"><td colspan="8"><div class="spinner"></div></td></tr>';
@@ -16705,6 +16723,8 @@ async function carregarProtheus() {
   _prData = data.registros || [];
   const total = data.total || 0;
   const totalPags = data.totalPaginas || 1;
+  // Filtro deixou menos páginas do que a página aberta: volta para a primeira
+  if (_prPagina > totalPags) { _prPagina = 1; return carregarProtheus(true); }
 
   // Status já vem filtrado do backend — não precisa mais filtrar localmente
   let lista = _prData;
@@ -16755,9 +16775,9 @@ async function carregarProtheus() {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid var(--border);font-size:11px;color:var(--text-3)">
       <span>Total: ${total} registros</span>
       <div style="display:flex;gap:6px">
-        <button class="row-action" ${_prPagina===1?'disabled':''} onclick="_prPagina--;carregarProtheus()">← Anterior</button>
+        <button class="row-action" ${_prPagina===1?'disabled':''} onclick="_prPagina--;carregarProtheus(true)">← Anterior</button>
         <span style="padding:4px 10px;font-weight:600">${_prPagina}/${totalPags}</span>
-        <button class="row-action" ${_prPagina===totalPags?'disabled':''} onclick="_prPagina++;carregarProtheus()">Próxima →</button>
+        <button class="row-action" ${_prPagina===totalPags?'disabled':''} onclick="_prPagina++;carregarProtheus(true)">Próxima →</button>
       </div>
     </div>` : '';
 }
@@ -18192,7 +18212,7 @@ function renderRecuperados() {
     <td style="text-align:center">${semSerial ? '' : `<input type="checkbox" ${_recupSelecionados.has(r.id_ativo)?'checked':''} onchange="recupToggleSelecao('${r.id_ativo}',this.checked)">`}</td>
     <td class="td-main">${r.item||'—'}${semSerial ? ` <span style="font-size:9px;color:var(--text-3)">(${r.quantidade||1}x, sem serial)</span>` : ''}</td>
     <td style="text-align:center;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(r.serial||'—')}</td>
-    <td style="font-size:11px;color:var(--text-3)">${r.dt_ult_mov_raw ? r.dt_ult_mov_raw.replace('T',' ').slice(0,16) : '—'}</td>
+    <td style="font-size:11px;color:var(--text-3)">${formatarDataHora(r.dt_ult_mov_raw)}</td>
     <td style="font-size:11px;color:var(--text-2)">${escHtml(r.motivo||'Aguardando Laudo')}</td>
     <td>
       <div style="display:flex;gap:6px">
@@ -20137,7 +20157,7 @@ function eaAbrirFicha() {
   document.getElementById('fichaEnelCorpo').innerHTML = `
     ${d.cancelado ? `<div class="ea-banner erro" style="animation:none">
       <span style="font-size:18px">✕</span>
-      <span>Atendimento CANCELADO por ${escHtml(d.cancelado_por || '—')}${d.cancelado_em ? ' em ' + d.cancelado_em.replace('T', ' ').slice(0, 16) : ''}${d.motivo_cancelamento ? ` — ${escHtml(d.motivo_cancelamento)}` : ''}</span>
+      <span>Atendimento CANCELADO por ${escHtml(d.cancelado_por || '—')}${d.cancelado_em ? ' em ' + formatarDataHora(d.cancelado_em) : ''}${d.motivo_cancelamento ? ` — ${escHtml(d.motivo_cancelamento)}` : ''}</span>
     </div>` : ''}
     <div class="ea-resumo" style="margin-bottom:16px">
       <div class="ea-resumo-card"><b>${d.itens.length}</b><span>materiais</span></div>
@@ -20248,7 +20268,7 @@ async function carregarHistAtendEnel() {
       ? `<span style="color:#fca5a5;font-size:11px;font-weight:700" title="${escHtml(a.motivo_cancelamento || '')}">✕ Cancelado</span>`
       : '<span style="color:#4ade80;font-size:11px;font-weight:700">✓ Válido</span>';
     return `<tr style="${cancelado ? 'opacity:.6' : ''}">
-      <td style="font-size:11px">${a.criado_em ? a.criado_em.replace('T', ' ').slice(0, 16) : formatarData(a.data)}</td>
+      <td style="font-size:11px">${a.criado_em ? formatarDataHora(a.criado_em) : formatarData(a.data)}</td>
       <td class="td-main" style="font-family:var(--font-mono)">${escHtml(a.nome_equipe || '—')}</td>
       <td style="text-align:center;font-weight:600">${a.itens.length}</td>
       <td style="text-align:center">${a.unidades}</td>
