@@ -2803,6 +2803,9 @@ window.addEventListener('pageshow', function(e) {
               <div class="card-actions">
                 <input class="form-input" type="date" id="enelEntHistDe" style="width:130px;font-size:11px">
                 <input class="form-input" type="date" id="enelEntHistAte" style="width:130px;font-size:11px">
+                <select class="form-input" id="enelEntHistMotivo" style="width:170px;font-size:11px" onchange="carregarHistEntradas()">
+                  <option value="">Todos os motivos</option>
+                </select>
                 <button class="btn btn-ghost" onclick="carregarHistEntradas()">↻ Buscar</button>
               </div>
             </div>
@@ -2857,11 +2860,14 @@ window.addEventListener('pageshow', function(e) {
               <div class="card-actions">
                 <input class="form-input" type="date" id="enelSaiHistDe" style="width:130px;font-size:11px">
                 <input class="form-input" type="date" id="enelSaiHistAte" style="width:130px;font-size:11px">
+                <select class="form-input" id="enelSaiHistMotivo" style="width:190px;font-size:11px" onchange="carregarHistSaidas()">
+                  <option value="">Todos os motivos</option>
+                </select>
                 <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻ Buscar</button>
               </div>
             </div>
-            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
-            <tbody id="enelSaiHistBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
+            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
+            <tbody id="enelSaiHistBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
           </div>
         </div>
       </div>
@@ -2932,9 +2938,8 @@ window.addEventListener('pageshow', function(e) {
           <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
             <div class="form-group" style="margin:0;flex:1;min-width:200px">
               <label class="form-label">Equipe</label>
-              <select id="btdcEquipe" class="form-input">
-                <option value="">— Todas as equipes —</option>
-              </select>
+              <input id="btdcEquipe" class="form-input" list="btdcEquipesLista" placeholder="Digite parte do nome — vazio = todas as equipes" autocomplete="off">
+              <datalist id="btdcEquipesLista"></datalist>
             </div>
             <div class="form-group" style="margin:0">
               <label class="form-label">De</label>
@@ -19258,10 +19263,13 @@ async function carregarHistEntradas() {
   tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
   const de  = document.getElementById('enelEntHistDe')?.value||'';
   const ate = document.getElementById('enelEntHistAte')?.value||'';
-  let url = '/enel/historico-entradas';
-  if (de||ate) url += `?data_inicio=${de}&data_fim=${ate}`;
-  const data = await api(url);
+  const motivo = document.getElementById('enelEntHistMotivo')?.value||'';
+  const qs = new URLSearchParams();
+  if (de||ate) { qs.set('data_inicio', de); qs.set('data_fim', ate); }
+  if (motivo) qs.set('motivo', motivo);
+  const data = await api('/enel/historico-entradas' + (qs.toString() ? '?' + qs : ''));
   const lista = data?.data||[];
+  preencherFiltroMotivo('enelEntHistMotivo', data?.motivos);
   tbody.innerHTML = lista.length ? lista.map(e=>`<tr>
     <td>${formatarData(e.data)}</td>
     <td class="td-main">${e.descricao_material||'—'}</td>
@@ -19347,18 +19355,32 @@ async function carregarHistSaidas() {
   const de    = document.getElementById('enelSaiHistDe')?.value;
   const ate   = document.getElementById('enelSaiHistAte')?.value;
   if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
-  let url = '/enel/historico-saidas';
-  if (de||ate) url += `?data_inicio=${de||''}&data_fim=${ate||''}`;
-  const data = await api(url);
+  tbody.innerHTML='<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const motivo = document.getElementById('enelSaiHistMotivo')?.value||'';
+  const qs = new URLSearchParams();
+  if (de||ate) { qs.set('data_inicio', de||''); qs.set('data_fim', ate||''); }
+  if (motivo) qs.set('motivo', motivo);
+  const data = await api('/enel/historico-saidas' + (qs.toString() ? '?' + qs : ''));
   const lista = data?.data||[];
+  preencherFiltroMotivo('enelSaiHistMotivo', data?.motivos);
   tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
     <td>${formatarData(s.data)}</td>
     <td class="td-main">${escHtml(s.material_descricao||'—')}</td>
-    <td style="text-align:center;font-weight:600;color:#ef4444">${s.quantidade}</td>
-    <td style="font-size:11px">${s.destino||'—'}</td>
-    <td style="font-size:11px;color:var(--text-3)">${s.usuario||'—'}</td>
-  </tr>`).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma saída</td></tr>`;
+    <td style="text-align:center;font-weight:600;color:${Number(s.quantidade)<0?'#22c55e':'#ef4444'}">${s.quantidade}</td>
+    <td style="font-size:11px">${escHtml(txtConc(s.tipo_saida)||'—')}</td>
+    <td style="font-size:11px">${escHtml(s.destino||'—')}</td>
+    <td style="font-size:11px;color:var(--text-3)">${escHtml(s.usuario||'—')}</td>
+  </tr>`).join('') : `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma saída</td></tr>`;
+}
+
+// Monta o filtro de motivo com o que existe no período, sem perder o que já estava escolhido
+function preencherFiltroMotivo(id, motivos) {
+  const sel = document.getElementById(id);
+  if (!sel || !Array.isArray(motivos)) return;
+  const atual = sel.value;
+  const lista = [...new Set([...motivos, ...(atual ? [atual] : [])])];
+  sel.innerHTML = '<option value="">Todos os motivos</option>' +
+    lista.map(m => `<option value="${escHtml(m)}"${m === atual ? ' selected' : ''}>${escHtml(txtConc(m))}</option>`).join('');
 }
 
 // ── ESTOQUE ENEL ──
@@ -20834,16 +20856,23 @@ async function btdcIniciar() {
   if (!_btdcEquipes.length) {
     const res = await api('/equipes');
     _btdcEquipes = (res?.data || []).map(e => e.nome_equipe).filter(Boolean).sort();
-    const sel = document.getElementById('btdcEquipe');
-    if (sel) {
-      sel.innerHTML = '<option value="">— Todas as equipes —</option>' +
-        _btdcEquipes.map(n => `<option value="${n}">${n}</option>`).join('');
-    }
+    const dl = document.getElementById('btdcEquipesLista');
+    if (dl) dl.innerHTML = _btdcEquipes.map(n => `<option value="${escHtml(n)}"></option>`).join('');
   }
 }
 
 async function btdcBuscar() {
-  const equipe = document.getElementById('btdcEquipe')?.value || '';
+  const digitado = (document.getElementById('btdcEquipe')?.value || '').trim();
+  // Digitou só um pedaço do nome: se casar com uma equipe só, busca ela
+  let equipe = digitado;
+  if (digitado) {
+    const exata = _btdcEquipes.find(n => n.toLowerCase() === digitado.toLowerCase());
+    const parciais = _btdcEquipes.filter(n => n.toLowerCase().includes(digitado.toLowerCase()));
+    if (exata) equipe = exata;
+    else if (parciais.length === 1) { equipe = parciais[0]; document.getElementById('btdcEquipe').value = equipe; }
+    else if (parciais.length > 1) { toast(`${parciais.length} equipes têm "${digitado}" no nome. Escolha uma na lista.`, 'warn'); return; }
+    else { toast(`Nenhuma equipe com "${digitado}" no nome.`, 'warn'); return; }
+  }
   const de     = document.getElementById('btdcDe')?.value || '';
   const ate    = document.getElementById('btdcAte')?.value || '';
 
@@ -20872,14 +20901,16 @@ async function btdcBuscar() {
   document.getElementById('btdcCntMateriais').textContent  = materiais.length;
   document.getElementById('btdcCntRegistros').textContent  = res.total_registros || 0;
 
-  // Renderizar materiais
+  // Com "todas as equipes", cada TdC mostra de quem é
+  const equipeFiltrada = !!equipe;
   lista.innerHTML = materiais.map((m, idx) => {
     const gid = `btdc_mat_${idx}`;
     const tdcsHtml = m.tdcs.map(t => `
       <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <div>
           <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text)">TdC ${t.tdc}</span>
-          ${t.usuario && t.usuario !== 'Importação EORDE' ? `<span style="font-size:10px;color:var(--text-3);margin-left:8px">${t.usuario}</span>` : ''}
+          ${!equipeFiltrada && t.equipe ? `<span style="font-size:11px;font-weight:600;margin-left:8px">${escHtml(t.equipe)}</span>` : ''}
+          ${t.usuario && t.usuario !== 'Importação EORDE' ? `<span style="font-size:10px;color:var(--text-3);margin-left:8px">${escHtml(t.usuario)}</span>` : ''}
         </div>
         <span style="font-size:11px;color:var(--text-3);white-space:nowrap">${t.data ? formatarData(t.data) : '—'}</span>
         <span style="font-size:13px;font-weight:700;color:var(--text-1);text-align:right;min-width:56px">${t.quantidade} un.</span>
