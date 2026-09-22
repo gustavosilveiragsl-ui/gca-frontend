@@ -3249,8 +3249,13 @@ window.addEventListener('pageshow', function(e) {
             <div class="card-header" style="flex-wrap:wrap;gap:8px">
               <div class="card-title">Histórico</div>
               <div class="card-actions" style="flex-wrap:wrap">
-                <input type="date" id="eaHistDe" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
-                <input type="date" id="eaHistAte" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
+                <div style="display:flex;gap:4px">
+                  <button class="btn btn-ghost ea-per" data-per="hoje" onclick="eaPeriodoRapido('hoje')">Hoje</button>
+                  <button class="btn btn-ghost ea-per" data-per="ontem" onclick="eaPeriodoRapido('ontem')">Ontem</button>
+                  <button class="btn btn-ghost ea-per" data-per="semana" onclick="eaPeriodoRapido('semana')" title="De segunda-feira até hoje">Essa semana</button>
+                </div>
+                <input type="date" id="eaHistDe" class="form-input" style="width:150px;font-size:11px" onchange="eaMarcarPeriodo(null);carregarHistAtendEnel()">
+                <input type="date" id="eaHistAte" class="form-input" style="width:150px;font-size:11px" onchange="eaMarcarPeriodo(null);carregarHistAtendEnel()">
                 <input type="text" id="eaHistEquipe" class="search-box" placeholder="Equipe..." oninput="clearTimeout(this._t);this._t=setTimeout(carregarHistAtendEnel,400)">
                 <select id="eaHistStatus" class="form-input" style="width:150px;font-size:11px" onchange="carregarHistAtendEnel()">
                   <option value="">Todos</option>
@@ -5810,8 +5815,8 @@ function onViewLoad(nome) {
   if (nome === 'enel-baixa-auto')    { initBaixaAuto(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
-  if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=new Date().toISOString().split('T')[0]; }
-  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=new Date().toISOString().split('T')[0]; }
+  if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=hojeBR(); }
+  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
   if (nome === 'enel-consulta-saidas') { cseIniciar(); }
   if (nome === 'enel-sol-materiais') { carregarSolicitacoesEnel(); }
@@ -8668,6 +8673,11 @@ function renderPaginacaoAss(total, lista) {
     </div>`;
 
   document.getElementById('assBody').closest('table').parentElement.appendChild(div);
+}
+
+// Data de hoje em Brasília, no formato AAAA-MM-DD (o toISOString vira o dia seguinte após 21h)
+function hojeBR(d = new Date()) {
+  return d.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 }
 
 // Data e hora de um registro do banco (vem em UTC) no horário de Brasília: 22/09/2026 09:46
@@ -19305,7 +19315,7 @@ let _saiMatSel = null;
 function limparEntradaEnel() {
   document.getElementById('enelEntMatBusca').value = '';
   document.getElementById('enelEntMatId').value = '';
-  document.getElementById('enelEntData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('enelEntData').value = hojeBR();
   document.getElementById('enelEntQtd').value = '';
   document.getElementById('enelEntMotivo').selectedIndex = 0;
   document.getElementById('enelEntObs').value = '';
@@ -19316,7 +19326,7 @@ function limparEntradaEnel() {
 function limparSaidaEnel() {
   document.getElementById('enelSaiMatBusca').value = '';
   document.getElementById('enelSaiMatId').value = '';
-  document.getElementById('enelSaiData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('enelSaiData').value = hojeBR();
   document.getElementById('enelSaiQtd').value = '';
   document.getElementById('enelSaiMotivo').selectedIndex = 0;
   document.getElementById('enelSaiEquipeBusca').value = '';
@@ -19617,7 +19627,7 @@ function enelIniciarAtendimento() {
   window.__ENEL__.atendimento = { id: 'enel_' + Date.now(), inicio: agora.toISOString(), seg: 0 };
   window.__ENEL__.itens = [];
   window.__ENEL__.equipe = null;
-  document.getElementById('enelData').value = agora.toISOString().split('T')[0];
+  document.getElementById('enelData').value = hojeBR(agora);
   document.getElementById('enelHoraInicio').textContent = agora.toLocaleTimeString('pt-BR');
   document.getElementById('enelCronometro').textContent = '00:00:00';
   document.getElementById('enelEquipeBusca').value = '';
@@ -20230,6 +20240,31 @@ function imprimirFichaEnel() {
 }
 
 let _eaHist = [];
+
+// Atalhos de período do histórico: Hoje, Ontem e Essa semana (de segunda até hoje)
+function eaPeriodoRapido(qual) {
+  const dia = (delta) => { const d = new Date(); d.setDate(d.getDate() + delta); return hojeBR(d); };
+  let de = hojeBR(), ate = hojeBR();
+  if (qual === 'ontem') { de = ate = dia(-1); }
+  if (qual === 'semana') {
+    // getDay(): 0 = domingo. Domingo conta como fim da semana que começou na segunda.
+    const diaSemana = new Date(hojeBR() + 'T12:00:00').getDay();
+    de = dia(-((diaSemana + 6) % 7));
+  }
+  document.getElementById('eaHistDe').value = de;
+  document.getElementById('eaHistAte').value = ate;
+  eaMarcarPeriodo(qual);
+  carregarHistAtendEnel();
+}
+
+function eaMarcarPeriodo(qual) {
+  document.querySelectorAll('.ea-per').forEach(b => {
+    const ativo = b.dataset.per === qual;
+    b.style.background = ativo ? 'var(--accent)' : '';
+    b.style.color = ativo ? '#fff' : '';
+    b.style.borderColor = ativo ? 'var(--accent)' : '';
+  });
+}
 
 async function carregarHistAtendEnel() {
   const tbody = document.getElementById('tbodyHistAtendEnel');
