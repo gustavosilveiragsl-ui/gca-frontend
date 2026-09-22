@@ -11670,7 +11670,7 @@ async function salvarEquipe() {
   const res = await api(id ? `/equipes/${id}` : '/equipes', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
-  if (res?.ok) { toast('Equipe salva!', 'success'); limparFormEquipe(); carregarEquipesView(); }
+  if (res?.ok) { toast('Equipe salva!', 'success'); limparFormEquipe(); carregarEquipesView(); carregarEquipes(true); }
   else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
@@ -14484,7 +14484,7 @@ const PERFIS_PERMISSOES = {
 async function excluirEquipe(id) {
   if (!confirm('Excluir esta equipe?')) return;
   const res = await api(`/equipes/${id}`, { method:'DELETE' });
-  if (res?.ok) { toast('Equipe excluída!', 'success'); carregarEquipesView(); }
+  if (res?.ok) { toast('Equipe excluída!', 'success'); carregarEquipesView(); carregarEquipes(true); }
   else toast(res?.erro || 'Erro ao excluir', 'error');
 }
 
@@ -19137,8 +19137,9 @@ let _enelSaldos    = [];
 let _entSeriaisAtual = [];
 let _equipes = [];
 
-async function carregarEquipes() {
-  if (_equipes.length) return;
+// forcar = true relê do servidor (equipe cadastrada agora precisa aparecer na hora)
+async function carregarEquipes(forcar) {
+  if (_equipes.length && !forcar) return;
   const data = await api('/equipes');
   _equipes = (data?.data||[]).map(e=>({...e, nomeEquipe:e.nome_equipe||e.nomeEquipe||e.nome||'—', prefixo:e.prefixo||''  }));
 }
@@ -23842,6 +23843,8 @@ let _baPollingTimer   = null;
 
 function initBaixaAuto() {
   baAba('importar');
+  carregarEquipes(true);   // listas do mapeamento: sempre atualizadas
+  carregarMateriaisEnel();
   baCarregarCodigos();
   baCarregarEquipes();
   baCarregarHistorico();
@@ -24088,11 +24091,17 @@ function baFiltrarItem(q) {
   const sug = document.getElementById('ba-item-sug');
   document.getElementById('ba-item-id').value = '';
   if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
-  const res = (_itensEnel || _itens || []).filter(i =>
+  // Materiais da concessionária (_enelMateriais). "_itensEnel" não existe: dava erro ao digitar.
+  const lista = (_enelMateriais && _enelMateriais.length) ? _enelMateriais : (_itens || []);
+  const res = lista.filter(i =>
     (i.descricao||'').toLowerCase().includes(q.toLowerCase()) ||
     (i.codigo||'').toLowerCase().includes(q.toLowerCase())
   ).slice(0, 12);
-  if (!res.length) { sug.classList.add('hidden'); return; }
+  if (!res.length) {
+    sug.innerHTML = `<div class="ac-item" style="color:var(--text-3)">Nenhum material com "${escHtml(q)}" no cadastro desta filial</div>`;
+    sug.classList.remove('hidden');
+    return;
+  }
   sug.innerHTML = res.map(i => `<div class="ac-item"
     onmousedown="document.getElementById('ba-item-busca').value='${escJs(i.descricao||'')}';document.getElementById('ba-item-id').value='${i.id}';document.getElementById('ba-item-sug').classList.add('hidden')">
     <div class="ac-item-nome">${escHtml(i.descricao)}</div>
@@ -24147,13 +24156,20 @@ function baFiltrarEquipe(q) {
   document.getElementById('ba-eq-nome-gca').value = '';
   if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
   const res = (_equipes || []).filter(e =>
-    (e.nome||'').toLowerCase().includes(q.toLowerCase()) ||
+    (e.nomeEquipe||e.nome_equipe||e.nome||'').toLowerCase().includes(q.toLowerCase()) ||
     (e.prefixo||e.codigo||'').toLowerCase().includes(q.toLowerCase())
   ).slice(0, 12);
-  if (!res.length) { sug.classList.add('hidden'); return; }
+  if (!res.length) {
+    sug.innerHTML = `<div class="ac-item" style="color:var(--text-3)">Nenhuma equipe com "${escHtml(q)}" no cadastro desta filial</div>`;
+    sug.classList.remove('hidden');
+    return;
+  }
+  // O cadastro de equipes devolve nome_equipe/prefixo (não "nome"): sem isso a sugestão vinha
+  // sem nome e o mapeamento era salvo com o nome da equipe GCA em branco.
+  const nomeDe = (e) => e.nomeEquipe || e.nome_equipe || e.nome || e.prefixo || '';
   sug.innerHTML = res.map(e => `<div class="ac-item"
-    onmousedown="document.getElementById('ba-eq-busca').value='${escJs(e.nome||'')}';document.getElementById('ba-eq-id').value='${e.id}';document.getElementById('ba-eq-nome-gca').value='${escJs(e.nome||'')}';document.getElementById('ba-eq-sug').classList.add('hidden')">
-    <div class="ac-item-nome">${escHtml(e.nome)}</div>
+    onmousedown="document.getElementById('ba-eq-busca').value='${escJs(nomeDe(e))}';document.getElementById('ba-eq-id').value='${e.id}';document.getElementById('ba-eq-nome-gca').value='${escJs(nomeDe(e))}';document.getElementById('ba-eq-sug').classList.add('hidden')">
+    <div class="ac-item-nome">${escHtml(nomeDe(e))}</div>
     <div class="ac-item-sub">${escHtml(e.prefixo||e.codigo||'')}</div>
   </div>`).join('');
   sug.classList.remove('hidden');
