@@ -3782,6 +3782,7 @@ window.addEventListener('pageshow', function(e) {
         <div class="atend-tabs">
           <button class="atend-tab active" onclick="cvAba('iniciar', this)">Iniciar Atendimento</button>
           <button class="atend-tab" onclick="cvAba('mobilizar', this)">Mobilizar Viatura</button>
+          <button class="atend-tab" onclick="cvAba('transferir', this)">Transferir entre Placas</button>
           <button class="atend-tab" onclick="cvAba('consulta', this)">Consulta de Atendimentos</button>
         </div>
 
@@ -3915,6 +3916,94 @@ window.addEventListener('pageshow', function(e) {
           </div>
         </div>
 
+        <!-- ── ABA: TRANSFERIR ENTRE PLACAS ── -->
+        <div class="atend-panel" id="cv-panel-transferir">
+          <div class="card" style="max-width:820px;margin:0 auto">
+            <div class="card-header">
+              <div><div class="card-title">Transferir material entre placas</div>
+                <div class="card-sub">O material passa direto de uma viatura para a outra, sem voltar ao estoque. Quem recebe assina a ficha.</div></div>
+              <button class="btn btn-ghost" onclick="cvTrLimpar()" style="font-size:11px">✕ Limpar</button>
+            </div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="cv-tr-grid">
+                <div>
+                  <label class="form-label">Viatura de origem (de onde sai)</label>
+                  <div style="position:relative">
+                    <input id="cvTrOrigem" class="form-input" placeholder="Digite a placa..." autocomplete="off" oninput="cvTrFiltrarPlaca(this.value,'origem')">
+                    <div id="cvTrOrigemSug" class="autocomplete-list hidden"></div>
+                  </div>
+                  <div id="cvTrOrigemCard" class="colab-card hidden" style="margin-top:8px">
+                    <div class="colab-card-avatar">🚚</div>
+                    <div class="colab-card-info">
+                      <div class="colab-card-nome" id="cvTrOrigemNome">—</div>
+                      <div class="colab-card-sub" id="cvTrOrigemSub">—</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label">Viatura de destino (para onde vai)</label>
+                  <div style="position:relative">
+                    <input id="cvTrDestino" class="form-input" placeholder="Digite a placa..." autocomplete="off" oninput="cvTrFiltrarPlaca(this.value,'destino')">
+                    <div id="cvTrDestinoSug" class="autocomplete-list hidden"></div>
+                  </div>
+                  <div id="cvTrDestinoCard" class="colab-card hidden" style="margin-top:8px">
+                    <div class="colab-card-avatar">🚚</div>
+                    <div class="colab-card-info">
+                      <div class="colab-card-nome" id="cvTrDestinoNome">—</div>
+                      <div class="colab-card-sub" id="cvTrDestinoSub">—</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Material que vai passar de placa</label>
+                <div id="cvTrItens" style="border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;min-height:60px">
+                  <div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px">Escolha a viatura de origem para ver a carga</div>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" class="cv-tr-grid">
+                <div>
+                  <label class="form-label">Quem está recebendo *</label>
+                  <div style="position:relative">
+                    <input id="cvTrColab" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off" oninput="cvTrFiltrarColab(this.value)">
+                    <div id="cvTrColabSug" class="autocomplete-list hidden"></div>
+                  </div>
+                  <div id="cvTrColabCard" class="colab-card hidden" style="margin-top:8px">
+                    <div class="colab-card-avatar">👤</div>
+                    <div class="colab-card-info">
+                      <div class="colab-card-nome" id="cvTrColabNome">—</div>
+                      <div class="colab-card-sub" id="cvTrColabSub">—</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label class="form-label">Motivo *</label>
+                  <textarea id="cvTrMotivo" class="form-input" rows="3" placeholder="Ex.: rodízio de turno, viatura quebrada, remanejamento de equipe"></textarea>
+                </div>
+              </div>
+
+              <div id="cvTrErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+              <button class="btn btn-primary" id="cvTrBtn" onclick="cvTrConfirmar()">🔄 Transferir e gerar ficha</button>
+            </div>
+          </div>
+
+          <div class="card" style="max-width:820px;margin:16px auto 0">
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+              <div><div class="card-title">Transferências feitas</div></div>
+              <div class="card-actions" style="flex-wrap:wrap">
+                <input type="text" id="cvTrBuscaPlaca" class="search-box" placeholder="Placa..." oninput="clearTimeout(this._t);this._t=setTimeout(cvTrCarregarHistorico,400)">
+                <button class="btn btn-ghost" onclick="cvTrCarregarHistorico()">↻ Atualizar</button>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>Data</th><th>De</th><th>Para</th><th style="text-align:center">Itens</th><th>Quem recebeu</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="cvTrHistBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- ── ABA: CONSULTA ── -->
         <div class="atend-panel" id="cv-panel-consulta">
           <div class="card">
@@ -3944,6 +4033,7 @@ window.addEventListener('pageshow', function(e) {
           </div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-ghost" onclick="carregarFrota()">↻ Recarregar</button>
+            <button class="btn btn-ghost" onclick="abrirConferencias()">🔍 Conferências</button>
             <button class="btn btn-ghost" onclick="abrirCargaPadrao()">📋 Carga padrão</button>
             <button class="btn btn-primary" onclick="abrirFormFrota()">+ Nova viatura</button>
           </div>
@@ -4661,6 +4751,11 @@ window.addEventListener('pageshow', function(e) {
                 <label for="lsPodeInventario" class="form-label" style="margin:0">📋 Pode contar inventário</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Além de pedir material, essa pessoa também poderá acessar o link de contagem de inventário nos armazéns permitidos acima.</div>
+              <div style="display:flex;align-items:center;gap:8px" class="so-viatura">
+                <input type="checkbox" id="lsPodeConferirViatura" style="accent-color:var(--primary)">
+                <label for="lsPodeConferirViatura" class="form-label" style="margin:0">🚚 Pode conferir viatura</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px" class="so-viatura">Poderá bipar o QR colado na viatura e conferir a carga pelo celular.</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -6273,10 +6368,14 @@ async function verificarTokenAssinatura() {
   document.getElementById('loadingScreen')?.classList.add('hidden');
 
   const API = 'https://gca-backend-production.up.railway.app';
+  // O mesmo link de assinatura serve para a ficha de transferência entre placas
+  const ehViatura = params.get('tipo') === 'viatura';
   try {
-    const res = await fetch(`${API}/atendimentos/token/${token}`, { cache: 'no-store' });
+    const res = await fetch(`${API}${ehViatura ? `/viaturas/transferencia/token/${token}` : `/atendimentos/token/${token}`}`, { cache: 'no-store' });
     const data = await res.json();
     const card = document.getElementById('assinCardConteudo');
+
+    if (ehViatura && data.ok) { montarFichaTransferencia(card, token, data); return true; }
 
     if (!data.ok) {
       card.innerHTML = `
@@ -6343,6 +6442,86 @@ async function verificarTokenAssinatura() {
   } catch(e) {
     document.getElementById('assinCardConteudo').innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8">Erro ao carregar. Tente novamente.</div>`;
     return true;
+  }
+}
+
+// ── Ficha de transferência entre placas (mesma tela de assinatura) ──
+function montarFichaTransferencia(card, token, d) {
+  card.innerHTML = `
+    <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;background:#1e293b">
+      <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
+        <div style="font-size:16px;font-weight:600;color:#f1f5f9">Olá, ${escHtml(d.recebidoPor || '')}!</div>
+        <div style="font-size:12px;color:#94a3b8;margin-top:4px">Confirme o material que está passando para a sua viatura — ${formatarData(d.data) || ''}</div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;font-family:'DM Mono',monospace;font-size:15px;color:#f1f5f9">
+          <span>${escHtml(d.origemPlaca)}</span><span style="color:#22c55e">➜</span><span>${escHtml(d.destinoPlaca)}</span>
+        </div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:8px">Motivo: ${escHtml(d.motivo || '—')}</div>
+      </div>
+      <div style="padding:12px">
+        <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+          <colgroup><col style="width:60%"><col style="width:20%"><col style="width:20%"></colgroup>
+          <thead><tr>
+            <th style="text-align:left;font-size:11px;color:#64748b;padding:6px 4px;border-bottom:1px solid #334155">Item</th>
+            <th style="text-align:center;font-size:11px;color:#64748b;padding:6px 4px;border-bottom:1px solid #334155">Qtd</th>
+            <th style="text-align:left;font-size:11px;color:#64748b;padding:6px 4px;border-bottom:1px solid #334155">Serial</th>
+          </tr></thead>
+          <tbody>
+            ${(d.itens || []).map(it => `<tr>
+              <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao || '—')}</td>
+              <td style="padding:8px 4px;font-size:12px;text-align:center;color:#e2e8f0;border-bottom:1px solid #1e293b;white-space:nowrap">${it.quantidade} ${escHtml(it.un_med || 'UN')}</td>
+              <td style="padding:8px 4px;font-size:11px;color:#94a3b8;border-bottom:1px solid #1e293b;word-break:break-word;font-family:'DM Mono',monospace">${escHtml((it.seriais || []).join(', ') || '—')}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
+      <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">Assine abaixo para confirmar o recebimento:</div>
+      <canvas id="canvasAssinatura" width="520" height="260"
+        style="border:2px dashed #475569;border-radius:10px;width:100%;touch-action:none;cursor:crosshair;background:#ffffff;display:block">
+      </canvas>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <button onclick="limparAssinatura()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;padding:4px 8px">↺ Limpar</button>
+        <span style="font-size:11px;color:#64748b;flex:1">Ao assinar, declaro que recebi o material acima na minha viatura.</span>
+      </div>
+    </div>
+
+    <button onclick="confirmarAssinaturaTransferencia('${escJs(token)}')"
+      style="width:100%;padding:18px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">
+      ✅ Confirmar recebimento
+    </button>`;
+  iniciarCanvasAssinatura();
+}
+
+async function confirmarAssinaturaTransferencia(token) {
+  if (!_assinCanvas) return;
+  const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
+  if (vazio) { alert('Por favor, assine no campo acima antes de confirmar.'); return; }
+  const assinaturaBase64 = _assinCanvas.toDataURL('image/png');
+  const btn = document.querySelector('#assinCardConteudo button[onclick*="confirmarAssinaturaTransferencia"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+  const API = 'https://gca-backend-production.up.railway.app';
+  try {
+    const res = await fetch(`${API}/viaturas/transferencia/confirmar-assinatura`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64 }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
+      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
+      return;
+    }
+    document.getElementById('assinCardConteudo').innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px">
+        <div style="font-size:56px;margin-bottom:16px">✅</div>
+        <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
+        <div style="font-size:13px;color:#94a3b8">O material já está na sua viatura.</div>
+      </div>`;
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
+    alert('Erro de conexão. Tente novamente.');
   }
 }
 
@@ -12170,6 +12349,7 @@ async function salvarLS() {
   const senha  = document.getElementById('lsSenha').value.trim();
   const ativo  = document.getElementById('lsAtivo').checked;
   const podeInventario = document.getElementById('lsPodeInventario').checked;
+  const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -12180,13 +12360,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -12202,6 +12382,7 @@ function editarLS(id) {
   document.getElementById('lsSenha').value     = ''; // nunca pré-preenche — deixe em branco pra manter a senha atual
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
+  if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = !!u.pode_conferir_viatura;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -12230,6 +12411,7 @@ function limparLS() {
   document.getElementById('lsSenha').value    = '';
   document.getElementById('lsAtivo').checked  = true;
   document.getElementById('lsPodeInventario').checked = false;
+  if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
   carregarArmazensLS();
 }
 
@@ -22925,6 +23107,7 @@ function renderFrota() {
     <td>${v.status === 'ativa' ? '<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativa</span>' : '<span style="color:var(--text-3);font-size:11px">Inativa</span>'}</td>
     <td style="display:flex;gap:4px;justify-content:flex-end">
       <button class="row-action" onclick="abrirCargaViatura('${escJs(v.id)}')">📦 Carga</button>
+      <button class="row-action" onclick="abrirQrViatura('${escJs(v.placa)}')">📱 QR</button>
       <button class="row-action" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>
       <button class="row-action" style="color:var(--red)" onclick="excluirFrota('${escJs(v.id)}','${escJs(v.placa)}')">✕</button>
     </td>
@@ -23113,6 +23296,183 @@ function cpRender() {
     </div>`).join('');
 }
 
+// ═══════════════════════════════════════════
+// QR DA VIATURA — o adesivo que fica colado no carro. Quem confere bipa o QR,
+// entra com o crachá (matrícula + senha) e confere a carga pelo celular.
+// ═══════════════════════════════════════════
+async function abrirQrViatura(placa) {
+  const base = `${window.location.origin}${window.location.pathname.replace(/index\.html$/, '')}`;
+  const link = `${base}conferencia-viatura.html?placa=${encodeURIComponent(placa)}&unidade=${encodeURIComponent(GCA.unidade)}`;
+  document.getElementById('modalQrVtr')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalQrVtr';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:420px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">📱 QR da viatura ${escHtml(placa)}</div>
+        <div style="font-size:11px;color:var(--text-3)">Imprima e cole na viatura. Serve para conferir a carga pelo celular.</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalQrVtr').remove()">×</button>
+      </div>
+      <div class="modal-body" style="text-align:center">
+        <div id="qrVtrArea" style="background:#fff;border-radius:10px;padding:16px;display:inline-block">
+          <img id="qrVtrImg" alt="QR da viatura" style="width:240px;height:240px;display:block">
+          <div style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:#111;letter-spacing:2px;margin-top:8px">${escHtml(placa)}</div>
+          <div style="font-size:10px;color:#555;margin-top:2px">Conferência de carga — GCA</div>
+        </div>
+        <input class="form-input" readonly value="${escHtml(link)}" style="margin-top:12px;font-size:10px">
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="copiarLink('${escJs(link)}')">📋 Copiar link</button>
+          <button class="btn btn-primary" onclick="imprimirQrViatura('${escJs(placa)}')">🖨️ Imprimir</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const r = await api(`/atendimentos/qrcode?url=${encodeURIComponent(link)}&size=300`);
+  if (r?.dataUrl) { const img = document.getElementById('qrVtrImg'); if (img) img.src = r.dataUrl; }
+}
+
+function imprimirQrViatura(placa) {
+  const area = document.getElementById('qrVtrArea');
+  if (!area) return;
+  const janela = window.open('', '_blank', 'width=520,height=640');
+  if (!janela) { toast('Libere as janelas pop-up para imprimir', 'error'); return; }
+  janela.document.write(`<html><head><title>QR ${escHtml(placa)}</title></head>
+    <body style="font-family:sans-serif;text-align:center;padding:30px" onload="window.print()">
+      ${area.innerHTML}
+    </body></html>`);
+  janela.document.close();
+}
+
+// ═══════════════════════════════════════════
+// CONFERÊNCIAS DA VIATURA — relatório e acerto das diferenças
+// ═══════════════════════════════════════════
+async function abrirConferencias() {
+  document.getElementById('modalConfVtr')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalConfVtr';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:760px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">🔍 Conferências de viatura</div>
+        <div style="font-size:11px;color:var(--text-3)">Contagens feitas pelo QR da viatura. Clique para ver as diferenças e acertar.</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalConfVtr').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="confVtrLista"><div style="text-align:center;padding:30px;color:var(--text-3);font-size:12px">Carregando...</div></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  await carregarConferencias();
+}
+
+async function carregarConferencias() {
+  const alvo = document.getElementById('confVtrLista');
+  if (!alvo) return;
+  const res = await api('/conferencia-viatura');
+  const lista = res?.data || [];
+  if (!lista.length) {
+    alvo.innerHTML = '<div class="empty-state" style="padding:24px"><div class="es-icon">🔍</div><div class="es-title">Nenhuma conferência ainda</div><div class="es-sub">Cole o QR na viatura para a equipe conferir pelo celular</div></div>';
+    return;
+  }
+  alvo.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="text-align:left;font-size:11px;color:var(--text-3);padding:6px">Data</th>
+      <th style="text-align:left;font-size:11px;color:var(--text-3);padding:6px">Placa</th>
+      <th style="text-align:left;font-size:11px;color:var(--text-3);padding:6px">Quem conferiu</th>
+      <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Itens</th>
+      <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Diferenças</th>
+      <th></th>
+    </tr></thead>
+    <tbody>${lista.map(c => `<tr style="border-top:1px solid var(--border)">
+      <td style="padding:8px 6px;font-size:11px">${formatarDataHora(c.iniciado_em)}</td>
+      <td style="padding:8px 6px;font-size:12px;font-family:var(--font-mono)">${escHtml(c.placa)}</td>
+      <td style="padding:8px 6px;font-size:11px">${escHtml(c.conferente_nome || '—')}</td>
+      <td style="padding:8px 6px;text-align:center;font-size:12px">${c.total_itens || 0}</td>
+      <td style="padding:8px 6px;text-align:center;font-size:12px;font-weight:700;color:${c.itens_divergentes ? '#f59e0b' : '#22c55e'}">${c.status === 'EM_ANDAMENTO' ? '—' : (c.itens_divergentes || 0)}</td>
+      <td style="padding:8px 6px;text-align:right">
+        ${c.status === 'EM_ANDAMENTO'
+          ? '<span style="font-size:10px;color:#f59e0b">em andamento</span>'
+          : `<button class="row-action" onclick="abrirConferencia('${escJs(c.id)}')">Ver</button>`}
+      </td></tr>`).join('')}</tbody></table>`;
+}
+
+async function abrirConferencia(id) {
+  const res = await api(`/conferencia-viatura/${id}`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao abrir', 'error'); return; }
+  const c = res.conferencia;
+  const itens = res.itens || [];
+  document.getElementById('modalConfDet')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalConfDet';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:820px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">🔍 Conferência ${escHtml(c.placa)}</div>
+        <div style="font-size:11px;color:var(--text-3)">${formatarDataHora(c.iniciado_em)} · ${escHtml(c.conferente_nome || '—')}${c.observacao ? ' · ' + escHtml(c.observacao) : ''}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalConfDet').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div id="confDetLista"></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  renderConferenciaItens(c, itens);
+}
+
+function renderConferenciaItens(c, itens) {
+  const alvo = document.getElementById('confDetLista');
+  if (!alvo) return;
+  alvo.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="text-align:left;font-size:11px;color:var(--text-3);padding:6px">Material</th>
+      <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Previsto</th>
+      <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Encontrado</th>
+      <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Diferença</th>
+      <th style="text-align:right;font-size:11px;color:var(--text-3);padding:6px">Acerto</th>
+    </tr></thead>
+    <tbody>${itens.map(i => {
+      const dif = Number(i.diferenca || 0);
+      const faltaSerial = (i.seriais_esperados || []).filter(s => !(i.seriais_encontrados || []).includes(s));
+      const sobraSerial = (i.seriais_encontrados || []).filter(s => !(i.seriais_esperados || []).includes(s));
+      return `<tr style="border-top:1px solid var(--border)">
+        <td style="padding:8px 6px;font-size:12px">${escHtml(i.item_descricao || i.item_id)}
+          ${faltaSerial.length ? `<div style="font-size:10px;color:#f87171;font-family:var(--font-mono)">não achou: ${escHtml(faltaSerial.join(', '))}</div>` : ''}
+          ${sobraSerial.length ? `<div style="font-size:10px;color:#fbbf24;font-family:var(--font-mono)">a mais: ${escHtml(sobraSerial.join(', '))}</div>` : ''}</td>
+        <td style="padding:8px 6px;text-align:center;font-size:12px">${i.esperado}</td>
+        <td style="padding:8px 6px;text-align:center;font-size:12px">${i.contado === null ? '—' : i.contado}</td>
+        <td style="padding:8px 6px;text-align:center;font-size:12px;font-weight:700;color:${dif === 0 ? '#22c55e' : (dif < 0 ? '#f87171' : '#fbbf24')}">${dif > 0 ? '+' : ''}${dif}</td>
+        <td style="padding:8px 6px;text-align:right;white-space:nowrap">
+          ${i.status !== 'DIVERGENTE' ? '<span style="font-size:10px;color:#22c55e">bateu</span>'
+            : (i.resolucao
+              ? `<span style="font-size:10px;color:var(--text-3)" title="${escHtml(i.resolucao_obs || '')}">${escHtml(i.resolucao)} · ${escHtml(i.resolvido_por || '')}</span>`
+              : `${dif < 0 ? `<button class="row-action" style="color:#f87171" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','BAIXA')">Dar baixa</button>` : ''}
+                 ${dif > 0 ? `<button class="row-action" style="color:#22c55e" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','INCLUIR')">Incluir na carga</button>` : ''}
+                 <button class="row-action" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','IGNORAR')">Ignorar</button>`)}
+        </td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+async function resolverConferencia(conferenciaId, itemId, acao) {
+  const pergunta = acao === 'BAIXA'
+    ? 'Dar baixa do que faltou (sai da carga da viatura e NÃO volta ao estoque).\n\nMotivo:'
+    : acao === 'INCLUIR'
+      ? 'Incluir o que sobrou na carga da viatura.\n\nMotivo:'
+      : 'Registrar como resolvido, sem mexer na carga.\n\nMotivo:';
+  const obs = prompt(pergunta);
+  if (obs === null) return;
+  if (String(obs).trim().length < 5) { toast('Escreva o motivo (mínimo 5 letras)', 'error'); return; }
+  const res = await apiMovimentacao(`/conferencia-viatura/${conferenciaId}/itens/${itemId}/resolver`, { acao, obs: String(obs).trim() });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao acertar', 'error'); return; }
+  toast('Acerto registrado', 'success');
+  const atualizado = await api(`/conferencia-viatura/${conferenciaId}`);
+  if (atualizado?.ok) renderConferenciaItens(atualizado.conferencia, atualizado.itens || []);
+  carregarConferencias();
+  carregarFrota();
+}
+
 // ── Carga da viatura: o que está nela e o histórico de entregas ──
 async function abrirCargaViatura(id) {
   const res = await api(`/viaturas/${id}/carga`);
@@ -23123,20 +23483,28 @@ async function abrirCargaViatura(id) {
   // Entrega e devolução na mesma linha do tempo: sem isso a devolução sumia do histórico
   const linhasHist = hist.map(h => {
     const ehDevolucao = h.tipo === 'DEVOLUCAO';
+    const saiuTransferido = h.tipo === 'TRANSFERENCIA_SAIDA';
+    const veioTransferido = h.tipo === 'TRANSFERENCIA_ENTRADA';
+    const ehTransferencia = saiuTransferido || veioTransferido;
     const cancelado = h.status === 'CANCELADO';
-    const situacao = ehDevolucao
-      ? `<span style="color:var(--text-3)">${escHtml(h.destino ? 'Voltou para ' + h.destino : 'Devolvido ao estoque')}</span>`
-      : (cancelado ? '<span style="color:#fca5a5">Cancelado</span>'
-        : (h.status === 'ASSINADO' ? '<span style="color:#22c55e">Assinado</span>' : 'Pendente'));
+    const situacao = ehTransferencia
+      ? (h.status === 'ASSINADA' ? '<span style="color:#22c55e">Assinada</span>' : '<span style="color:#f59e0b">Aguardando assinatura</span>')
+      : (ehDevolucao
+        ? `<span style="color:var(--text-3)">${escHtml(h.destino ? 'Voltou para ' + h.destino : 'Devolvido ao estoque')}</span>`
+        : (cancelado ? '<span style="color:#fca5a5">Cancelado</span>'
+          : (h.status === 'ASSINADO' ? '<span style="color:#22c55e">Assinado</span>' : 'Pendente')));
+    const rotulo = ehTransferencia
+      ? `<span style="color:#60a5fa;font-weight:600">🔄 ${saiuTransferido ? 'Transferido para' : 'Recebido de'} ${escHtml(h.outra_placa || '')}</span>`
+      : (ehDevolucao
+        ? '<span style="color:#f59e0b;font-weight:600">↩️ Devolução</span>'
+        : '<span style="color:#22c55e;font-weight:600">📦 Entrega</span>');
     return `<tr style="${cancelado ? 'opacity:.55' : ''}">
       <td style="font-size:11px">${formatarDataHora(h.criado_em)}</td>
-      <td style="font-size:11px">${ehDevolucao
-        ? '<span style="color:#f59e0b;font-weight:600">↩️ Devolução</span>'
-        : '<span style="color:#22c55e;font-weight:600">📦 Entrega</span>'}
+      <td style="font-size:11px">${rotulo}
         ${ehDevolucao && h.item ? `<div style="color:var(--text-3)">${escHtml(h.item)}</div>` : ''}
-        ${ehDevolucao && h.motivo ? `<div style="color:var(--text-3);font-size:10px">${escHtml(h.motivo)}</div>` : ''}</td>
+        ${(ehDevolucao || ehTransferencia) && h.motivo ? `<div style="color:var(--text-3);font-size:10px">${escHtml(h.motivo)}</div>` : ''}</td>
       <td style="font-size:11px">${escHtml(h.pessoa || '—')}</td>
-      <td style="text-align:center;font-size:12px">${ehDevolucao ? '-' : ''}${h.quantidade || 0}</td>
+      <td style="text-align:center;font-size:12px">${ehDevolucao || saiuTransferido ? '-' : ''}${h.quantidade || 0}</td>
       <td style="font-size:11px">${situacao}</td>
     </tr>`;
   }).join('');
@@ -23271,11 +23639,243 @@ const CV_MOTIVOS = ['Entrega inicial', 'Troca desgaste', 'Troca recuperação', 
 function cvAba(aba, btn) {
   document.querySelectorAll('#view-carga-viatura .atend-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  ['iniciar', 'mobilizar', 'consulta'].forEach(a => {
+  ['iniciar', 'mobilizar', 'transferir', 'consulta'].forEach(a => {
     document.getElementById('cv-panel-' + a).classList.toggle('active', a === aba);
   });
   if (aba === 'consulta') cvCarregarHistorico();
   if (aba === 'mobilizar') cvIniciar();
+  if (aba === 'transferir') { cvIniciar(); cvTrCarregarHistorico(); }
+}
+
+// ═══════════════════════════════════════════
+// TRANSFERIR ENTRE PLACAS — o material passa de uma viatura para a outra
+// sem voltar ao estoque; quem recebe assina a ficha pelo link.
+// ═══════════════════════════════════════════
+let _cvTr = { origem: null, destino: null, colab: null, carga: [] };
+let _cvTrTimer = null, _cvTrColabTimer = null;
+
+function cvTrFiltrarPlaca(q, qual) {
+  clearTimeout(_cvTrTimer);
+  const sug = document.getElementById(qual === 'origem' ? 'cvTrOrigemSug' : 'cvTrDestinoSug');
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  _cvTrTimer = setTimeout(() => {
+    const busca = q.toLowerCase();
+    // A viatura já escolhida do outro lado não pode aparecer: transferir para ela mesma não existe
+    const outra = qual === 'origem' ? _cvTr.destino?.id : _cvTr.origem?.id;
+    const res = (_frota || []).filter(v => v.id !== outra && (v.status || 'ativa') === 'ativa' &&
+      [v.placa, v.modelo, v.base, v.tipo].some(x => (x || '').toLowerCase().includes(busca)))
+      .slice(0, 8)
+      .map(v => ({ id: v.id, nome: v.placa, matricula: v.modelo || '—', funcao: [v.tipo, v.base].filter(Boolean).join(' · ') || '—' }));
+    mostrarAutocomplete(qual === 'origem' ? 'cvTrOrigemSug' : 'cvTrDestinoSug',
+      qual === 'origem' ? 'cvTrOrigem' : 'cvTrDestino', res,
+      qual === 'origem' ? 'cvTrEscolherOrigem' : 'cvTrEscolherDestino');
+  }, 200);
+}
+
+async function cvTrEscolherOrigem(id) {
+  const v = (_frota || []).find(x => x.id === id);
+  if (!v) return;
+  _cvTr.origem = v;
+  document.getElementById('cvTrOrigemSug').classList.add('hidden');
+  document.getElementById('cvTrOrigem').value = v.placa;
+  document.getElementById('cvTrOrigemCard').classList.remove('hidden');
+  document.getElementById('cvTrOrigemNome').textContent = v.placa;
+  document.getElementById('cvTrOrigemSub').textContent = [v.modelo, v.tipo, v.base].filter(Boolean).join(' · ') || '—';
+  await cvTrCarregarCarga();
+}
+
+function cvTrEscolherDestino(id) {
+  const v = (_frota || []).find(x => x.id === id);
+  if (!v) return;
+  _cvTr.destino = v;
+  document.getElementById('cvTrDestinoSug').classList.add('hidden');
+  document.getElementById('cvTrDestino').value = v.placa;
+  document.getElementById('cvTrDestinoCard').classList.remove('hidden');
+  document.getElementById('cvTrDestinoNome').textContent = v.placa;
+  document.getElementById('cvTrDestinoSub').textContent = [v.modelo, v.tipo, v.base].filter(Boolean).join(' · ') || '—';
+}
+
+async function cvTrCarregarCarga() {
+  const alvo = document.getElementById('cvTrItens');
+  alvo.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text-3);font-size:12px">Carregando a carga...</div>';
+  const res = await api(`/viaturas/${_cvTr.origem.id}/carga`);
+  _cvTr.carga = res?.itens || [];
+  cvTrRenderItens();
+}
+
+function cvTrRenderItens() {
+  const alvo = document.getElementById('cvTrItens');
+  if (!_cvTr.carga.length) {
+    alvo.innerHTML = `<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px">A viatura ${escHtml(_cvTr.origem?.placa || '')} está sem material na carga</div>`;
+    return;
+  }
+  alvo.innerHTML = _cvTr.carga.map(i => `
+    <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 6px;border-bottom:1px solid var(--border)">
+      <input type="checkbox" class="cv-tr-item" data-item="${escHtml(i.item_id)}" style="margin-top:9px" onchange="cvTrToggle(this)">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${escHtml(i.item_descricao || i.item_id)}</div>
+        <div style="font-size:10px;color:var(--text-3)">Na viatura: ${i.saldo}</div>
+        ${(i.seriais || []).length ? `<div class="cv-tr-seriais hidden" data-seriais="${escHtml(i.item_id)}" style="margin-top:6px;display:none;flex-direction:column;gap:3px">
+          <div style="font-size:10px;color:var(--text-3)">Material de laudo: marque os seriais que vão mudar de placa</div>
+          ${i.seriais.map(sv => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:var(--font-mono);cursor:pointer">
+            <input type="checkbox" class="cv-tr-serial" data-de="${escHtml(i.item_id)}" value="${escHtml(sv)}" onchange="cvTrContarSeriais('${escJs(i.item_id)}')"> ${escHtml(sv)}</label>`).join('')}
+        </div>` : ''}
+      </div>
+      <input type="number" class="form-input cv-tr-qtd" data-qtd="${escHtml(i.item_id)}" min="0" step="any" max="${Number(i.saldo)}"
+        placeholder="Qtd" style="width:90px" disabled oninput="cvTrContarSeriais('${escJs(i.item_id)}')">
+    </div>`).join('');
+}
+
+function cvTrToggle(caixa) {
+  const itemId = caixa.dataset.item;
+  const qtd = document.querySelector(`.cv-tr-qtd[data-qtd="${CSS.escape(itemId)}"]`);
+  const seriais = document.querySelector(`.cv-tr-seriais[data-seriais="${CSS.escape(itemId)}"]`);
+  qtd.disabled = !caixa.checked;
+  if (!caixa.checked) { qtd.value = ''; }
+  if (seriais) seriais.style.display = caixa.checked ? 'flex' : 'none';
+  if (!caixa.checked) document.querySelectorAll(`.cv-tr-serial[data-de="${CSS.escape(itemId)}"]`).forEach(c => { c.checked = false; });
+}
+
+// Item de laudo: a quantidade é a dos seriais marcados, não dá para divergir
+function cvTrContarSeriais(itemId) {
+  const marcados = [...document.querySelectorAll(`.cv-tr-serial[data-de="${CSS.escape(itemId)}"]:checked`)];
+  if (!marcados.length && !document.querySelector(`.cv-tr-serial[data-de="${CSS.escape(itemId)}"]`)) return;
+  const qtd = document.querySelector(`.cv-tr-qtd[data-qtd="${CSS.escape(itemId)}"]`);
+  if (qtd && marcados.length) qtd.value = marcados.length;
+}
+
+function cvTrFiltrarColab(q) {
+  clearTimeout(_cvTrColabTimer);
+  const sug = document.getElementById('cvTrColabSug');
+  _cvTr.colab = null;
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  _cvTrColabTimer = setTimeout(() => {
+    const busca = q.toLowerCase();
+    const lista = (_colaboradores || []).filter(c => (c.status || 'ativo') === 'ativo' &&
+      ((c.nome || '').toLowerCase().includes(busca) || String(c.matricula || '').toLowerCase().includes(busca))).slice(0, 8);
+    mostrarAutocomplete('cvTrColabSug', 'cvTrColab', lista, 'cvTrEscolherColab');
+  }, 200);
+}
+
+function cvTrEscolherColab(id) {
+  const c = (_colaboradores || []).find(x => x.id === id);
+  if (!c) return;
+  _cvTr.colab = c;
+  document.getElementById('cvTrColabSug').classList.add('hidden');
+  document.getElementById('cvTrColab').value = c.nome;
+  document.getElementById('cvTrColabCard').classList.remove('hidden');
+  document.getElementById('cvTrColabNome').textContent = c.nome;
+  document.getElementById('cvTrColabSub').textContent = [c.matricula, c.funcao].filter(Boolean).join(' · ') || '—';
+}
+
+function cvTrLimpar() {
+  _cvTr = { origem: null, destino: null, colab: null, carga: [] };
+  ['cvTrOrigem', 'cvTrDestino', 'cvTrColab', 'cvTrMotivo'].forEach(id => { document.getElementById(id).value = ''; });
+  ['cvTrOrigemCard', 'cvTrDestinoCard', 'cvTrColabCard'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  document.getElementById('cvTrErro').textContent = '';
+  document.getElementById('cvTrItens').innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px">Escolha a viatura de origem para ver a carga</div>';
+}
+
+async function cvTrConfirmar() {
+  const erro = document.getElementById('cvTrErro');
+  const motivo = (document.getElementById('cvTrMotivo').value || '').trim();
+  if (!_cvTr.origem) { erro.textContent = 'Escolha a viatura de origem.'; return; }
+  if (!_cvTr.destino) { erro.textContent = 'Escolha a viatura de destino.'; return; }
+  if (_cvTr.origem.id === _cvTr.destino.id) { erro.textContent = 'A origem e o destino são a mesma viatura.'; return; }
+  if (!_cvTr.colab) { erro.textContent = 'Informe quem está recebendo o material.'; return; }
+  if (motivo.length < 5) { erro.textContent = 'Escreva o motivo da transferência (mínimo 5 letras).'; return; }
+
+  const itens = [];
+  for (const caixa of document.querySelectorAll('.cv-tr-item:checked')) {
+    const itemId = caixa.dataset.item;
+    const linha = _cvTr.carga.find(i => i.item_id === itemId);
+    const qtd = Number(document.querySelector(`.cv-tr-qtd[data-qtd="${CSS.escape(itemId)}"]`)?.value || 0);
+    const seriais = [...document.querySelectorAll(`.cv-tr-serial[data-de="${CSS.escape(itemId)}"]:checked`)].map(c => c.value);
+    if (!(qtd > 0)) { erro.textContent = `Informe a quantidade de "${linha?.item_descricao || itemId}".`; return; }
+    if (qtd > Number(linha?.saldo || 0)) { erro.textContent = `A viatura ${_cvTr.origem.placa} só tem ${linha?.saldo} de "${linha?.item_descricao}".`; return; }
+    if ((linha?.seriais || []).length && seriais.length !== qtd) {
+      erro.textContent = `"${linha.item_descricao}" é material de laudo: marque ${qtd} serial(is).`; return;
+    }
+    itens.push({ item_id: itemId, quantidade: qtd, seriais });
+  }
+  if (!itens.length) { erro.textContent = 'Marque pelo menos um material.'; return; }
+
+  const btn = document.getElementById('cvTrBtn');
+  btn.disabled = true; erro.textContent = '';
+  const res = await apiMovimentacao('/viaturas/transferir', {
+    origem_id: _cvTr.origem.id, destino_id: _cvTr.destino.id,
+    recebido_por_id: _cvTr.colab.id, motivo, itens,
+  });
+  btn.disabled = false;
+  if (!res?.ok) { erro.textContent = res?.erro || 'Erro ao transferir'; return; }
+
+  const placaOrigem = _cvTr.origem.placa, placaDestino = _cvTr.destino.placa, nomeRecebe = _cvTr.colab.nome;
+  cvTrLimpar();
+  cvTrCarregarHistorico();
+  cvTrMostrarLink(res.token, placaOrigem, placaDestino, nomeRecebe);
+}
+
+function cvTrMostrarLink(token, placaOrigem, placaDestino, nomeRecebe) {
+  const link = `${window.location.origin}${window.location.pathname}#/assinar?token=${token}&tipo=viatura`;
+  document.getElementById('modalCvTrLink')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCvTrLink';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:520px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">✅ Material transferido</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(placaOrigem)} → ${escHtml(placaDestino)} · ${escHtml(nomeRecebe)} precisa assinar</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCvTrLink').remove()">×</button>
+      </div>
+      <div class="modal-body" style="text-align:center">
+        <img id="cvTrQr" alt="QR do link" style="width:180px;height:180px;background:#fff;border-radius:8px;padding:6px">
+        <input id="cvTrLinkTxt" class="form-input" readonly value="${escHtml(link)}" style="margin-top:12px;font-size:11px">
+        <div style="display:flex;gap:8px;margin-top:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="copiarLink('${escJs(link)}')">📋 Copiar link</button>
+          <button class="btn btn-ghost" onclick="window.open('${escJs(link)}','_blank')">✍️ Abrir para assinar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  api(`/atendimentos/qrcode?url=${encodeURIComponent(link)}&size=180`).then(r => {
+    if (r?.dataUrl) { const img = document.getElementById('cvTrQr'); if (img) img.src = r.dataUrl; }
+  });
+}
+
+async function cvTrCarregarHistorico() {
+  const corpo = document.getElementById('cvTrHistBody');
+  if (!corpo) return;
+  const placa = (document.getElementById('cvTrBuscaPlaca')?.value || '').trim();
+  const res = await api(`/viaturas/transferencias${placa ? `?placa=${encodeURIComponent(placa)}` : ''}`);
+  const lista = res?.data || [];
+  if (!lista.length) {
+    corpo.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma transferência</td></tr>';
+    return;
+  }
+  const cor = { PENDENTE: '#f59e0b', ASSINADA: '#22c55e', CANCELADA: '#ef4444' };
+  corpo.innerHTML = lista.map(t => `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 10px;font-size:11px">${formatarData(t.data) || '—'}</td>
+      <td style="padding:8px;font-size:12px;font-family:var(--font-mono)">${escHtml(t.origem_placa)}</td>
+      <td style="padding:8px;font-size:12px;font-family:var(--font-mono)">${escHtml(t.destino_placa)}</td>
+      <td style="padding:8px;text-align:center;font-size:12px">${t.qtd_itens}</td>
+      <td style="padding:8px;font-size:11px">${escHtml(t.recebido_por_nome || '—')}</td>
+      <td style="padding:8px;font-size:11px;color:${cor[t.status] || 'var(--text-3)'};font-weight:600">${escHtml(t.status)}</td>
+      <td style="padding:8px;text-align:right;white-space:nowrap">
+        ${t.status === 'PENDENTE' && t.token ? `<button class="row-action" onclick="cvTrMostrarLink('${escJs(t.token)}','${escJs(t.origem_placa)}','${escJs(t.destino_placa)}','${escJs(t.recebido_por_nome || '')}')">✍️ Link</button>
+        <button class="row-action" style="color:var(--red)" onclick="cvTrCancelar('${escJs(t.id)}','${escJs(t.destino_placa)}')">✕ Cancelar</button>` : ''}
+      </td></tr>`).join('');
+}
+
+async function cvTrCancelar(id, placaDestino) {
+  const motivo = prompt(`Cancelar a transferência para ${placaDestino}? O material volta para a placa de origem.\n\nMotivo:`);
+  if (motivo === null) return;
+  if (String(motivo).trim().length < 5) { toast('Escreva o motivo (mínimo 5 letras)', 'error'); return; }
+  const res = await apiMovimentacao(`/viaturas/transferencia/${id}/cancelar`, { motivo: String(motivo).trim() });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao cancelar', 'error'); return; }
+  toast('Transferência cancelada, o material voltou para a origem', 'success');
+  cvTrCarregarHistorico();
 }
 
 async function cvIniciar() {
