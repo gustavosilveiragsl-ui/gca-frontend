@@ -23161,10 +23161,13 @@ async function abrirCargaViatura(id) {
             <th style="padding:6px"></th>
           </tr></thead>
           <tbody>${itens.length ? itens.map(i => `<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px 10px;font-size:12px;font-weight:600">${escHtml(i.item_descricao || i.item_id)}</td>
+            <td style="padding:8px 10px;font-size:12px;font-weight:600">${escHtml(i.item_descricao || i.item_id)}
+              ${(i.seriais || []).length ? `<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">
+                ${i.seriais.map(sv => `<span class="tag tag-accent" style="font-size:9px;font-family:var(--font-mono)">${escHtml(sv)}</span>`).join('')}
+              </div>` : ''}</td>
             <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:#22c55e">${i.saldo}</td>
             <td style="padding:8px;text-align:right">
-              <button class="row-action" style="color:#f59e0b" onclick="abrirDevolverViatura('${escJs(v.id)}','${escJs(i.item_id)}','${escJs(i.item_descricao || '')}',${Number(i.saldo)})">↩️ Devolver</button>
+              <button class="row-action" style="color:#f59e0b" onclick='abrirDevolverViatura(${JSON.stringify(v.id)}, ${JSON.stringify(i.item_id)}, ${JSON.stringify(i.item_descricao || "")}, ${Number(i.saldo)}, ${JSON.stringify(i.seriais || [])})'>↩️ Devolver</button>
             </td></tr>`).join('') : '<tr><td colspan="3" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Viatura sem material</td></tr>'}</tbody>
         </table>
         <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Movimentos da viatura</div>
@@ -23183,8 +23186,9 @@ async function abrirCargaViatura(id) {
   document.body.appendChild(modal);
 }
 
-function abrirDevolverViatura(viaturaId, itemId, descricao, saldo) {
+function abrirDevolverViatura(viaturaId, itemId, descricao, saldo, seriais) {
   const armazens = (_armazens || []).filter(a => a.id);
+  _devVtrSeriais = seriais || [];
   document.getElementById('modalDevVtr')?.remove();
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
@@ -23198,9 +23202,15 @@ function abrirDevolverViatura(viaturaId, itemId, descricao, saldo) {
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
         <div class="form-group" style="margin:0"><label class="form-label">Quantidade *</label>
-          <input id="devVtrQtd" class="form-input" type="number" min="0" step="any" max="${saldo}" placeholder="Máx. ${saldo}"></div>
+          <input id="devVtrQtd" class="form-input" type="number" min="0" step="any" max="${saldo}" placeholder="Máx. ${saldo}" oninput="devVtrContarSeriais()"></div>
         <div class="form-group" style="margin:0"><label class="form-label">Armazém que recebe *</label>
           <select id="devVtrArm" class="form-input">${armazens.map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('')}</select></div>
+        ${(seriais || []).length ? `<div class="form-group" style="margin:0"><label class="form-label">Seriais que estão voltando *</label>
+          <div style="display:flex;flex-direction:column;gap:4px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px;max-height:140px;overflow:auto">
+            ${seriais.map(sv => `<label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;font-family:var(--font-mono)">
+              <input type="checkbox" class="dev-vtr-serial" value="${escHtml(sv)}" onchange="devVtrContarSeriais()"> ${escHtml(sv)}</label>`).join('')}
+          </div>
+          <div id="devVtrSerialAviso" style="font-size:10px;color:var(--text-3);margin-top:3px">Marque um serial para cada unidade devolvida</div></div>` : ''}
         <div class="form-group" style="margin:0"><label class="form-label">Motivo *</label>
           <textarea id="devVtrMotivo" class="form-input" rows="3" placeholder="Ex.: sobra de obra, item trocado, viatura saindo de operação"></textarea></div>
         <div id="devVtrErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
@@ -23214,23 +23224,39 @@ function abrirDevolverViatura(viaturaId, itemId, descricao, saldo) {
   setTimeout(() => document.getElementById('devVtrQtd')?.focus(), 50);
 }
 
+let _devVtrSeriais = [];
+
+// Marcou um serial a mais do que a quantidade? avisa na hora
+function devVtrContarSeriais() {
+  const marcados = [...document.querySelectorAll('.dev-vtr-serial:checked')].length;
+  const qtd = Number(document.getElementById('devVtrQtd')?.value || 0);
+  const aviso = document.getElementById('devVtrSerialAviso');
+  if (!aviso) return;
+  aviso.textContent = `${marcados} serial(is) marcado(s)${qtd ? ` para ${qtd} unidade(s)` : ''}`;
+  aviso.style.color = (qtd && marcados !== qtd) ? 'var(--red)' : 'var(--text-3)';
+}
+
 async function confirmarDevolverViatura(viaturaId, itemId, saldo) {
   const erro = document.getElementById('devVtrErro');
   const quantidade = Number(document.getElementById('devVtrQtd')?.value || 0);
   const motivo = (document.getElementById('devVtrMotivo')?.value || '').trim();
   const armazem_id = document.getElementById('devVtrArm')?.value;
+  const seriais = [...document.querySelectorAll('.dev-vtr-serial:checked')].map(c => c.value);
   if (!(quantidade > 0)) { erro.textContent = 'Informe a quantidade.'; return; }
   if (quantidade > saldo) { erro.textContent = `A viatura só tem ${saldo}.`; return; }
+  if (_devVtrSeriais.length && seriais.length !== quantidade) {
+    erro.textContent = `Marque ${quantidade} serial(is) — este material é de laudo.`; return;
+  }
   if (motivo.length < 5) { erro.textContent = 'Informe o motivo (mínimo 5 letras).'; return; }
   if (!armazem_id) { erro.textContent = 'Escolha o armazém.'; return; }
   const btn = document.getElementById('devVtrBtn');
   btn.disabled = true; erro.textContent = '';
-  const res = await apiMovimentacao(`/viaturas/${viaturaId}/devolver`, { item_id: itemId, quantidade, motivo, armazem_id });
+  const res = await apiMovimentacao(`/viaturas/${viaturaId}/devolver`, { item_id: itemId, quantidade, motivo, armazem_id, seriais });
   btn.disabled = false;
   if (res?.ok) {
     document.getElementById('modalDevVtr')?.remove();
     document.getElementById('modalCargaVtr')?.remove();
-    toast(`✅ ${quantidade} devolvido(s) ao estoque.`, 'success');
+    toast(`✅ ${quantidade} devolvido(s) ao estoque${seriais.length ? ` (serial ${seriais.join(', ')})` : ''}.`, 'success');
     carregarFrota();
   } else erro.textContent = res?.erro || 'Erro na devolução';
 }
