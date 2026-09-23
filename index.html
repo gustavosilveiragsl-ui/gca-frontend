@@ -4821,6 +4821,24 @@ window.addEventListener('pageshow', function(e) {
           </div>
         </div>
 
+        <div class="card" style="margin-bottom:16px;border:1px solid rgba(245,158,11,.35)" data-perm-btn="inventario_avulso">
+          <div class="card-header">
+            <div><div class="card-title">🗓️ Inventário avulso</div>
+            <div class="card-sub">Abre uma contagem a qualquer momento, fora do calendário mensal — sem prazo e mesmo que o do mês já tenha sido entregue</div></div>
+          </div>
+          <div style="padding:16px;display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-label">Armazém</label>
+              <select id="invAvulsoArmazem" class="form-input"></select>
+            </div>
+            <div style="flex:2;min-width:240px">
+              <label class="form-label">Motivo *</label>
+              <input id="invAvulsoMotivo" class="form-input" placeholder="Ex.: implantação da filial, suspeita de diferença, troca de responsável">
+            </div>
+            <button class="btn btn-primary" id="invAvulsoBtn" onclick="abrirInventarioAvulso()">➕ Abrir inventário</button>
+          </div>
+        </div>
+
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Histórico de Inventários</div><div class="card-sub">Todos os ciclos, mês a mês</div></div>
@@ -6091,7 +6109,7 @@ function onViewLoad(nome) {
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); trfPrepararAbas(); if (!document.getElementById('trfTabFil')?.classList.contains('active')) traIniciar(); }
   if (nome === 'estoque')            { _iniciarRealtime(); if (!_itens.length) carregarItensAtendimento().then(()=>{ if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); }); else { if (!_scData.length) carregarSC().then(carregarEstoque); else carregarEstoque(); } }
   if (nome === 'movimentacoes')      carregarMovimentacoes();
-  if (nome === 'inventario')         { carregarInventarioHistorico(); if (!_armazens.length) carregarArmazens(); }
+  if (nome === 'inventario')         { (async () => { if (!_armazens.length) await carregarArmazens(); carregarInventarioHistorico(); })(); }
   if (nome === 'enel-inventario')    carregarInventarioEnel();
   if (nome === 'enel-cadastro')      carregarMateriaisEnel();
   if (nome === 'logistica')          { carregarDestinosEntrega(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
@@ -12440,6 +12458,11 @@ async function carregarInventarioHistorico() {
   if (sel && _armazens.length) {
     sel.innerHTML = _armazens.map(a => `<option value="${a.id}">${escHtml(a.nome)}${a.requer_inventario_mensal ? '' : ' (não obrigatório)'}</option>`).join('');
   }
+  // O avulso vale para qualquer armazém, obrigatório ou não
+  const selAvulso = document.getElementById('invAvulsoArmazem');
+  if (selAvulso && _armazens.length) {
+    selAvulso.innerHTML = '<option value="">Escolha...</option>' + _armazens.map(a => `<option value="${a.id}">${escHtml(a.nome)}</option>`).join('');
+  }
 
   const res = await api('/inventario/historico');
   _invHistData = res?.data || [];
@@ -12500,7 +12523,8 @@ function renderInventarioHistorico() {
       <div class="inv-hist-top">
         <div>
           <div class="inv-hist-armazem">${escHtml(r.nome_armazem)}</div>
-          <div class="inv-hist-mes">${formatarMesAno(r.ano_mes)}</div>
+          <div class="inv-hist-mes">${r.tipo === 'AVULSO' ? `<span style="color:#f59e0b;font-weight:600">Avulso</span> · ` : ''}${formatarMesAno(r.ano_mes)}</div>
+          ${r.tipo === 'AVULSO' && r.motivo ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(r.motivo)}</div>` : ''}
         </div>
         ${statusBadge(r)}
       </div>
@@ -12520,7 +12544,7 @@ function renderInventarioHistorico() {
           ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','${escJs(r.nome_armazem)}')">🔗 Link / QR</button>` : ''}
           ${r.congelado
             ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="descongelarInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">🔓 Descongelar</button>`
-            : `<button class="row-action" style="color:var(--accent-text);border-color:var(--accent-text)" data-perm-btn="inventario_gerar_link" onclick="iniciarContagemInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">▶️ Iniciar contagem</button>`}
+            : `<button class="row-action" style="color:var(--accent-text);border-color:var(--accent-text)" data-perm-btn="inventario_gerar_link|inventario_avulso" onclick="iniciarContagemInventario('${escJs(r.id)}','${escJs(r.nome_armazem)}')">▶️ Iniciar contagem</button>`}
         `}
       </div>
     </div>`;
@@ -12546,6 +12570,26 @@ async function gerarLinkInventario() {
     toast('Link gerado!', 'success');
     carregarInventarioHistorico();
   } else toast(res?.erro || 'Erro ao gerar link', 'error');
+}
+
+// Inventário avulso: fora do calendário, sem prazo. O resto do caminho é o do mensal
+// (iniciar contagem, contar pelo link, finalizar, corrigir divergências).
+async function abrirInventarioAvulso() {
+  const armazemId = document.getElementById('invAvulsoArmazem').value;
+  const motivo = (document.getElementById('invAvulsoMotivo').value || '').trim();
+  if (!armazemId) { toast('Escolha o armazém', 'warn'); return; }
+  if (motivo.length < 5) { toast('Escreva o motivo do inventário (mínimo 5 letras)', 'warn'); return; }
+  const nome = document.getElementById('invAvulsoArmazem').selectedOptions[0]?.textContent || '';
+  if (!confirm(`Abrir um inventário avulso no ${nome}?\n\nDepois é só clicar em "Iniciar contagem" no card dele — a partir daí o armazém fica congelado até finalizar.`)) return;
+
+  const btn = document.getElementById('invAvulsoBtn');
+  btn.disabled = true;
+  const res = await api('/inventario/avulso', { method: 'POST', body: JSON.stringify({ armazem_id: armazemId, motivo }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao abrir o inventário', 'error'); return; }
+  document.getElementById('invAvulsoMotivo').value = '';
+  toast(`Inventário avulso aberto (${res.itens} itens). Clique em "Iniciar contagem" quando a equipe estiver pronta.`, 'success', 6000);
+  carregarInventarioHistorico();
 }
 
 function copiarLinkInventario() {
@@ -14351,6 +14395,7 @@ const PERMISSOES_SCHEMA = {
     inventario_gerar_link:'Gerar link de contagem',
     inventario_ver_historico:'Ver histórico de inventários',
     inventario_liberar_atraso:'Liberar inventário atrasado',
+    inventario_avulso:'Abrir inventário avulso (a qualquer momento)',
     inventario_ajustar_divergencia:'Ajustar estoque por divergência',
     inventario_liberar_movimentacao:'Liberar movimentação durante o inventário'
   }},
@@ -14817,7 +14862,7 @@ function aplicarPermissoesMenu() {
 
   // Oculta/desabilita botões de ação dentro das telas
   document.querySelectorAll('[data-perm-btn]').forEach(btn => {
-    if (!temPermissao(btn.dataset.permBtn)) {
+    if (!btn.dataset.permBtn.split('|').some(p => temPermissao(p))) {
       btn.style.display = 'none';
     }
   });
