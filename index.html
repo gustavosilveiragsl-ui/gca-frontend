@@ -3777,42 +3777,131 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
-      <!-- CARGA DE VIATURA — entrega de material para a placa -->
+      <!-- ATENDIMENTO VIATURA — mesmo desenho do atendimento de EPI -->
       <div class="view" id="view-carga-viatura">
-        <div style="margin-bottom:16px">
-          <div class="page-title">🚚 Atendimento Viatura</div>
-          <div class="page-sub">O material fica na placa. Quem retira assina a ficha.</div>
+        <div class="atend-tabs">
+          <button class="atend-tab active" onclick="cvAba('iniciar', this)">Iniciar Atendimento</button>
+          <button class="atend-tab" onclick="cvAba('consulta', this)">Consulta de Atendimentos</button>
         </div>
-        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
-          <div class="card">
-            <div class="card-header"><div><div class="card-title">Entrega</div><div class="card-sub">Placa, quem retirou e os materiais</div></div></div>
-            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-              <div class="form-group" style="margin:0"><label class="form-label">Viatura *</label>
-                <input id="cvPlaca" class="form-input" list="cvPlacasLista" placeholder="Digite a placa..." autocomplete="off" oninput="cvSelecionarPlaca()">
-                <datalist id="cvPlacasLista"></datalist>
-                <div id="cvPlacaInfo" style="font-size:11px;color:var(--text-3);margin-top:3px"></div>
-              </div>
-              <div class="form-group" style="margin:0;position:relative"><label class="form-label">Quem está retirando *</label>
-                <input id="cvColabBusca" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off"
-                  oninput="cvFiltrarColab(this.value)" onblur="setTimeout(()=>document.getElementById('cvColabSug').classList.add('hidden'),200)">
-                <div id="cvColabSug" class="autocomplete-list hidden"></div>
-                <input type="hidden" id="cvColabId">
-              </div>
-              <div class="form-group" style="margin:0;position:relative"><label class="form-label">Material</label>
-                <input id="cvItemBusca" class="form-input" placeholder="Buscar material de viatura..." autocomplete="off"
-                  oninput="cvFiltrarItem(this.value)" onblur="setTimeout(()=>document.getElementById('cvItemSug').classList.add('hidden'),200)">
-                <div id="cvItemSug" class="autocomplete-list hidden"></div>
-              </div>
-              <div id="cvMsg" style="font-size:12px;min-height:16px;color:var(--red)"></div>
-              <button class="btn btn-primary" style="justify-content:center" onclick="cvConfirmar()">✅ Confirmar entrega</button>
-              <button class="btn btn-ghost" style="justify-content:center" onclick="cvLimpar()">Limpar</button>
+
+        <!-- ── ABA: INICIAR ── -->
+        <div class="atend-panel active" id="cv-panel-iniciar">
+          <div id="cvEstadoInicial" class="atend-start-area">
+            <div class="atend-start-card">
+              <div class="atend-start-icon">🚚</div>
+              <div class="atend-start-title">Iniciar atendimento de viatura</div>
+              <div class="atend-start-sub">O material fica na placa e quem retira assina a ficha</div>
+              <button class="btn btn-primary" style="margin-top:20px;padding:10px 28px;font-size:13px" onclick="cvIniciarAtendimento()">▶ Iniciar Atendimento</button>
             </div>
           </div>
+
+          <div id="cvEmAndamento" class="hidden">
+            <div class="atend-header-bar">
+              <div class="atend-cronometro" id="cvCronometro">00:00:00</div>
+              <div class="atend-header-info"><span id="cvDataDisplay">—</span></div>
+              <div style="margin-left:auto;display:flex;gap:8px">
+                <button class="btn btn-ghost" style="font-size:11px;color:var(--red);border-color:var(--red)" onclick="cvCancelarAtendimento()">✕ Cancelar</button>
+                <button class="btn btn-primary" id="cvBtnConcluir" onclick="cvConfirmar()" disabled>Concluir Atendimento</button>
+              </div>
+            </div>
+
+            <div class="atend-body">
+              <div class="atend-col-main">
+                <!-- VIATURA -->
+                <div class="card">
+                  <div class="card-header"><div><div class="card-title">Identificação da Viatura</div></div></div>
+                  <div style="padding:16px">
+                    <div style="position:relative">
+                      <input id="cvPlaca" class="form-input" list="cvPlacasLista" placeholder="Digite a placa..." autocomplete="off" oninput="cvSelecionarPlaca()">
+                      <datalist id="cvPlacasLista"></datalist>
+                    </div>
+                    <div id="cvViaturaCard" class="colab-card hidden">
+                      <div class="colab-card-avatar">🚚</div>
+                      <div class="colab-card-info">
+                        <div class="colab-card-nome" id="cvViaturaPlaca">—</div>
+                        <div class="colab-card-sub" id="cvViaturaSub">—</div>
+                      </div>
+                      <span style="font-size:11px;font-weight:600;color:#22c55e;display:flex;align-items:center;gap:4px">✓ Ativa</span>
+                      <button class="row-action" style="margin-left:auto" onclick="cvTrocarViatura()">Trocar</button>
+                    </div>
+                    <div id="cvPlacaInfo" style="font-size:11px;color:var(--red);margin-top:6px"></div>
+                  </div>
+                </div>
+
+                <!-- QUEM RETIRA -->
+                <div class="card">
+                  <div class="card-header"><div><div class="card-title">Quem está retirando</div><div class="card-sub">Assina a ficha desta entrega</div></div></div>
+                  <div style="padding:16px">
+                    <div style="position:relative">
+                      <input id="cvColabBusca" class="form-input" placeholder="Digite nome ou matrícula..." autocomplete="off"
+                        oninput="cvFiltrarColab(this.value)" onblur="setTimeout(()=>document.getElementById('cvColabSug').classList.add('hidden'),200)">
+                      <div id="cvColabSug" class="autocomplete-list hidden"></div>
+                      <input type="hidden" id="cvColabId">
+                    </div>
+                    <div id="cvColabCard" class="colab-card hidden">
+                      <div class="colab-card-avatar" id="cvColabAvatar">—</div>
+                      <div class="colab-card-info">
+                        <div class="colab-card-nome" id="cvColabNome">—</div>
+                        <div class="colab-card-sub" id="cvColabSub">—</div>
+                      </div>
+                      <button class="row-action" style="margin-left:auto" onclick="cvTrocarColab()">Trocar</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- ITENS -->
+                <div class="card">
+                  <div class="card-header">
+                    <div><div class="card-title">Itens do Atendimento</div><div class="card-sub" id="cvItensCount">Nenhum item adicionado</div></div>
+                    <div style="margin-left:auto">
+                      <button class="btn btn-primary" id="cvBtnAddItens" onclick="cvAbrirModalItens()" disabled>+ Adicionar Itens</button>
+                    </div>
+                  </div>
+                  <div id="cvItensList">
+                    <div class="empty-state" style="padding:28px">
+                      <div class="es-icon">📦</div>
+                      <div class="es-title">Nenhum item adicionado</div>
+                      <div class="es-sub">Escolha a viatura e clique em "Adicionar Itens"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- RESUMO -->
+              <div class="atend-col-side">
+                <div class="card">
+                  <div class="card-header"><div class="card-title">Resumo</div></div>
+                  <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+                    <div class="resumo-row"><span class="resumo-label">Viatura</span><span class="resumo-val" id="cvResumoPlaca">—</span></div>
+                    <div class="resumo-row"><span class="resumo-label">Retirado por</span><span class="resumo-val" id="cvResumoColab">—</span></div>
+                    <div class="resumo-row"><span class="resumo-label">Data</span><span class="resumo-val" id="cvResumoData">—</span></div>
+                    <div class="resumo-row"><span class="resumo-label">Itens</span><span class="resumo-val" id="cvResumoItens">0</span></div>
+                    <div class="resumo-row"><span class="resumo-label">Tempo</span><span class="resumo-val" id="cvResumoTempo">00:00:00</span></div>
+                    <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:12px">
+                      <div id="cvMsg" style="font-size:11px;color:var(--text-3);text-align:center">Aguardando a viatura...</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── ABA: CONSULTA ── -->
+        <div class="atend-panel" id="cv-panel-consulta">
           <div class="card">
-            <div class="card-header"><div><div class="card-title">Itens desta entrega <span id="cvCount" style="color:var(--accent-text)">(0)</span></div></div></div>
+            <div class="card-header" style="flex-wrap:wrap;gap:8px">
+              <div><div class="card-title">Atendimentos de viatura</div></div>
+              <div class="card-actions" style="flex-wrap:wrap">
+                <input type="date" id="cvHistDe" class="form-input" style="width:150px;font-size:11px" onchange="cvCarregarHistorico()">
+                <input type="date" id="cvHistAte" class="form-input" style="width:150px;font-size:11px" onchange="cvCarregarHistorico()">
+                <input type="text" id="cvHistPlaca" class="search-box" placeholder="Placa..." oninput="clearTimeout(this._t);this._t=setTimeout(cvCarregarHistorico,400)">
+                <button class="btn btn-ghost" onclick="cvCarregarHistorico()">↻ Atualizar</button>
+              </div>
+            </div>
             <table>
-              <thead><tr><th>Material</th><th>Armazém</th><th style="text-align:center">Estoque</th><th style="text-align:center">Qtd</th><th>Motivo</th><th></th></tr></thead>
-              <tbody id="cvItensBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr></tbody>
+              <thead><tr><th>Data/Hora</th><th>Viatura</th><th>Retirado por</th><th style="text-align:center">Itens</th><th style="text-align:center">Qtd</th><th>Situação</th></tr></thead>
+              <tbody id="cvHistBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha o período e clique em ↻ Atualizar</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -5900,7 +5989,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-baixa-auto')    { initBaixaAuto(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
   if (nome === 'consulta-viaturas')  carregarFrota();
-  if (nome === 'carga-viatura')      cvIniciar();
+  if (nome === 'carga-viatura')      { cvIniciar(); cvAba('iniciar', document.querySelector('#view-carga-viatura .atend-tab')); }
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=hojeBR(); }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
@@ -22884,15 +22973,24 @@ async function abrirCargaViatura(id) {
   const v = res.viatura;
   const itens = res.itens || [];
   const hist = (res.historico || []).slice(0, 15);
+  // Entrega e devolução na mesma linha do tempo: sem isso a devolução sumia do histórico
   const linhasHist = hist.map(h => {
-    let qtd = 0;
-    try { qtd = (JSON.parse(h.itens_json || '[]')).reduce((t, i) => t + Number(i.quantidade || 0), 0); } catch {}
+    const ehDevolucao = h.tipo === 'DEVOLUCAO';
     const cancelado = h.status === 'CANCELADO';
+    const situacao = ehDevolucao
+      ? `<span style="color:var(--text-3)">${escHtml(h.destino ? 'Voltou para ' + h.destino : 'Devolvido ao estoque')}</span>`
+      : (cancelado ? '<span style="color:#fca5a5">Cancelado</span>'
+        : (h.status === 'ASSINADO' ? '<span style="color:#22c55e">Assinado</span>' : 'Pendente'));
     return `<tr style="${cancelado ? 'opacity:.55' : ''}">
-      <td style="font-size:11px">${formatarDataHora(h.criado_em) }</td>
-      <td style="font-size:11px">${escHtml(h.retirado_por_nome || '—')}</td>
-      <td style="text-align:center;font-size:12px">${qtd}</td>
-      <td style="font-size:11px">${cancelado ? '<span style="color:#fca5a5">Cancelado</span>' : (h.status === 'ASSINADO' ? '<span style="color:#22c55e">Assinado</span>' : 'Pendente')}</td>
+      <td style="font-size:11px">${formatarDataHora(h.criado_em)}</td>
+      <td style="font-size:11px">${ehDevolucao
+        ? '<span style="color:#f59e0b;font-weight:600">↩️ Devolução</span>'
+        : '<span style="color:#22c55e;font-weight:600">📦 Entrega</span>'}
+        ${ehDevolucao && h.item ? `<div style="color:var(--text-3)">${escHtml(h.item)}</div>` : ''}
+        ${ehDevolucao && h.motivo ? `<div style="color:var(--text-3);font-size:10px">${escHtml(h.motivo)}</div>` : ''}</td>
+      <td style="font-size:11px">${escHtml(h.pessoa || '—')}</td>
+      <td style="text-align:center;font-size:12px">${ehDevolucao ? '-' : ''}${h.quantidade || 0}</td>
+      <td style="font-size:11px">${situacao}</td>
     </tr>`;
   }).join('');
 
@@ -22922,15 +23020,16 @@ async function abrirCargaViatura(id) {
               <button class="row-action" style="color:#f59e0b" onclick="abrirDevolverViatura('${escJs(v.id)}','${escJs(i.item_id)}','${escJs(i.item_descricao || '')}',${Number(i.saldo)})">↩️ Devolver</button>
             </td></tr>`).join('') : '<tr><td colspan="3" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Viatura sem material</td></tr>'}</tbody>
         </table>
-        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Últimas entregas</div>
+        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Movimentos da viatura</div>
         <table style="width:100%;border-collapse:collapse">
           <thead><tr style="background:var(--bg)">
             <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Data</th>
-            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Retirado por</th>
-            <th style="padding:6px;text-align:center;font-size:10px;color:var(--text-3)">Itens</th>
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Movimento</th>
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Pessoa</th>
+            <th style="padding:6px;text-align:center;font-size:10px;color:var(--text-3)">Qtd</th>
             <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Situação</th>
           </tr></thead>
-          <tbody>${linhasHist || '<tr><td colspan="4" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma entrega registrada</td></tr>'}</tbody>
+          <tbody>${linhasHist || '<tr><td colspan="5" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Nenhum movimento registrado</td></tr>'}</tbody>
         </table>
       </div>
     </div>`;
@@ -22990,242 +23089,390 @@ async function confirmarDevolverViatura(viaturaId, itemId, saldo) {
 }
 
 // ═══════════════════════════════════════════
-// CARGA DE VIATURA — entrega
+// ATENDIMENTO VIATURA — mesmo desenho do atendimento de EPI
 // ═══════════════════════════════════════════
-const CV = { itens: [], viatura: null };
+const CV = { itens: [], viatura: null, colab: null, segundos: 0, cronometro: null, sugestoes: [], selecionados: {} };
+let _cvSaldos = [];
+const CV_MOTIVOS = ['Entrega inicial', 'Troca desgaste', 'Troca recuperação', 'Troca por dano', 'Perda', 'Roubo'];
+
+function cvAba(aba, btn) {
+  document.querySelectorAll('#view-carga-viatura .atend-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  ['iniciar', 'consulta'].forEach(a => {
+    document.getElementById('cv-panel-' + a).classList.toggle('active', a === aba);
+  });
+  if (aba === 'consulta') cvCarregarHistorico();
+}
 
 async function cvIniciar() {
-  CV.itens = []; CV.viatura = null;
   await Promise.all([
     carregarFrota(),
     (!_itens.length ? carregarItensAtendimento() : Promise.resolve()),
     (!_colaboradores.length ? carregarColaboradoresAtendimento() : Promise.resolve()),
+    (!_armazens.length ? carregarArmazens() : Promise.resolve()),
     cvCarregarSaldos(),
   ]);
   const dl = document.getElementById('cvPlacasLista');
-  if (dl) dl.innerHTML = _frota.filter(v => v.status !== 'inativa').map(v => `<option value="${escHtml(v.placa)}">${escHtml([v.modelo, v.base].filter(Boolean).join(' · '))}</option>`).join('');
-  cvRenderItens();
+  if (dl) dl.innerHTML = (_frota || []).filter(v => v.status !== 'inativa')
+    .map(v => `<option value="${escHtml(v.placa)}">${escHtml([v.modelo, v.base].filter(Boolean).join(' · '))}</option>`).join('');
 }
 
-let _cvSaldos = [];
 async function cvCarregarSaldos() {
   const data = await api('/saldos');
   _cvSaldos = (data?.data || []).filter(s => Number(s.saldo) > 0);
 }
 
-function cvSelecionarPlaca() {
-  const texto = (document.getElementById('cvPlaca').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-  CV.viatura = _frota.find(v => v.placa === texto) || null;
-  const info = document.getElementById('cvPlacaInfo');
-  if (info) {
-    info.textContent = CV.viatura
-      ? [CV.viatura.modelo, CV.viatura.tipo, CV.viatura.base].filter(Boolean).join(' · ') || 'Viatura encontrada'
-      : (texto ? 'Placa não cadastrada nesta filial' : '');
-    info.style.color = CV.viatura ? 'var(--text-3)' : (texto ? 'var(--red)' : 'var(--text-3)');
-  }
+function cvIniciarAtendimento() {
+  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0;
+  document.getElementById('cvEstadoInicial').classList.add('hidden');
+  document.getElementById('cvEmAndamento').classList.remove('hidden');
+  document.getElementById('cvDataDisplay').textContent = formatarData(hojeBR());
+  document.getElementById('cvResumoData').textContent = formatarData(hojeBR());
+  clearInterval(CV.cronometro);
+  CV.cronometro = setInterval(() => {
+    CV.segundos++;
+    const h = String(Math.floor(CV.segundos / 3600)).padStart(2, '0');
+    const m = String(Math.floor((CV.segundos % 3600) / 60)).padStart(2, '0');
+    const s = String(CV.segundos % 60).padStart(2, '0');
+    const txt = `${h}:${m}:${s}`;
+    document.getElementById('cvCronometro').textContent = txt;
+    document.getElementById('cvResumoTempo').textContent = txt;
+  }, 1000);
+  cvRenderItens();
+  cvMsg('Escolha a viatura para começar', true);
 }
 
+function cvCancelarAtendimento() {
+  if (CV.itens.length && !confirm('Cancelar este atendimento? Os itens adicionados serão descartados.')) return;
+  clearInterval(CV.cronometro);
+  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0;
+  ['cvPlaca', 'cvColabBusca', 'cvColabId'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cvViaturaCard').classList.add('hidden');
+  document.getElementById('cvColabCard').classList.add('hidden');
+  document.getElementById('cvCronometro').textContent = '00:00:00';
+  document.getElementById('cvEmAndamento').classList.add('hidden');
+  document.getElementById('cvEstadoInicial').classList.remove('hidden');
+}
+
+// ── Viatura ──
+function cvSelecionarPlaca() {
+  const texto = (document.getElementById('cvPlaca').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  CV.viatura = (_frota || []).find(v => v.placa === texto && v.status !== 'inativa') || null;
+  const info = document.getElementById('cvPlacaInfo');
+  const card = document.getElementById('cvViaturaCard');
+  if (CV.viatura) {
+    card.classList.remove('hidden');
+    document.getElementById('cvViaturaPlaca').textContent = CV.viatura.placa;
+    document.getElementById('cvViaturaSub').textContent = [CV.viatura.modelo, CV.viatura.tipo, CV.viatura.base].filter(Boolean).join(' · ') || '—';
+    document.getElementById('cvResumoPlaca').textContent = CV.viatura.placa;
+    info.textContent = '';
+    cvMsg('Informe quem está retirando', true);
+  } else {
+    card.classList.add('hidden');
+    document.getElementById('cvResumoPlaca').textContent = '—';
+    info.textContent = texto ? 'Placa não cadastrada nesta filial' : '';
+  }
+  cvAtualizarBotoes();
+}
+
+function cvTrocarViatura() {
+  CV.viatura = null;
+  document.getElementById('cvPlaca').value = '';
+  document.getElementById('cvViaturaCard').classList.add('hidden');
+  document.getElementById('cvResumoPlaca').textContent = '—';
+  cvAtualizarBotoes();
+}
+
+// ── Quem retira ──
 function cvFiltrarColab(q) {
   const sug = document.getElementById('cvColabSug');
   document.getElementById('cvColabId').value = '';
-  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  CV.colab = null;
+  if (!q || q.length < 2) { sug.classList.add('hidden'); cvAtualizarBotoes(); return; }
   const busca = q.toLowerCase();
   const lista = (_colaboradores || []).filter(c => (c.status || 'ativo') === 'ativo' &&
     ((c.nome || '').toLowerCase().includes(busca) || String(c.matricula || '').includes(busca))).slice(0, 10);
   if (!lista.length) {
     sug.innerHTML = '<div class="ac-item" style="color:var(--text-3)">Nenhum colaborador encontrado</div>';
-    sug.classList.remove('hidden');
-    return;
+    sug.classList.remove('hidden'); return;
   }
-  sug.innerHTML = lista.map(c => `<div class="ac-item"
-    onmousedown="document.getElementById('cvColabBusca').value='${escJs(c.nome)}';document.getElementById('cvColabId').value='${escJs(c.id)}';document.getElementById('cvColabSug').classList.add('hidden')">
+  sug.innerHTML = lista.map(c => `<div class="ac-item" onmousedown="cvEscolherColab('${escJs(c.id)}')">
     <div class="ac-item-nome">${escHtml(c.nome)}</div>
     <div class="ac-item-sub">${escHtml(c.matricula || '')} ${escHtml(c.funcao || '')}</div>
   </div>`).join('');
   sug.classList.remove('hidden');
 }
 
-function cvFiltrarItem(q) {
-  const sug = document.getElementById('cvItemSug');
-  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
-  const busca = q.toLowerCase();
+function cvEscolherColab(id) {
+  const c = (_colaboradores || []).find(x => x.id === id);
+  if (!c) return;
+  CV.colab = c;
+  document.getElementById('cvColabSug').classList.add('hidden');
+  document.getElementById('cvColabBusca').value = c.nome;
+  document.getElementById('cvColabId').value = c.id;
+  document.getElementById('cvColabCard').classList.remove('hidden');
+  document.getElementById('cvColabAvatar').textContent = (c.nome || '?').trim().charAt(0).toUpperCase();
+  document.getElementById('cvColabNome').textContent = c.nome;
+  document.getElementById('cvColabSub').textContent = [c.matricula, c.funcao].filter(Boolean).join(' · ') || '—';
+  document.getElementById('cvResumoColab').textContent = c.nome;
+  cvMsg('Adicione os materiais', true);
+  cvAtualizarBotoes();
+}
+
+function cvTrocarColab() {
+  CV.colab = null;
+  document.getElementById('cvColabBusca').value = '';
+  document.getElementById('cvColabId').value = '';
+  document.getElementById('cvColabCard').classList.add('hidden');
+  document.getElementById('cvResumoColab').textContent = '—';
+  cvAtualizarBotoes();
+}
+
+function cvAtualizarBotoes() {
+  const btnAdd = document.getElementById('cvBtnAddItens');
+  if (btnAdd) btnAdd.disabled = !CV.viatura;
+  const btnOk = document.getElementById('cvBtnConcluir');
+  if (btnOk) btnOk.disabled = !(CV.viatura && CV.colab && CV.itens.length);
+}
+
+// ── Modal de itens (mesmo desenho do atendimento de EPI) ──
+function cvAbrirModalItens() {
+  if (!CV.viatura) { cvMsg('Escolha a viatura primeiro.', false); return; }
+  CV.selecionados = {};
+  document.getElementById('modalCvItens')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCvItens';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:860px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">📦 Adicionar itens à viatura ${escHtml(CV.viatura.placa)}</div>
+        <div style="font-size:11px;color:var(--text-3)">Só aparecem materiais de viatura com saldo no estoque</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCvItens').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <input class="search-box" id="cvModalBusca" placeholder="Buscar material..." oninput="cvModalRender()" style="width:100%;margin-bottom:10px">
+        <div id="cvModalLista" style="max-height:280px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"></div>
+        <div id="cvModalSelWrapper" style="display:none;margin-top:14px">
+          <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Itens selecionados</div>
+          <div id="cvModalSel"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <span id="cvModalContador" style="font-size:11px;color:var(--text-3)">0 item selecionado</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost" onclick="document.getElementById('modalCvItens').remove()">Cancelar</button>
+          <button class="btn btn-primary" id="cvModalBtn" onclick="cvConfirmarModal()" disabled>Adicionar</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  cvModalRender();
+  setTimeout(() => document.getElementById('cvModalBusca')?.focus(), 50);
+}
+
+function cvModalRender() {
+  const q = (document.getElementById('cvModalBusca')?.value || '').toLowerCase();
+  const lista = document.getElementById('cvModalLista');
+  if (!lista) return;
   const deViatura = (_itens || []).filter(i => String(i.entrega_para || '').toLowerCase() === 'viatura');
   const linhas = [];
   deViatura.forEach(i => {
-    if (!((i.descricao || '').toLowerCase().includes(busca) || (i.codigo || '').toLowerCase().includes(busca))) return;
+    if (q && !((i.descricao || '').toLowerCase().includes(q) || (i.codigo || '').toLowerCase().includes(q))) return;
     _cvSaldos.filter(s => s.item_id === i.id).forEach(s => linhas.push({ item: i, saldo: s }));
   });
-  if (!linhas.length) {
-    sug.innerHTML = `<div class="ac-item" style="color:var(--text-3)">Nenhum material de viatura com saldo para "${escHtml(q)}"</div>`;
-    sug.classList.remove('hidden');
-    return;
-  }
-  sug.innerHTML = linhas.slice(0, 12).map((l, idx) => `<div class="ac-item" onmousedown="cvAddItem(${idx})">
-    <div class="ac-item-nome">${escHtml(l.item.descricao)}</div>
-    <div class="ac-item-sub">${escHtml(l.saldo.nome_armazem || '')} · saldo ${l.saldo.saldo}</div>
-  </div>`).join('');
-  sug.classList.remove('hidden');
-  CV.sugestoes = linhas.slice(0, 12);
+  CV.sugestoes = linhas;
+  lista.innerHTML = linhas.length ? linhas.map((l, idx) => {
+    const chave = `${l.item.id}|${l.saldo.armazem_id}`;
+    const marcado = !!CV.selecionados[chave];
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer"
+      onclick="cvToggleItemModal(${idx})">
+      <input type="checkbox" ${marcado ? 'checked' : ''} onclick="event.stopPropagation();cvToggleItemModal(${idx})">
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${escHtml(l.item.descricao)}
+          ${(l.item.requer_ensaio || l.item.possui_serie) ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(l.saldo.nome_armazem || '')} · saldo ${l.saldo.saldo}</div>
+      </div>
+    </div>`;
+  }).join('') : '<div style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Nenhum material de viatura com saldo</div>';
+  cvModalRenderSelecionados();
 }
 
-function cvAddItem(idx) {
-  const l = (CV.sugestoes || [])[idx];
+function cvToggleItemModal(idx) {
+  const l = CV.sugestoes[idx];
   if (!l) return;
-  document.getElementById('cvItemSug').classList.add('hidden');
-  document.getElementById('cvItemBusca').value = '';
-  if (CV.itens.some(x => x.itemId === l.item.id && x.armazemId === l.saldo.armazem_id)) {
-    cvMsg('Esse material já está na lista.', false);
-    return;
-  }
-  const requerEnsaio = !!(l.item.requer_ensaio || l.item.possui_serie);
-  CV.itens.push({
-    itemId: l.item.id, descricao: l.item.descricao, codigo: l.item.codigo || '',
-    armazemId: l.saldo.armazem_id, nomeArmazem: l.saldo.nome_armazem || '',
-    un_med: l.item.un_med || 'UN',
-    disponivel: Number(l.saldo.saldo), quantidade: 1, motivo: '',
-    requerEnsaio, seriais: requerEnsaio ? [''] : [], serialRetorno: [],
-    tipoRecuperacao: '',
-  });
-  cvRenderItens();
+  const chave = `${l.item.id}|${l.saldo.armazem_id}`;
+  if (CV.selecionados[chave]) delete CV.selecionados[chave];
+  else CV.selecionados[chave] = { item: l.item, saldo: l.saldo, qtd: 1, motivo: '', tipoRecuperacao: '' };
+  cvModalRender();
 }
 
-function cvRemoverItem(i) { CV.itens.splice(i, 1); cvRenderItens(); }
+function cvAtualizarSelModal(chave, campo, valor) {
+  if (!CV.selecionados[chave]) return;
+  CV.selecionados[chave][campo] = campo === 'qtd' ? Number(valor) : valor;
+  if (campo === 'motivo') cvModalRenderSelecionados();
+}
 
-// Motivo do item: define serial de retorno, resíduo e fila de recuperação (igual à pessoa)
-async function cvMotivo(i, valor) {
+function cvModalRenderSelecionados() {
+  const wrapper = document.getElementById('cvModalSelWrapper');
+  const cont = document.getElementById('cvModalSel');
+  const sel = Object.entries(CV.selecionados);
+  const cnt = document.getElementById('cvModalContador');
+  if (cnt) cnt.textContent = `${sel.length} ${sel.length === 1 ? 'item selecionado' : 'itens selecionados'}`;
+  const btn = document.getElementById('cvModalBtn');
+  if (btn) btn.disabled = !sel.length;
+  if (!wrapper || !cont) return;
+  wrapper.style.display = sel.length ? 'block' : 'none';
+  cont.innerHTML = sel.map(([chave, s]) => `
+    <div class="item-sel-row">
+      <div class="item-sel-nome">${escHtml(s.item.descricao)}</div>
+      <span style="font-size:11px;color:var(--text-3);width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.saldo.nome_armazem || '')}</span>
+      <input type="number" class="form-input" style="width:70px;font-size:11px;text-align:center" min="1" step="any" value="${s.qtd}"
+        onchange="cvAtualizarSelModal('${escJs(chave)}','qtd',this.value)">
+      <select class="form-input" style="width:150px;font-size:11px" onchange="cvAtualizarSelModal('${escJs(chave)}','motivo',this.value)">
+        <option value="">Selecione o motivo</option>
+        ${CV_MOTIVOS.map(m => `<option value="${m}" ${s.motivo === m ? 'selected' : ''}>${m}</option>`).join('')}
+      </select>
+      ${s.motivo === 'Troca recuperação' ? `<select class="form-input" style="width:120px;font-size:11px" onchange="cvAtualizarSelModal('${escJs(chave)}','tipoRecuperacao',this.value)">
+        <option value="">Tipo</option>
+        <option value="Laudar" ${s.tipoRecuperacao === 'Laudar' ? 'selected' : ''}>Laudar</option>
+        <option value="Manutenção" ${s.tipoRecuperacao === 'Manutenção' ? 'selected' : ''}>Manutenção</option>
+      </select>` : ''}
+    </div>`).join('');
+}
+
+async function cvConfirmarModal() {
+  const sel = Object.values(CV.selecionados);
+  if (!sel.length) return;
+  const semMotivo = sel.filter(s => !s.motivo);
+  if (semMotivo.length) { toast(`Selecione o motivo para: ${semMotivo.map(s => s.item.descricao).join(', ')}`, 'warn'); return; }
+  const semRecup = sel.filter(s => s.motivo === 'Troca recuperação' && !s.tipoRecuperacao);
+  if (semRecup.length) { toast(`Escolha o tipo de recuperação para: ${semRecup.map(s => s.item.descricao).join(', ')}`, 'warn'); return; }
+  const semSaldo = sel.filter(s => !(s.qtd > 0) || s.qtd > Number(s.saldo.saldo));
+  if (semSaldo.length) { toast(`Quantidade inválida em: ${semSaldo.map(s => s.item.descricao).join(', ')}`, 'warn'); return; }
+
+  for (const s of sel) {
+    if (CV.itens.some(x => x.itemId === s.item.id && x.armazemId === s.saldo.armazem_id)) continue;
+    const requerEnsaio = !!(s.item.requer_ensaio || s.item.possui_serie);
+    const it = {
+      itemId: s.item.id, descricao: s.item.descricao, codigo: s.item.codigo || '',
+      armazemId: s.saldo.armazem_id, nomeArmazem: s.saldo.nome_armazem || '',
+      un_med: s.item.un_med || 'UN', disponivel: Number(s.saldo.saldo),
+      quantidade: s.qtd, motivo: s.motivo, tipoRecuperacao: s.tipoRecuperacao || '',
+      requerEnsaio, seriais: requerEnsaio ? Array(Math.max(1, Math.round(s.qtd))).fill('') : [], serialRetorno: [],
+      avisoDurabilidade: '',
+    };
+    // Prazo de durabilidade: mesma regra da pessoa, olhando a última entrega para esta placa
+    if (!/entrega inicial/i.test(it.motivo)) {
+      const res = await api('/validacoes/durabilidade-viatura', { method: 'POST',
+        body: JSON.stringify({ viatura_id: CV.viatura.id, item_id: it.itemId }) });
+      if (res && res.ok && !res.dentro && res.ultimaEntrega)
+        it.avisoDurabilidade = `Prazo de durabilidade não atingido (${res.diasDecorridos} de ${res.prazoMinDias} dias)`;
+    }
+    CV.itens.push(it);
+  }
+  document.getElementById('modalCvItens')?.remove();
+  cvRenderItens();
+  cvAtualizarBotoes();
+}
+
+// ── Lista do atendimento ──
+function cvRemoverItem(i) { CV.itens.splice(i, 1); cvRenderItens(); cvAtualizarBotoes(); }
+function cvQtd(i, valor) {
   const it = CV.itens[i];
   if (!it) return;
-  it.motivo = valor;
-  if (!/troca/i.test(valor)) { it.serialRetorno = []; it.tipoRecuperacao = ''; }
-  cvRenderItens();
-
-  // Prazo de durabilidade: mesma regra da pessoa, olhando a última entrega para esta placa
-  const aviso = document.getElementById('cvDur' + i);
-  if (!aviso || !CV.viatura || !valor || /entrega inicial/i.test(valor)) return;
-  const res = await api('/validacoes/durabilidade-viatura', { method: 'POST',
-    body: JSON.stringify({ viatura_id: CV.viatura.id, item_id: it.itemId }) });
-  it.avisoDurabilidade = (res && res.ok && !res.dentro && res.ultimaEntrega)
-    ? `Prazo de durabilidade não atingido (${res.diasDecorridos} de ${res.prazoMinDias} dias)` : '';
-  const el = document.getElementById('cvDur' + i);
-  if (el) el.textContent = it.avisoDurabilidade ? '⚠️ ' + it.avisoDurabilidade : '';
-}
-
-function cvQtd(i, valor) {
-  const item = CV.itens[i];
-  if (!item) return;
-  item.quantidade = Number(valor) || 0;
-  document.getElementById('cvAviso' + i).textContent = item.quantidade > item.disponivel ? 'acima do estoque' : '';
+  it.quantidade = Number(valor) || 0;
+  const aviso = document.getElementById('cvAviso' + i);
+  if (aviso) aviso.textContent = it.quantidade > it.disponivel ? 'acima do estoque' : '';
 }
 
 function cvRenderItens() {
-  const tbody = document.getElementById('cvItensBody');
-  const cnt = document.getElementById('cvCount');
-  if (cnt) cnt.textContent = `(${CV.itens.length})`;
-  if (!tbody) return;
+  const lista = document.getElementById('cvItensList');
+  const cnt = document.getElementById('cvItensCount');
+  const res = document.getElementById('cvResumoItens');
+  if (cnt) cnt.textContent = CV.itens.length ? `${CV.itens.length} item(ns) adicionado(s)` : 'Nenhum item adicionado';
+  if (res) res.textContent = CV.itens.length;
+  if (!lista) return;
   if (!CV.itens.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr>';
+    lista.innerHTML = `<div class="empty-state" style="padding:28px">
+      <div class="es-icon">📦</div><div class="es-title">Nenhum item adicionado</div>
+      <div class="es-sub">Escolha a viatura e clique em "Adicionar Itens"</div></div>`;
     return;
   }
-  const MOTIVOS = ['Entrega inicial', 'Troca desgaste', 'Troca recuperação', 'Troca por dano', 'Perda', 'Roubo'];
-  tbody.innerHTML = CV.itens.map((it, i) => {
-    const ehTroca = /troca/i.test(it.motivo || '');
-    // Serial: mesma regra do atendimento da pessoa — na troca, bipa o que sai e o que volta
-    const blocoSerial = it.requerEnsaio ? `
-      <div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
-      ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px"
-        placeholder="Serial ${si + 1}" value="${escHtml(sv || '')}"
-        oninput="CV.itens[${i}].seriais[${si}]=this.value.toUpperCase()">`).join('')}
-      ${ehTroca ? `<div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
-      ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px;border-color:var(--yellow)"
-        placeholder="Retorno ${si + 1}" value="${escHtml((it.serialRetorno || [])[si] || '')}"
-        oninput="if(!CV.itens[${i}].serialRetorno)CV.itens[${i}].serialRetorno=[];CV.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()">`).join('')}` : ''}` : '';
-
-    return `<tr>
-    <td class="td-main">${escHtml(it.descricao)}
-      ${it.requerEnsaio ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}
-      ${blocoSerial}
-    </td>
-    <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nomeArmazem)}</td>
-    <td style="text-align:center;font-size:12px">${it.disponivel}</td>
-    <td style="text-align:center">
-      <input class="form-input" type="number" min="0" step="any" value="${it.quantidade}" style="width:80px;text-align:center"
-        oninput="cvQtd(${i}, this.value)">
-      <div id="cvAviso${i}" style="font-size:10px;color:var(--red)"></div>
-    </td>
-    <td>
-      <select class="form-input" style="width:150px;font-size:11px" onchange="cvMotivo(${i}, this.value)">
-        <option value="">Selecione o motivo</option>
-        ${MOTIVOS.map(m => `<option value="${m}" ${it.motivo === m ? 'selected' : ''}>${m}</option>`).join('')}
-      </select>
-      ${it.motivo === 'Troca recuperação' ? `<select class="form-input" style="width:150px;font-size:11px;margin-top:4px" onchange="CV.itens[${i}].tipoRecuperacao=this.value">
-        <option value="">Tipo</option>
-        <option value="Laudar" ${it.tipoRecuperacao === 'Laudar' ? 'selected' : ''}>Laudar</option>
-        <option value="Manutenção" ${it.tipoRecuperacao === 'Manutenção' ? 'selected' : ''}>Manutenção</option>
-      </select>` : ''}
-      <div id="cvDur${i}" style="font-size:10px;color:var(--yellow);margin-top:2px"></div>
-    </td>
-    <td style="text-align:right"><button class="row-action" style="color:var(--red)" onclick="cvRemoverItem(${i})">✕</button></td>
-  </tr>`;
-  }).join('');
+  lista.innerHTML = `<table><thead><tr>
+      <th>Material</th><th>Armazém</th><th style="text-align:center">Qtd</th><th>Motivo</th><th></th>
+    </tr></thead><tbody>${CV.itens.map((it, i) => {
+      const ehTroca = /troca/i.test(it.motivo || '');
+      const blocoSerial = it.requerEnsaio ? `
+        <div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
+        ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px"
+          placeholder="Serial ${si + 1}" value="${escHtml(sv || '')}"
+          oninput="CV.itens[${i}].seriais[${si}]=this.value.toUpperCase()">`).join('')}
+        ${ehTroca ? `<div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
+        ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px;border-color:var(--yellow)"
+          placeholder="Retorno ${si + 1}" value="${escHtml((it.serialRetorno || [])[si] || '')}"
+          oninput="if(!CV.itens[${i}].serialRetorno)CV.itens[${i}].serialRetorno=[];CV.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()">`).join('')}` : ''}` : '';
+      return `<tr>
+        <td class="td-main">${escHtml(it.descricao)}
+          ${it.requerEnsaio ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}
+          ${it.avisoDurabilidade ? `<div style="font-size:10px;color:var(--yellow);margin-top:3px">⚠️ ${escHtml(it.avisoDurabilidade)}</div>` : ''}
+          ${blocoSerial}
+        </td>
+        <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nomeArmazem)}</td>
+        <td style="text-align:center">
+          <input class="form-input" type="number" min="0" step="any" value="${it.quantidade}" style="width:80px;text-align:center" oninput="cvQtd(${i}, this.value)">
+          <div id="cvAviso${i}" style="font-size:10px;color:var(--red)"></div>
+        </td>
+        <td><span class="tag tag-gray">${escHtml(it.motivo)}</span>${it.tipoRecuperacao ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(it.tipoRecuperacao)}</div>` : ''}</td>
+        <td style="text-align:right"><button class="row-action" style="color:var(--red)" onclick="cvRemoverItem(${i})">✕</button></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
 }
 
 function cvMsg(txt, ok) {
   const el = document.getElementById('cvMsg');
   if (!el) return;
-  el.style.color = ok ? '#22c55e' : 'var(--red)';
+  el.style.color = ok ? 'var(--text-3)' : 'var(--red)';
   el.textContent = txt || '';
 }
 
-function cvLimpar() {
-  CV.itens = []; CV.viatura = null;
-  ['cvPlaca', 'cvColabBusca', 'cvColabId', 'cvItemBusca'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  document.getElementById('cvPlacaInfo').textContent = '';
-  cvMsg('', true);
-  cvRenderItens();
-}
-
+// ── Conclusão ──
 async function cvConfirmar() {
-  cvSelecionarPlaca();
-  const colabId = document.getElementById('cvColabId').value;
   if (!CV.viatura) { cvMsg('Escolha uma viatura cadastrada.', false); return; }
-  if (!colabId) { cvMsg('Informe quem está retirando o material.', false); return; }
+  if (!CV.colab) { cvMsg('Informe quem está retirando o material.', false); return; }
   if (!CV.itens.length) { cvMsg('Adicione pelo menos um material.', false); return; }
   const invalido = CV.itens.find(i => !(i.quantidade > 0) || i.quantidade > i.disponivel);
   if (invalido) { cvMsg(`Quantidade inválida em "${invalido.descricao}".`, false); return; }
-  const semMotivo = CV.itens.find(i => !i.motivo);
-  if (semMotivo) { cvMsg(`Selecione o motivo de "${semMotivo.descricao}".`, false); return; }
-  const semRecup = CV.itens.find(i => i.motivo === 'Troca recuperação' && !i.tipoRecuperacao);
-  if (semRecup) { cvMsg(`Escolha o tipo de recuperação de "${semRecup.descricao}" (laudar ou manutenção).`, false); return; }
   const semSerial = CV.itens.find(i => i.requerEnsaio && !(i.seriais || []).filter(Boolean).length);
   if (semSerial) { cvMsg(`Informe o serial de "${semSerial.descricao}".`, false); return; }
   const semRetorno = CV.itens.find(i => i.requerEnsaio && /troca/i.test(i.motivo) && !(i.serialRetorno || []).filter(Boolean).length);
   if (semRetorno) { cvMsg(`Informe o serial de retorno de "${semRetorno.descricao}".`, false); return; }
-
   const comAviso = CV.itens.filter(i => i.avisoDurabilidade);
   if (comAviso.length && !confirm(`Atenção:\n\n${comAviso.map(i => `• ${i.descricao}: ${i.avisoDurabilidade}`).join('\n')}\n\nConfirmar a entrega mesmo assim?`)) return;
 
+  const btn = document.getElementById('cvBtnConcluir');
+  btn.disabled = true;
   cvMsg('⏳ Registrando entrega...', true);
   const agora = new Date();
   const hora = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
   const corpo = {
     id: `atd_vtr_${Date.now()}`,
-    destinatarioTipo: 'VIATURA',
-    viaturaId: CV.viatura.id,
-    retiradoPorId: colabId,
-    data: hojeBR(), horaInicio: hora, horaFim: hora, tempoSegundos: 0,
+    destinatarioTipo: 'VIATURA', viaturaId: CV.viatura.id, retiradoPorId: CV.colab.id,
+    data: hojeBR(), horaInicio: hora, horaFim: hora, tempoSegundos: CV.segundos,
     qtdItens: CV.itens.length,
     usuario: GCA.usuario?.nome || GCA.usuario?.username || 'Sistema',
-    itens: CV.itens.map(({ disponivel, ...i }) => i),
+    itens: CV.itens.map(({ disponivel, avisoDurabilidade, ...i }) => i),
   };
   const res = await apiMovimentacao('/atendimentos', corpo);
-  if (!res || res.ok === false || res.erro) { cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
+  if (!res || res.ok === false || res.erro) { btn.disabled = false; cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
 
   const link = res.token ? `${window.location.origin}${window.location.pathname}#/assinar?token=${res.token}` : '';
-  cvLimpar();
+  const placa = CV.viatura.placa;
+  cvCancelarAtendimento();
   carregarFrota();
   cvCarregarSaldos();
-  toast('✅ Entrega registrada! Falta a assinatura de quem retirou.', 'success');
-  if (link) cvMostrarLink(link, CV.placaEntregue || corpo.id);
+  toast(`✅ Entrega registrada para ${placa}! Falta a assinatura de quem retirou.`, 'success');
+  if (link) cvMostrarLink(link);
 }
 
 function cvMostrarLink(link) {
@@ -23249,6 +23496,35 @@ function cvMostrarLink(link) {
       </div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+// ── Consulta de atendimentos de viatura ──
+async function cvCarregarHistorico() {
+  const tbody = document.getElementById('cvHistBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  const de = document.getElementById('cvHistDe')?.value || '';
+  const ate = document.getElementById('cvHistAte')?.value || '';
+  const placa = (document.getElementById('cvHistPlaca')?.value || '').trim().toUpperCase();
+  const qs = new URLSearchParams();
+  if (de) qs.set('de', de);
+  if (ate) qs.set('ate', ate);
+  const data = await api('/atendimentos' + (qs.toString() ? '?' + qs : ''));
+  let lista = (data?.atendimentos || data?.data || []).filter(a => a.destinatario_tipo === 'VIATURA');
+  if (placa) lista = lista.filter(a => (a.placa || '').includes(placa));
+  tbody.innerHTML = lista.length ? lista.map(a => {
+    let qtd = 0, itens = 0;
+    try { const arr = JSON.parse(a.itens_json || '[]'); itens = arr.length; qtd = arr.reduce((t, i) => t + Number(i.quantidade || 0), 0); } catch {}
+    const cancelado = a.status === 'CANCELADO';
+    return `<tr style="${cancelado ? 'opacity:.6' : ''}">
+      <td style="font-size:11px">${formatarDataHora(a.criado_em)}</td>
+      <td class="td-main" style="font-family:var(--font-mono)">${escHtml(a.placa || '—')}</td>
+      <td style="font-size:11px">${escHtml(a.retirado_por_nome || '—')}</td>
+      <td style="text-align:center">${itens}</td>
+      <td style="text-align:center">${qtd}</td>
+      <td style="font-size:11px">${cancelado ? '<span style="color:#fca5a5">✕ Cancelado</span>' : (a.status === 'ASSINADO' ? '<span style="color:#4ade80">✓ Assinado</span>' : 'Pendente')}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhum atendimento de viatura no período</td></tr>';
 }
 
 function abrirBaixaDiretaOS() { toast('Baixa Direta por OS em breve','info'); }
