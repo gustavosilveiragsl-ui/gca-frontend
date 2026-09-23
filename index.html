@@ -737,6 +737,18 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- Viaturas (filiais que entregam material para a placa) -->
+      <div class="nav-group so-viatura" style="display:none">
+        <div class="nav-group-header" onclick="toggleNavGroup(this)">
+          <span class="nav-group-label">Viaturas</span>
+          <span class="nav-group-arrow">›</span>
+        </div>
+        <div class="nav-group-items">
+          <button class="nav-item" data-view="carga-viatura" data-perm="entregar_viatura" onclick="showView('carga-viatura',this)"><span class="ni-icon">🚚</span> Carga de Viatura</button>
+          <button class="nav-item" data-view="consulta-viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon">🚙</span> Consulta de Viaturas</button>
+        </div>
+      </div>
+
       <!-- Gestão -->
       <div class="nav-group">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
@@ -975,6 +987,11 @@ window.addEventListener('pageshow', function(e) {
                 </div>
               </div>
               <div><label class="form-label">Link da Imagem</label><input id="itemImg" class="form-input" placeholder="https://..."></div>
+              <div class="so-viatura" style="display:none"><label class="form-label">Entregue para</label>
+                <select id="itemEntregaPara" class="form-input">
+                  <option value="pessoa">Pessoa (EPI, ficha e desconto)</option>
+                  <option value="viatura">Viatura (carga da placa)</option>
+                </select></div>
               <div style="display:flex;gap:16px;flex-wrap:wrap">
                 <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
                   <input type="checkbox" id="itemRequerEnsaio"> Requer Ensaio (NR10)
@@ -3770,6 +3787,68 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- CARGA DE VIATURA — entrega de material para a placa -->
+      <div class="view" id="view-carga-viatura">
+        <div style="margin-bottom:16px">
+          <div class="page-title">🚚 Carga de Viatura</div>
+          <div class="page-sub">O material fica na placa. Quem retira assina a ficha.</div>
+        </div>
+        <div style="display:grid;grid-template-columns:380px 1fr;gap:20px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Entrega</div><div class="card-sub">Placa, quem retirou e os materiais</div></div></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group" style="margin:0"><label class="form-label">Viatura *</label>
+                <input id="cvPlaca" class="form-input" list="cvPlacasLista" placeholder="Digite a placa..." autocomplete="off" oninput="cvSelecionarPlaca()">
+                <datalist id="cvPlacasLista"></datalist>
+                <div id="cvPlacaInfo" style="font-size:11px;color:var(--text-3);margin-top:3px"></div>
+              </div>
+              <div class="form-group" style="margin:0;position:relative"><label class="form-label">Quem está retirando *</label>
+                <input id="cvColabBusca" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off"
+                  oninput="cvFiltrarColab(this.value)" onblur="setTimeout(()=>document.getElementById('cvColabSug').classList.add('hidden'),200)">
+                <div id="cvColabSug" class="autocomplete-list hidden"></div>
+                <input type="hidden" id="cvColabId">
+              </div>
+              <div class="form-group" style="margin:0;position:relative"><label class="form-label">Material</label>
+                <input id="cvItemBusca" class="form-input" placeholder="Buscar material de viatura..." autocomplete="off"
+                  oninput="cvFiltrarItem(this.value)" onblur="setTimeout(()=>document.getElementById('cvItemSug').classList.add('hidden'),200)">
+                <div id="cvItemSug" class="autocomplete-list hidden"></div>
+              </div>
+              <div id="cvMsg" style="font-size:12px;min-height:16px;color:var(--red)"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="cvConfirmar()">✅ Confirmar entrega</button>
+              <button class="btn btn-ghost" style="justify-content:center" onclick="cvLimpar()">Limpar</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Itens desta entrega <span id="cvCount" style="color:var(--accent-text)">(0)</span></div></div></div>
+            <table>
+              <thead><tr><th>Material</th><th>Armazém</th><th style="text-align:center">Estoque</th><th style="text-align:center">Qtd</th><th></th></tr></thead>
+              <tbody id="cvItensBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONSULTA DE VIATURAS -->
+      <div class="view" id="view-consulta-viaturas">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div class="page-title">🚙 Consulta de Viaturas</div>
+            <div class="page-sub">Placas cadastradas e o material que está em cada uma</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="carregarFrota()">↻ Recarregar</button>
+            <button class="btn btn-primary" onclick="abrirFormFrota()">+ Nova viatura</button>
+          </div>
+        </div>
+        <input class="search-box" id="vtrBusca" placeholder="Buscar por placa, modelo ou base..." oninput="renderFrota()" style="margin-bottom:12px;width:100%">
+        <div class="card">
+          <table>
+            <thead><tr><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Base</th><th style="text-align:center">Carga</th><th>Status</th><th></th></tr></thead>
+            <tbody id="vtrBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
       <div class="view" id="view-enel-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -5532,6 +5611,7 @@ async function carregarFiliais() {
     _filiais = data.data;
     popularSelectsFiliais();
     aplicarNomeConc();
+    aplicarModeloEntrega();
   }
 }
 
@@ -5544,6 +5624,19 @@ function nomeConc() {
 function aplicarNomeConc() {
   const n = nomeConc();
   document.querySelectorAll('.nome-conc').forEach(el => { el.textContent = n; });
+}
+
+// Modelo de entrega da filial: 'pessoa' (padrão) ou 'viatura' (EPI na pessoa, material na placa)
+function modeloEntrega() {
+  const f = (_filiais || []).find(x => x.slug === GCA.unidade);
+  return String(f?.modelo_entrega || 'pessoa').toLowerCase() === 'viatura' ? 'viatura' : 'pessoa';
+}
+function usaViatura() { return modeloEntrega() === 'viatura'; }
+function aplicarModeloEntrega() {
+  const mostrar = usaViatura();
+  document.querySelectorAll('.so-viatura').forEach(el => { el.style.display = mostrar ? '' : 'none'; });
+  // Quem não tem permissão continua sem ver os itens do grupo
+  if (mostrar && typeof aplicarPermissoesMenu === 'function') aplicarPermissoesMenu();
 }
 // Códigos gravados no banco com o nome antigo, só para mostrar em tela/planilha
 function txtConc(s) {
@@ -5699,6 +5792,7 @@ const VIEW_TITLES = {
   'enel-baixa-auto':['Materiais Cliente','/ Baixa Automática'],
   'enel-baixas':['Materiais Cliente','/ Baixas por TdC'],
   'enel-controle':['Materiais Cliente','/ Controle De Materiais'],
+  'carga-viatura':['Viaturas','/ Carga de Viatura'], 'consulta-viaturas':['Viaturas','/ Consulta'],
   'enel-estoque':['Materiais Cliente','/ Consulta Estoque'],
   'enel-inventario':['Materiais Cliente','/ Inventário ENEL'],
   'enel-consulta-saidas':['Materiais Cliente','/ Consulta Saídas'],
@@ -5772,6 +5866,7 @@ function showView(nome, btnEl) {
   // Atualiza a URL sem recarregar a página
   // URL limpa — sem hash
   aplicarNomeConc();
+  aplicarModeloEntrega();
   onViewLoad(nome);
 }
 
@@ -5814,6 +5909,8 @@ function onViewLoad(nome) {
   if (nome === 'enel-sucata')         { initSucata(); }
   if (nome === 'enel-baixa-auto')    { initBaixaAuto(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
+  if (nome === 'consulta-viaturas')  carregarFrota();
+  if (nome === 'carga-viatura')      cvIniciar();
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=hojeBR(); }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
@@ -13929,6 +14026,9 @@ const PERMISSOES_SCHEMA = {
     ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais',
     limpar_descartes:'Excluir seriais de descarte'
   }},
+  viaturas: { label:'Viaturas', icon:'🚙', itens:{
+    cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
+  } },
   enel: { label:'Concessionária', icon:'⚡', itens:{
     ver_enel:'Ver módulo Concessionária', marcar_instalado:'Marcar como instalado',
     desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento Concessionária'
@@ -14513,6 +14613,7 @@ async function salvarItem() {
     img:             document.getElementById('itemImg').value.trim(),
     requer_ensaio:   document.getElementById('itemRequerEnsaio').checked,
     possui_serie:    document.getElementById('itemPossuiSerie').checked,
+    entrega_para:    usaViatura() ? document.getElementById('itemEntregaPara').value : 'pessoa',
   };
   if (!body.descricao || !body.codigo) { toast('Descrição e código obrigatórios', 'warn'); return; }
   const res = await api(id ? `/itens/${id}` : '/itens', {
@@ -14543,6 +14644,7 @@ function editarItem(id) {
   document.getElementById('itemImg').value          = item.img||'';
   document.getElementById('itemRequerEnsaio').checked = !!(item.requer_ensaio);
   document.getElementById('itemPossuiSerie').checked  = !!(item.possui_serie);
+  document.getElementById('itemEntregaPara').value    = String(item.entrega_para || 'pessoa').toLowerCase() === 'viatura' ? 'viatura' : 'pessoa';
   document.getElementById('itemFormTitulo').textContent = 'Editar Item';
   document.getElementById('itemFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
 }
@@ -14563,6 +14665,7 @@ function limparFormItem() {
   document.getElementById('itemEstMin').value = '1';
   document.getElementById('itemRequerEnsaio').checked = false;
   document.getElementById('itemPossuiSerie').checked  = false;
+  document.getElementById('itemEntregaPara').value    = 'pessoa';
   document.getElementById('itemFormTitulo').textContent = 'Novo Item';
 }
 
@@ -21531,6 +21634,12 @@ async function editarFilial(id) {
           <select id="efStatus" class="form-input"><option value="ativa" ${f.status === 'ativa' ? 'selected' : ''}>Ativa</option><option value="inativa" ${f.status !== 'ativa' ? 'selected' : ''}>Inativa</option></select></div>
         <div style="grid-column:1/-1">${campo('efConc', 'Nome da concessionária', f.nome_concessionaria, 'placeholder="Ex.: ENEL, Equatorial, Light" maxlength="60"')}
           <div style="font-size:10px;color:var(--text-3);margin-top:3px">Aparece no lugar de "Concessionária" nas telas de materiais do cliente desta filial (estoque, atendimento, inventário, fichas).</div></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Modelo de entrega de material</label>
+          <select id="efModelo" class="form-input">
+            <option value="pessoa" ${f.modelo_entrega !== 'viatura' ? 'selected' : ''}>Tudo entregue à pessoa (padrão)</option>
+            <option value="viatura" ${f.modelo_entrega === 'viatura' ? 'selected' : ''}>EPI na pessoa e material na viatura</option>
+          </select>
+          <div style="font-size:10px;color:var(--text-3);margin-top:3px">Com "material na viatura", o item marcado como carga de viatura é entregue à placa, e não ao colaborador.</div></div>
         <div style="grid-column:1/-1" class="tfl-secao">Dados fiscais</div>
         <div style="grid-column:1/-1">${campo('efRazao', 'Razão social', f.razao_social)}</div>
         ${campo('efCnpj', 'CNPJ', f.cnpj)}
@@ -21561,6 +21670,7 @@ async function salvarEdicaoFilial(id) {
     endereco: v('efEndereco'), numero: v('efNumero'), complemento: v('efCompl'),
     bairro: v('efBairro'), cidade: v('efCidade'), uf: v('efUf'), cep: v('efCep'), telefone: v('efTelefone'),
     nome_concessionaria: v('efConc'),
+    modelo_entrega: v('efModelo'),
   };
   const res = await api(`/filiais/${id}`, { method: 'PUT', body: JSON.stringify(corpo) });
   if (res?.ok) {
@@ -22673,6 +22783,418 @@ async function confirmarDevolucaoEquipe(equipe, materialId, saldo) {
     toast(`✅ ${quantidade} devolvido(s) ao estoque. A equipe ficou com ${res.saldo_equipe}.`, 'success');
     await carregarControleMateriaisEquipe();
   } else erro.textContent = res?.erro || 'Erro na devolução';
+}
+
+// ═══════════════════════════════════════════
+// VIATURAS — cadastro, carga e entrega de material para a placa
+// (só nas filiais com o modelo de entrega por viatura)
+// ═══════════════════════════════════════════
+let _frota = [];
+
+async function carregarFrota() {
+  const tbody = document.getElementById('vtrBody');
+  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  const res = await api('/viaturas');
+  _frota = res?.data || [];
+  renderFrota();
+}
+
+function renderFrota() {
+  const tbody = document.getElementById('vtrBody');
+  if (!tbody) return;
+  const q = (document.getElementById('vtrBusca')?.value || '').toLowerCase();
+  const lista = q ? _frota.filter(v => [v.placa, v.modelo, v.base, v.tipo].some(x => (x || '').toLowerCase().includes(q))) : _frota;
+  if (!lista.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma viatura cadastrada</td></tr>';
+    return;
+  }
+  tbody.innerHTML = lista.map(v => `<tr>
+    <td class="td-main" style="font-family:var(--font-mono);font-weight:700">${escHtml(v.placa)}</td>
+    <td>${escHtml(v.modelo || '—')}</td>
+    <td style="font-size:11px">${escHtml(v.tipo || '—')}</td>
+    <td style="font-size:11px">${escHtml(v.base || '—')}</td>
+    <td style="text-align:center;font-size:12px">${v.carga?.itens ? `${v.carga.itens} tipo(s) · ${v.carga.total}` : '<span style="color:var(--text-3)">vazia</span>'}</td>
+    <td>${v.status === 'ativa' ? '<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativa</span>' : '<span style="color:var(--text-3);font-size:11px">Inativa</span>'}</td>
+    <td style="display:flex;gap:4px;justify-content:flex-end">
+      <button class="row-action" onclick="abrirCargaViatura('${escJs(v.id)}')">📦 Carga</button>
+      <button class="row-action" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>
+      <button class="row-action" style="color:var(--red)" onclick="excluirFrota('${escJs(v.id)}','${escJs(v.placa)}')">✕</button>
+    </td>
+  </tr>`).join('');
+}
+
+function abrirFormFrota(id) {
+  const v = _frota.find(x => x.id === id) || {};
+  document.getElementById('modalViatura')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalViatura';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <div class="modal-title">🚙 ${v.id ? 'Editar viatura' : 'Nova viatura'}</div>
+        <button class="modal-close" onclick="document.getElementById('modalViatura').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group" style="margin:0"><label class="form-label">Placa *</label>
+          <input id="vtrPlaca" class="form-input" value="${escHtml(v.placa || '')}" placeholder="ABC1D23" style="text-transform:uppercase;font-family:var(--font-mono)"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Modelo</label>
+          <input id="vtrModelo" class="form-input" value="${escHtml(v.modelo || '')}" placeholder="Ex.: Fiat Strada"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Tipo</label>
+          <input id="vtrTipo" class="form-input" value="${escHtml(v.tipo || '')}" placeholder="Ex.: Cesto, Utilitário, Moto"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Base</label>
+          <input id="vtrBase" class="form-input" value="${escHtml(v.base || '')}" placeholder="Ex.: Salvador"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Status</label>
+          <select id="vtrStatus" class="form-input">
+            <option value="ativa" ${v.status !== 'inativa' ? 'selected' : ''}>Ativa</option>
+            <option value="inativa" ${v.status === 'inativa' ? 'selected' : ''}>Inativa</option>
+          </select></div>
+        <div id="vtrErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalViatura').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarFrota('${escJs(v.id || '')}')">Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('vtrPlaca')?.focus(), 50);
+}
+
+async function salvarFrota(id) {
+  const erro = document.getElementById('vtrErro');
+  const corpo = {
+    placa:  document.getElementById('vtrPlaca').value.trim().toUpperCase(),
+    modelo: document.getElementById('vtrModelo').value.trim(),
+    tipo:   document.getElementById('vtrTipo').value.trim(),
+    base:   document.getElementById('vtrBase').value.trim(),
+    status: document.getElementById('vtrStatus').value,
+  };
+  if (!corpo.placa) { erro.textContent = 'Informe a placa.'; return; }
+  const res = id
+    ? await api(`/viaturas/${id}`, { method: 'PUT', body: JSON.stringify(corpo) })
+    : await api('/viaturas', { method: 'POST', body: JSON.stringify(corpo) });
+  if (res?.ok) {
+    document.getElementById('modalViatura')?.remove();
+    toast('Viatura salva!', 'success');
+    carregarFrota();
+  } else erro.textContent = res?.erro || 'Erro ao salvar';
+}
+
+async function excluirFrota(id, placa) {
+  if (!confirm(`Excluir a viatura ${placa}?`)) return;
+  const res = await api(`/viaturas/${id}`, { method: 'DELETE' });
+  if (res?.ok) { toast('Viatura excluída', 'success'); carregarFrota(); }
+  else toast(res?.erro || 'Erro ao excluir', 'error');
+}
+
+// ── Carga da viatura: o que está nela e o histórico de entregas ──
+async function abrirCargaViatura(id) {
+  const res = await api(`/viaturas/${id}/carga`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar', 'error'); return; }
+  const v = res.viatura;
+  const itens = res.itens || [];
+  const hist = (res.historico || []).slice(0, 15);
+  const linhasHist = hist.map(h => {
+    let qtd = 0;
+    try { qtd = (JSON.parse(h.itens_json || '[]')).reduce((t, i) => t + Number(i.quantidade || 0), 0); } catch {}
+    const cancelado = h.status === 'CANCELADO';
+    return `<tr style="${cancelado ? 'opacity:.55' : ''}">
+      <td style="font-size:11px">${formatarDataHora(h.criado_em) }</td>
+      <td style="font-size:11px">${escHtml(h.retirado_por_nome || '—')}</td>
+      <td style="text-align:center;font-size:12px">${qtd}</td>
+      <td style="font-size:11px">${cancelado ? '<span style="color:#fca5a5">Cancelado</span>' : (h.status === 'ASSINADO' ? '<span style="color:#22c55e">Assinado</span>' : 'Pendente')}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('modalCargaVtr')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCargaVtr';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:720px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">📦 Carga da viatura ${escHtml(v.placa)}</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml([v.modelo, v.tipo, v.base].filter(Boolean).join(' · ') || 'Sem dados adicionais')}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCargaVtr').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Material na viatura</div>
+        <table style="width:100%;border-collapse:collapse;margin-bottom:18px">
+          <thead><tr style="background:var(--bg)">
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Material</th>
+            <th style="padding:6px;text-align:center;font-size:10px;color:var(--text-3)">Quantidade</th>
+            <th style="padding:6px"></th>
+          </tr></thead>
+          <tbody>${itens.length ? itens.map(i => `<tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 10px;font-size:12px;font-weight:600">${escHtml(i.item_descricao || i.item_id)}</td>
+            <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:#22c55e">${i.saldo}</td>
+            <td style="padding:8px;text-align:right">
+              <button class="row-action" style="color:#f59e0b" onclick="abrirDevolverViatura('${escJs(v.id)}','${escJs(i.item_id)}','${escJs(i.item_descricao || '')}',${Number(i.saldo)})">↩️ Devolver</button>
+            </td></tr>`).join('') : '<tr><td colspan="3" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Viatura sem material</td></tr>'}</tbody>
+        </table>
+        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Últimas entregas</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:var(--bg)">
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Data</th>
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Retirado por</th>
+            <th style="padding:6px;text-align:center;font-size:10px;color:var(--text-3)">Itens</th>
+            <th style="padding:6px 10px;text-align:left;font-size:10px;color:var(--text-3)">Situação</th>
+          </tr></thead>
+          <tbody>${linhasHist || '<tr><td colspan="4" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma entrega registrada</td></tr>'}</tbody>
+        </table>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function abrirDevolverViatura(viaturaId, itemId, descricao, saldo) {
+  const armazens = (_armazens || []).filter(a => a.id);
+  document.getElementById('modalDevVtr')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalDevVtr';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:440px">
+      <div class="modal-header">
+        <div><div class="modal-title">↩️ Devolver ao estoque</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(descricao)} · na viatura: ${saldo}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalDevVtr').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="form-group" style="margin:0"><label class="form-label">Quantidade *</label>
+          <input id="devVtrQtd" class="form-input" type="number" min="0" step="any" max="${saldo}" placeholder="Máx. ${saldo}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Armazém que recebe *</label>
+          <select id="devVtrArm" class="form-input">${armazens.map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('')}</select></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Motivo *</label>
+          <textarea id="devVtrMotivo" class="form-input" rows="3" placeholder="Ex.: sobra de obra, item trocado, viatura saindo de operação"></textarea></div>
+        <div id="devVtrErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalDevVtr').remove()">Cancelar</button>
+        <button class="btn btn-primary" id="devVtrBtn" onclick="confirmarDevolverViatura('${escJs(viaturaId)}','${escJs(itemId)}',${Number(saldo)})">↩️ Confirmar devolução</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('devVtrQtd')?.focus(), 50);
+}
+
+async function confirmarDevolverViatura(viaturaId, itemId, saldo) {
+  const erro = document.getElementById('devVtrErro');
+  const quantidade = Number(document.getElementById('devVtrQtd')?.value || 0);
+  const motivo = (document.getElementById('devVtrMotivo')?.value || '').trim();
+  const armazem_id = document.getElementById('devVtrArm')?.value;
+  if (!(quantidade > 0)) { erro.textContent = 'Informe a quantidade.'; return; }
+  if (quantidade > saldo) { erro.textContent = `A viatura só tem ${saldo}.`; return; }
+  if (motivo.length < 5) { erro.textContent = 'Informe o motivo (mínimo 5 letras).'; return; }
+  if (!armazem_id) { erro.textContent = 'Escolha o armazém.'; return; }
+  const btn = document.getElementById('devVtrBtn');
+  btn.disabled = true; erro.textContent = '';
+  const res = await apiMovimentacao(`/viaturas/${viaturaId}/devolver`, { item_id: itemId, quantidade, motivo, armazem_id });
+  btn.disabled = false;
+  if (res?.ok) {
+    document.getElementById('modalDevVtr')?.remove();
+    document.getElementById('modalCargaVtr')?.remove();
+    toast(`✅ ${quantidade} devolvido(s) ao estoque.`, 'success');
+    carregarFrota();
+  } else erro.textContent = res?.erro || 'Erro na devolução';
+}
+
+// ═══════════════════════════════════════════
+// CARGA DE VIATURA — entrega
+// ═══════════════════════════════════════════
+const CV = { itens: [], viatura: null };
+
+async function cvIniciar() {
+  CV.itens = []; CV.viatura = null;
+  await Promise.all([
+    carregarFrota(),
+    (!_itens.length ? carregarItensAtendimento() : Promise.resolve()),
+    (!_colaboradores.length ? carregarColaboradoresAtendimento() : Promise.resolve()),
+    cvCarregarSaldos(),
+  ]);
+  const dl = document.getElementById('cvPlacasLista');
+  if (dl) dl.innerHTML = _frota.filter(v => v.status !== 'inativa').map(v => `<option value="${escHtml(v.placa)}">${escHtml([v.modelo, v.base].filter(Boolean).join(' · '))}</option>`).join('');
+  cvRenderItens();
+}
+
+let _cvSaldos = [];
+async function cvCarregarSaldos() {
+  const data = await api('/saldos');
+  _cvSaldos = (data?.data || []).filter(s => Number(s.saldo) > 0);
+}
+
+function cvSelecionarPlaca() {
+  const texto = (document.getElementById('cvPlaca').value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  CV.viatura = _frota.find(v => v.placa === texto) || null;
+  const info = document.getElementById('cvPlacaInfo');
+  if (info) {
+    info.textContent = CV.viatura
+      ? [CV.viatura.modelo, CV.viatura.tipo, CV.viatura.base].filter(Boolean).join(' · ') || 'Viatura encontrada'
+      : (texto ? 'Placa não cadastrada nesta filial' : '');
+    info.style.color = CV.viatura ? 'var(--text-3)' : (texto ? 'var(--red)' : 'var(--text-3)');
+  }
+}
+
+function cvFiltrarColab(q) {
+  const sug = document.getElementById('cvColabSug');
+  document.getElementById('cvColabId').value = '';
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  const busca = q.toLowerCase();
+  const lista = (_colaboradores || []).filter(c => (c.status || 'ativo') === 'ativo' &&
+    ((c.nome || '').toLowerCase().includes(busca) || String(c.matricula || '').includes(busca))).slice(0, 10);
+  if (!lista.length) {
+    sug.innerHTML = '<div class="ac-item" style="color:var(--text-3)">Nenhum colaborador encontrado</div>';
+    sug.classList.remove('hidden');
+    return;
+  }
+  sug.innerHTML = lista.map(c => `<div class="ac-item"
+    onmousedown="document.getElementById('cvColabBusca').value='${escJs(c.nome)}';document.getElementById('cvColabId').value='${escJs(c.id)}';document.getElementById('cvColabSug').classList.add('hidden')">
+    <div class="ac-item-nome">${escHtml(c.nome)}</div>
+    <div class="ac-item-sub">${escHtml(c.matricula || '')} ${escHtml(c.funcao || '')}</div>
+  </div>`).join('');
+  sug.classList.remove('hidden');
+}
+
+function cvFiltrarItem(q) {
+  const sug = document.getElementById('cvItemSug');
+  if (!q || q.length < 2) { sug.classList.add('hidden'); return; }
+  const busca = q.toLowerCase();
+  const deViatura = (_itens || []).filter(i => String(i.entrega_para || '').toLowerCase() === 'viatura');
+  const linhas = [];
+  deViatura.forEach(i => {
+    if (!((i.descricao || '').toLowerCase().includes(busca) || (i.codigo || '').toLowerCase().includes(busca))) return;
+    _cvSaldos.filter(s => s.item_id === i.id).forEach(s => linhas.push({ item: i, saldo: s }));
+  });
+  if (!linhas.length) {
+    sug.innerHTML = `<div class="ac-item" style="color:var(--text-3)">Nenhum material de viatura com saldo para "${escHtml(q)}"</div>`;
+    sug.classList.remove('hidden');
+    return;
+  }
+  sug.innerHTML = linhas.slice(0, 12).map((l, idx) => `<div class="ac-item" onmousedown="cvAddItem(${idx})">
+    <div class="ac-item-nome">${escHtml(l.item.descricao)}</div>
+    <div class="ac-item-sub">${escHtml(l.saldo.nome_armazem || '')} · saldo ${l.saldo.saldo}</div>
+  </div>`).join('');
+  sug.classList.remove('hidden');
+  CV.sugestoes = linhas.slice(0, 12);
+}
+
+function cvAddItem(idx) {
+  const l = (CV.sugestoes || [])[idx];
+  if (!l) return;
+  document.getElementById('cvItemSug').classList.add('hidden');
+  document.getElementById('cvItemBusca').value = '';
+  if (CV.itens.some(x => x.itemId === l.item.id && x.armazemId === l.saldo.armazem_id)) {
+    cvMsg('Esse material já está na lista.', false);
+    return;
+  }
+  CV.itens.push({
+    itemId: l.item.id, descricao: l.item.descricao, codigo: l.item.codigo || '',
+    armazemId: l.saldo.armazem_id, nomeArmazem: l.saldo.nome_armazem || '',
+    disponivel: Number(l.saldo.saldo), quantidade: 1, motivo: 'Carga de viatura',
+  });
+  cvRenderItens();
+}
+
+function cvRemoverItem(i) { CV.itens.splice(i, 1); cvRenderItens(); }
+
+function cvQtd(i, valor) {
+  const item = CV.itens[i];
+  if (!item) return;
+  item.quantidade = Number(valor) || 0;
+  document.getElementById('cvAviso' + i).textContent = item.quantidade > item.disponivel ? 'acima do estoque' : '';
+}
+
+function cvRenderItens() {
+  const tbody = document.getElementById('cvItensBody');
+  const cnt = document.getElementById('cvCount');
+  if (cnt) cnt.textContent = `(${CV.itens.length})`;
+  if (!tbody) return;
+  if (!CV.itens.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr>';
+    return;
+  }
+  tbody.innerHTML = CV.itens.map((it, i) => `<tr>
+    <td class="td-main">${escHtml(it.descricao)}</td>
+    <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nomeArmazem)}</td>
+    <td style="text-align:center;font-size:12px">${it.disponivel}</td>
+    <td style="text-align:center">
+      <input class="form-input" type="number" min="0" step="any" value="${it.quantidade}" style="width:90px;text-align:center"
+        oninput="cvQtd(${i}, this.value)">
+      <div id="cvAviso${i}" style="font-size:10px;color:var(--red)"></div>
+    </td>
+    <td style="text-align:right"><button class="row-action" style="color:var(--red)" onclick="cvRemoverItem(${i})">✕</button></td>
+  </tr>`).join('');
+}
+
+function cvMsg(txt, ok) {
+  const el = document.getElementById('cvMsg');
+  if (!el) return;
+  el.style.color = ok ? '#22c55e' : 'var(--red)';
+  el.textContent = txt || '';
+}
+
+function cvLimpar() {
+  CV.itens = []; CV.viatura = null;
+  ['cvPlaca', 'cvColabBusca', 'cvColabId', 'cvItemBusca'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('cvPlacaInfo').textContent = '';
+  cvMsg('', true);
+  cvRenderItens();
+}
+
+async function cvConfirmar() {
+  cvSelecionarPlaca();
+  const colabId = document.getElementById('cvColabId').value;
+  if (!CV.viatura) { cvMsg('Escolha uma viatura cadastrada.', false); return; }
+  if (!colabId) { cvMsg('Informe quem está retirando o material.', false); return; }
+  if (!CV.itens.length) { cvMsg('Adicione pelo menos um material.', false); return; }
+  const invalido = CV.itens.find(i => !(i.quantidade > 0) || i.quantidade > i.disponivel);
+  if (invalido) { cvMsg(`Quantidade inválida em "${invalido.descricao}".`, false); return; }
+
+  cvMsg('⏳ Registrando entrega...', true);
+  const agora = new Date();
+  const hora = agora.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour12: false });
+  const corpo = {
+    id: `atd_vtr_${Date.now()}`,
+    destinatarioTipo: 'VIATURA',
+    viaturaId: CV.viatura.id,
+    retiradoPorId: colabId,
+    data: hojeBR(), horaInicio: hora, horaFim: hora, tempoSegundos: 0,
+    qtdItens: CV.itens.length,
+    usuario: GCA.usuario?.nome || GCA.usuario?.username || 'Sistema',
+    itens: CV.itens.map(({ disponivel, ...i }) => i),
+  };
+  const res = await apiMovimentacao('/atendimentos', corpo);
+  if (!res || res.ok === false || res.erro) { cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
+
+  const link = res.token ? `${window.location.origin}${window.location.pathname}#/assinar?token=${res.token}` : '';
+  cvLimpar();
+  carregarFrota();
+  cvCarregarSaldos();
+  toast('✅ Entrega registrada! Falta a assinatura de quem retirou.', 'success');
+  if (link) cvMostrarLink(link, CV.placaEntregue || corpo.id);
+}
+
+function cvMostrarLink(link) {
+  document.getElementById('modalCvLink')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCvLink';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-header">
+        <div><div class="modal-title">✍️ Assinatura da entrega</div>
+        <div style="font-size:11px;color:var(--text-3)">Quem retirou assina por este link (também aparece em Assinaturas)</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCvLink').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+        <input class="form-input" id="cvLinkTxt" value="${escHtml(link)}" readonly style="font-size:11px">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="navigator.clipboard.writeText(document.getElementById('cvLinkTxt').value);toast('Link copiado','success')">📋 Copiar link</button>
+          <button class="btn btn-ghost" onclick="window.open(document.getElementById('cvLinkTxt').value,'_blank')">Abrir</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 function abrirBaixaDiretaOS() { toast('Baixa Direta por OS em breve','info'); }
