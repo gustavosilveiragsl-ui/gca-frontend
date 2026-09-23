@@ -3811,8 +3811,8 @@ window.addEventListener('pageshow', function(e) {
           <div class="card">
             <div class="card-header"><div><div class="card-title">Itens desta entrega <span id="cvCount" style="color:var(--accent-text)">(0)</span></div></div></div>
             <table>
-              <thead><tr><th>Material</th><th>Armazém</th><th style="text-align:center">Estoque</th><th style="text-align:center">Qtd</th><th></th></tr></thead>
-              <tbody id="cvItensBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr></tbody>
+              <thead><tr><th>Material</th><th>Armazém</th><th style="text-align:center">Estoque</th><th style="text-align:center">Qtd</th><th>Motivo</th><th></th></tr></thead>
+              <tbody id="cvItensBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -23077,15 +23077,38 @@ function cvAddItem(idx) {
     cvMsg('Esse material já está na lista.', false);
     return;
   }
+  const requerEnsaio = !!(l.item.requer_ensaio || l.item.possui_serie);
   CV.itens.push({
     itemId: l.item.id, descricao: l.item.descricao, codigo: l.item.codigo || '',
     armazemId: l.saldo.armazem_id, nomeArmazem: l.saldo.nome_armazem || '',
-    disponivel: Number(l.saldo.saldo), quantidade: 1, motivo: 'Carga de viatura',
+    un_med: l.item.un_med || 'UN',
+    disponivel: Number(l.saldo.saldo), quantidade: 1, motivo: '',
+    requerEnsaio, seriais: requerEnsaio ? [''] : [], serialRetorno: [],
+    tipoRecuperacao: '',
   });
   cvRenderItens();
 }
 
 function cvRemoverItem(i) { CV.itens.splice(i, 1); cvRenderItens(); }
+
+// Motivo do item: define serial de retorno, resíduo e fila de recuperação (igual à pessoa)
+async function cvMotivo(i, valor) {
+  const it = CV.itens[i];
+  if (!it) return;
+  it.motivo = valor;
+  if (!/troca/i.test(valor)) { it.serialRetorno = []; it.tipoRecuperacao = ''; }
+  cvRenderItens();
+
+  // Prazo de durabilidade: mesma regra da pessoa, olhando a última entrega para esta placa
+  const aviso = document.getElementById('cvDur' + i);
+  if (!aviso || !CV.viatura || !valor || /entrega inicial/i.test(valor)) return;
+  const res = await api('/validacoes/durabilidade-viatura', { method: 'POST',
+    body: JSON.stringify({ viatura_id: CV.viatura.id, item_id: it.itemId }) });
+  it.avisoDurabilidade = (res && res.ok && !res.dentro && res.ultimaEntrega)
+    ? `Prazo de durabilidade não atingido (${res.diasDecorridos} de ${res.prazoMinDias} dias)` : '';
+  const el = document.getElementById('cvDur' + i);
+  if (el) el.textContent = it.avisoDurabilidade ? '⚠️ ' + it.avisoDurabilidade : '';
+}
 
 function cvQtd(i, valor) {
   const item = CV.itens[i];
@@ -23103,17 +23126,47 @@ function cvRenderItens() {
     tbody.innerHTML = '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Escolha a placa e adicione os materiais</td></tr>';
     return;
   }
-  tbody.innerHTML = CV.itens.map((it, i) => `<tr>
-    <td class="td-main">${escHtml(it.descricao)}</td>
+  const MOTIVOS = ['Entrega inicial', 'Troca desgaste', 'Troca recuperação', 'Troca por dano', 'Perda', 'Roubo'];
+  tbody.innerHTML = CV.itens.map((it, i) => {
+    const ehTroca = /troca/i.test(it.motivo || '');
+    // Serial: mesma regra do atendimento da pessoa — na troca, bipa o que sai e o que volta
+    const blocoSerial = it.requerEnsaio ? `
+      <div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial novo (entrega)</div>
+      ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px"
+        placeholder="Serial ${si + 1}" value="${escHtml(sv || '')}"
+        oninput="CV.itens[${i}].seriais[${si}]=this.value.toUpperCase()">`).join('')}
+      ${ehTroca ? `<div style="font-size:10px;color:var(--text-3);margin-top:8px;text-transform:uppercase;letter-spacing:.5px">Serial de retorno (devolução)</div>
+      ${(it.seriais || []).map((sv, si) => `<input class="form-input" style="width:170px;font-size:11px;font-family:var(--font-mono);margin-top:4px;border-color:var(--yellow)"
+        placeholder="Retorno ${si + 1}" value="${escHtml((it.serialRetorno || [])[si] || '')}"
+        oninput="if(!CV.itens[${i}].serialRetorno)CV.itens[${i}].serialRetorno=[];CV.itens[${i}].serialRetorno[${si}]=this.value.toUpperCase()">`).join('')}` : ''}` : '';
+
+    return `<tr>
+    <td class="td-main">${escHtml(it.descricao)}
+      ${it.requerEnsaio ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}
+      ${blocoSerial}
+    </td>
     <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nomeArmazem)}</td>
     <td style="text-align:center;font-size:12px">${it.disponivel}</td>
     <td style="text-align:center">
-      <input class="form-input" type="number" min="0" step="any" value="${it.quantidade}" style="width:90px;text-align:center"
+      <input class="form-input" type="number" min="0" step="any" value="${it.quantidade}" style="width:80px;text-align:center"
         oninput="cvQtd(${i}, this.value)">
       <div id="cvAviso${i}" style="font-size:10px;color:var(--red)"></div>
     </td>
+    <td>
+      <select class="form-input" style="width:150px;font-size:11px" onchange="cvMotivo(${i}, this.value)">
+        <option value="">Selecione o motivo</option>
+        ${MOTIVOS.map(m => `<option value="${m}" ${it.motivo === m ? 'selected' : ''}>${m}</option>`).join('')}
+      </select>
+      ${it.motivo === 'Troca recuperação' ? `<select class="form-input" style="width:150px;font-size:11px;margin-top:4px" onchange="CV.itens[${i}].tipoRecuperacao=this.value">
+        <option value="">Tipo</option>
+        <option value="Laudar" ${it.tipoRecuperacao === 'Laudar' ? 'selected' : ''}>Laudar</option>
+        <option value="Manutenção" ${it.tipoRecuperacao === 'Manutenção' ? 'selected' : ''}>Manutenção</option>
+      </select>` : ''}
+      <div id="cvDur${i}" style="font-size:10px;color:var(--yellow);margin-top:2px"></div>
+    </td>
     <td style="text-align:right"><button class="row-action" style="color:var(--red)" onclick="cvRemoverItem(${i})">✕</button></td>
-  </tr>`).join('');
+  </tr>`;
+  }).join('');
 }
 
 function cvMsg(txt, ok) {
@@ -23139,6 +23192,17 @@ async function cvConfirmar() {
   if (!CV.itens.length) { cvMsg('Adicione pelo menos um material.', false); return; }
   const invalido = CV.itens.find(i => !(i.quantidade > 0) || i.quantidade > i.disponivel);
   if (invalido) { cvMsg(`Quantidade inválida em "${invalido.descricao}".`, false); return; }
+  const semMotivo = CV.itens.find(i => !i.motivo);
+  if (semMotivo) { cvMsg(`Selecione o motivo de "${semMotivo.descricao}".`, false); return; }
+  const semRecup = CV.itens.find(i => i.motivo === 'Troca recuperação' && !i.tipoRecuperacao);
+  if (semRecup) { cvMsg(`Escolha o tipo de recuperação de "${semRecup.descricao}" (laudar ou manutenção).`, false); return; }
+  const semSerial = CV.itens.find(i => i.requerEnsaio && !(i.seriais || []).filter(Boolean).length);
+  if (semSerial) { cvMsg(`Informe o serial de "${semSerial.descricao}".`, false); return; }
+  const semRetorno = CV.itens.find(i => i.requerEnsaio && /troca/i.test(i.motivo) && !(i.serialRetorno || []).filter(Boolean).length);
+  if (semRetorno) { cvMsg(`Informe o serial de retorno de "${semRetorno.descricao}".`, false); return; }
+
+  const comAviso = CV.itens.filter(i => i.avisoDurabilidade);
+  if (comAviso.length && !confirm(`Atenção:\n\n${comAviso.map(i => `• ${i.descricao}: ${i.avisoDurabilidade}`).join('\n')}\n\nConfirmar a entrega mesmo assim?`)) return;
 
   cvMsg('⏳ Registrando entrega...', true);
   const agora = new Date();
