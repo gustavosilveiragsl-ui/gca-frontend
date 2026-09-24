@@ -306,8 +306,43 @@ input,select,textarea{font-family:var(--font-main);}
         </div>
       </div>
 
+      <!-- Para quem (só nas filiais com carga de viatura) -->
+      <div class="card hidden" id="cardDestino">
+        <div class="card-header"><div class="card-title">🎯 Para quem é o material?</div></div>
+        <div class="card-body">
+          <div class="prio-btns">
+            <button class="prio-btn normal" id="btnDestColab" onclick="setDestino('COLABORADOR')">👤 Colaborador</button>
+            <button class="prio-btn" id="btnDestVtr" onclick="setDestino('VIATURA')">🚚 Viatura</button>
+          </div>
+          <div style="font-size:10px;color:var(--text-3);margin-top:6px" id="destinoDica">EPI e material pessoal são pedidos no nome do colaborador.</div>
+        </div>
+      </div>
+
+      <!-- Viatura -->
+      <div class="card hidden" id="cardViatura">
+        <div class="card-header"><div class="card-title">🚚 Viatura que Receberá</div></div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label">Placa *</label>
+            <input class="form-input" id="vtrBusca" placeholder="Buscar placa..." autocomplete="off"
+              oninput="filtrarVtr()" onblur="setTimeout(()=>document.getElementById('vtrLista').classList.add('hidden'),200)" style="text-transform:uppercase">
+            <input type="hidden" id="vtrId">
+          </div>
+          <div class="sel-card" id="cVtr" style="justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="sel-avatar">🚚</div>
+              <div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-1);font-family:var(--font-mono)" id="vtrPlacaD"></div>
+                <div style="font-size:10px;color:var(--text-3)" id="vtrMetaD"></div>
+              </div>
+            </div>
+            <button onclick="limparVtr()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;padding:4px 8px;cursor:pointer;flex-shrink:0" title="Trocar viatura">✕ Limpar</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Colaborador -->
-      <div class="card">
+      <div class="card" id="cardColab">
         <div class="card-header"><div class="card-title">🪪 Colaborador que Receberá</div></div>
         <div class="card-body">
           <div class="form-group">
@@ -377,10 +412,10 @@ input,select,textarea{font-family:var(--font-main);}
           </div>
         </div>
         <div class="card-body">
-          <div id="imgDrop" class="img-drop" onclick="if(!document.getElementById('colId').value){toast('Selecione o colaborador primeiro.','warn');return;}document.getElementById('imgInput').click()"
+          <div id="imgDrop" class="img-drop" onclick="if(!destinoEscolhido()){toast(_destino==='VIATURA'?'Selecione a viatura primeiro.':'Selecione o colaborador primeiro.','warn');return;}document.getElementById('imgInput').click()"
             ondragover="event.preventDefault();this.classList.add('over')"
             ondragleave="this.classList.remove('over')"
-            ondrop="event.preventDefault();this.classList.remove('over');if(!document.getElementById('colId').value){toast('Selecione o colaborador primeiro.','warn');return;}processarImgs(event.dataTransfer.files)">
+            ondrop="event.preventDefault();this.classList.remove('over');if(!destinoEscolhido()){toast(_destino==='VIATURA'?'Selecione a viatura primeiro.':'Selecione o colaborador primeiro.','warn');return;}processarImgs(event.dataTransfer.files)">
             <div style="font-size:24px;margin-bottom:6px">📸</div>
             <div style="font-size:12px;color:var(--text-2)">Clique ou arraste para adicionar</div>
             <div style="font-size:10px;color:var(--text-3);margin-top:3px" id="imgUrgLabel"></div>
@@ -575,6 +610,78 @@ const MOTIVO_MAP = {
 
 let _usr = null, _solToken = null, _arm = [], _dados = null;
 let _prio = 'Normal', _itens = [], _imgs = [];
+
+// ══════════════════════════════════════════
+// PARA QUEM É O MATERIAL — colaborador (sempre existiu) ou placa (filiais com carga de viatura)
+// ══════════════════════════════════════════
+let _destino = 'COLABORADOR';
+function filialUsaViatura() { return _dados?.modelo_entrega === 'viatura'; }
+function destinoEscolhido() {
+  return _destino === 'VIATURA' ? document.getElementById('vtrId').value : document.getElementById('colId').value;
+}
+
+function setDestino(tipo, semPerguntar) {
+  if (tipo === _destino) return;
+  if (!semPerguntar && (_itens.length || _imgs.length) &&
+      !confirm('Ao trocar para quem é o material, os itens e fotos adicionados serão removidos. Continuar?')) return;
+  _destino = tipo;
+  _itens = []; renderItens();
+  _imgs = []; renderImgs();
+  _mSel.clear(); _idsPermitidos = null;
+  ['colBusca', 'colId', 'vtrBusca', 'vtrId'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('cCol').classList.remove('show');
+  document.getElementById('cVtr').classList.remove('show');
+  document.getElementById('cardColab').classList.toggle('hidden', tipo === 'VIATURA');
+  document.getElementById('cardViatura').classList.toggle('hidden', tipo !== 'VIATURA');
+  document.getElementById('btnDestColab').className = 'prio-btn' + (tipo === 'COLABORADOR' ? ' normal' : '');
+  document.getElementById('btnDestVtr').className = 'prio-btn' + (tipo === 'VIATURA' ? ' normal' : '');
+  document.getElementById('destinoDica').textContent = tipo === 'VIATURA'
+    ? 'Material de viatura (EPC, ferramentas) fica na placa — quem retirar assina a ficha.'
+    : 'EPI e material pessoal são pedidos no nome do colaborador.';
+}
+
+function filtrarVtr() {
+  const q = document.getElementById('vtrBusca').value.trim().toLowerCase();
+  const lista = document.getElementById('vtrLista');
+  document.getElementById('vtrId').value = '';
+  document.getElementById('cVtr').classList.remove('show');
+  if (!q) { lista.classList.add('hidden'); return; }
+  _posicionarAcList(document.getElementById('vtrBusca'), lista);
+  const res = (_dados?.viaturas || []).filter(v =>
+    [v.placa, v.modelo, v.tipo, v.base].some(x => (x || '').toLowerCase().includes(q))).slice(0, 14);
+  if (!res.length) { lista.innerHTML = '<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhuma viatura encontrada</div></div>'; lista.classList.remove('hidden'); return; }
+  lista.innerHTML = res.map(v => `<div class="ac-item" onmousedown="selVtr('${escJs(v.id)}')">
+    <div class="ac-item-nome" style="font-family:var(--font-mono)">${escHtml(v.placa)}</div>
+    <div class="ac-item-sub">${escHtml([v.modelo, v.tipo, v.base].filter(Boolean).join(' · '))}</div>
+  </div>`).join('');
+  lista.classList.remove('hidden');
+}
+
+function selVtr(id, semPerguntar) {
+  const v = (_dados?.viaturas || []).find(x => x.id === id);
+  if (!v) return;
+  const anterior = document.getElementById('vtrId').value;
+  if (!semPerguntar && anterior && anterior !== id && (_itens.length || _imgs.length)) {
+    if (!confirm('Ao trocar a viatura, os itens e fotos adicionados serão removidos. Deseja continuar?')) return;
+    _itens = []; renderItens(); _imgs = []; renderImgs(); _mSel.clear();
+  }
+  document.getElementById('vtrBusca').value = v.placa;
+  document.getElementById('vtrId').value = v.id;
+  document.getElementById('vtrPlacaD').textContent = v.placa;
+  document.getElementById('vtrMetaD').textContent = [v.modelo, v.tipo, v.base].filter(Boolean).join(' · ') || '—';
+  document.getElementById('cVtr').classList.add('show');
+  document.getElementById('vtrLista').classList.add('hidden');
+}
+
+function limparVtr() {
+  document.getElementById('vtrBusca').value = '';
+  document.getElementById('vtrId').value = '';
+  document.getElementById('cVtr').classList.remove('show');
+  document.getElementById('vtrLista').classList.add('hidden');
+  _itens = []; renderItens();
+  _imgs = []; renderImgs();
+  _mSel.clear();
+}
 let _mSel = new Set(), _mFila = [], _mIdx = 0, _mCache = {};
 let _listaSolsCache = [], _solAtual = null;
 let _idsPermitidos = null; // null = sem restrição, Set = itens permitidos
@@ -670,6 +777,8 @@ async function carregarDados() {
   const res = await req('/solicitacao-auth/dados?unidade='+_usr.unidade);
   if (!res.ok) { toast('Erro ao carregar dados: '+(res.erro||'?'), 'error'); return; }
   _dados = res;
+  document.getElementById('cardDestino').classList.toggle('hidden', !filialUsaViatura());
+  if (!filialUsaViatura() && _destino !== 'COLABORADOR') setDestino('COLABORADOR', true);
   // Popular armazéns
   const sel = document.getElementById('armSel');
   sel.innerHTML = '<option value="">Selecione...</option>';
@@ -813,13 +922,16 @@ function renderImgs() {
 // MODAL ITENS — SELEÇÃO
 // ══════════════════════════════════════════
 function abrirModalItens() {
-  if (!document.getElementById('colId').value){ toast('Selecione o colaborador primeiro.','warn'); return; }
+  if (!destinoEscolhido()){ toast(_destino==='VIATURA'?'Selecione a viatura primeiro.':'Selecione o colaborador primeiro.','warn'); return; }
   if (!document.getElementById('armSel').value){ toast('Selecione o armazém.','warn'); return; }
   _mSel.clear();
   document.getElementById('mItensBusca').value='';
   // Mostrar info do filtro ativo
   const infoEl = document.getElementById('mItensInfoFiltro');
-  if (_idsPermitidos !== null) {
+  if (_destino === 'VIATURA') {
+    infoEl.textContent = '🚚 Exibindo apenas material de viatura';
+    infoEl.style.display = 'block';
+  } else if (_idsPermitidos !== null) {
     infoEl.textContent = `🗂️ Exibindo apenas itens da dotação do colaborador (${_idsPermitidos.size} item(ns) permitidos)`;
     infoEl.style.display = 'block';
   } else {
@@ -836,8 +948,12 @@ function renderMGrid(q) {
   let itens = (_dados?.itens||[]);
 
   // Filtrar por dotação/nível do colaborador
-  if (_idsPermitidos !== null) {
+  if (_destino !== 'VIATURA' && _idsPermitidos !== null) {
     itens = itens.filter(i => _idsPermitidos.has(i.id));
+  }
+  // Filial com carga de viatura: EPI vai para a pessoa, material de viatura vai para a placa
+  if (filialUsaViatura()) {
+    itens = itens.filter(i => (i.entrega_para === 'viatura') === (_destino === 'VIATURA'));
   }
 
   if (q) itens = itens.filter(i=>(i.descricao||'').toLowerCase().includes(q)||(i.codigo||'').toLowerCase().includes(q));
@@ -852,7 +968,7 @@ function renderMGrid(q) {
       <div class="ig-meta">${i.codigo||''} · ${i.categoria||''}</div>
       <div class="ig-saldo ${semSaldo?'ig-zero':''}">Saldo: ${saldo}</div>
     </div>`;
-  }).join('') || '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px">Nenhum item encontrado na dotação deste colaborador</div>';
+  }).join('') || `<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px">${_destino === 'VIATURA' ? 'Nenhum material de viatura encontrado' : 'Nenhum item encontrado na dotação deste colaborador'}</div>`;
   atualizarSel();
 }
 
@@ -925,6 +1041,9 @@ async function abrirConf() {
     : `Saldo disponível: ${saldo}`;
   document.getElementById('confQtd').value   = '1';
   document.getElementById('confMotivo').value = '';
+  // Troca de tamanho é coisa de EPI da pessoa, não de material de viatura
+  const optTamanho = document.querySelector('#confMotivo option[value="Troca por Tamanho"]');
+  if (optTamanho) optTamanho.hidden = _destino === 'VIATURA';
   ['wTroca','wDur'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('durJust').value = '';
   document.getElementById('confMsg').textContent = '';
@@ -1018,6 +1137,12 @@ async function addItemConf() {
   const motivoValid = MOTIVO_MAP[motiv] || motiv;
 
   try {
+    if (_destino === 'VIATURA') {
+      const lista = [..._itens.map(i => ({ itemId: i.itemId, nome: i.nome, quantidade: i.quantidade })),
+        { itemId: it.id, nome: it.descricao, quantidade: qtd }];
+      const resV = await req('/solicitacao-auth/validar-viatura', { method: 'POST', body: { viatura_id: document.getElementById('vtrId').value, itens: lista } });
+      if (!resV?.ok) { document.getElementById('confMsg').textContent = '🚫 ' + (resV?.erro || 'Não foi possível validar'); return; }
+    }
     if (colId) {
       const [resN, resD, resDur] = await Promise.all([
         req('/solicitacao-auth/validar-nivel',      {method:'POST',body:{colaborador_id:colId,categoria:it.categoria||'',unidade:_usr.unidade}}),
@@ -1100,7 +1225,9 @@ async function enviar() {
   const msg     = document.getElementById('msgForm');
 
   msg.textContent='';
-  if (!colId)         { msg.textContent='Selecione o colaborador.'; return; }
+  const paraViatura = _destino === 'VIATURA';
+  const vtrId = document.getElementById('vtrId').value;
+  if (paraViatura ? !vtrId : !colId) { msg.textContent = paraViatura ? 'Selecione a viatura.' : 'Selecione o colaborador.'; return; }
   if (!armId)         { msg.textContent='Selecione o armazém.'; return; }
   if (!_itens.length) { msg.textContent='Adicione pelo menos um item.'; return; }
   if (_prio==='Urgente'&&!obs){ msg.textContent='⚠️ Solicitação urgente requer observação.'; return; }
@@ -1112,8 +1239,10 @@ async function enviar() {
   const payload = {
     colaborador_id:         _usr.colaborador_id,
     solicitante_nome:       _usr.nome,
-    colaborador_destino_id: colId,
-    colaborador_nome:       colNome,
+    destinatario_tipo:      _destino,
+    viatura_id:             paraViatura ? vtrId : null,
+    colaborador_destino_id: paraViatura ? null : colId,
+    colaborador_nome:       paraViatura ? null : colNome,
     armazem_id:   armId, nome_armazem: armNome,
     prioridade:   _prio, obs_geral: obs||null,
     itens_json:   JSON.stringify(_itens),
@@ -1146,6 +1275,9 @@ function novaSol() {
   document.getElementById('colBusca').value='';
   document.getElementById('colId').value='';
   document.getElementById('cCol').classList.remove('show');
+  document.getElementById('vtrBusca').value='';
+  document.getElementById('vtrId').value='';
+  document.getElementById('cVtr').classList.remove('show');
   document.getElementById('obsGeral').value='';
   if (_arm.length!==1) document.getElementById('armSel').value='';
   _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null; _idsPermitidos=null;
@@ -1183,7 +1315,7 @@ async function carregarSols() {
         </div>
         ${tag(s.status)}
       </div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">🪪 ${escHtml(s.colaborador_nome||'—')}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">${s.destinatario_tipo === 'VIATURA' ? '🚚 Viatura ' + escHtml(s.placa || '') : '🪪 ' + escHtml(s.colaborador_nome||'—')}</div>
       <div style="font-size:11px;color:var(--text-3)">🏭 ${escHtml(s.nome_armazem||'—')} · 📦 ${itens.length} item(ns) · 🕐 ${fmtData(s.data_hora||s.criado_em)}</div>
     </div>`;
   }).join('');
@@ -1199,7 +1331,7 @@ function abrirDet(s) {
   document.getElementById('detId').textContent   = s.id;
   document.getElementById('detBadge').innerHTML  = tag(s.status);
   document.getElementById('detSol').textContent  = s.solicitante_nome||'—';
-  document.getElementById('detCol').textContent  = s.colaborador_nome||'—';
+  document.getElementById('detCol').textContent  = s.destinatario_tipo === 'VIATURA' ? '🚚 Viatura ' + (s.placa || '') : (s.colaborador_nome||'—');
   document.getElementById('detArm').textContent  = s.nome_armazem||'—';
   document.getElementById('detData').textContent = fmtData(s.data_hora||s.criado_em);
 
@@ -1312,10 +1444,16 @@ async function abrirEdicao(s) {
   // Preenche formulário com dados da solicitação original
   await new Promise(r => setTimeout(r, 100));
 
-  // Colaborador
-  const col = (_dados?.colaboradores||[]).find(c => c.id === (s.colaborador_id || s.colaborador_destino_id));
+  // Para quem: placa ou colaborador
+  if (s.destinatario_tipo === 'VIATURA') {
+    setDestino('VIATURA', true);
+    selVtr(s.viatura_id, true);
+  } else {
+    setDestino('COLABORADOR', true);
+  }
+  const col = s.destinatario_tipo === 'VIATURA' ? null : (_dados?.colaboradores||[]).find(c => c.id === (s.colaborador_id || s.colaborador_destino_id));
   if (col) selCol(col.id, col.nome, col.funcao||'', col.matricula||'');
-  else {
+  else if (s.destinatario_tipo !== 'VIATURA') {
     document.getElementById('colBusca').value = s.colaborador_nome||'';
     document.getElementById('colId').value    = s.colaborador_id||'';
     document.getElementById('colNomeD').textContent = s.colaborador_nome||'';
@@ -1374,6 +1512,7 @@ if ('serviceWorker' in navigator) {
 </script>
 <!-- Autocomplete flutuante — fora de qualquer container para evitar clipping -->
 <div id="colLista" class="ac-list hidden"></div>
+<div id="vtrLista" class="ac-list hidden"></div>
 
 </body>
 </html>

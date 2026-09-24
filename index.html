@@ -9572,7 +9572,7 @@ function renderSolicitacoes() {
 
     let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
     const qtd = itens.length || s.qtd_itens || 0;
-    const nome = s.colaborador_nome || s.colaboradorNome || '—';
+    const nome = s.destinatario_tipo === 'VIATURA' ? `🚚 Viatura ${s.placa || ''}` : (s.colaborador_nome || s.colaboradorNome || '—');
     const sol  = s.solicitante_nome || s.solicitanteNome || '—';
 
     // Tags de alerta
@@ -9661,7 +9661,7 @@ async function abrirModalSolicitacao(id) {
 
   let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
   let historico = []; try { historico = JSON.parse(s.historico_status || '[]'); } catch {}
-  const nome = s.colaborador_nome || '—';
+  const nome = s.destinatario_tipo === 'VIATURA' ? `🚚 Viatura ${s.placa || ''}` : (s.colaborador_nome || '—');
   const sol  = s.solicitante_nome || '—';
   const obs  = s.obs_geral || s.observacao || '';
 
@@ -9967,6 +9967,82 @@ async function salvarEdicaoSolicitacao(id) {
 
 let _atendendoSolicitacaoEmAndamento = false;
 
+// ── Solicitação pedida para uma placa: vira um Atendimento Viatura já preenchido ──
+const CV_MOTIVO_DA_SOLICITACAO = {
+  'Entrega inicial':      { motivo: 'Entrega inicial' },
+  'Desgastado':           { motivo: 'Troca desgaste' },
+  'Troca por laudo':      { motivo: 'Troca recuperação', tipoRecuperacao: 'Laudar' },
+  'Troca por Manutenção': { motivo: 'Troca recuperação', tipoRecuperacao: 'Manutenção' },
+  'Troca por Tamanho':    { motivo: 'Troca desgaste' },
+  'Avariado por mau uso': { motivo: 'Troca por dano' },
+  'Perdido':              { motivo: 'Perda' },
+  'Roubado':              { motivo: 'Roubo' },
+};
+
+async function atenderSolicitacaoViatura(s, btnEl) {
+  const textoOriginalBtn = btnEl?.innerHTML;
+  if (btnEl) {
+    btnEl.disabled = true;
+    btnEl.innerHTML = '<span class="spinner" style="width:13px;height:13px;border-width:2px;display:inline-block;vertical-align:-2px;margin-right:6px"></span>Processando...';
+  }
+  _atendendoSolicitacaoEmAndamento = true;
+  try {
+    // Mesma regra do atendimento: placa com entrega pendente de assinatura não recebe outra
+    await carregarAssinaturasSilencioso();
+    const pendente = (_assinaturas || []).find(a => a.destinatarioTipo === 'VIATURA' && a.placa === s.placa &&
+      (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
+    if (pendente) { toast(`⚠️ A viatura ${escHtml(s.placa)} tem uma entrega pendente de assinatura. Resolva antes de iniciar outra.`, 'error', 6000); return; }
+    if (await bloqueadoPorInventario(s.armazem_id)) return;
+
+    fecharModalSolicitacao();
+    showView('carga-viatura');
+    await new Promise(r => setTimeout(r, 350));
+    await cvIniciar();
+    cvLimparAtendimento();
+    cvIniciarAtendimento();
+
+    if (!(_frota || []).some(v => v.id === s.viatura_id)) {
+      toast(`A viatura ${escHtml(s.placa || '')} não está mais ativa. Escolha a placa manualmente.`, 'warn', 6000);
+    } else {
+      cvEscolherViatura(s.viatura_id);
+    }
+    // Quem retira: por padrão quem pediu (dá para trocar antes de concluir)
+    if ((_colaboradores || []).some(c => c.id === s.solicitante_id)) cvEscolherColab(s.solicitante_id);
+    CV.solicitacaoId = s.id;
+
+    let itens = []; try { itens = JSON.parse(s.itens_json || '[]'); } catch {}
+    const naoEntraram = [];
+    if (CV.viatura) {
+      for (const it of itens) {
+        const itemLocal = (_itens || []).find(i => i.id === (it.itemId || it.item_id));
+        if (!itemLocal) { naoEntraram.push(it.nome || it.itemId); continue; }
+        const armazens = cvArmazensDoItem(itemLocal.id);
+        const armazem = armazens.find(a => a.armazem_id === s.armazem_id) || armazens[0];
+        if (!armazem) { naoEntraram.push(`${itemLocal.descricao} (sem saldo)`); continue; }
+        const original = String(it.motivo || '').split(' — Justificativa:')[0].trim();
+        const mapeado = CV_MOTIVO_DA_SOLICITACAO[original] || { motivo: 'Entrega inicial' };
+        const qtd = Math.min(Number(it.quantidade || 1), Number(armazem.saldo || 0));
+        if (qtd < Number(it.quantidade || 1)) naoEntraram.push(`${itemLocal.descricao} (só ${armazem.saldo} em estoque)`);
+        if (!(qtd > 0)) continue;
+        // Um de cada vez: se um item falhar, os outros entram mesmo assim
+        CV.selecionados = { [itemLocal.id]: { item: itemLocal, armazemId: armazem.armazem_id, qtd,
+          motivo: mapeado.motivo, tipoRecuperacao: mapeado.tipoRecuperacao || '' } };
+        await cvConfirmarModal();
+      }
+      CV.selecionados = {};
+    }
+    cvRenderItens();
+    cvAtualizarBotoes();
+    toast(naoEntraram.length
+      ? `Atendimento montado. Confira: ${naoEntraram.join(', ')}`
+      : `Atendimento da viatura ${escHtml(s.placa || '')} montado com os itens da solicitação. Confira quem retira e conclua.`,
+      naoEntraram.length ? 'warn' : 'success', 7000);
+  } finally {
+    _atendendoSolicitacaoEmAndamento = false;
+    if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = textoOriginalBtn; }
+  }
+}
+
 async function atenderSolicitacao(id, btnEl) {
   // Evita clique duplo/repetido disparar o fluxo assíncrono duas vezes em paralelo
   // (causava itens duplicados no atendimento, cada execução adicionando os seus).
@@ -9974,6 +10050,7 @@ async function atenderSolicitacao(id, btnEl) {
 
   const s = _solicitacoes.find(x => x.id === id);
   if (!s) return;
+  if (s.destinatario_tipo === 'VIATURA') return atenderSolicitacaoViatura(s, btnEl);
 
   const colabId = s.colaborador_id || s.colaboradorId;
   if (!colabId) {
@@ -23773,7 +23850,7 @@ async function confirmarDevolverViatura(viaturaId, itemId, saldo) {
 // ═══════════════════════════════════════════
 // ATENDIMENTO VIATURA — mesmo desenho do atendimento de EPI
 // ═══════════════════════════════════════════
-const CV = { itens: [], viatura: null, colab: null, segundos: 0, cronometro: null, sugestoes: [], selecionados: {} };
+const CV = { itens: [], viatura: null, colab: null, segundos: 0, cronometro: null, sugestoes: [], selecionados: {}, solicitacaoId: null };
 let _cvSaldos = [];
 const CV_MOTIVOS = ['Entrega inicial', 'Troca desgaste', 'Troca recuperação', 'Troca por dano', 'Perda', 'Roubo'];
 
@@ -24070,7 +24147,7 @@ async function cvCarregarSaldos() {
 }
 
 function cvIniciarAtendimento() {
-  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0;
+  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0; CV.solicitacaoId = null;
   document.getElementById('cvEstadoInicial').classList.add('hidden');
   document.getElementById('cvEmAndamento').classList.remove('hidden');
   document.getElementById('cvDataDisplay').textContent = formatarData(hojeBR());
@@ -24099,7 +24176,7 @@ function cvCancelarAtendimento() {
 // no fim de uma entrega já gravada e, se a pessoa dissesse não, deixava tudo na tela).
 function cvLimparAtendimento() {
   clearInterval(CV.cronometro);
-  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0;
+  CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0; CV.solicitacaoId = null;
   ['cvPlaca', 'cvColabBusca', 'cvColabId'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   document.getElementById('cvViaturaCard').classList.add('hidden');
   document.getElementById('cvColabCard').classList.add('hidden');
@@ -24443,6 +24520,7 @@ async function cvFinalizarEntrega(necessitaLogistica, destinoEntregaId) {
     itens: CV.itens.map(({ disponivel, avisoDurabilidade, ...i }) => i),
     necessitaLogistica: !!necessitaLogistica,
     destinoEntregaId: necessitaLogistica ? destinoEntregaId : null,
+    solicitacaoId: CV.solicitacaoId || null,
   };
   const res = await apiMovimentacao('/atendimentos', corpo);
   if (!res || res.ok === false || res.erro) { btn.disabled = false; cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
