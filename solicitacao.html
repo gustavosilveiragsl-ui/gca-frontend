@@ -338,6 +338,20 @@ input,select,textarea{font-family:var(--font-main);}
             </div>
             <button onclick="limparVtr()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;padding:4px 8px;cursor:pointer;flex-shrink:0" title="Trocar viatura">✕ Limpar</button>
           </div>
+          <div class="form-group" style="margin-top:12px">
+            <label class="form-label">Quem vai retirar *</label>
+            <input class="form-input" id="retBusca" placeholder="Nome ou matrícula..." autocomplete="off"
+              oninput="filtrarRet()" onblur="setTimeout(()=>document.getElementById('retLista').classList.add('hidden'),200)">
+            <input type="hidden" id="retId">
+            <div style="font-size:10px;color:var(--text-3);margin-top:4px">Quem vai buscar o material no almoxarifado e assinar a ficha da viatura</div>
+          </div>
+          <div class="sel-card" id="cRet">
+            <div class="sel-avatar">👤</div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-1)" id="retNomeD"></div>
+              <div style="font-size:10px;color:var(--text-3)" id="retMetaD"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -638,6 +652,7 @@ function setDestino(tipo, semPerguntar) {
   document.getElementById('destinoDica').textContent = tipo === 'VIATURA'
     ? 'Material de viatura (EPC, ferramentas) fica na placa — quem retirar assina a ficha.'
     : 'EPI e material pessoal são pedidos no nome do colaborador.';
+  if (tipo === 'VIATURA') retiranteInicial(); else limparRet();
 }
 
 function filtrarVtr() {
@@ -671,6 +686,47 @@ function selVtr(id, semPerguntar) {
   document.getElementById('vtrMetaD').textContent = [v.modelo, v.tipo, v.base].filter(Boolean).join(' · ') || '—';
   document.getElementById('cVtr').classList.add('show');
   document.getElementById('vtrLista').classList.add('hidden');
+}
+
+// ── Quem vai retirar (só para placa) — começa com quem está pedindo ──
+function filtrarRet() {
+  const q = document.getElementById('retBusca').value.trim().toLowerCase();
+  const lista = document.getElementById('retLista');
+  document.getElementById('retId').value = '';
+  document.getElementById('cRet').classList.remove('show');
+  if (!q) { lista.classList.add('hidden'); return; }
+  _posicionarAcList(document.getElementById('retBusca'), lista);
+  const res = (_dados?.colaboradores || []).filter(c =>
+    (c.nome || '').toLowerCase().includes(q) || (c.matricula || '').toLowerCase().includes(q)).slice(0, 14);
+  if (!res.length) { lista.innerHTML = '<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
+  lista.innerHTML = res.map(c => `<div class="ac-item" onmousedown="selRet('${escJs(c.id)}')">
+    <div class="ac-item-nome">${escHtml(c.nome)}</div>
+    <div class="ac-item-sub">${escHtml(c.matricula || '')} · ${escHtml(c.funcao || '')}</div>
+  </div>`).join('');
+  lista.classList.remove('hidden');
+}
+
+function selRet(id) {
+  const c = (_dados?.colaboradores || []).find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('retBusca').value = c.nome;
+  document.getElementById('retId').value = c.id;
+  document.getElementById('retNomeD').textContent = c.nome;
+  document.getElementById('retMetaD').textContent = [c.matricula ? 'Mat. ' + c.matricula : '', c.funcao].filter(Boolean).join(' · ');
+  document.getElementById('cRet').classList.add('show');
+  document.getElementById('retLista').classList.add('hidden');
+}
+
+function limparRet() {
+  document.getElementById('retBusca').value = '';
+  document.getElementById('retId').value = '';
+  document.getElementById('cRet').classList.remove('show');
+}
+
+// Padrão: quem está logado no portal (se for colaborador ativo da filial)
+function retiranteInicial() {
+  limparRet();
+  if ((_dados?.colaboradores || []).some(c => c.id === _usr?.colaborador_id)) selRet(_usr.colaborador_id);
 }
 
 function limparVtr() {
@@ -1228,6 +1284,8 @@ async function enviar() {
   const paraViatura = _destino === 'VIATURA';
   const vtrId = document.getElementById('vtrId').value;
   if (paraViatura ? !vtrId : !colId) { msg.textContent = paraViatura ? 'Selecione a viatura.' : 'Selecione o colaborador.'; return; }
+  const retId = document.getElementById('retId').value;
+  if (paraViatura && !retId) { msg.textContent = 'Informe quem vai retirar o material.'; return; }
   if (!armId)         { msg.textContent='Selecione o armazém.'; return; }
   if (!_itens.length) { msg.textContent='Adicione pelo menos um item.'; return; }
   if (_prio==='Urgente'&&!obs){ msg.textContent='⚠️ Solicitação urgente requer observação.'; return; }
@@ -1241,6 +1299,7 @@ async function enviar() {
     solicitante_nome:       _usr.nome,
     destinatario_tipo:      _destino,
     viatura_id:             paraViatura ? vtrId : null,
+    retirado_por_id:        paraViatura ? retId : null,
     colaborador_destino_id: paraViatura ? null : colId,
     colaborador_nome:       paraViatura ? null : colNome,
     armazem_id:   armId, nome_armazem: armNome,
@@ -1278,6 +1337,7 @@ function novaSol() {
   document.getElementById('vtrBusca').value='';
   document.getElementById('vtrId').value='';
   document.getElementById('cVtr').classList.remove('show');
+  if (_destino === 'VIATURA') retiranteInicial(); else limparRet();
   document.getElementById('obsGeral').value='';
   if (_arm.length!==1) document.getElementById('armSel').value='';
   _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null; _idsPermitidos=null;
@@ -1331,7 +1391,9 @@ function abrirDet(s) {
   document.getElementById('detId').textContent   = s.id;
   document.getElementById('detBadge').innerHTML  = tag(s.status);
   document.getElementById('detSol').textContent  = s.solicitante_nome||'—';
-  document.getElementById('detCol').textContent  = s.destinatario_tipo === 'VIATURA' ? '🚚 Viatura ' + (s.placa || '') : (s.colaborador_nome||'—');
+  document.getElementById('detCol').textContent  = s.destinatario_tipo === 'VIATURA'
+    ? '🚚 Viatura ' + (s.placa || '') + (s.retirado_por_nome ? ' · retira: ' + s.retirado_por_nome : '')
+    : (s.colaborador_nome||'—');
   document.getElementById('detArm').textContent  = s.nome_armazem||'—';
   document.getElementById('detData').textContent = fmtData(s.data_hora||s.criado_em);
 
@@ -1448,6 +1510,7 @@ async function abrirEdicao(s) {
   if (s.destinatario_tipo === 'VIATURA') {
     setDestino('VIATURA', true);
     selVtr(s.viatura_id, true);
+    if (s.retirado_por_id && (_dados?.colaboradores || []).some(c => c.id === s.retirado_por_id)) selRet(s.retirado_por_id);
   } else {
     setDestino('COLABORADOR', true);
   }
@@ -1513,6 +1576,7 @@ if ('serviceWorker' in navigator) {
 <!-- Autocomplete flutuante — fora de qualquer container para evitar clipping -->
 <div id="colLista" class="ac-list hidden"></div>
 <div id="vtrLista" class="ac-list hidden"></div>
+<div id="retLista" class="ac-list hidden"></div>
 
 </body>
 </html>
