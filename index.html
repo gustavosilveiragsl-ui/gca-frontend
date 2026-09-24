@@ -2268,6 +2268,9 @@ window.addEventListener('pageshow', function(e) {
                 <option value="ok">🟢 OK</option>
                 <option value="zerado">⬜ Zerado</option>
               </select>
+              <select class="form-input" id="estFiltroCategoria" style="width:160px;font-size:11px" onchange="renderEstoque()" title="Filtrar por categoria">
+                <option value="">Todas as categorias</option>
+              </select>
               <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
             </div>
           </div>
@@ -2994,13 +2997,16 @@ window.addEventListener('pageshow', function(e) {
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque <span class="nome-conc">Concessionária</span></div><div class="card-sub">Saldo atual de materiais</div></div>
             <div class="card-actions">
-              <input class="search-box" placeholder="Buscar material..." oninput="filtrarEstoqueEnel(this.value)">
+              <input class="search-box" id="enelEstBusca" placeholder="Buscar material..." oninput="filtrarEstoqueEnel()">
               <button class="btn btn-ghost" onclick="exportarEstoqueEnel()">📥 Excel</button>
-              <select class="form-input" id="enelEstFiltro" style="width:140px;font-size:11px" onchange="filtrarEstoqueEnel('')">
+              <select class="form-input" id="enelEstFiltro" style="width:140px;font-size:11px" onchange="filtrarEstoqueEnel()">
                 <option value="">Todos</option>
                 <option value="critico">🔴 Crítico</option>
                 <option value="baixo">🟡 Baixo</option>
                 <option value="ok">🟢 OK</option>
+              </select>
+              <select class="form-input" id="enelEstFiltroCategoria" style="width:160px;font-size:11px" onchange="filtrarEstoqueEnel()" title="Filtrar por categoria">
+                <option value="">Todas as categorias</option>
               </select>
               <button class="btn btn-ghost" onclick="carregarEstoqueEnel()">↻</button>
             </div>
@@ -11774,6 +11780,20 @@ function toggleOrdemEstoque() {
 let _estPagina    = 1;
 const _estPorPag  = 50;
 
+// Filtro de categoria das consultas de estoque: junta variações de espaço e maiúsculas
+function normCategoriaFiltro(c) { return String(c || '').trim().toUpperCase() || 'SEM CATEGORIA'; }
+// Monta as opções com as categorias da lista e devolve a escolhida (limpa se ela sumiu da lista)
+function preencherFiltroCategoria(selId, categorias) {
+  const sel = document.getElementById(selId);
+  if (!sel) return '';
+  const atual = sel.value;
+  const lista = [...new Set(categorias)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcoes = '<option value="">Todas as categorias</option>' + lista.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+  if (sel.innerHTML !== opcoes) sel.innerHTML = opcoes;
+  sel.value = lista.includes(atual) ? atual : '';
+  return sel.value;
+}
+
 async function carregarEstoque() {
   const tbody = document.getElementById('estBody');
   if (!tbody) return;
@@ -11827,8 +11847,12 @@ function renderEstoque(manterPagina) {
   const busca    = (document.getElementById('estBusca')?.value || '').toLowerCase();
   const filtro   = document.getElementById('estFiltroStatus')?.value || '';
 
-  let lista = _estoqueData;
-  if (_estArmazem) lista = lista.filter(s => s.armazem_id === _estArmazem);
+  // Categoria vem do cadastro do item (o saldo não traz)
+  const catPorItem = new Map((_itens || []).map(i => [i.id, normCategoriaFiltro(i.categoria)]));
+  const catDe = (s) => catPorItem.get(s.item_id) || 'SEM CATEGORIA';
+  const doArmazem = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
+  const categoria = preencherFiltroCategoria('estFiltroCategoria', doArmazem.map(catDe));
+  let lista = categoria ? doArmazem.filter(s => catDe(s) === categoria) : doArmazem;
   if (busca)       lista = lista.filter(s => (s.nome_item||'').toLowerCase().includes(busca) || (s.codigo_item||'').toLowerCase().includes(busca));
 
   // Status
@@ -11851,7 +11875,8 @@ function renderEstoque(manterPagina) {
   }
 
   // KPIs
-  const all = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
+  // KPIs: armazém e categoria escolhidos (busca e status não mudam os totais)
+  const all = categoria ? doArmazem.filter(s => catDe(s) === categoria) : doArmazem;
   document.getElementById('estKpiCritico').textContent = all.filter(s => getStatus(s) === 'critico').length;
   document.getElementById('estKpiBaixo').textContent   = all.filter(s => getStatus(s) === 'baixo').length;
   document.getElementById('estKpiOk').textContent      = all.filter(s => getStatus(s) === 'ok').length;
@@ -20360,13 +20385,16 @@ async function carregarEstoqueEnel() {
   const [matData, saldData] = await Promise.all([api('/enel/materiais'), api('/enel/saldos')]);
   _enelMateriais = matData?.data||[];
   _enelSaldos    = saldData?.data||[];
-  filtrarEstoqueEnel('');
+  filtrarEstoqueEnel();
 }
 
-function filtrarEstoqueEnel(q) {
+// Busca, status e categoria valem juntos: mexer num filtro não desfaz os outros
+function filtrarEstoqueEnel() {
   const tbody = document.getElementById('enelEstBody');
   const filtro= document.getElementById('enelEstFiltro')?.value||'';
+  const q = (document.getElementById('enelEstBusca')?.value || '').trim();
   if (!tbody) return;
+  const categoria = preencherFiltroCategoria('enelEstFiltroCategoria', _enelMateriais.map(m => normCategoriaFiltro(m.categoria)));
   let lista = _enelMateriais.map(m=>{
     const saldo = _enelSaldos.find(s=>s.id_material===m.id);
     const qtd   = Number(saldo?.saldo||0);
@@ -20380,6 +20408,7 @@ function filtrarEstoqueEnel(q) {
   const dinheiro = (v) => Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   if (q) lista = lista.filter(m=>(m.descricao||'').toLowerCase().includes(q.toLowerCase())||(m.codigo||'').toLowerCase().includes(q.toLowerCase()));
   if (filtro) lista = lista.filter(m=>m.st===filtro);
+  if (categoria) lista = lista.filter(m=>normCategoriaFiltro(m.categoria)===categoria);
 
   document.getElementById('enelEstKpiCritico').textContent = lista.filter(m=>m.st==='critico').length;
   document.getElementById('enelEstKpiBaixo').textContent   = lista.filter(m=>m.st==='baixo').length;
@@ -22248,7 +22277,8 @@ function exportarProtheus() {
 function exportarEstoqueEnel() {
   if (!_enelMateriais?.length) { toast('Carregue o estoque primeiro', 'warn'); return; }
   const filtroStatus = document.getElementById('enelEstFiltro')?.value || '';
-  let lista = _enelMateriais.map(m => {
+  const filtroCategoria = document.getElementById('enelEstFiltroCategoria')?.value || '';
+  let lista = _enelMateriais.filter(m => !filtroCategoria || normCategoriaFiltro(m.categoria) === filtroCategoria).map(m => {
     const saldo = _enelSaldos.find(s => s.id_material === m.id);
     const qtd   = Number(saldo?.saldo || 0);
     const min   = Number(m.estoque_minimo || 0);
