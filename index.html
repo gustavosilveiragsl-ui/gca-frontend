@@ -460,6 +460,11 @@ tbody tr:hover td{background:var(--bg-hover);}
 .fin-kpi .sub{font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5}
 .fin-tag-est{font-size:9px;font-weight:700;color:var(--yellow);border:1px solid var(--yellow);border-radius:999px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 .fin-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.custo-economia{border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text-2);margin-bottom:12px;line-height:1.55}
+.custo-economia .conta{font-variant-numeric:tabular-nums}
+.custo-economia b{color:var(--green)}
+.custo-economia.aviso{border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.08);color:var(--yellow)}
+.fin-eco-linha{font-size:10px;color:var(--green);margin-top:2px}
 .fin-aviso{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.35);border-radius:var(--radius-sm);padding:8px 12px;font-size:12px;color:var(--yellow);margin-bottom:14px}
 /* Transferência entre filiais */
 .tfl-secao{font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
@@ -4551,6 +4556,7 @@ window.addEventListener('pageshow', function(e) {
                 <select id="custoTipo" class="form-input" onchange="finDicaTipoCusto()">
                   <option value="LAUDO">Laudo (entra junto com as remessas)</option>
                   <option value="COMPRA_DIRETA">Compra direta (sem SC)</option>
+                  <option value="MANUTENCAO">Manutenção (conserto que evitou comprar novo)</option>
                   <option value="OUTROS" selected>Outros</option>
                 </select>
               </div>
@@ -4561,7 +4567,7 @@ window.addEventListener('pageshow', function(e) {
               <input id="custoDescricao" class="form-input" placeholder="Ex.: 3 alicates amperímetros que voltaram do laudo">
             </div>
             <div style="margin-bottom:12px">
-              <label class="form-label">Item do cadastro (opcional)</label>
+              <label class="form-label" id="custoItemRotulo">Item do cadastro (opcional)</label>
               <div style="position:relative">
                 <input id="custoItemBusca" class="form-input" placeholder="Busque o item para preencher categoria e valor..." autocomplete="off"
                   oninput="finBuscarItemCusto()" onblur="setTimeout(()=>{const e=document.getElementById('custoItemSug'); if(e) e.style.display='none'},200)">
@@ -4571,13 +4577,14 @@ window.addEventListener('pageshow', function(e) {
             </div>
             <div style="display:grid;grid-template-columns:1fr 120px 1fr;gap:12px;margin-bottom:12px">
               <div><label class="form-label">Categoria</label><input id="custoCategoria" class="form-input" placeholder="Ex.: FERRAMENTAS"></div>
-              <div><label class="form-label">Quantidade</label><input type="number" id="custoQtd" class="form-input" min="0" step="any" placeholder="—" oninput="finCalcularValorCusto()"></div>
-              <div><label class="form-label">Valor unitário</label><input type="number" id="custoValorUn" class="form-input" min="0" step="0.01" placeholder="—" oninput="finCalcularValorCusto()"></div>
+              <div><label class="form-label" id="custoQtdRotulo">Quantidade</label><input type="number" id="custoQtd" class="form-input" min="0" step="any" placeholder="—" oninput="finCalcularValorCusto()"></div>
+              <div><label class="form-label" id="custoValorUnRotulo">Valor unitário</label><input type="number" id="custoValorUn" class="form-input" min="0" step="0.01" placeholder="—" oninput="finCalcularValorCusto()"></div>
             </div>
             <div style="margin-bottom:12px">
-              <label class="form-label">Valor total (R$) *</label>
-              <input type="number" id="custoValor" class="form-input" min="0" step="0.01" placeholder="0,00" style="font-size:18px;font-weight:800">
+              <label class="form-label" id="custoValorRotulo">Valor total (R$) *</label>
+              <input type="number" id="custoValor" class="form-input" min="0" step="0.01" placeholder="0,00" style="font-size:18px;font-weight:800" oninput="finPreviaEconomia()">
             </div>
+            <div id="custoEconomia" class="custo-economia hidden"></div>
             <div>
               <label class="form-label">Observação</label>
               <input id="custoObs" class="form-input" placeholder="Nota fiscal, processo, quem autorizou...">
@@ -22535,6 +22542,7 @@ const finData = (d) => d ? new Date(String(d).length === 10 ? d + 'T12:00:00' : 
 const FIN_ORIGEM = {
   LAUDO: 'Aprovado no laudo', SEM_LAUDO: 'Recuperado sem laudo', SEM_SERIAL: 'Recuperado (sem serial)',
   REPROVADO_LAUDO: 'Reprovado no laudo', INUTILIZADO_RECUPERACAO: 'Inutilizado na recuperação', DIVERGENCIA_SERIAL: 'Divergência de serial', DESCARTE_SERIAL: 'Descarte de serial',
+  MANUTENCAO: 'Manutenção (evitou comprar novo)',
 };
 const FIN_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const finNomeMes = (m) => { const [a, mm] = String(m || '').split('-'); return mm ? `${FIN_MESES[Number(mm) - 1]}/${a}` : ''; };
@@ -22631,7 +22639,7 @@ function finRenderResumo() {
     <div class="fin-kpis">
       ${finKpi('Real × estimado', finR$(c.economia), c.economia >= 0 ? 'pagou menos que o estimado no que já chegou' : 'pagou mais que o estimado no que já chegou', c.economia >= 0 ? 'var(--green)' : 'var(--red)')}
       ${finKpi('Custo com laudos', finR$(a.recuperacao.custo_laudos), (a.recuperacao.remessas_sem_valor ? `⚠️ ${a.recuperacao.remessas_sem_valor} remessa(s) sem valor pago` : `${a.recuperacao.remessas.length} remessa(s) enviada(s)`) + (a.recuperacao.custo_laudos_avulso ? `<br>inclui ${finR$(a.recuperacao.custo_laudos_avulso)} lançado à mão` : ''))}
-      ${finKpi('Economia com recuperação', finR$(a.recuperacao.economia), `resultado ${finR$(a.recuperacao.resultado)} (economia − laudos)`, 'var(--green)')}
+      ${finKpi('Economia com recuperação', finR$(a.recuperacao.economia), `resultado ${finR$(a.recuperacao.resultado)} (economia − laudos${a.recuperacao.custo_manutencao ? ' − manutenção' : ''})` + (a.avulsos?.economia_manutencao ? `<br>inclui ${finR$(a.avulsos.economia_manutencao)} de manutenção` : ''), 'var(--green)')}
       ${finKpi('Perdas', finR$(a.perdas.total || 0), `recuperação ${finR$(a.perdas.recuperacao || 0)} · inventário ${finR$(a.perdas.ajuste_inventario || 0)}`, 'var(--red)')}
       ${finKpi('Consumo (saídas)', finR$(a.consumo.total), `${a.consumo.movimentos} saídas<br>${finVariacao(a.consumo.total, ant.consumo)}`)}
       ${finKpi('Custos lançados à mão', finR$(a.gasto.avulsos || 0), (a.avulsos?.lancamentos?.length || 0)
@@ -22670,7 +22678,7 @@ function finRenderResumo() {
   }
 }
 
-const FIN_TIPO_CUSTO = { LAUDO: '♻️ Laudo', COMPRA_DIRETA: '🛒 Compra direta', OUTROS: '🧾 Outros' };
+const FIN_TIPO_CUSTO = { LAUDO: '♻️ Laudo', COMPRA_DIRETA: '🛒 Compra direta', MANUTENCAO: '🔧 Manutenção', OUTROS: '🧾 Outros' };
 
 // Custos que não passam por SC nem por remessa: lançados à mão para o mês fechar certo.
 function finRenderAvulsos() {
@@ -22684,6 +22692,7 @@ function finRenderAvulsos() {
       ${finKpi('Lançado em ' + finNomeMes(d.mes), finR$(av.total), `${lista.length} lançamento(s)`)}
       ${finKpi('Laudo', finR$(av.por_tipo?.LAUDO || 0), 'soma no custo de laudos e no resultado da recuperação')}
       ${finKpi('Compra direta', finR$(av.por_tipo?.COMPRA_DIRETA || 0), 'compra do setor sem SC')}
+      ${finKpi('Manutenção', finR$(av.por_tipo?.MANUTENCAO || 0), av.economia_manutencao ? `evitou comprar novo: economia de <b style="color:var(--green)">${finR$(av.economia_manutencao)}</b>` : 'conserto que evita comprar novo')}
       ${finKpi('Outros', finR$(av.por_tipo?.OUTROS || 0), 'demais custos do mês')}
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap">
@@ -22698,7 +22707,8 @@ function finRenderAvulsos() {
     lista.map((l, i) => `<tr>
       <td style="white-space:nowrap">${formatarData(l.data)}</td>
       <td style="font-size:11px">${FIN_TIPO_CUSTO[l.tipo] || l.tipo}</td>
-      <td class="td-main">${escHtml(l.descricao)}${l.observacao ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.observacao)}</div>` : ''}</td>
+      <td class="td-main">${escHtml(l.descricao)}${l.observacao ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.observacao)}</div>` : ''}
+        ${l.economia ? `<div class="fin-eco-linha">♻️ economia ${finR$(l.economia.valor)} = ${finNum(l.economia.quantidade)} × ${finR$(l.economia.valor_item_un)} × ${finNum(l.economia.fator_pct)}%</div>` : ''}</td>
       <td style="font-size:11px">${escHtml(l.categoria || '—')}</td>
       ${finTd(l.quantidade ?? '—')}
       ${finTd(finR$(l.valor), 'font-weight:700')}
@@ -22718,11 +22728,65 @@ function finRenderAvulsos() {
 
 function finDicaTipoCusto() {
   const tipo = document.getElementById('custoTipo').value;
+  const manut = tipo === 'MANUTENCAO';
   document.getElementById('custoDicaTipo').textContent = tipo === 'LAUDO'
     ? 'Entra no custo com laudos, junto com as remessas, e no resultado da recuperação.'
     : tipo === 'COMPRA_DIRETA'
       ? 'Compra do setor que não passou por solicitação de compra.'
-      : 'Qualquer outro custo que precisa aparecer no mês.';
+      : manut
+        ? 'O custo do conserto entra no gasto do mês, e o item que deixou de ser comprado entra como economia na recuperação (valor do item novo × fator da categoria).'
+        : 'Qualquer outro custo que precisa aparecer no mês.';
+  document.getElementById('custoItemRotulo').textContent = manut ? 'Item consertado *' : 'Item do cadastro (opcional)';
+  document.getElementById('custoQtdRotulo').textContent = manut ? 'Peças consertadas' : 'Quantidade';
+  document.getElementById('custoValorUnRotulo').textContent = manut ? 'Custo por peça' : 'Valor unitário';
+  document.getElementById('custoValorRotulo').textContent = manut ? 'Custo da manutenção (R$) *' : 'Valor total (R$) *';
+  document.getElementById('custoDescricao').placeholder = manut ? 'Ex.: Reparo em jaqueta airbag' : 'Ex.: 3 alicates amperímetros que voltaram do laudo';
+  if (manut) finCarregarFatores();
+  finPreviaEconomia();
+}
+
+// Fatores de recuperação da filial, para mostrar a economia da manutenção antes de salvar
+let _finFatores = null, _custoEcoCongelada = null;
+async function finCarregarFatores() {
+  if (_finFatores) return;
+  const res = await api('/financeiro/config');
+  if (!res?.ok) return;
+  _finFatores = { padrao: res.data.padrao, porCategoria: Object.fromEntries((res.data.categorias || []).map(c => [c.categoria, c.fator])) };
+  finPreviaEconomia();
+}
+function finFatorDaCategoria(cat) {
+  const k = String(cat || '').trim().toUpperCase() || 'SEM CATEGORIA';
+  return _finFatores?.porCategoria?.[k] ?? _finFatores?.padrao ?? null;
+}
+
+// Mostra a conta: peças × valor do item novo × fator = economia; e o resultado depois do custo
+function finPreviaEconomia() {
+  const box = document.getElementById('custoEconomia');
+  if (!box) return;
+  if (document.getElementById('custoTipo').value !== 'MANUTENCAO') { box.classList.add('hidden'); return; }
+  box.classList.remove('hidden', 'aviso');
+  const itemId = document.getElementById('custoItemId').value;
+  const item = (_itens || []).find(i => i.id === itemId);
+  if (!itemId || !item) {
+    box.classList.add('aviso');
+    box.innerHTML = 'Escolha o item consertado para calcular a economia.';
+    return;
+  }
+  const congelada = _custoEcoCongelada && _custoEcoCongelada.item_id === itemId ? _custoEcoCongelada : null;
+  const valorItem = congelada ? congelada.valor_item_un : Number(item.valor_un) || 0;
+  if (!(valorItem > 0)) {
+    box.classList.add('aviso');
+    box.innerHTML = `O item "${escHtml(item.nome || item.descricao)}" está sem valor no cadastro. Preencha o valor dele para calcular a economia.`;
+    return;
+  }
+  const fator = congelada ? congelada.fator_pct : finFatorDaCategoria(item.categoria);
+  if (fator == null) { box.innerHTML = 'Calculando a economia…'; return; }
+  const qtd = Number(document.getElementById('custoQtd').value) || 1;
+  const economia = Math.round(qtd * valorItem * fator) / 100;
+  const custo = Number(document.getElementById('custoValor').value) || 0;
+  box.innerHTML = `♻️ <b>Economia na recuperação: ${finR$(economia)}</b>
+    <div class="conta">${finNum(qtd)} × ${finR$(valorItem)} (item novo) × ${finNum(fator)}% (fator ${escHtml(String(item.categoria || 'padrão').toUpperCase())}${congelada ? ', do lançamento original' : ''})</div>
+    ${custo > 0 ? `<div class="conta">Resultado: ${finR$(economia)} − ${finR$(custo)} do conserto = <b style="color:${economia - custo >= 0 ? 'var(--green)' : 'var(--red)'}">${finR$(economia - custo)}</b></div>` : ''}`;
 }
 
 function finBuscarItemCusto() {
@@ -22730,6 +22794,7 @@ function finBuscarItemCusto() {
   const sug = document.getElementById('custoItemSug');
   document.getElementById('custoItemId').value = '';
   if (q.length < 2) { sug.style.display = 'none'; return; }
+  finPreviaEconomia();
   const lista = (_itens || []).filter(i => (i.nome || i.descricao || '').toLowerCase().includes(q) || String(i.codigo || '').toLowerCase().includes(q)).slice(0, 10);
   if (!lista.length) { sug.style.display = 'none'; return; }
   sug.innerHTML = lista.map(i => `<div class="ea-sug-item" onmousedown="finEscolherItemCusto('${escJs(i.id)}')">
@@ -22745,8 +22810,12 @@ function finEscolherItemCusto(id) {
   document.getElementById('custoItemId').value = id;
   document.getElementById('custoItemBusca').value = `${i.nome || i.descricao} (${i.codigo || '—'})`;
   document.getElementById('custoItemSug').style.display = 'none';
+  document.getElementById('custoErro').textContent = '';
   if (i.categoria) document.getElementById('custoCategoria').value = i.categoria;
-  if (i.valor_un) {
+  if (document.getElementById('custoTipo').value === 'MANUTENCAO') {
+    // Aqui o valor é o custo do conserto, não o preço do item: só a quantidade é preenchida
+    if (!document.getElementById('custoQtd').value) document.getElementById('custoQtd').value = 1;
+  } else if (i.valor_un) {
     document.getElementById('custoValorUn').value = Number(i.valor_un);
     if (!document.getElementById('custoQtd').value) document.getElementById('custoQtd').value = 1;
     finCalcularValorCusto();
@@ -22754,12 +22823,14 @@ function finEscolherItemCusto(id) {
   if (!document.getElementById('custoDescricao').value.trim()) {
     document.getElementById('custoDescricao').value = i.nome || i.descricao || '';
   }
+  finPreviaEconomia();
 }
 
 function finCalcularValorCusto() {
   const qtd = Number(document.getElementById('custoQtd').value || 0);
   const un = Number(document.getElementById('custoValorUn').value || 0);
   if (qtd > 0 && un > 0) document.getElementById('custoValor').value = (qtd * un).toFixed(2);
+  finPreviaEconomia();
 }
 
 function finAbrirCusto(idx) {
@@ -22773,12 +22844,15 @@ function finAbrirCusto(idx) {
   document.getElementById('custoDescricao').value = l?.descricao || '';
   document.getElementById('custoCategoria').value = l?.categoria || '';
   document.getElementById('custoItemId').value = l?.item_id || '';
-  document.getElementById('custoItemBusca').value = '';
+  const itemAtual = l?.item_id ? (_itens || []).find(x => x.id === l.item_id) : null;
+  document.getElementById('custoItemBusca').value = itemAtual ? `${itemAtual.nome || itemAtual.descricao} (${itemAtual.codigo || '—'})` : (l?.economia?.item || '');
+  _custoEcoCongelada = l?.economia ? { item_id: l.item_id, valor_item_un: l.economia.valor_item_un, fator_pct: l.economia.fator_pct } : null;
   document.getElementById('custoQtd').value = l?.quantidade ?? '';
   document.getElementById('custoValorUn').value = l?.valor_unitario ?? '';
   document.getElementById('custoValor').value = l?.valor ?? '';
   document.getElementById('custoObs').value = l?.observacao || '';
   document.getElementById('custoErro').textContent = '';
+  _finFatores = null;
   finDicaTipoCusto();
   if (!(_itens || []).length) carregarItens?.();
   document.getElementById('modalCustoAvulso').classList.remove('hidden');
@@ -22801,7 +22875,8 @@ async function finSalvarCusto() {
   };
   const erro = document.getElementById('custoErro');
   if (!corpo.descricao) { erro.textContent = 'Escreva a descrição do custo.'; return; }
-  if (!(corpo.valor > 0)) { erro.textContent = 'Informe o valor do custo.'; return; }
+  if (corpo.tipo === 'MANUTENCAO' && !corpo.item_id) { erro.textContent = 'Na manutenção, escolha o item consertado — é dele que sai o valor da economia.'; return; }
+  if (!(corpo.valor > 0)) { erro.textContent = corpo.tipo === 'MANUTENCAO' ? 'Informe quanto custou a manutenção.' : 'Informe o valor do custo.'; return; }
   const btn = document.getElementById('custoBtnSalvar');
   btn.disabled = true;
   const res = await api(id ? `/financeiro/custos/${encodeURIComponent(id)}` : '/financeiro/custos',
@@ -22882,8 +22957,8 @@ function finRenderRecuperacao() {
     ${r.tem_estimado ? '<div class="fin-aviso">⚠️ Recuperações e perdas anteriores ao financeiro foram calculadas com o preço atual do item e fator de 60%.</div>' : ''}
     <div class="fin-kpis">
       ${finKpi('Custo com laudos', finR$(r.custo_laudos), r.remessas_sem_valor ? `⚠️ ${r.remessas_sem_valor} remessa(s) sem valor pago — preencha em Recuperados → Remessas` : 'valor pago nas remessas enviadas no mês')}
-      ${finKpi('Economia com recuperação', finR$(r.economia), 'itens que voltaram ao estoque × valor × fator de desgaste', 'var(--green)')}
-      ${finKpi('Resultado', finR$(r.resultado), 'economia − custo com laudos', r.resultado >= 0 ? 'var(--green)' : 'var(--red)')}
+      ${finKpi('Economia com recuperação', finR$(r.economia), 'itens que voltaram ao estoque × valor × fator de desgaste' + (d.atual.avulsos?.economia_manutencao ? `<br>inclui ${finR$(d.atual.avulsos.economia_manutencao)} de manutenção` : ''), 'var(--green)')}
+      ${finKpi('Resultado', finR$(r.resultado), r.custo_manutencao ? `economia − laudos − manutenção (${finR$(r.custo_manutencao)})` : 'economia − custo com laudos', r.resultado >= 0 ? 'var(--green)' : 'var(--red)')}
       ${finKpi('Perdas na recuperação', finR$(r.perdas), 'reprovados, inutilizados e divergências', 'var(--red)')}
     </div>
     ${finCard('Remessas para laudo', `Enviadas em ${finNomeMes(d.mes)}`, finTabela(
