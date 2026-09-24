@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="./icon-v3.png">
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#6366f1">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GCA">
@@ -99,23 +100,33 @@ input,select,textarea{font-family:var(--font-main);}
 .umapa-wrap .unidade-card{max-width:none;}
 .umapa-mapa{position:relative;animation:fadeUp .45s ease;}
 .umapa-mapa::before{content:'';position:absolute;inset:4% 2%;background:radial-gradient(ellipse at 64% 42%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 66%);filter:blur(12px);pointer-events:none;}
-.umapa-svg{position:relative;width:100%;height:auto;max-height:82vh;display:block;overflow:hidden;border-radius:var(--radius-lg);}
-.umapa-uf{fill:color-mix(in srgb,var(--text-3) 14%,var(--bg-card));stroke:color-mix(in srgb,var(--text-3) 45%,transparent);stroke-width:1.1;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;opacity:0;animation:umapaEntra .75s cubic-bezier(.2,.8,.2,1) forwards;animation-delay:var(--atraso,0s);transition:fill .3s ease,filter .3s ease,opacity .4s ease;}
+.umapa-palco{position:relative;overflow:hidden;border-radius:var(--radius-lg);}
+.umapa-svg{position:relative;width:100%;height:auto;max-height:82vh;display:block;-webkit-tap-highlight-color:transparent;}
+.umapa-uf{fill:color-mix(in srgb,var(--text-3) 14%,var(--bg-card));stroke:color-mix(in srgb,var(--text-3) 45%,transparent);stroke-width:1.1;vector-effect:non-scaling-stroke;outline:none;-webkit-tap-highlight-color:transparent;}
+.umapa-uf:focus{outline:none;}
 .umapa-uf.ativo{fill:url(#umapaGrad);stroke:color-mix(in srgb,var(--accent) 70%,white);cursor:pointer;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 55%,transparent));}
-.umapa-uf.ativo:hover,.umapa-uf.ativo.destaque,.umapa-uf.ativo:focus-visible{filter:drop-shadow(0 0 16px color-mix(in srgb,var(--accent) 85%,transparent)) brightness(1.18);outline:none;}
+.umapa-uf.ativo:hover,.umapa-uf.ativo.destaque,.umapa-uf.ativo:focus-visible{filter:drop-shadow(0 0 14px color-mix(in srgb,var(--accent) 80%,transparent)) brightness(1.12);}
+.umapa-svg.movendo .umapa-uf{filter:none !important;}
 .umapa-svg.zoom .umapa-uf:not(.foco){fill-opacity:.22;stroke-opacity:.35;filter:none;}
-@keyframes umapaEntra{from{opacity:0;transform:translateY(16px) scale(.94)}to{opacity:1;transform:none}}
-.umapa-pino{pointer-events:none;opacity:0;animation:umapaAparece .5s ease forwards;animation-delay:1s;}
+.umapa-cortina{position:absolute;top:0;bottom:0;left:0;width:135%;pointer-events:none;background:linear-gradient(90deg,transparent 0%,var(--bg) 26%);transform:translate3d(-26%,0,0);animation:umapaCortina 1.25s cubic-bezier(.5,.05,.2,1) .15s forwards;will-change:transform;}
+@keyframes umapaCortina{to{transform:translate3d(100%,0,0);}}
+.umapa-camada{position:absolute;inset:0;pointer-events:none;transition:opacity .22s ease;}
+.umapa-camada.oculta{opacity:0;transition-duration:.12s;}
+.umapa-camada.zoom .umapa-rotulo{display:none;}
+.umapa-pino{position:absolute;left:0;top:0;width:14px;height:14px;margin:-7px 0 0 -7px;opacity:0;animation:umapaAparece .45s ease 1.05s forwards;}
 .umapa-pino.clicavel{pointer-events:auto;cursor:pointer;}
-.umapa-pino .nucleo{fill:#fff;stroke:var(--accent);stroke-width:3;vector-effect:non-scaling-stroke;}
-.umapa-pino .onda{fill:none;stroke:var(--accent);stroke-width:2;vector-effect:non-scaling-stroke;transform-box:fill-box;transform-origin:center;animation:umapaOnda 2.4s ease-out infinite;}
-.umapa-pino .onda.d2{animation-delay:1.2s;}
-.umapa-pino.destaque .nucleo{fill:var(--accent);}
-@keyframes umapaOnda{from{transform:scale(1);opacity:.85}to{transform:scale(4.4);opacity:0}}
+.umapa-pino .nucleo{position:absolute;inset:0;border-radius:50%;background:#fff;border:3px solid var(--accent);box-sizing:border-box;box-shadow:0 1px 4px rgba(15,23,42,.25);transition:background .2s ease;}
+.umapa-pino.destaque .nucleo{background:var(--accent);}
+.umapa-pino .onda{position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:umapaOnda 2.6s cubic-bezier(.2,.6,.35,1) infinite;will-change:transform,opacity;}
+.umapa-pino .onda.d2{animation-delay:1.3s;}
+@keyframes umapaOnda{0%{transform:scale(1);opacity:.8}100%{transform:scale(3.6);opacity:0}}
 @keyframes umapaAparece{to{opacity:1}}
-.umapa-rotulo{font-family:var(--font-main,sans-serif);font-weight:700;fill:var(--text-1);paint-order:stroke;stroke:color-mix(in srgb,var(--bg) 80%,transparent);stroke-linejoin:round;pointer-events:none;opacity:0;animation:umapaAparece .5s ease forwards;animation-delay:1.1s;}
-.umapa-rotulo .sub{font-weight:500;fill:var(--text-2);}
-.umapa-svg.zoom .umapa-rotulo.geral{opacity:0 !important;animation:none;}
+.umapa-rotulo{position:absolute;left:0;top:0;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;opacity:0;animation:umapaAparece .5s ease 1.15s forwards;}
+.umapa-rotulo b{display:block;font-size:clamp(11px,1.05vw,14px);font-weight:600;letter-spacing:-.1px;line-height:1.2;color:var(--text-1);}
+.umapa-rotulo span{display:block;font-size:clamp(10px,.85vw,11.5px);font-weight:500;line-height:1.35;color:var(--text-2);}
+.umapa-rotulo.sobre-estado b{color:#fff;text-shadow:0 1px 3px rgba(30,27,75,.45);}
+.umapa-rotulo.sobre-estado span{color:rgba(255,255,255,.88);text-shadow:0 1px 3px rgba(30,27,75,.45);}
+.umapa-chip{position:absolute;left:0;top:0;transform:translate(14px,-50%);padding:4px 10px;border-radius:999px;background:var(--bg-card);border:1px solid var(--border);box-shadow:0 4px 14px rgba(15,23,42,.14);font-size:12px;font-weight:600;color:var(--text-1);white-space:nowrap;opacity:0;animation:umapaAparece .25s ease forwards;}
 .umapa-dica{position:absolute;pointer-events:none;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 11px;font-size:11px;color:var(--text-1);box-shadow:0 10px 28px rgba(0,0,0,.35);transform:translate(-50%,calc(-100% - 12px));opacity:0;transition:opacity .15s;white-space:nowrap;z-index:5;}
 .umapa-dica.show{opacity:1;}
 .umapa-dica b{color:var(--accent-text);}
@@ -126,7 +137,7 @@ input,select,textarea{font-family:var(--font-main);}
 .umapa-entrando{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--bg-card);border:1px solid var(--accent);border-radius:999px;padding:9px 18px;font-size:12px;color:var(--accent-text);box-shadow:0 10px 30px rgba(0,0,0,.4);animation:fadeUp .25s ease;z-index:7;}
 .u-uf{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent-text);}
 @media(max-width:860px){.umapa-wrap{grid-template-columns:1fr;gap:12px}.umapa-mapa{max-width:520px;margin:0 auto;width:100%}}
-@media(prefers-reduced-motion:reduce){.umapa-uf,.umapa-pino,.umapa-rotulo{animation:none!important;opacity:1!important}.umapa-pino .onda{display:none}}
+@media(prefers-reduced-motion:reduce){.umapa-cortina{display:none}.umapa-pino,.umapa-rotulo,.umapa-chip{animation:none!important;opacity:1!important}.umapa-pino .onda{display:none}}
 .u-icon{font-size:22px;}
 .u-name{font-size:14px;font-weight:600;}
 .u-desc{font-size:11px;color:var(--text-3);margin-top:2px;}
@@ -6383,7 +6394,8 @@ const FILIAL_GEO = {
   piaui:          { uf: 'PI', cidade: 'Teresina',       lon: -42.80, lat: -5.09 },
 };
 // Rótulo fora do estado quando ele é pequeno demais para caber o nome (deslocamento no mapa)
-const UMAPA_ROTULO_DESLOC = { RJ: [95, 70], SE: [70, 20], AL: [80, 5], ES: [85, 10], DF: [0, -30] };
+// [deslocamento x, deslocamento y, fica fora do estado]. O Piauí é estreito no alto: o nome desce para a parte larga.
+const UMAPA_ROTULO_DESLOC = { RJ: [95, 70, true], SE: [70, 20, true], AL: [80, 5, true], ES: [85, 10, true], DF: [0, -30, true], PI: [-8, 34, false] };
 
 const _semAcento = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').trim().toLowerCase();
 function geoDaFilial(slug) {
@@ -6416,48 +6428,75 @@ function desenharMapaFiliais(unidades) {
     (porUf[f.geo.uf] = porUf[f.geo.uf] || []).push(f);
   });
 
-  // Os estados entram varrendo do oeste para o leste
-  const estados = MAPA_BRASIL.e.map(([uf, nome, cx, , d]) => {
+  const estados = MAPA_BRASIL.e.map(([uf, nome, , , d]) => {
     const fs = porUf[uf];
-    return `<path class="umapa-uf${fs ? ' ativo' : ''}" data-uf="${uf}" d="${d}" style="--atraso:${(cx / l * 0.6).toFixed(2)}s"
-      ${fs ? `tabindex="0" role="button" aria-label="${escHtml(nome)}: ${fs.map(f => escHtml(f.nome)).join(', ')}"` : ''}></path>`;
+    return `<path class="umapa-uf${fs ? ' ativo' : ''}" data-uf="${uf}" d="${d}"${fs ? ` tabindex="0" role="button" aria-label="${escHtml(nome)}: ${fs.map(f => escHtml(f.nome)).join(', ')}"` : ''}></path>`;
   }).join('');
+
+  // Nomes e pinos ficam numa camada por cima do desenho: a animação deles não obriga o
+  // navegador a redesenhar o mapa inteiro a cada quadro (era isso que causava as travadas)
   const rotulos = Object.entries(porUf).map(([uf, fs]) => {
     const e = MAPA_BRASIL.e.find(x => x[0] === uf);
-    const [dx, dy] = UMAPA_ROTULO_DESLOC[uf] || [0, 0];
-    const x = e[2] + dx, y = e[3] + dy;
+    const [dx, dy, fora] = UMAPA_ROTULO_DESLOC[uf] || [0, 0, false];
     const titulo = fs.length === 1 ? fs[0].nome : e[1];
     const sub = fs.length === 1 ? (fs[0].geo.cidade || e[1]) : `${fs.length} filiais`;
-    return `<text class="umapa-rotulo geral" x="${x}" y="${y}" text-anchor="middle" font-size="24" stroke-width="4">
-      <tspan x="${x}">${escHtml(titulo)}</tspan><tspan class="sub" x="${x}" dy="26" font-size="18">${escHtml(sub)}</tspan></text>`;
+    return `<div class="umapa-rotulo${fora ? '' : ' sobre-estado'}" data-x="${e[2] + dx}" data-y="${e[3] + dy}"><b>${escHtml(titulo)}</b><span>${escHtml(sub)}</span></div>`;
   }).join('');
   const pinos = noMapa.map(f => `
-    <g class="umapa-pino" data-slug="${escHtml(f.slug)}" data-x="${f.x.toFixed(1)}" data-y="${f.y.toFixed(1)}" transform="translate(${f.x.toFixed(1)} ${f.y.toFixed(1)})">
-      <circle class="onda" r="6"></circle><circle class="onda d2" r="6"></circle><circle class="nucleo" r="6"></circle>
-    </g>`).join('');
+    <div class="umapa-pino" data-slug="${escHtml(f.slug)}" data-x="${f.x.toFixed(1)}" data-y="${f.y.toFixed(1)}" title="${escHtml(f.nome)}">
+      <span class="onda"></span><span class="onda d2"></span><span class="nucleo"></span>
+    </div>`).join('');
 
   alvo.innerHTML = `
-    <svg class="umapa-svg" id="umapaSvg" viewBox="0 0 ${l} ${a}" role="group" aria-label="Mapa do Brasil com as filiais">
-      <defs><linearGradient id="umapaGrad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" style="stop-color:color-mix(in srgb,var(--accent) 70%,white)"></stop>
-        <stop offset="1" style="stop-color:var(--accent)"></stop>
-      </linearGradient></defs>
-      <g>${estados}</g><g>${rotulos}</g><g id="umapaRotulosZoom"></g><g>${pinos}</g>
-    </svg>
+    <div class="umapa-palco" id="umapaPalco">
+      <svg class="umapa-svg" id="umapaSvg" viewBox="0 0 ${l} ${a}" role="group" aria-label="Mapa do Brasil com as filiais">
+        <defs><linearGradient id="umapaGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" style="stop-color:color-mix(in srgb,var(--accent) 70%,white)"></stop>
+          <stop offset="1" style="stop-color:var(--accent)"></stop>
+        </linearGradient></defs>
+        <g>${estados}</g>
+      </svg>
+      <div class="umapa-camada" id="umapaCamada">${rotulos}<div id="umapaChips"></div>${pinos}</div>
+      <div class="umapa-cortina" aria-hidden="true"></div>
+    </div>
     <div class="umapa-dica" id="umapaDica"></div>
-    <button class="umapa-voltar hidden" id="umapaVoltar" onclick="umapaVoltarBrasil()">← Voltar ao Brasil</button>
+    <button class="umapa-voltar hidden" id="umapaVoltar" type="button" onclick="umapaVoltarBrasil()">← Voltar ao Brasil</button>
     <div id="umapaEscolha"></div>`;
+  _umapa?.observador?.disconnect();
   _umapa = { porUf, vb: [0, 0, l, a], animando: false };
+  umapaPosicionar();
+  // A camada acompanha o tamanho do mapa (janela redimensionada, celular girado)
+  if (window.ResizeObserver) {
+    _umapa.observador = new ResizeObserver(() => umapaPosicionar());
+    _umapa.observador.observe(document.getElementById('umapaPalco'));
+  }
 
   alvo.querySelectorAll('.umapa-uf.ativo').forEach(p => {
     const uf = p.dataset.uf;
     p.addEventListener('mouseenter', () => { umapaMostrarDica(uf); umapaDestacarUf(uf, true); });
     p.addEventListener('mousemove', (ev) => umapaMoverDica(ev));
     p.addEventListener('mouseleave', () => { umapaEsconderDica(); umapaDestacarUf(uf, false); });
-    p.addEventListener('click', () => umapaAbrirEstado(uf));
+    p.addEventListener('click', () => { p.blur(); umapaAbrirEstado(uf); });
     p.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); umapaAbrirEstado(uf); } });
   });
   alvo.querySelectorAll('.umapa-pino').forEach(g => g.addEventListener('click', () => umapaEntrar(g.dataset.slug)));
+}
+
+// Leva cada nome/pino da coordenada do desenho para o pixel certo na tela
+function umapaPosicionar() {
+  const svg = document.getElementById('umapaSvg');
+  const palco = document.getElementById('umapaPalco');
+  const ctm = svg?.getScreenCTM();
+  if (!svg || !palco || !ctm) return;
+  const caixa = palco.getBoundingClientRect();
+  const pt = svg.createSVGPoint();
+  palco.querySelectorAll('.umapa-camada [data-x]').forEach(el => {
+    pt.x = Number(el.dataset.x);
+    pt.y = Number(el.dataset.y);
+    const p = pt.matrixTransform(ctm);
+    el.style.left = (p.x - caixa.left).toFixed(1) + 'px';
+    el.style.top = (p.y - caixa.top).toFixed(1) + 'px';
+  });
 }
 
 function umapaMostrarDica(uf) {
@@ -6492,31 +6531,33 @@ function umapaDestacar(slug, ligado) {
   document.querySelector(`.umapa-pino[data-slug="${CSS.escape(slug)}"]`)?.classList.toggle('destaque', ligado);
 }
 
-// Zoom suave até a área do estado (anima o viewBox do mapa)
-function umapaAnimarViewBox(destino, ms, fim) {
+// Zoom suave até a área do estado. Durante o voo os nomes e pinos saem de cena e o brilho
+// dos estados é desligado, para cada quadro sair leve; no fim tudo volta no lugar novo.
+function umapaAnimarViewBox(destino, ms, fim, semBrilhoNoFim) {
   const svg = document.getElementById('umapaSvg');
   if (!svg) return;
+  const camada = document.getElementById('umapaCamada');
   const ini = _umapa.vb.slice();
   const reduzido = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const dur = reduzido ? 1 : ms;
-  const t0 = performance.now();
   const suave = (t) => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   _umapa.animando = true;
+  camada.classList.add('oculta');
+  svg.classList.add('movendo');
+  const t0 = performance.now();
   const passo = (agora) => {
     const t = Math.min(1, (agora - t0) / dur), k = suave(t);
-    const vb = ini.map((v, i) => v + (destino[i] - v) * k);
-    svg.setAttribute('viewBox', vb.map(n => n.toFixed(2)).join(' '));
-    umapaAjustarPinos(vb[2]);
-    if (t < 1) requestAnimationFrame(passo);
-    else { _umapa.vb = destino.slice(); _umapa.animando = false; fim && fim(); }
+    svg.setAttribute('viewBox', ini.map((v, i) => (v + (destino[i] - v) * k).toFixed(2)).join(' '));
+    if (t < 1) { requestAnimationFrame(passo); return; }
+    _umapa.vb = destino.slice();
+    _umapa.animando = false;
+    // Ampliado, o estado já se destaca pelos outros escurecidos: o brilho só volta no Brasil inteiro
+    if (!semBrilhoNoFim) svg.classList.remove('movendo');
+    umapaPosicionar();
+    camada.classList.remove('oculta');
+    fim && fim();
   };
   requestAnimationFrame(passo);
-}
-// Pino e rótulo mantêm o mesmo tamanho na tela durante o zoom
-function umapaAjustarPinos(larguraVb) {
-  const s = larguraVb / MAPA_BRASIL.l;
-  document.querySelectorAll('.umapa-pino').forEach(g =>
-    g.setAttribute('transform', `translate(${g.dataset.x} ${g.dataset.y}) scale(${s.toFixed(4)})`));
 }
 
 function umapaCaixaDoEstado(uf) {
@@ -6534,27 +6575,26 @@ function umapaAbrirEstado(uf, slugDireto) {
   const fs = _umapa.porUf[uf];
   if (!fs) return;
   umapaEsconderDica();
-  const svg = document.getElementById('umapaSvg');
-  svg.classList.add('zoom');
+  document.getElementById('umapaSvg').classList.add('zoom');
+  document.getElementById('umapaCamada').classList.add('zoom');
   document.querySelectorAll('.umapa-uf').forEach(p => p.classList.toggle('foco', p.dataset.uf === uf));
-  const destino = umapaCaixaDoEstado(uf);
-  umapaAnimarViewBox(destino, 700, () => {
+  umapaAnimarViewBox(umapaCaixaDoEstado(uf), 700, () => {
     if (slugDireto || fs.length === 1) { umapaEntrar(slugDireto || fs[0].slug); return; }
-    umapaMostrarEscolha(uf, fs, destino[2]);
-  });
+    umapaMostrarEscolha(uf, fs);
+  }, true);
 }
 
-// Estado com mais de uma filial: mostra os pinos com o nome e um cartão para escolher
-function umapaMostrarEscolha(uf, fs, larguraVb) {
-  const s = larguraVb / MAPA_BRASIL.l;
-  document.getElementById('umapaRotulosZoom').innerHTML = fs.map(f => `
-    <text class="umapa-rotulo" x="${(f.x + 12 * s).toFixed(2)}" y="${(f.y - 12 * s).toFixed(2)}" font-size="${(20 * s).toFixed(2)}" stroke-width="${(3.5 * s).toFixed(2)}" style="animation-delay:0s">${escHtml(f.nome)}</text>`).join('');
+// Estado com mais de uma filial: etiqueta com o nome de cada pino e um cartão para escolher
+function umapaMostrarEscolha(uf, fs) {
+  document.getElementById('umapaChips').innerHTML = fs.map(f =>
+    `<div class="umapa-chip" data-x="${f.x.toFixed(1)}" data-y="${f.y.toFixed(1)}">${escHtml(f.nome)}</div>`).join('');
+  umapaPosicionar();
   fs.forEach(f => document.querySelector(`.umapa-pino[data-slug="${CSS.escape(f.slug)}"]`)?.classList.add('clicavel'));
   const est = MAPA_BRASIL.e.find(e => e[0] === uf);
   document.getElementById('umapaEscolha').innerHTML = `
     <div class="umapa-escolha">
       <div class="t">${escHtml(est ? est[1] : uf)} — escolha a filial</div>
-      ${fs.map(f => `<button class="unidade-btn" onclick="umapaEntrar('${escJs(f.slug)}')"
+      ${fs.map(f => `<button class="unidade-btn" type="button" onclick="umapaEntrar('${escJs(f.slug)}')"
           onmouseenter="umapaDestacar('${escJs(f.slug)}', true)" onmouseleave="umapaDestacar('${escJs(f.slug)}', false)">
         <div><div class="u-name">${escHtml(f.nome)}</div>${f.geo.cidade && _semAcento(f.geo.cidade) !== _semAcento(f.nome) ? `<div class="u-desc">${escHtml(f.geo.cidade)}</div>` : ''}</div>
       </button>`).join('')}
@@ -6565,10 +6605,11 @@ function umapaMostrarEscolha(uf, fs, larguraVb) {
 function umapaVoltarBrasil() {
   if (!_umapa || _umapa.animando) return;
   document.getElementById('umapaEscolha').innerHTML = '';
-  document.getElementById('umapaRotulosZoom').innerHTML = '';
+  document.getElementById('umapaChips').innerHTML = '';
   document.getElementById('umapaVoltar').classList.add('hidden');
   document.querySelector('#unidadeMapa .umapa-entrando')?.remove();
   document.querySelectorAll('.umapa-pino').forEach(g => g.classList.remove('clicavel'));
+  document.getElementById('umapaCamada').classList.remove('zoom');
   umapaAnimarViewBox([0, 0, MAPA_BRASIL.l, MAPA_BRASIL.a], 600, () => {
     document.getElementById('umapaSvg')?.classList.remove('zoom');
     document.querySelectorAll('.umapa-uf').forEach(p => p.classList.remove('foco'));
