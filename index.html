@@ -4239,8 +4239,9 @@ window.addEventListener('pageshow', function(e) {
             <div><label class="form-label" style="margin-bottom:4px">Armazém onde o serial está</label>
               <select id="nsArmazem" class="form-input" onchange="atualizarConsistenciaNS()"></select>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-              <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase" oninput="validarSerialDuplicado(this.value)">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <input id="nsSerial" class="form-input" placeholder="Nº de série *" style="font-family:var(--font-mono);text-transform:uppercase" oninput="validarSerialDuplicado(this.value)">
+              <input id="nsRastreio" class="form-input" placeholder="Rastreio (nº laudo / lote) *" title="Número do laudo ou lote colado na peça, logo acima do serial — o SESMT usa para achar o laudo" style="font-family:var(--font-mono);text-transform:uppercase">
               <select id="nsStatus" class="form-input" onchange="atualizarConsistenciaNS()">
                 <option value="ESTOQUE">📦 Estoque</option>
                 <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
@@ -4260,7 +4261,7 @@ window.addEventListener('pageshow', function(e) {
         <!-- Filtros -->
         <div class="card" style="margin-bottom:12px">
           <div style="padding:12px;display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
-            <div><label class="form-label">Buscar item / serial</label><input id="laudoFiltro" class="form-input" placeholder="Nome ou serial..." oninput="laudosRender_()"></div>
+            <div><label class="form-label">Buscar item / serial</label><input id="laudoFiltro" class="form-input" placeholder="Nome, serial ou rastreio..." oninput="laudosRender_()"></div>
             <div><label class="form-label">Armazém</label>
               <select id="laudoFiltroArmazem" class="form-input" onchange="laudosRender_()" title="Seriais, pendências e saldo do armazém escolhido">
                 <option value="">Todos os armazéns</option>
@@ -5626,8 +5627,13 @@ window.addEventListener('pageshow', function(e) {
       </div>
 
       <div>
-        <label class="form-label">Serial Novo <span style="color:var(--text-3);font-weight:400;text-transform:none">(deixe em branco se o serial não mudou)</span></label>
-        <input id="recupSerialNovo" class="form-input" placeholder="Novo nº de série..." style="font-family:var(--font-mono);text-transform:uppercase">
+        <label class="form-label">Serial * <span style="color:var(--text-3);font-weight:400;text-transform:none">(confira na peça — troque se mudou)</span></label>
+        <input id="recupSerialNovo" class="form-input" placeholder="Nº de série da peça" style="font-family:var(--font-mono);text-transform:uppercase">
+      </div>
+      <div id="recupRastreioBloco">
+        <label class="form-label">Rastreio novo * <span style="color:var(--text-3);font-weight:400;text-transform:none">(nº do laudo ou lote da etiqueta que veio na peça)</span></label>
+        <input id="recupRastreioNovo" class="form-input" placeholder="Nº do laudo / lote" style="font-family:var(--font-mono);text-transform:uppercase">
+        <div id="recupRastreioAnterior" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
       </div>
 
       <div>
@@ -5637,7 +5643,6 @@ window.addEventListener('pageshow', function(e) {
 
       <div style="font-size:11px;color:var(--text-3);padding:8px;border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-sm);background:rgba(34,197,94,.05)">
         ✅ Ao confirmar: saldo do armazém será incrementado em 1 e o serial voltará para ESTOQUE na gestão de laudos.
-        ${document.getElementById ? '' : ''}
       </div>
     </div>
     <div class="modal-footer">
@@ -17972,7 +17977,7 @@ function abrirFormNovoSerial(_ev, itemId, nomeItem, armazemId) {
 }
 function fecharFormNovoSerial() {
   document.getElementById('formNovoSerial').classList.add('hidden');
-  ['nsItemBusca','nsItemId','nsSerial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['nsItemBusca','nsItemId','nsSerial','nsRastreio'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('nsStatus').value = 'ESTOQUE';
   document.getElementById('nsMsgConsistencia').textContent='';
 }
@@ -18064,9 +18069,11 @@ function validarSerialDuplicado(valor) {
 async function salvarNovoSerial() {
   const itemId = document.getElementById('nsItemId').value;
   const serial  = document.getElementById('nsSerial').value.trim().toUpperCase().replace(/\s+/g,'');
+  const rastreio = (document.getElementById('nsRastreio')?.value || '').trim().toUpperCase();
   const status  = document.getElementById('nsStatus').value;
   const item    = (_itens||[]).find(i=>i.id===itemId);
   if (!itemId || !serial) { toast('Item e serial obrigatórios','warn'); return; }
+  if (!rastreio) { toast('Informe o rastreio da peça (nº do laudo ou lote, colado acima do serial)','warn'); document.getElementById('nsRastreio')?.focus(); return; }
 
   // Bloqueia se serial duplicado
   if (validarSerialDuplicado(serial)) {
@@ -18075,7 +18082,7 @@ async function salvarNovoSerial() {
   }
 
   const armazemId = document.getElementById('nsArmazem')?.value || '';
-  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status, armazem_id: armazemId || undefined }) });
+  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, rastreio, status_local:status, armazem_id: armazemId || undefined }) });
   if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
@@ -18183,10 +18190,11 @@ function laudosRender_() {
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="border-bottom:1px solid var(--border)">
           <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Serial</th>
+          <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)" title="Nº do laudo ou lote colado na peça">Rastreio</th>
           <th style="padding:8px;text-align:left;font-size:10px;color:var(--text-3)">Local</th>
-          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Status</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Vencimento</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Dias</th>
+          <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Status</th>
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
         </tr></thead>
         <tbody>${s.map(x=>{
@@ -18196,10 +18204,11 @@ function laudosRender_() {
           if (x.status === 'PENDENTE_CADASTRO') {
             return `<tr style="border-bottom:1px solid var(--border);background:rgba(168,85,247,.06)">
               <td style="padding:8px;font-family:var(--font-mono);color:#a855f7;font-style:italic">— sem serial —</td>
+              <td style="padding:8px;color:var(--text-3)">—</td>
               <td style="padding:8px;font-size:11px;color:var(--text-3)">${escHtml(x.nomeArmazem||'Estoque')}</td>
-              <td style="padding:8px;text-align:center"><span style="color:#a855f7;font-size:10px;font-weight:700">⏳ Pendente</span></td>
               <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center;color:var(--text-3)">—</td>
+              <td style="padding:8px;text-align:center"><span style="color:#a855f7;font-size:10px;font-weight:700">⏳ Pendente</span></td>
               <td style="padding:8px;text-align:center">
                 <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${escJs(x.itemId)}',this.dataset.nome,'${escJs(x.armazemId||'')}')" data-nome="${escHtml((x.itemNome||'').replace(/"/g,'&quot;'))}">+ Cadastrar Serial</button>
               </td>
@@ -18213,13 +18222,14 @@ function laudosRender_() {
             :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
           return `<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(x.serial)}</td>
+            <td style="padding:8px">${nr10CelulaRastreio(x)}</td>
             <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}${x.statusLocal==='DESCARTE' && x.motivo ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(x.motivo)}</div>` : ''}</td>
-            <td style="padding:8px;text-align:center">${stBadge}</td>
             <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
+            <td style="padding:8px;text-align:center">${stBadge}</td>
             <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
               ${x.anexoUrl?`<a href="${escHtml(safeUrl(x.anexoUrl))}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
-              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')">✏️ Editar</button>`}
+              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')" title="Lançar o PDF e o vencimento do laudo">📄 PDF e vencimento</button>`}
               ${['ESTOQUE','AGUARDANDO_LAUDO'].includes(x.statusLocal) && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}')">🗑️ Descartar</button>` : ''}
             </td>
           </tr>`;
@@ -18239,7 +18249,7 @@ function laudosFiltrarLista_() {
   const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
 
   let lista = laudosDoArmazem_(__LAUDOS_NR10__.lista || []);
-  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
+  if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.rastreio||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
   if (status) lista = lista.filter(x=>x.status===status);
   if (local)  lista = lista.filter(x=>x.statusLocal===local);
   if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
@@ -18273,7 +18283,7 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     String(a.itemNome || '').localeCompare(String(b.itemNome || ''), 'pt-BR') ||
     String(a.serial || '').localeCompare(String(b.serial || ''), 'pt-BR', { numeric: true }));
 
-  const seriais = [['Item', 'Código', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Lote / Nº laudo', 'Data do ensaio',
+  const seriais = [['Item', 'Código', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Rastreio (nº laudo / lote)', 'Data do ensaio',
     'Validade (dias)', 'Vencimento', 'Dias restantes', 'Motivo do descarte', 'Última movimentação', 'Link do laudo', 'Armazém']];
   ordenada.forEach(x => {
     const it = itemPorId[x.itemId];
@@ -18284,7 +18294,7 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     seriais.push([
       x.itemNome || '', it?.codigo || '', x.serial || '', LAUDOS_LOCAL_TXT[x.statusLocal] || x.statusLocal || '',
       x.statusLocal === 'COM_COLAB' ? (x.nomeColab || '') : '', LAUDOS_STATUS_TXT[x.status] || x.status || '',
-      x.loteLaudo || '', dataBR(x.dataEnsaio), numero(x.validadeDias), dataBR(x.dataVenc), numero(x.diasRest),
+      x.rastreio || x.loteLaudo || '', dataBR(x.dataEnsaio), numero(x.validadeDias), dataBR(x.dataVenc), numero(x.diasRest),
       x.statusLocal === 'DESCARTE' ? (x.motivo || '') : '', dataHoraBR(x.dtUltMov), x.anexoUrl || '', x.nomeArmazem || '',
     ]);
   });
@@ -18412,13 +18422,51 @@ async function laudosCarregar_() {
 
 function laudosAtualizarContadores__(lista) { laudosAtualizarContadores_(lista); }
 
+// Rastreio: almoxarifado (gerenciar seriais) ou SESMT (inserir laudo) pode cadastrar/corrigir
+const nr10PodeRastreio = () => temPermissao('gerenciar_seriais') || temPermissao('inserir_laudo');
+function nr10CelulaRastreio(x) {
+  const pode = nr10PodeRastreio() && x.idAtivo;
+  if (x.rastreio) {
+    return `<span style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:var(--text-1)">${escHtml(x.rastreio)}</span>` +
+      (pode ? ` <button class="row-action" style="padding:0 4px;font-size:10px" title="Corrigir o rastreio" onclick="nr10AbrirRastreio('${escJs(x.idAtivo)}')">✏️</button>` : '');
+  }
+  return pode
+    ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b;font-size:10px" onclick="nr10AbrirRastreio('${escJs(x.idAtivo)}')">+ Rastreio</button>`
+    : '<span style="color:var(--yellow);font-size:10px">sem rastreio</span>';
+}
+function nr10AbrirRastreio(idAtivo) {
+  const x = (__LAUDOS_NR10__.lista || []).find(a => a.idAtivo === idAtivo);
+  if (!x) return;
+  document.getElementById('rastreioIdAtivo').value = idAtivo;
+  document.getElementById('rastreioItemSerial').textContent = `${x.itemNome || ''} · Serial: ${x.serial || ''}`;
+  document.getElementById('rastreioInput').value = x.rastreio || '';
+  document.getElementById('modalRastreioNR10').classList.remove('hidden');
+  setTimeout(() => document.getElementById('rastreioInput')?.focus(), 50);
+}
+async function nr10SalvarRastreio(btn) {
+  const id = document.getElementById('rastreioIdAtivo').value;
+  const rastreio = document.getElementById('rastreioInput').value.trim().toUpperCase();
+  if (!rastreio) { toast('Informe o rastreio (nº do laudo ou lote)', 'warn'); return; }
+  btn.disabled = true;
+  const res = await api(`/laudos/nr10/rastreio/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ rastreio }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar o rastreio', 'error'); return; }
+  const x = (__LAUDOS_NR10__.lista || []).find(a => a.idAtivo === id);
+  if (x) x.rastreio = res.rastreio;
+  document.getElementById('modalRastreioNR10').classList.add('hidden');
+  toast('Rastreio salvo!', 'success');
+  laudosRender_();
+}
+
 function abrirEditarLaudo(idAtivo) {
   const x = __LAUDOS_NR10__.lista.find(a=>a.idAtivo===idAtivo);
   if (!x) return;
   __LAUDOS_NR10__.selecionado = x;
   document.getElementById('laudoIdAtivo').value     = idAtivo;
-  document.getElementById('laudoLote').value        = x.loteLaudo||'';
-  document.getElementById('laudoDataEnsaio').value  = x.dataEnsaio?x.dataEnsaio.slice(0,10):'';
+  const rastreioInfo = document.getElementById('laudoRastreioInfo');
+  rastreioInfo.textContent = x.rastreio || 'sem rastreio — peça ao almoxarifado para cadastrar';
+  rastreioInfo.style.color = x.rastreio ? 'var(--text-1)' : 'var(--yellow)';
+  document.getElementById('laudoDataVenc').value    = x.dataVenc?x.dataVenc.slice(0,10):'';
   document.getElementById('laudoValDias').value     = x.validadeDias||'';
   document.getElementById('laudoAnexoUrl').value    = x.anexoUrl||'';
   document.getElementById('laudoItemSerial').textContent = `${escHtml(x.itemNome)} · Serial: ${escHtml(x.serial)}`;
@@ -18429,12 +18477,11 @@ async function salvarLaudo() {
   if (!temPermissao('inserir_laudo')) { toast('Sem permissão para inserir laudos', 'warn'); return; }
   const id = document.getElementById('laudoIdAtivo').value;
   const body = {
-    lote_laudo: document.getElementById('laudoLote').value.trim(),
-    dt_ensaio:  document.getElementById('laudoDataEnsaio').value,
+    dt_venc:    document.getElementById('laudoDataVenc').value,
     validade_dias: document.getElementById('laudoValDias').value,
     anexo_url:  document.getElementById('laudoAnexoUrl').value.trim(),
   };
-  if (!body.dt_ensaio || !body.validade_dias) { toast('Data de ensaio e validade obrigatórios','warn'); return; }
+  if (!body.dt_venc || !(Number(body.validade_dias) > 0)) { toast('Informe o vencimento e a validade (dias) do laudo','warn'); return; }
   const res = await api(`/laudos/nr10/laudo/${encodeURIComponent(id)}`, { method:'PUT', body: JSON.stringify(body) });
   if (res?.ok) { toast('Laudo salvo!','success'); document.getElementById('modalEditarLaudo').classList.add('hidden'); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
@@ -18478,6 +18525,7 @@ async function buscarLocalizador() {
   document.getElementById('locSituacaoAtual').innerHTML = a ? [
     ['Item', a.item||'—'],
     ['Serial', a.serial||'—'],
+    ['Rastreio', escHtml(a.rastreio||'—')],
     ['Status', `<span style="color:${localCor};font-weight:700">${a.status_local||'—'}</span>`],
     ['Localização', a.nome_colab_atual||a.local_atual||'—'],
     ['Última mov.', formatarData(a.dt_ult_mov_raw?.split('T')[0])||'—'],
@@ -18494,7 +18542,7 @@ async function buscarLocalizador() {
     laudoBox.style.display = '';
     const stCor = l.status==='OK'?'#22c55e':l.status==='VENCIDO'?'#ef4444':l.status==='ALERTA_30'?'#f59e0b':'var(--text-3)';
     document.getElementById('locLaudoInfo').innerHTML = [
-      ['Lote', l.lote_laudo||'—'],
+      ['Rastreio', escHtml(l.lote_laudo||'—')],
       ['Data Ensaio', formatarData(l.dt_ensaio)||'—'],
       ['Validade', l.validade_dias?`${l.validade_dias} dias`:'—'],
       ['Vencimento', formatarData(l.dt_venc)||'—'],
@@ -19379,6 +19427,7 @@ function abrirModalRecuperarSemSerial(id, item, origemArmazemId) {
   document.getElementById('recupSerialAtualDisplay').textContent = '(item sem serial)';
   document.getElementById('recupSerialNovo').value      = '';
   document.getElementById('recupSerialNovo').parentElement.style.display = 'none'; // esconde campo de serial novo
+  document.getElementById('recupRastreioBloco').style.display = 'none';            // item sem serial não tem rastreio
   document.getElementById('recupItemInfo').textContent  = item;
 
   const selArm = document.getElementById('recupArmazem');
@@ -19409,8 +19458,11 @@ function abrirModalRecuperar(idAtivo, serial, item, remessaItemId) {
   document.getElementById('recupRemessaItemId').value   = remessaItemId || '';
   document.getElementById('recupSerialAtual').value     = serial;
   document.getElementById('recupSerialAtualDisplay').textContent = serial;
-  document.getElementById('recupSerialNovo').value      = '';
+  document.getElementById('recupSerialNovo').value      = serial || '';
   document.getElementById('recupSerialNovo').parentElement.style.display = '';
+  document.getElementById('recupRastreioBloco').style.display = '';
+  document.getElementById('recupRastreioNovo').value    = '';
+  recupMostrarRastreioAnterior(idAtivo, serial);
   document.getElementById('recupItemInfo').textContent  = item;
   delete document.getElementById('modalRecuperar').dataset.semSerialId;
 
@@ -19424,6 +19476,20 @@ function abrirModalRecuperar(idAtivo, serial, item, remessaItemId) {
   selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}">${escHtml(a.nome)}</option>`).join('');
 
   document.getElementById('modalRecuperar').classList.remove('hidden');
+}
+
+// Mostra o rastreio que a peça tinha antes de ir para o laudo (a etiqueta nova costuma trocar)
+async function recupMostrarRastreioAnterior(idAtivo, serial) {
+  const el = document.getElementById('recupRastreioAnterior');
+  el.textContent = '';
+  let anterior = (_recupData || []).find(r => r.id_ativo === idAtivo)?.rastreio
+    || (__LAUDOS_NR10__?.lista || []).find(a => a.idAtivo === idAtivo)?.rastreio;
+  if (!anterior && serial) {
+    const h = await api(`/laudos/nr10/historico/${encodeURIComponent(serial)}`);
+    anterior = [h?.ativo, ...(h?.ativos_duplicados || [])].filter(Boolean).find(a => a.id_ativo === idAtivo)?.rastreio;
+  }
+  if (document.getElementById('recupIdAtivo').value !== idAtivo) return;
+  el.textContent = anterior ? `Rastreio anterior: ${anterior}` : 'Sem rastreio anterior cadastrado';
 }
 
 async function confirmarRecuperacao() {
@@ -19447,12 +19513,16 @@ async function confirmarRecuperacao() {
     return;
   }
 
-  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase();
+  const serialNovo = document.getElementById('recupSerialNovo').value.trim().toUpperCase().replace(/\s+/g, '');
+  const serialAtual = (document.getElementById('recupSerialAtual').value || '').toUpperCase();
+  const rastreioNovo = document.getElementById('recupRastreioNovo').value.trim().toUpperCase();
   const remessaItemId = document.getElementById('recupRemessaItemId').value || null;
+  if (!serialNovo) { toast('Informe o serial da peça', 'warn'); document.getElementById('recupSerialNovo').focus(); return; }
+  if (!rastreioNovo) { toast('Informe o rastreio novo (nº do laudo ou lote da etiqueta)', 'warn'); document.getElementById('recupRastreioNovo').focus(); return; }
 
   const res = await api('/laudos/recuperados/recuperar', {
     method: 'POST',
-    body: JSON.stringify({ id_ativo: idAtivo, serial_novo: serialNovo||null, armazem_id: armazemId, remessa_item_id: remessaItemId })
+    body: JSON.stringify({ id_ativo: idAtivo, serial_novo: serialNovo !== serialAtual ? serialNovo : null, rastreio_novo: rastreioNovo, armazem_id: armazemId, remessa_item_id: remessaItemId })
   });
 
   if (res?.ok) {
@@ -26983,25 +27053,49 @@ async function baExcluirEquipe(id) {
 </div>
 
 
+<!-- MODAL RASTREIO DO SERIAL NR10 -->
+<div class="modal-overlay hidden" id="modalRastreioNR10">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <div><div class="modal-title">🏷️ Rastreio da peça</div><div style="font-size:11px;color:var(--text-3)" id="rastreioItemSerial"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalRastreioNR10').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:8px">
+      <input type="hidden" id="rastreioIdAtivo">
+      <label class="form-label">Nº do laudo ou lote *</label>
+      <input id="rastreioInput" class="form-input" placeholder="Número colado logo acima do serial" style="font-family:var(--font-mono);text-transform:uppercase"
+        onkeydown="if(event.key==='Enter')nr10SalvarRastreio(document.getElementById('rastreioBtnSalvar'))">
+      <div style="font-size:11px;color:var(--text-3)">É com ele que o SESMT localiza o laudo e lança o vencimento. Pode se repetir em várias peças do mesmo lote.</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalRastreioNR10').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" id="rastreioBtnSalvar" onclick="nr10SalvarRastreio(this)">Salvar rastreio</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL EDITAR LAUDO NR10 -->
 <div class="modal-overlay hidden" id="modalEditarLaudo">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <div><div class="modal-title">✏️ Editar Laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
+      <div><div class="modal-title">📄 PDF e vencimento do laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
       <button class="modal-close" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
       <input type="hidden" id="laudoIdAtivo">
-      <div><label class="form-label">Lote / Nº Laudo</label><input id="laudoLote" class="form-input" placeholder="Ex: LOT-2024-001"></div>
+      <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--bg)">
+        <div style="font-size:10px;color:var(--text-3)">RASTREIO (Nº DO LAUDO / LOTE)</div>
+        <div id="laudoRastreioInfo" style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text-1)">—</div>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label class="form-label">Data do Ensaio *</label><input id="laudoDataEnsaio" class="form-input" type="date"></div>
-        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" placeholder="Ex: 365"></div>
+        <div><label class="form-label">Vencimento do laudo *</label><input id="laudoDataVenc" class="form-input" type="date"></div>
+        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" min="1" placeholder="Ex: 180"></div>
       </div>
       <div><label class="form-label">Link PDF do Laudo (Drive)</label><input id="laudoAnexoUrl" class="form-input" placeholder="https://drive.google.com/..."></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">Cancelar</button>
-      <button class="btn btn-primary" onclick="salvarLaudo()">Salvar Laudo</button>
+      <button class="btn btn-primary" onclick="salvarLaudo()">Salvar</button>
     </div>
   </div>
 </div>
