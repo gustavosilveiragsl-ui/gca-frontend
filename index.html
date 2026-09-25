@@ -776,7 +776,7 @@ window.addEventListener('pageshow', function(e) {
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="financeiro" data-perm="ver_financeiro" onclick="showView('financeiro',this)"><span class="ni-icon">📊</span> Painel Financeiro</button>
+          <button class="nav-item" data-view="financeiro" data-perm="painel_financeiro" onclick="showView('financeiro',this)"><span class="ni-icon">📊</span> Painel Financeiro</button>
           <button class="nav-item" data-view="descontos" data-perm="descontos" onclick="showView('descontos',this)"><span class="ni-icon">💰</span> Descontos</button>
           <button class="nav-item" data-view="solicitacoes-compra" data-perm="previsao_compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon">🛒</span> Solicitações de Compra</button>
           <button class="nav-item" data-view="protheus" data-perm="protheus" onclick="showView('protheus',this)"><span class="ni-icon">🗂️</span> Lançamentos Protheus</button>
@@ -4236,6 +4236,9 @@ window.addEventListener('pageshow', function(e) {
               <div id="nsItemSug" class="autocomplete-list hidden"></div>
               <input type="hidden" id="nsItemId">
             </div>
+            <div><label class="form-label" style="margin-bottom:4px">Armazém onde o serial está</label>
+              <select id="nsArmazem" class="form-input" onchange="atualizarConsistenciaNS()"></select>
+            </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
               <input id="nsSerial" class="form-input" placeholder="N° Série / N° Laudo" style="font-family:var(--font-mono);text-transform:uppercase" oninput="validarSerialDuplicado(this.value)">
               <select id="nsStatus" class="form-input" onchange="atualizarConsistenciaNS()">
@@ -4256,8 +4259,13 @@ window.addEventListener('pageshow', function(e) {
 
         <!-- Filtros -->
         <div class="card" style="margin-bottom:12px">
-          <div style="padding:12px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+          <div style="padding:12px;display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
             <div><label class="form-label">Buscar item / serial</label><input id="laudoFiltro" class="form-input" placeholder="Nome ou serial..." oninput="laudosRender_()"></div>
+            <div><label class="form-label">Armazém</label>
+              <select id="laudoFiltroArmazem" class="form-input" onchange="laudosRender_()" title="Seriais, pendências e saldo do armazém escolhido">
+                <option value="">Todos os armazéns</option>
+              </select>
+            </div>
             <div><label class="form-label">Status</label>
               <select id="laudoFiltroStatus" class="form-input" onchange="laudosRender_()">
                 <option value="">Todos</option>
@@ -8591,7 +8599,8 @@ function adicionarItensAoAtendimento(selecionados) {
 
 async function carregarSeriaisDisponiveis(itemId, idx) {
   const [dataEst, dataColab] = await Promise.all([
-    api(`/ensaios/seriais-disponiveis/${itemId}`),
+    // Só os seriais do armazém de onde o item está saindo
+    api(`/ensaios/seriais-disponiveis/${itemId}${ATEND.itens[idx]?.armazemId ? `?armazem_id=${encodeURIComponent(ATEND.itens[idx].armazemId)}` : ''}`),
     ATEND.colab ? api(`/ensaios/seriais-colab/${ATEND.colab.id}/${itemId}`) : Promise.resolve(null),
   ]);
   if (dataEst?.seriais) {
@@ -10907,7 +10916,7 @@ function traFiltrarItens(q) {
     .slice(0, 40);
   box.innerHTML = lista.length
     ? lista.map(i => `<div class="tfl-sug" onmousedown="traAdicionarItem('${escJs(i.item_id)}')">${escHtml(i.descricao)}
-        <span style="color:var(--text-3);font-size:10px"> · ${escHtml(i.codigo || 's/ código')} · saldo ${i.saldo}</span></div>`).join('')
+        <span style="color:var(--text-3);font-size:10px"> · ${escHtml(i.codigo || 's/ código')} · saldo ${i.saldo}${i.requer_ensaio ? ' · 🔬 NR10 (bipar seriais)' : ''}</span></div>`).join('')
     : `<div class="tfl-sug" style="color:var(--text-3);cursor:default">Nenhum item com saldo encontrado</div>`;
   box.classList.remove('hidden');
 }
@@ -10915,7 +10924,7 @@ function traFiltrarItens(q) {
 function traAdicionarItem(id) {
   const i = _traEstoque.find(x => x.item_id === id);
   if (!i) return;
-  _traItens.push({ ...i, quantidade: 1 });
+  _traItens.push({ ...i, quantidade: 1, bipados: [] });
   document.getElementById('traItemBusca').value = '';
   document.getElementById('traItemSugestoes').classList.add('hidden');
   traRenderItens();
@@ -10943,17 +10952,70 @@ function traRenderItens() {
     tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--text-3);font-size:12px">Nenhum item adicionado</td></tr>`;
     return;
   }
-  tbody.innerHTML = _traItens.map(i => `
+  tbody.innerHTML = _traItens.map((i, idx) => `
     <tr>
-      <td class="td-main">${escHtml(i.descricao)}</td>
+      <td class="td-main">${escHtml(i.descricao)}${i.requer_ensaio ? ' <span style="font-size:10px;font-weight:700;color:#a855f7">🔬 NR10</span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(i.codigo || '—')}</td>
       <td style="text-align:center;font-size:11px">${i.saldo}</td>
       <td style="text-align:center"><input type="number" min="1" max="${i.saldo}" value="${i.quantidade}" class="form-input" style="width:80px;text-align:center"
             onchange="traQtdItem('${escJs(i.item_id)}', this.value)"></td>
       <td style="font-size:11px">${escHtml(i.un_med || 'UN')}</td>
       <td><button class="row-action" style="color:var(--red)" onclick="traRemoverItem('${escJs(i.item_id)}')">✕</button></td>
-    </tr>`).join('') + `
+    </tr>${i.requer_ensaio ? traLinhaSeriais(i, idx) : ''}`).join('') + `
     <tr><td colspan="6" style="text-align:right;font-size:11px;color:var(--text-3)">${_traItens.length} item(ns) · ${_traItens.reduce((s, i) => s + i.quantidade, 0)} unidade(s)</td></tr>`;
+}
+
+// ── Seriais NR10 na transferência: cada peça com serial cadastrado vai bipada e muda de armazém.
+// Peças que ainda não têm serial (pendentes de cadastro) podem ir sem — por isso o mínimo. ──
+const traPecas = (i) => Math.round(Number(i.quantidade || 0) * (i.fator || 1));
+const traMinimoSeriais = (i) => Math.max(0, traPecas(i) - (i.sem_serial || 0));
+
+function traLinhaSeriais(i, idx) {
+  const pecas = traPecas(i), minimo = traMinimoSeriais(i), n = (i.bipados || []).length;
+  const cor = n > pecas ? 'var(--red)' : n >= minimo ? 'var(--green)' : 'var(--yellow)';
+  const livres = (i.seriais || []).filter(x => !(i.bipados || []).includes(x));
+  const regra = minimo === pecas
+    ? `bipe os ${pecas} serial(is)`
+    : `bipe de ${minimo} a ${pecas} serial(is) — ${i.sem_serial} peça(s) de ${escHtml(document.getElementById('trfOrigem')?.selectedOptions?.[0]?.textContent || 'origem')} ainda sem serial cadastrado podem ir sem bipar`;
+  return `
+    <tr class="tra-nr10"><td colspan="6" style="background:var(--bg);padding:8px 12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="form-input" id="traSerial_${idx}" list="traSeriaisDisp_${idx}" placeholder="Bipe o serial e Enter" autocomplete="off"
+          style="width:220px;font-family:var(--font-mono);text-transform:uppercase"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();traBipar(${idx}, this.value)}">
+        <datalist id="traSeriaisDisp_${idx}">${livres.map(x => `<option value="${escHtml(x)}">`).join('')}</datalist>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="traBipar(${idx}, document.getElementById('traSerial_${idx}').value)">+ Serial</button>
+        <span class="tra-nr10-conta" style="font-size:11px;font-weight:700;color:${cor}">${n} de ${pecas} bipado(s)</span>
+        <span style="font-size:11px;color:var(--text-3)">🔬 ${regra}</span>
+      </div>
+      ${n ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${i.bipados.map(x => `
+        <span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg-card);border:1px solid var(--border)">${escHtml(x)}
+          <button class="row-action" style="padding:0 4px;color:var(--red)" title="Tirar" onclick="traTirarSerial(${idx}, '${escJs(x)}')">×</button></span>`).join('')}</div>` : ''}
+    </td></tr>`;
+}
+
+function traBipar(idx, valor) {
+  const i = _traItens[idx];
+  if (!i) return;
+  const serial = String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+  if (!serial) return;
+  i.bipados = i.bipados || [];
+  const aviso = i.bipados.includes(serial) ? `O serial ${serial} já foi bipado`
+    : !(i.seriais || []).includes(serial) ? `O serial ${serial} não está no estoque de ${document.getElementById('trfOrigem')?.selectedOptions?.[0]?.textContent || 'origem'} para "${i.descricao}"`
+    : i.bipados.length >= traPecas(i) ? `Já foram bipados os ${traPecas(i)} seriais — aumente a quantidade para mandar mais`
+    : '';
+  if (aviso) toast(aviso, 'warn', 5000);
+  else i.bipados.push(serial);
+  traRenderItens();
+  const campo = document.getElementById(`traSerial_${idx}`);
+  if (campo) { campo.value = aviso ? serial : ''; campo.focus(); if (aviso) campo.select(); }
+}
+
+function traTirarSerial(idx, serial) {
+  const i = _traItens[idx];
+  if (!i) return;
+  i.bipados = (i.bipados || []).filter(x => x !== serial);
+  traRenderItens();
 }
 
 // completo = também volta os armazéns para "Selecione" (usado ao entrar na tela).
@@ -10985,6 +11047,11 @@ async function traRegistrar() {
     if (origem === destino) { toast('Origem e destino precisam ser armazéns diferentes', 'warn'); return; }
     if (!_traItens.length) { toast('Adicione ao menos um item', 'warn'); return; }
     if (traVal('traJustificativa').length < 5) { toast('Informe a justificativa da transferência', 'warn'); return; }
+    for (const i of _traItens.filter(x => x.requer_ensaio)) {
+      const n = (i.bipados || []).length, pecas = traPecas(i), minimo = traMinimoSeriais(i);
+      if (n > pecas) { toast(`"${i.descricao}": ${n} seriais bipados para ${pecas} peça(s) — tire ${n - pecas}`, 'warn', 6000); return; }
+      if (n < minimo) { toast(`"${i.descricao}" tem laudo NR10: bipe ${minimo === pecas ? `os ${pecas} seriais` : `pelo menos ${minimo} dos ${pecas} seriais`} que estão indo`, 'warn', 6000); return; }
+    }
 
     const meio = traMeio();
     const transporte = meio === 'PROPRIO'
@@ -10996,7 +11063,7 @@ async function traRegistrar() {
       armazem_origem_id: origem, armazem_destino_id: destino, data: traVal('trfData'),
       nome_responsavel: traVal('traResponsavel'), justificativa: traVal('traJustificativa'), observacao: traVal('traObs'),
       meio_transporte: meio, transporte,
-      itens: _traItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade })),
+      itens: _traItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade, ...(i.requer_ensaio ? { seriais: i.bipados || [] } : {}) })),
     };
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
     // Mexe no saldo: se algum dos dois armazéns estiver em inventário, passa pelo fluxo de liberação.
@@ -11083,7 +11150,7 @@ async function traAbrirDetalhe(id) {
         <div class="tfl-secao">Itens</div>
         <div style="overflow-x:auto;margin-bottom:10px"><table>
           <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Qtd.</th><th>Un.</th></tr></thead>
-          <tbody>${(t.itens || []).map(i => `<tr><td class="td-main">${escHtml(i.descricao)}</td><td style="font-size:11px">${escHtml(i.codigo || '—')}</td><td style="text-align:center">${Number(i.quantidade)}</td><td style="font-size:11px">${escHtml(i.un_med || 'UN')}</td></tr>`).join('')}</tbody>
+          <tbody>${(t.itens || []).map(i => `<tr><td class="td-main">${escHtml(i.descricao)}${(i.seriais || []).length ? `<div style="font-size:10px;font-weight:500;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">🔬 ${i.seriais.map(escHtml).join(', ')}</div>` : ''}</td><td style="font-size:11px">${escHtml(i.codigo || '—')}</td><td style="text-align:center">${Number(i.quantidade)}</td><td style="font-size:11px">${escHtml(i.un_med || 'UN')}</td></tr>`).join('')}</tbody>
         </table></div>
         ${t.observacao ? `<div style="font-size:12px;color:var(--text-2)"><span style="color:var(--text-3)">Observação:</span> ${escHtml(t.observacao)}</div>` : ''}
       </div>
@@ -14872,14 +14939,14 @@ const PERMISSOES_SCHEMA = {
     saida_material:'Registrar saída', transferencia:'Transferência',
     transferencia_filial:'Transferência entre filiais (criar e enviar)',
     transferencia_filial_receber:'Transferência entre filiais (aceitar e receber)',
-    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra'
+    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra e Solicitações de compra'
   }},
   consulta: { label:'Consulta', icon:'🔍', itens:{
     consulta_itens:'Consulta de itens', consulta_colaboradores:'Consulta de colaboradores',
     consulta_dotacao:'Consulta de dotação'
   }},
   financeiro: { label:'Financeiro', icon:'💰', itens:{
-    ver_financeiro:'Ver financeiro', descontos:'Gerenciar descontos', protheus:'Protheus / Compras'
+    painel_financeiro:'Painel financeiro (gastos, compras, recuperação e custos lançados)', descontos:'Descontos', protheus:'Lançamentos Protheus'
   }},
   laudos: { label:'Laudos / NR10', icon:'🔬', itens:{
     ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais',
@@ -14895,7 +14962,7 @@ const PERMISSOES_SCHEMA = {
   gestao: { label:'Gestão', icon:'📊', itens:{
     ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
     ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
-    ver_indicadores:'Ver indicadores', ver_financeiro:'Painel financeiro (gastos, compras e recuperação)', relatorios:'Relatórios'
+    ver_indicadores:'Ver indicadores', relatorios:'Relatórios'
   }},
   cadastros: { label:'Cadastros', icon:'🗂️', itens:{
     cadastrar_itens:'Cadastrar/editar itens', cadastrar_colaboradores:'Cadastrar/editar colaboradores',
@@ -17850,9 +17917,59 @@ async function editarPCItem(idx, itemId) {
 // ═══════════════════════════════════════════
 // LAUDOS NR10
 // ═══════════════════════════════════════════
-let __LAUDOS_NR10__ = { lista: [], selecionado: null };
+let __LAUDOS_NR10__ = { lista: [], selecionado: null, armazens: [], principalId: null };
 
-function abrirFormNovoSerial() { document.getElementById('formNovoSerial').classList.remove('hidden'); }
+// ── Armazém: cada serial está num armazém. O servidor só manda os armazéns que o usuário pode
+// ver; com um só, a tela fica presa nele. "Todos" soma os armazéns visíveis. ──
+function laudosOpcoesArmazem_(comTodos) {
+  const arms = __LAUDOS_NR10__.armazens || [];
+  return (comTodos && arms.length > 1 ? '<option value="">Todos os armazéns</option>' : '') +
+    arms.map(a => `<option value="${escHtml(a.id)}">${a.principal ? '⭐ ' : ''}${escHtml(a.nome)}</option>`).join('');
+}
+function laudosPreencherArmazens_() {
+  const sel = document.getElementById('laudoFiltroArmazem');
+  if (!sel) return;
+  const atual = sel.value;
+  const arms = __LAUDOS_NR10__.armazens || [];
+  sel.innerHTML = laudosOpcoesArmazem_(true);
+  sel.value = arms.some(a => a.id === atual) ? atual : (arms.length === 1 ? arms[0].id : '');
+  sel.disabled = arms.length <= 1;
+}
+function laudosArmazemSel_() { return document.getElementById('laudoFiltroArmazem')?.value || ''; }
+// Armazéns que entram na conta de saldo: o escolhido, ou todos os visíveis
+function laudosArmazensConsiderados_() {
+  const sel = laudosArmazemSel_();
+  return sel ? [sel] : (__LAUDOS_NR10__.armazens || []).map(a => a.id);
+}
+function laudosDoArmazem_(lista) {
+  const sel = laudosArmazemSel_();
+  return sel ? (lista || []).filter(x => x.armazemId === sel) : (lista || []);
+}
+// Armazém sugerido para cadastrar/devolver: o do filtro, senão o principal, senão o primeiro
+function laudosArmazemPadrao_() {
+  const arms = __LAUDOS_NR10__.armazens || [];
+  const sel = laudosArmazemSel_();
+  if (sel) return sel;
+  return (arms.find(a => a.id === __LAUDOS_NR10__.principalId) || arms[0])?.id || '';
+}
+
+// Aberto pelo "+ Cadastrar Serial" de uma pendência já vem com o item e o armazém dela.
+function abrirFormNovoSerial(_ev, itemId, nomeItem, armazemId) {
+  const selArm = document.getElementById('nsArmazem');
+  if (selArm) {
+    selArm.innerHTML = laudosOpcoesArmazem_(false);
+    selArm.value = armazemId || laudosArmazemPadrao_();
+    selArm.disabled = (__LAUDOS_NR10__.armazens || []).length <= 1;
+  }
+  if (itemId) {
+    const it = (_itens || []).find(i => i.id === itemId);
+    document.getElementById('nsItemId').value = itemId;
+    document.getElementById('nsItemBusca').value = it ? `${it.descricao} (${it.codigo || '—'})` : (nomeItem || '');
+  }
+  document.getElementById('formNovoSerial').classList.remove('hidden');
+  atualizarConsistenciaNS();
+  if (itemId) setTimeout(() => document.getElementById('nsSerial')?.focus(), 50);
+}
 function fecharFormNovoSerial() {
   document.getElementById('formNovoSerial').classList.add('hidden');
   ['nsItemBusca','nsItemId','nsSerial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -17892,9 +18009,10 @@ function atualizarConsistenciaNS() {
 
   const itemLocal = (_itens||[]).find(i=>i.id===id);
   const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
-  const saldoEst  = _estoqueData.filter(s=>s.item_id===id).reduce((acc,s)=>acc+Number(s.saldo||0),0);
+  const arm       = document.getElementById('nsArmazem')?.value || '';
+  const saldoEst  = _estoqueData.filter(s=>s.item_id===id && (!arm || s.armazem_id===arm)).reduce((acc,s)=>acc+Number(s.saldo||0),0);
   const serialsNecessarios = saldoEst * fatorPar;
-  const serialsEstoque = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&x.statusLocal==='ESTOQUE').length;
+  const serialsEstoque = __LAUDOS_NR10__.lista.filter(x=>x.itemId===id&&!x.pendente&&x.statusLocal==='ESTOQUE'&&(!arm||x.armazemId===arm)).length;
 
   if (serialsEstoque >= serialsNecessarios && serialsNecessarios > 0) {
     msg.style.color = '#ef4444';
@@ -17956,7 +18074,8 @@ async function salvarNovoSerial() {
     return;
   }
 
-  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status }) });
+  const armazemId = document.getElementById('nsArmazem')?.value || '';
+  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, status_local:status, armazem_id: armazemId || undefined }) });
   if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
@@ -17981,6 +18100,8 @@ function laudosAtualizarContadores_(lista) {
 
 function laudosLimparFiltros_() {
   ['laudoFiltro','laudoFiltroStatus','laudoFiltroLocal','laudoFiltroVencDe','laudoFiltroVencAte'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const arm = document.getElementById('laudoFiltroArmazem');
+  if (arm && !arm.disabled) arm.value = '';
   laudosRender_();
 }
 
@@ -17989,6 +18110,8 @@ function laudosRender_() {
   const info   = document.getElementById('laudoInfo');
   if (!tbody) return;
 
+  // Os cartões do topo seguem o armazém escolhido (os demais filtros refinam só a lista)
+  laudosAtualizarContadores_(laudosDoArmazem_(__LAUDOS_NR10__.lista || []));
   const lista = laudosFiltrarLista_();
 
   // Agrupa por item
@@ -18019,16 +18142,16 @@ function laudosRender_() {
     if(aguardLaudo>0) badge+=`<span style="color:#6366f1;font-size:10px;font-weight:700;margin-right:4px">🔬 ${aguardLaudo} aguardando laudo</span>`;
     if(!badge) badge=`<span style="color:#22c55e;font-size:10px;font-weight:700">✅ OK</span>`;
 
-    // Saldo considerado é sempre o do armazém principal da unidade, nunca soma de satélites
-    const armPrincipal = (_armazens||[]).find(a=>a.principal);
-    const saldoEstObj = _estoqueData.filter(x=>x.item_id===grupo.itemId && (!armPrincipal || x.armazem_id===armPrincipal.id));
+    // Saldo considerado: o do armazém escolhido, ou a soma dos armazéns que a tela mostra
+    const armsConta = laudosArmazensConsiderados_();
+    const saldoEstObj = _estoqueData.filter(x=>x.item_id===grupo.itemId && armsConta.includes(x.armazem_id));
     const saldoEst = saldoEstObj.reduce((acc, x) => acc + Number(x.saldo||0), 0);
     const itemLocal = (_itens||[]).find(i=>i.id===grupo.itemId);
     const fatorPar  = (itemLocal?.un_med||'').toUpperCase()==='PAR' ? 2 : 1;
     const serialsNecessarios = saldoEst * fatorPar;
     let consist;
     if (pendentes > 0) {
-      // Faltam cadastrar: backend so conta seriais com status ESTOQUE contra o saldo do armazem principal
+      // Faltam cadastrar: o backend conta, em cada armazém, os seriais em ESTOQUE contra o saldo dele
       consist = `<span style="color:#f59e0b;font-size:10px;font-weight:700" title="Faltam ${pendentes} serial(is) para bater com o saldo de ${saldoEst}${fatorPar===2?' (PAR×2)':''}">📋 Faltam ${pendentes} serial(is)${fatorPar===2?' (PAR)':''}</span>`;
     } else if (emEst > serialsNecessarios) {
       // Excesso em estoque: só faz sentido comparar seriais com status ESTOQUE contra o saldo físico
@@ -18067,7 +18190,7 @@ function laudosRender_() {
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
         </tr></thead>
         <tbody>${s.map(x=>{
-          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='ENVIADO_LAUDO' ? '📤 Enviado para Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte' : '📦 Estoque';
+          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='ENVIADO_LAUDO' ? '📤 Enviado para Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte' : `📦 ${escHtml(x.nomeArmazem || 'Estoque')}`;
           const diasCor = x.status==='VENCIDO'?'#ef4444':x.status==='ALERTA_30'?'#f59e0b':'#22c55e';
 
           if (x.status === 'PENDENTE_CADASTRO') {
@@ -18078,7 +18201,7 @@ function laudosRender_() {
               <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center">
-                <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${x.itemId}',this.dataset.nome)" data-nome="${escHtml((x.itemNome||'').replace(/"/g,'&quot;'))}">+ Cadastrar Serial</button>
+                <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${escJs(x.itemId)}',this.dataset.nome,'${escJs(x.armazemId||'')}')" data-nome="${escHtml((x.itemNome||'').replace(/"/g,'&quot;'))}">+ Cadastrar Serial</button>
               </td>
             </tr>`;
           }
@@ -18115,7 +18238,7 @@ function laudosFiltrarLista_() {
   const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
   const vencAte= document.getElementById('laudoFiltroVencAte')?.value||'';
 
-  let lista = __LAUDOS_NR10__.lista || [];
+  let lista = laudosDoArmazem_(__LAUDOS_NR10__.lista || []);
   if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
   if (status) lista = lista.filter(x=>x.status===status);
   if (local)  lista = lista.filter(x=>x.statusLocal===local);
@@ -18131,7 +18254,9 @@ const LAUDOS_LOCAL_TXT = { ESTOQUE: 'Estoque', COM_COLAB: 'Com colaborador', AGU
 const LAUDOS_STATUS_TXT = { OK: 'OK', ALERTA_30: 'Alerta 30 dias', VENCIDO: 'Vencido', SEM_LAUDO: 'Sem laudo', AGUARDANDO_LAUDO: 'Aguardando laudo', PENDENTE_CADASTRO: 'Pendente de cadastro' };
 
 // Monta as linhas das abas sem tocar na tela.
-function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincipalId = null } = {}) {
+function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincipalId = null, armazemIds = null } = {}) {
+  // Saldo que entra na conta: os armazéns da tela (antes, só o principal)
+  const armsConta = armazemIds || (armazemPrincipalId ? [armazemPrincipalId] : null);
   const dataBR = (v) => {
     if (!v) return '';
     const [a, m, d] = String(v).slice(0, 10).split('-');
@@ -18149,18 +18274,18 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     String(a.serial || '').localeCompare(String(b.serial || ''), 'pt-BR', { numeric: true }));
 
   const seriais = [['Item', 'Código', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Lote / Nº laudo', 'Data do ensaio',
-    'Validade (dias)', 'Vencimento', 'Dias restantes', 'Motivo do descarte', 'Última movimentação', 'Link do laudo']];
+    'Validade (dias)', 'Vencimento', 'Dias restantes', 'Motivo do descarte', 'Última movimentação', 'Link do laudo', 'Armazém']];
   ordenada.forEach(x => {
     const it = itemPorId[x.itemId];
     if (x.status === 'PENDENTE_CADASTRO') {
-      seriais.push([x.itemNome || '', it?.codigo || '', '(sem serial)', x.nomeArmazem || 'Estoque', '', LAUDOS_STATUS_TXT.PENDENTE_CADASTRO, '', '', '', '', '', '', '', '']);
+      seriais.push([x.itemNome || '', it?.codigo || '', '(sem serial)', x.nomeArmazem || 'Estoque', '', LAUDOS_STATUS_TXT.PENDENTE_CADASTRO, '', '', '', '', '', '', '', '', x.nomeArmazem || '']);
       return;
     }
     seriais.push([
       x.itemNome || '', it?.codigo || '', x.serial || '', LAUDOS_LOCAL_TXT[x.statusLocal] || x.statusLocal || '',
       x.statusLocal === 'COM_COLAB' ? (x.nomeColab || '') : '', LAUDOS_STATUS_TXT[x.status] || x.status || '',
       x.loteLaudo || '', dataBR(x.dataEnsaio), numero(x.validadeDias), dataBR(x.dataVenc), numero(x.diasRest),
-      x.statusLocal === 'DESCARTE' ? (x.motivo || '') : '', dataHoraBR(x.dtUltMov), x.anexoUrl || '',
+      x.statusLocal === 'DESCARTE' ? (x.motivo || '') : '', dataHoraBR(x.dtUltMov), x.anexoUrl || '', x.nomeArmazem || '',
     ]);
   });
 
@@ -18171,7 +18296,7 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     grupos.get(k).s.push(x);
   });
   const resumo = [['Item', 'Código', 'Seriais cadastrados', 'Em estoque', 'Com colaborador', 'Aguardando laudo', 'Enviado para laudo',
-    'Descarte', 'Laudo OK', 'Alerta 30 dias', 'Vencidos', 'Sem laudo', 'Pendentes de cadastro', 'Saldo (armazém principal)',
+    'Descarte', 'Laudo OK', 'Alerta 30 dias', 'Vencidos', 'Sem laudo', 'Pendentes de cadastro', 'Saldo (armazéns da tela)',
     'Unidade', 'Seriais esperados em estoque', 'Situação']];
   [...grupos.values()].forEach(g => {
     const conta = (f) => g.s.filter(f).length;
@@ -18179,7 +18304,7 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     const pend = conta(x => !cadastrado(x));
     const emEst = conta(x => cadastrado(x) && x.statusLocal === 'ESTOQUE');
     const it = itemPorId[g.itemId];
-    const saldo = (saldos || []).filter(v => v.item_id === g.itemId && (!armazemPrincipalId || v.armazem_id === armazemPrincipalId))
+    const saldo = (saldos || []).filter(v => v.item_id === g.itemId && (!armsConta || armsConta.includes(v.armazem_id)))
       .reduce((acc, v) => acc + Number(v.saldo || 0), 0);
     const esperados = saldo * (String(it?.un_med || '').toUpperCase() === 'PAR' ? 2 : 1);
     const situacao = pend > 0 ? `Faltam ${pend} serial(is)`
@@ -18201,9 +18326,10 @@ function laudosExportarExcel() {
   const lista = laudosFiltrarLista_();
   if (!lista.length) { toast('Nenhum serial com os filtros atuais', 'warn'); return; }
 
-  const armPrincipal = (_armazens || []).find(a => a.principal);
+  const armsConta = laudosArmazensConsiderados_();
+  const nomesArms = (__LAUDOS_NR10__.armazens || []).filter(a => armsConta.includes(a.id)).map(a => a.nome);
   const { seriais, resumo } = laudosMontarPlanilhas_(lista, {
-    itens: _itens || [], saldos: _estoqueData || [], armazemPrincipalId: armPrincipal?.id || null,
+    itens: _itens || [], saldos: _estoqueData || [], armazemIds: armsConta,
   });
   const textoSelect = (id) => {
     const el = document.getElementById(id);
@@ -18219,7 +18345,8 @@ function laudosExportarExcel() {
     ['Gerado em', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })],
     ['Gerado por', GCA.usuario?.nome || GCA.usuario?.username || ''],
     ['Filial', GCA.usuario?.unidade || ''],
-    ['Saldo considerado', armPrincipal?.nome || 'Armazém principal'],
+    ['Armazém', laudosArmazemSel_() ? (nomesArms[0] || '') : 'Todos'],
+    ['Saldo considerado', nomesArms.join(', ') || '—'],
     [],
     ['Filtros aplicados', filtrado ? 'Sim — só o que estava na tela' : 'Nenhum — tudo'],
     ['Busca', document.getElementById('laudoFiltro')?.value || '—'],
@@ -18242,7 +18369,7 @@ function laudosExportarExcel() {
       }
       XLSX.utils.book_append_sheet(wb, ws, nome);
     };
-    aba('Seriais', seriais, [34, 12, 16, 18, 30, 20, 18, 14, 14, 14, 14, 36, 18, 40], true);
+    aba('Seriais', seriais, [34, 12, 16, 18, 30, 20, 18, 14, 14, 14, 14, 36, 18, 40, 28], true);
     aba('Resumo por item', resumo, [34, 12, 12, 11, 15, 15, 15, 10, 10, 13, 10, 10, 15, 16, 9, 18, 32], true);
     aba('Filtros', filtros, [26, 44], false);
     const nome = `laudos_nr10_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}${filtrado ? '_filtrado' : ''}.xlsx`;
@@ -18277,7 +18404,9 @@ async function laudosCarregar_() {
   const data = await api('/laudos/nr10');
   if (!data?.ok) { toast('Erro ao carregar laudos','error'); return; }
   __LAUDOS_NR10__.lista = data.lista || [];
-  laudosAtualizarContadores__(__LAUDOS_NR10__.lista);
+  __LAUDOS_NR10__.armazens = data.armazens || [];
+  __LAUDOS_NR10__.principalId = data.principalId || null;
+  laudosPreencherArmazens_();
   laudosRender_();
 }
 
@@ -18415,6 +18544,8 @@ function abrirDevolucaoNR10() {
   document.getElementById('devNR10Lista').innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>';
   document.getElementById('btnConfirmarDevNR10').style.display = 'none';
   _devNR10SerialsSelecionados = [];
+  const selArm = document.getElementById('devNR10Armazem');
+  if (selArm) { selArm.innerHTML = laudosOpcoesArmazem_(false); selArm.value = laudosArmazemPadrao_(); selArm.disabled = (__LAUDOS_NR10__.armazens || []).length <= 1; }
   // Garante colaboradores carregados
   if (!_colaboradores.length) carregarColaboradoresAtendimento();
   document.getElementById('modalDevolucaoNR10').classList.remove('hidden');
@@ -18514,7 +18645,7 @@ async function confirmarDevolucaoNR10() {
   if (!_devNR10SerialsSelecionados.length) { toast('Selecione pelo menos um serial','warn'); return; }
   const res = await api('/laudos/nr10/devolver', {
     method: 'POST',
-    body: JSON.stringify({ ids_ativos: _devNR10SerialsSelecionados })
+    body: JSON.stringify({ ids_ativos: _devNR10SerialsSelecionados, armazem_id: document.getElementById('devNR10Armazem')?.value || undefined })
   });
   if (res?.ok) {
     toast(`${res.devolvidos} serial(is) devolvido(s) ao estoque!`, 'success');
@@ -18524,7 +18655,7 @@ async function confirmarDevolucaoNR10() {
 }
 
 // ── DESCARTAR SERIAL (rasgou, furou, quebrou...) ──
-// Em estoque dá baixa no saldo do armazém principal (1, ou meio par nos itens em PAR);
+// Em estoque dá baixa no saldo do armazém onde o serial está (1, ou meio par nos itens em PAR);
 // aguardando laudo só vai para o descarte. As duas contam como perda no Financeiro.
 let _nr10DescarteId = null;
 
@@ -18534,11 +18665,10 @@ function nr10AbrirDescarte(idAtivo) {
   _nr10DescarteId = idAtivo;
   const item = (_itens || []).find(i => i.id === x.itemId);
   const par = String(item?.un_med || '').toUpperCase() === 'PAR';
-  const armPrincipal = (_armazens || []).find(a => a.principal);
   document.getElementById('nr10DescItem').textContent = x.itemNome || '—';
   document.getElementById('nr10DescSerial').textContent = x.serial || '—';
   document.getElementById('nr10DescAviso').textContent = x.statusLocal === 'ESTOQUE'
-    ? `Está em estoque: dá baixa de ${par ? 'meio par (0,5)' : '1'} no saldo ${armPrincipal ? `do ${armPrincipal.nome}` : 'do armazém principal'} e registra como perda no Financeiro.`
+    ? `Está em estoque: dá baixa de ${par ? 'meio par (0,5)' : '1'} no saldo ${x.nomeArmazem ? `do ${x.nomeArmazem}` : 'do armazém do serial'} e registra como perda no Financeiro.`
     : 'Está aguardando laudo (fora do saldo): só vai para o descarte e registra como perda no Financeiro.';
   document.getElementById('nr10DescMotivo').value = '';
   document.getElementById('modalNr10Descartar').classList.remove('hidden');
@@ -26840,6 +26970,9 @@ async function baExcluirEquipe(id) {
       </div>
       <div id="devNR10Lista" style="display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto">
         <div style="text-align:center;color:var(--text-3);font-size:12px;padding:20px">Busque por colaborador ou serial</div>
+      </div>
+      <div><label class="form-label">Volta para o armazém</label>
+        <select id="devNR10Armazem" class="form-input"></select>
       </div>
     </div>
     <div class="modal-footer">
