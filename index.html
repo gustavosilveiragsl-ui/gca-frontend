@@ -802,6 +802,7 @@ window.addEventListener('pageshow', function(e) {
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / <span class="nome-conc">Concessionária</span></div>
           <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
           <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
+          <button class="nav-item" data-view="enel-tdc" data-perm="ver_enel" onclick="showView('enel-tdc',this)"><span class="ni-icon">🧾</span> Consulta TdC</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
@@ -3070,6 +3071,43 @@ window.addEventListener('pageshow', function(e) {
             <div class="es-title">Selecione os filtros e clique em Buscar</div>
             <div class="es-sub">Filtre por equipe e/ou período para ver as baixas detalhadas por TdC</div>
           </div>
+        </div>
+      </div>
+
+      <!-- CONSULTA DE TdC — tudo o que foi usado em cada TdC -->
+      <div class="view" id="view-enel-tdc">
+        <div style="margin-bottom:16px">
+          <div class="page-title">Consulta de TdC</div>
+          <div class="page-sub">Tudo o que foi usado em cada TdC: materiais baixados, medidores instalados e o que a baixa automática não conseguiu lançar</div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0;min-width:180px">
+              <label class="form-label">Nº do TdC</label>
+              <input id="ctdcBusca" class="form-input" placeholder="Ex.: 40712439" style="font-family:var(--font-mono)" autocomplete="off"
+                onkeydown="if(event.key==='Enter')ctdcBuscar()">
+            </div>
+            <div class="form-group" style="margin:0;flex:1;min-width:180px">
+              <label class="form-label">Equipe</label>
+              <select id="ctdcEquipe" class="form-input"><option value="">Todas as equipes</option></select>
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">De</label>
+              <input class="form-input" type="date" id="ctdcDe" style="width:140px">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label class="form-label">Até</label>
+              <input class="form-input" type="date" id="ctdcAte" style="width:140px">
+            </div>
+            <button class="btn btn-primary" onclick="ctdcBuscar()">🔍 Buscar</button>
+            <button class="btn btn-ghost" onclick="exportarCtdc()">📥 Excel</button>
+            <button class="btn btn-ghost" onclick="ctdcLimpar()">Limpar</button>
+          </div>
+          <div id="ctdcInfo" style="padding:0 16px 10px;font-size:11px;color:var(--text-3)">Com o nº do TdC a busca é em todo o histórico; sem ele, vale o período.</div>
+        </div>
+        <div id="ctdcResumo" class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px"></div>
+        <div id="ctdcLista" style="display:flex;flex-direction:column;gap:8px">
+          <div class="empty-state"><div class="es-icon">🧾</div><div class="es-title">Digite o nº do TdC ou escolha o período</div></div>
         </div>
       </div>
 
@@ -6237,6 +6275,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=hojeBR(); }
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
+  if (nome === 'enel-tdc')           { ctdcIniciar(); }
   if (nome === 'enel-consulta-saidas') { cseIniciar(); }
   if (nome === 'enel-sol-materiais') { carregarSolicitacoesEnel(); }
   if (nome === 'laudos')             {
@@ -22131,7 +22170,8 @@ async function btdcBuscar() {
     const tdcsHtml = m.tdcs.map(t => `
       <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
         <div>
-          <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text)">TdC ${t.tdc}</span>
+          <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--accent-text);cursor:pointer;text-decoration:underline dotted"
+            title="Ver tudo o que foi usado neste TdC" onclick="event.stopPropagation();irParaConsultaTdc('${escJs(t.tdc)}')">TdC ${escHtml(t.tdc)}</span>
           ${!equipeFiltrada && t.equipe ? `<span style="font-size:11px;font-weight:600;margin-left:8px">${escHtml(t.equipe)}</span>` : ''}
           ${t.usuario && t.usuario !== 'Importação EORDE' ? `<span style="font-size:10px;color:var(--text-3);margin-left:8px">${escHtml(t.usuario)}</span>` : ''}
         </div>
@@ -22291,6 +22331,136 @@ function gcaExportarExcel(nomeArquivo, dados, colunas) {
     XLSX.writeFile(wb, `${nomeArquivo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.xlsx`);
     toast(`✅ ${nomeArquivo}.xlsx gerado!`, 'success', 3000);
   });
+}
+
+// ═══════════════════════════════════════════
+// CONSULTA DE TdC — materiais, medidores e avisos da baixa, por TdC
+// ═══════════════════════════════════════════
+let _ctdcDados = null, _ctdcAbertos = new Set();
+const CTDC_AVISO = {
+  SEM_MAPEAMENTO: 'Código sem mapeamento no GCA', SERIAL_NAO_ENCONTRADO: 'Medidor não encontrado no controle',
+  EQUIPE_NAO_CADASTRADA: 'Equipe não mapeada', OS_NAO_REALIZADA: 'OS não realizada', SALDO_ZERADO: 'Saldo da equipe insuficiente',
+  REVERTIDO: 'Baixa revertida', ERRO_BAIXA: 'Erro na baixa',
+};
+
+function ctdcIniciar() {
+  const de = document.getElementById('ctdcDe'), ate = document.getElementById('ctdcAte');
+  if (!de.value && !ate.value) {
+    const hoje = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
+    ate.value = hoje.toISOString().slice(0, 10);
+    de.value = new Date(hoje.getTime() - 30 * 86400000).toISOString().slice(0, 10);
+  }
+  if (!_ctdcDados) ctdcBuscar();
+}
+
+function ctdcLimpar() {
+  ['ctdcBusca', 'ctdcDe', 'ctdcAte'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('ctdcEquipe').value = '';
+  _ctdcDados = null;
+  ctdcIniciar();
+}
+
+// Vindo de outra tela (ex.: Baixas por TdC): abre a consulta já no TdC
+function irParaConsultaTdc(num) {
+  showView('enel-tdc', document.querySelector('.nav-item[data-view="enel-tdc"]'));
+  document.getElementById('ctdcBusca').value = num;
+  ctdcBuscar();
+}
+
+async function ctdcBuscar() {
+  const lista = document.getElementById('ctdcLista');
+  const busca = document.getElementById('ctdcBusca').value.trim();
+  const equipe = document.getElementById('ctdcEquipe').value;
+  const de = document.getElementById('ctdcDe').value, ate = document.getElementById('ctdcAte').value;
+  const qs = new URLSearchParams();
+  if (busca) qs.set('busca', busca);
+  if (equipe) qs.set('equipe', equipe);
+  if (!busca && de) qs.set('de', de);
+  if (!busca && ate) qs.set('ate', ate);
+  lista.innerHTML = '<div style="text-align:center;padding:30px"><div class="spinner" style="margin:0 auto"></div></div>';
+  const res = await api(`/enel/tdcs?${qs}`);
+  if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-title">${escHtml(res?.erro || 'Erro ao consultar')}</div></div>`; return; }
+  _ctdcDados = res;
+  _ctdcAbertos = new Set(res.data.length === 1 ? [res.data[0].tdc] : []);
+  const sel = document.getElementById('ctdcEquipe');
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todas as equipes</option>' + (res.equipes || []).map(e => `<option value="${escHtml(e)}">${escHtml(e)}</option>`).join('');
+  sel.value = (res.equipes || []).includes(atual) ? atual : '';
+  document.getElementById('ctdcInfo').textContent = res.busca
+    ? `Busca por "${res.busca}" em todo o histórico${equipe ? ` · equipe ${equipe}` : ''}`
+    : `Período ${formatarData(res.periodo.de)} a ${formatarData(res.periodo.ate)}${equipe ? ` · equipe ${equipe}` : ''} · com o nº do TdC a busca é em todo o histórico`;
+  ctdcRender();
+}
+
+function ctdcToggle(num) {
+  if (_ctdcAbertos.has(num)) _ctdcAbertos.delete(num); else _ctdcAbertos.add(num);
+  ctdcRender();
+}
+
+function ctdcRender() {
+  const res = _ctdcDados;
+  const lista = document.getElementById('ctdcLista');
+  const r = res.resumo;
+  document.getElementById('ctdcResumo').innerHTML = [
+    ['TdCs', r.tdcs, 'var(--accent-text)'], ['Com material baixado', r.com_material, 'var(--green)'],
+    ['Medidores instalados', r.medidores, '#0ea5e9'], ['Com aviso da baixa', r.com_aviso, 'var(--yellow)'],
+  ].map(([l, v, c]) => `<div class="kpi-card"><div class="kpi-value" style="color:${c}">${v}</div><div class="kpi-label">${l}</div></div>`).join('');
+  if (!res.data.length) {
+    lista.innerHTML = `<div class="empty-state"><div class="es-icon">🧾</div><div class="es-title">${res.busca ? `Nenhum TdC com "${escHtml(res.busca)}"` : 'Nenhum TdC no período'}</div></div>`;
+    return;
+  }
+  const LIMITE = 300;
+  const tabela = (cab, linhas) => `<div style="overflow-x:auto"><table style="width:100%"><thead><tr>${cab.map(c => `<th style="${c.d ? 'text-align:right' : ''}">${c.t}</th>`).join('')}</tr></thead><tbody>${linhas.join('')}</tbody></table></div>`;
+  lista.innerHTML = res.data.slice(0, LIMITE).map(t => {
+    const aberto = _ctdcAbertos.has(t.tdc);
+    const selo = (txt, cor) => `<span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:1px 8px;white-space:nowrap">${txt}</span>`;
+    const detalhe = !aberto ? '' : `
+      <div style="padding:10px 16px 14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:12px">
+        ${t.materiais.length ? `<div><div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px">🧵 Materiais baixados</div>
+          ${tabela([{ t: 'Material' }, { t: 'Código' }, { t: 'Quantidade', d: 1 }],
+            t.materiais.map(m => `<tr><td class="td-main">${escHtml(m.descricao || '—')}</td><td class="td-mono" style="font-size:11px">${escHtml(m.codigo || '—')}</td><td style="text-align:right;font-weight:700">${finNum(m.quantidade)}</td></tr>`))}</div>` : ''}
+        ${t.medidores.length ? `<div><div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px">📟 Medidores instalados</div>
+          ${tabela([{ t: 'Serial' }, { t: 'Medidor' }, { t: 'Instalado em' }],
+            t.medidores.map(m => `<tr><td class="td-mono" style="font-weight:700">${escHtml(m.serial)}</td><td>${escHtml(m.descricao || '—')}</td><td style="font-size:11px">${escHtml(m.data_hora || '—')}</td></tr>`))}</div>` : ''}
+        ${t.avisos.length ? `<div><div style="font-size:11px;font-weight:700;color:var(--yellow);margin-bottom:4px">⚠️ O que a baixa automática não lançou</div>
+          ${tabela([{ t: 'Situação' }, { t: 'O quê' }, { t: 'Qtd.', d: 1 }, { t: 'Detalhe' }],
+            t.avisos.map(a => `<tr><td style="font-size:11px;font-weight:700;color:var(--yellow);white-space:nowrap">${escHtml(CTDC_AVISO[a.status] || a.status)}</td>
+              <td><span class="td-mono" style="font-size:11px">${escHtml(a.referencia || '')}</span> ${escHtml(a.descricao || (a.tipo === 'SERIAL' ? 'Medidor' : ''))}</td>
+              <td style="text-align:right">${a.quantidade != null ? finNum(a.quantidade) : '—'}</td>
+              <td style="font-size:11px;color:var(--text-3)">${escHtml(a.obs || '')}</td></tr>`))}</div>` : ''}
+      </div>`;
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);overflow:hidden">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap" onclick="ctdcToggle('${escJs(t.tdc)}')">
+        <span style="font-size:11px;color:var(--text-3)">${aberto ? '▼' : '▶'}</span>
+        <span style="font-family:var(--font-mono);font-size:14px;font-weight:800;color:var(--accent-text)">TdC ${escHtml(t.tdc)}</span>
+        <span style="font-size:11px;color:var(--text-3)">${t.data ? formatarData(t.data) : '—'}</span>
+        ${t.tipo_tdc ? `<span style="font-size:11px;color:var(--text-2)">${escHtml(t.tipo_tdc)}</span>` : ''}
+        <span style="font-size:11px;font-weight:600;color:var(--text-1)">${escHtml(t.equipes.join(', ') || '')}</span>
+        <span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+          ${t.materiais.length ? selo(`🧵 ${t.materiais.length} material(is)`, 'var(--green)') : ''}
+          ${t.medidores.length ? selo(`📟 ${t.medidores.length} medidor(es)`, '#0ea5e9') : ''}
+          ${t.avisos.length ? selo(`⚠️ ${t.avisos.length} aviso(s)`, 'var(--yellow)') : ''}
+        </span>
+      </div>${detalhe}
+    </div>`;
+  }).join('') + (res.data.length > LIMITE ? `<div style="font-size:11px;color:var(--text-3);text-align:center;padding:8px">Mostrando ${LIMITE} de ${res.data.length} TdCs — use o Excel ou filtre para ver o resto.</div>` : '');
+}
+
+function exportarCtdc() {
+  if (!_ctdcDados?.data?.length) { toast('Faça uma busca primeiro', 'warn'); return; }
+  const linhas = [];
+  for (const t of _ctdcDados.data) {
+    const base = { tdc: t.tdc, data: t.data ? formatarData(t.data) : '', tipo_tdc: t.tipo_tdc || '', equipe: t.equipes.join(', ') };
+    t.materiais.forEach(m => linhas.push({ ...base, linha: 'Material', descricao: m.descricao, codigo: m.codigo, quantidade: m.quantidade, situacao: 'Baixado' }));
+    t.medidores.forEach(m => linhas.push({ ...base, linha: 'Medidor', descricao: m.descricao, codigo: m.serial, quantidade: 1, situacao: `Instalado ${m.data_hora || ''}`.trim() }));
+    t.avisos.forEach(a => linhas.push({ ...base, linha: 'Aviso da baixa', descricao: a.descricao || (a.tipo === 'SERIAL' ? 'Medidor' : ''), codigo: a.referencia || '',
+      quantidade: a.quantidade ?? '', situacao: `${CTDC_AVISO[a.status] || a.status}${a.obs ? ' — ' + a.obs : ''}` }));
+  }
+  gcaExportarExcel('Consulta_TdC', linhas, [
+    { key: 'tdc', label: 'TdC' }, { key: 'data', label: 'Data' }, { key: 'tipo_tdc', label: 'Tipo do TdC' }, { key: 'equipe', label: 'Equipe' },
+    { key: 'linha', label: 'Tipo' }, { key: 'descricao', label: 'Material / medidor' }, { key: 'codigo', label: 'Código / serial' },
+    { key: 'quantidade', label: 'Quantidade' }, { key: 'situacao', label: 'Situação' },
+  ]);
 }
 
 // BAIXAS POR TDC
