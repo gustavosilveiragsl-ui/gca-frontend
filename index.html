@@ -3092,6 +3092,14 @@ window.addEventListener('pageshow', function(e) {
               <select id="ctdcEquipe" class="form-input"><option value="">Todas as equipes</option></select>
             </div>
             <div class="form-group" style="margin:0">
+              <label class="form-label">Aviso da baixa</label>
+              <select id="ctdcAviso" class="form-input" style="width:170px" onchange="if(_ctdcDados)ctdcRender()" title="Aviso = o que a baixa automática não conseguiu lançar">
+                <option value="">Todos</option>
+                <option value="com">⚠️ Só com aviso</option>
+                <option value="sem">✅ Sem aviso</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin:0">
               <label class="form-label">De</label>
               <input class="form-input" type="date" id="ctdcDe" style="width:140px">
             </div>
@@ -22354,7 +22362,7 @@ function ctdcIniciar() {
 }
 
 function ctdcLimpar() {
-  ['ctdcBusca', 'ctdcDe', 'ctdcAte'].forEach(id => { document.getElementById(id).value = ''; });
+  ['ctdcBusca', 'ctdcDe', 'ctdcAte', 'ctdcAviso'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('ctdcEquipe').value = '';
   _ctdcDados = null;
   ctdcIniciar();
@@ -22397,16 +22405,27 @@ function ctdcToggle(num) {
   ctdcRender();
 }
 
+// Filtro "Aviso da baixa": age sobre o que já foi buscado (cartões e Excel acompanham)
+function ctdcFiltrados() {
+  const f = document.getElementById('ctdcAviso')?.value || '';
+  const todos = _ctdcDados?.data || [];
+  return f === 'com' ? todos.filter(t => t.avisos.length) : f === 'sem' ? todos.filter(t => !t.avisos.length) : todos;
+}
+
 function ctdcRender() {
-  const res = _ctdcDados;
+  const res = { ..._ctdcDados, data: ctdcFiltrados() };
   const lista = document.getElementById('ctdcLista');
-  const r = res.resumo;
+  const r = {
+    tdcs: res.data.length, com_material: res.data.filter(t => t.materiais.length).length,
+    medidores: res.data.reduce((s, t) => s + t.medidores.length, 0), com_aviso: res.data.filter(t => t.avisos.length).length,
+  };
   document.getElementById('ctdcResumo').innerHTML = [
     ['TdCs', r.tdcs, 'var(--accent-text)'], ['Com material baixado', r.com_material, 'var(--green)'],
     ['Medidores instalados', r.medidores, '#0ea5e9'], ['Com aviso da baixa', r.com_aviso, 'var(--yellow)'],
   ].map(([l, v, c]) => `<div class="kpi-card"><div class="kpi-value" style="color:${c}">${v}</div><div class="kpi-label">${l}</div></div>`).join('');
   if (!res.data.length) {
-    lista.innerHTML = `<div class="empty-state"><div class="es-icon">🧾</div><div class="es-title">${res.busca ? `Nenhum TdC com "${escHtml(res.busca)}"` : 'Nenhum TdC no período'}</div></div>`;
+    const filtroAviso = document.getElementById('ctdcAviso')?.value;
+    lista.innerHTML = `<div class="empty-state"><div class="es-icon">🧾</div><div class="es-title">${filtroAviso && _ctdcDados.data.length ? (filtroAviso === 'com' ? 'Nenhum TdC com aviso da baixa' : 'Todos os TdCs têm aviso da baixa') : res.busca ? `Nenhum TdC com "${escHtml(res.busca)}"` : 'Nenhum TdC no período'}</div></div>`;
     return;
   }
   const LIMITE = 300;
@@ -22449,7 +22468,9 @@ function ctdcRender() {
 function exportarCtdc() {
   if (!_ctdcDados?.data?.length) { toast('Faça uma busca primeiro', 'warn'); return; }
   const linhas = [];
-  for (const t of _ctdcDados.data) {
+  const lista = ctdcFiltrados();
+  if (!lista.length) { toast('Nenhum TdC com o filtro atual', 'warn'); return; }
+  for (const t of lista) {
     const base = { tdc: t.tdc, data: t.data ? formatarData(t.data) : '', tipo_tdc: t.tipo_tdc || '', equipe: t.equipes.join(', ') };
     t.materiais.forEach(m => linhas.push({ ...base, linha: 'Material', descricao: m.descricao, codigo: m.codigo, quantidade: m.quantidade, situacao: 'Baixado' }));
     t.medidores.forEach(m => linhas.push({ ...base, linha: 'Medidor', descricao: m.descricao, codigo: m.serial, quantidade: 1, situacao: `Instalado ${m.data_hora || ''}`.trim() }));
