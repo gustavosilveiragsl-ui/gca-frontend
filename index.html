@@ -8506,20 +8506,26 @@ async function validarEPrepararItens(selecionados) {
   const aprovadosFinal = [];
   for (const r of [...limpos, ...comAviso]) {
     const s = r.s;
-    const ehTroca   = (s.motivo || '').toLowerCase().includes('troca');
-    const variantes = ehTroca ? buscarVariantesTamanho(s.item) : [];
+    const exigeTamanho = !!s.trocaPorTamanho;   // solicitação pedida como "Troca por Tamanho"
+    const ehTroca   = exigeTamanho || (s.motivo || '').toLowerCase().includes('troca');
+    // Só os OUTROS tamanhos do mesmo item — devolver o mesmo tamanho não é troca de tamanho
+    const variantes = ehTroca ? buscarVariantesTamanho(s.item).filter(v => v.id !== s.item.id) : [];
     const veioDaSolicitacao = !!s.itemIdAntigoSolicitado;
+    if (exigeTamanho && !variantes.length) {
+      toast(`Item "${escHtml(s.item.descricao)}" não incluído — foi pedido como troca por tamanho, mas não há outro tamanho dele cadastrado.`, 'warn', 6000);
+      continue;
+    }
     // Só pede confirmação de troca de tamanho quando há evidência real: ou o
     // solicitante já declarou qual tamanho está devolvendo, ou a ficha do
     // colaborador mostra que ele tem OUTRO tamanho deste item em mãos. O item
     // existir em vários tamanhos no catálogo, sozinho, não é evidência de troca.
-    const temEvidenciaTroca = veioDaSolicitacao || !!r.resTroca?.troca;
+    const temEvidenciaTroca = exigeTamanho || veioDaSolicitacao || !!r.resTroca?.troca;
 
     if (ehTroca && variantes.length && temEvidenciaTroca) {
       // Prioriza o que o solicitante já indicou na solicitação sobre a detecção automática
       const preSelecionado = veioDaSolicitacao
         ? { itemIdAntigo: s.itemIdAntigoSolicitado, nomeAntigo: s.nomeItemAntigoSolicitado }
-        : r.resTroca.troca;
+        : (r.resTroca?.troca && r.resTroca.troca.itemIdAntigo !== s.item.id ? r.resTroca.troca : null);
       const escolha = await mostrarModalTrocaTamanho(s.item, variantes, preSelecionado, veioDaSolicitacao, s.justificativaSolicitada);
       if (!escolha) {
         toast(`Item "${escHtml(s.item.descricao)}" não incluído — troca de tamanho não confirmada.`, 'warn', 4000);
@@ -8603,8 +8609,9 @@ function mostrarModalTrocaTamanho(itemNovo, variantes, preSelecionado, veioDaSol
   return new Promise(resolve => {
     document.getElementById('trocaTamanhoNovo').textContent = itemNovo.descricao;
     const sel = document.getElementById('trocaTamanhoSelect');
-    sel.innerHTML = variantes.map(v => `<option value="${v.id}">${escHtml(v.descricao)}</option>`).join('');
-    if (preSelecionado) sel.value = preSelecionado.itemIdAntigo;
+    sel.innerHTML = '<option value="">Selecione o tamanho que está voltando...</option>' +
+      variantes.map(v => `<option value="${v.id}">${escHtml(v.descricao)}</option>`).join('');
+    sel.value = preSelecionado && variantes.some(v => v.id === preSelecionado.itemIdAntigo) ? preSelecionado.itemIdAntigo : '';
 
     let dica;
     if (veioDaSolicitacao) {
@@ -8612,7 +8619,7 @@ function mostrarModalTrocaTamanho(itemNovo, variantes, preSelecionado, veioDaSol
     } else if (preSelecionado) {
       dica = `Detectado automaticamente: colaborador possui "${escHtml(preSelecionado.nomeAntigo)}"${preSelecionado.saldoAntigo!=null?` (${preSelecionado.saldoAntigo} em mãos)`:''}. Confira e ajuste se necessário.`;
     } else {
-      dica = 'Não foi possível detectar automaticamente na ficha do colaborador — selecione manualmente o tamanho que está sendo devolvido.';
+      dica = `Não foi possível detectar na ficha do colaborador — escolha qual tamanho de "${extrairBaseFrontend(itemNovo.descricao)}" ele está devolvendo.`;
     }
     document.getElementById('trocaTamanhoDica').textContent = dica;
     document.getElementById('trocaTamanhoJustificativa').value = justificativaPrefill || '';
@@ -8632,9 +8639,10 @@ function confirmarTrocaTamanho(sim) {
   }
 
   const justificativa = document.getElementById('trocaTamanhoJustificativa').value.trim();
+  const sel = document.getElementById('trocaTamanhoSelect');
+  if (!sel.value) { toast('Escolha o tamanho que o colaborador está devolvendo', 'warn'); return; }
   if (!justificativa) { toast('Justificativa obrigatória', 'warn'); return; }
 
-  const sel = document.getElementById('trocaTamanhoSelect');
   const opt = sel.options[sel.selectedIndex];
   document.getElementById('modalTrocaTamanho').classList.add('hidden');
   window._trocaTamanhoResolve({ itemIdAntigo: sel.value, nomeItemAntigo: opt?.textContent || '', justificativa });
@@ -10686,6 +10694,8 @@ async function atenderSolicitacao(id, btnEl) {
         itemIdAntigoSolicitado:   it.itemIdAntigo || null,
         nomeItemAntigoSolicitado: it.nomeItemAntigo || null,
         justificativaSolicitada:  justificativaOriginal || null,
+        // "Troca por Tamanho" na solicitação: o tamanho devolvido é sempre confirmado aqui
+        trocaPorTamanho:          motivoOriginal === 'Troca por Tamanho',
       };
     }).filter(Boolean);
 
