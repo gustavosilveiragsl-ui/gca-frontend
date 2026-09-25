@@ -418,6 +418,22 @@ tbody tr:hover td{background:var(--bg-hover);}
 .item-card:hover{border-color:var(--accent)}
 .item-card-selected{border-color:var(--accent);background:var(--accent-soft)}
 .item-card-img{width:100%;height:72px;border-radius:6px;background:var(--bg-hover);margin-bottom:8px;overflow:hidden}
+/* Modal "Ver item": foto grande à esquerda, informações à direita (empilha no celular) */
+.modal-box.item-modal{max-width:860px;width:100%}
+.item-modal-corpo{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:start}
+.item-modal-corpo>*{min-width:0}
+.item-modal-foto img{width:300px;height:300px;object-fit:contain;background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);cursor:zoom-in;display:block}
+.item-modal-dica{font-size:11px;color:var(--text-3);text-align:center;margin-top:6px}
+.item-modal-semfoto{width:300px;height:300px;border:1px dashed var(--border);border-radius:var(--radius-lg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--text-3);font-size:13px;background:var(--bg-hover)}
+.item-modal-campos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item-modal-campo{border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;background:var(--bg-card)}
+.item-modal-campo .rot{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3)}
+.item-modal-campo .val{font-size:15px;font-weight:700;color:var(--text-1);margin-top:3px;word-break:break-word}
+.item-modal-selo{font-size:10px;font-weight:700;border:1px solid;border-radius:999px;padding:1px 8px;white-space:nowrap}
+.item-foto-cheia{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.item-foto-cheia img{max-width:92vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:var(--radius-lg)}
+.item-foto-cheia .modal-close{position:absolute;top:16px;right:16px}
+@media(max-width:700px){.item-modal-corpo{grid-template-columns:minmax(0,1fr)}.item-modal-foto img,.item-modal-semfoto{width:100%;height:auto;aspect-ratio:1/1;max-width:320px;margin:0 auto}.item-modal-campos{grid-template-columns:1fr 1fr}}
 .item-card-nome{font-size:11px;font-weight:500;color:var(--text-1);line-height:1.3}
 .item-card-cat{font-size:10px;color:var(--text-3);margin-top:2px}
 .item-card-check{position:absolute;top:6px;right:6px;width:18px;height:18px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
@@ -7828,21 +7844,47 @@ function abrirModalItem(id) {
   if (!item) return;
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
   const pos = [item.corredor, item.prateleira, item.box].filter(Boolean).join(' / ') || '—';
+  const selo = (txt, cor) => `<span class="item-modal-selo" style="color:${cor};border-color:${cor}">${txt}</span>`;
+  const campos = [
+    ['Unidade', item.un_med || '—'],
+    ['Valor unitário', Number(item.valor_un || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
+    ['Estoque mínimo', item.estoque_min || '—'],
+    ['Durabilidade', item.durabilidade_med ? `${item.durabilidade_med} dias` : '—'],
+    ['CA', item.ca || '—'],
+    ['Posição no armazém', pos],
+    ['Requer ensaio (NR10)', item.requer_ensaio ? 'Sim' : 'Não'],
+    ['Possui série', item.possui_serie ? 'Sim' : 'Não'],
+  ];
   overlay.innerHTML = `
-    <div class="modal-box" style="max-width:520px">
+    <div class="modal-box item-modal">
       <div class="modal-header">
-        <div><div class="modal-title">${escHtml(item.descricao)}</div><div style="font-size:11px;color:var(--text-3)">${item.codigo||'—'} • ${item.categoria||'—'}</div></div>
+        <div style="min-width:0">
+          <div class="modal-title" style="font-size:18px">${escHtml(item.descricao)}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">
+            <span class="td-mono" style="font-size:12px;color:var(--text-2)">${escHtml(item.codigo || '—')}</span>
+            ${item.categoria ? selo(escHtml(item.categoria), 'var(--accent-text)') : ''}
+            ${item.requer_ensaio ? selo('⚡ NR10', '#6366f1') : ''}
+            ${item.possui_serie ? selo('SERIAL', '#a78bfa') : ''}
+          </div>
+        </div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
-      <div class="modal-body" style="display:flex;gap:16px">
-        ${item.img ? `<img src="${item.img}" style="width:100px;height:100px;object-fit:cover;border-radius:var(--radius-md);flex-shrink:0">` : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1">
-          ${[['Unidade',item.un_med||'—'],['Valor Un.',Number(item.valor_un||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})],['Estoque Mín.',item.estoque_min||'—'],['Durabilidade',(item.durabilidade_med||'—')+' dias'],['CA',item.ca||'—'],['Posição',pos],['Requer Ensaio',item.requer_ensaio?'Sim':'Não'],['Possui Série',item.possui_serie?'Sim':'Não']].map(([l,v])=>`
-          <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px">
-            <div style="font-size:9px;color:var(--text-3)">${l.toUpperCase()}</div>
-            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${v}</div>
+      <div class="modal-body item-modal-corpo">
+        <div class="item-modal-foto">
+          ${item.img
+            ? `<img src="${escHtml(item.img)}" alt="${escHtml(item.descricao)}" title="Clique para ampliar" onclick="abrirFotoItem(this.src)">
+               <div class="item-modal-dica">🔍 Clique na foto para ampliar</div>`
+            : `<div class="item-modal-semfoto"><div style="font-size:42px">📦</div><div>Sem foto</div></div>`}
+        </div>
+        <div class="item-modal-campos">
+          ${campos.map(([l, v]) => `
+          <div class="item-modal-campo">
+            <div class="rot">${l}</div>
+            <div class="val">${escHtml(String(v))}</div>
           </div>`).join('')}
+          ${item.descricao_longa ? `<div class="item-modal-campo" style="grid-column:1/-1"><div class="rot">Descrição</div><div class="val" style="font-weight:500;white-space:pre-wrap">${escHtml(item.descricao_longa)}</div></div>` : ''}
         </div>
       </div>
       <div class="modal-footer">
@@ -7850,6 +7892,18 @@ function abrirModalItem(id) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+// Foto do item em tela cheia (clique fora ou Esc para fechar)
+function abrirFotoItem(src) {
+  const v = document.createElement('div');
+  v.className = 'item-foto-cheia';
+  v.innerHTML = `<img src="${escHtml(src)}" alt=""><button class="modal-close" aria-label="Fechar">×</button>`;
+  const fechar = () => { v.remove(); document.removeEventListener('keydown', esc); };
+  const esc = (e) => { if (e.key === 'Escape') fechar(); };
+  v.onclick = fechar;
+  document.addEventListener('keydown', esc);
+  document.body.appendChild(v);
 }
 
 function filtrarColaboradores(q) { renderColaboradores(_colaboradores.filter(c=>(c.nome||'').toLowerCase().includes(q.toLowerCase())||(c.matricula||'').toLowerCase().includes(q.toLowerCase()))); }
