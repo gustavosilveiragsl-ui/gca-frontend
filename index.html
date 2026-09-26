@@ -8343,6 +8343,10 @@ function renderItensSelecionadosModal() {
   })();
   const armazensOpts = armazensUsuario.map(a => `<option value="${a.id}">${escHtml(a.nome)}</option>`).join('');
   const motivosOpts  = ['Entrega inicial','Troca desgaste','Troca recuperação','Troca por dano','Perda','Roubo'].map(m => `<option value="${m}">${m}</option>`).join('');
+  // "Troca por tamanho" só para item que tem outros tamanhos cadastrados. Grava "Troca recuperação
+  // (tamanho)": o tamanho devolvido vai para Recuperados, como na solicitação.
+  const optTamanho = (item) => buscarVariantesTamanho(item).some(v => v.id !== item.id)
+    ? `<option value="${MOTIVO_TROCA_TAMANHO}">Troca por tamanho</option>` : '';
 
   container.innerHTML = selecionados.map(s => {
     const armazensOptsSel = armazensUsuario.map(a => `<option value="${a.id}" ${a.id===s.armazem?'selected':''}>${escHtml(a.nome)}</option>`).join('');
@@ -8356,7 +8360,7 @@ function renderItensSelecionadosModal() {
       <input type="number" class="form-input" style="width:70px;font-size:11px;text-align:center" min="1" value="${s.qtd}" onchange="atualizarItemModal('${s.item.id}','qtd',this.value)" placeholder="Qtd">
       <select class="form-input" style="width:160px;font-size:11px" onchange="atualizarItemModal('${s.item.id}','motivo',this.value);mostrarCampoRecuperacao('${s.item.id}',this.value)">
         <option value="">Selecione o motivo</option>
-        ${motivosOpts}
+        ${motivosOpts}${optTamanho(s.item)}
       </select>
       <select class="form-input" style="width:130px;font-size:11px;display:none" id="recup-${s.item.id}" onchange="atualizarItemModal('${s.item.id}','tipoRecuperacao',this.value)">
         <option value="">Tipo</option>
@@ -8373,6 +8377,8 @@ function atualizarItemModal(itemId, campo, valor) {
     _itensSelecionadosModal[itemId][campo] = campo === 'qtd' ? Number(valor) : valor;
   }
 }
+
+const MOTIVO_TROCA_TAMANHO = 'Troca recuperação (tamanho)';
 
 function mostrarCampoRecuperacao(itemId, motivo) {
   const el = document.getElementById(`recup-${itemId}`);
@@ -8394,6 +8400,9 @@ async function confirmarItensModal() {
     toast(`Selecione o motivo para: ${escHtml(semMotivo.map(s => s.item.descricao).join(', '))}`, 'warn');
     return;
   }
+
+  // Troca por tamanho: pede o tamanho devolvido (só do mesmo item) na validação
+  selecionados.forEach(s => { s.trocaPorTamanho = s.motivo === MOTIVO_TROCA_TAMANHO; });
 
   const btn = document.getElementById('btnConfirmarItens');
   btn.disabled = true;
@@ -8454,7 +8463,7 @@ async function validarEPrepararItens(selecionados) {
       api('/validacoes/nivel',        { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, categoria: s.item.categoria || '' }) }),
       api('/validacoes/dotacao',      { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id, item_descricao: s.item.descricao, motivo: s.motivo, quantidade: s.qtd }) }),
       api(`/saldos?item_id=${s.item.id}&armazem_id=${s.armazem}`),
-      (s.motivo||'').toLowerCase() !== 'entrega inicial'
+      (s.motivo||'').toLowerCase() !== 'entrega inicial' && !s.trocaPorTamanho   // trocar de tamanho não é desgaste
         ? api('/validacoes/durabilidade', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) })
         : Promise.resolve(null),
       api('/validacoes/troca-tamanho', { method:'POST', body: JSON.stringify({ colaborador_id: ATEND.colab.id, item_id: s.item.id }) }),
@@ -8886,7 +8895,7 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     colaboradorId:    ATEND.colab.id,
     nomeColaborador:  ATEND.colab.nome,
     funcaoColaborador:ATEND.colab.funcao || '',
-    data:             agora.toISOString().split('T')[0],
+    data:             hojeBR(agora),
     horaInicio:       inicio.toTimeString().substring(0,8),
     horaFim:          agora.toTimeString().substring(0,8),
     tempoSegundos:    ATEND.segundos,
@@ -9204,7 +9213,7 @@ async function executarMobilizacao() {
 let _consultaAtendimentos = [];
 
 function voltarConsultaAtendHoje() {
-  const hojeStr = new Date().toISOString().split('T')[0];
+  const hojeStr = hojeBR();
   document.getElementById('consultaDataDe').value  = hojeStr;
   document.getElementById('consultaDataAte').value = hojeStr;
   carregarConsultaAtendimentos();
@@ -9215,7 +9224,7 @@ async function carregarConsultaAtendimentos() {
   tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
 
   // Padrão na primeira carga: hoje até hoje (igual sempre funcionou)
-  const hojeStr = new Date().toISOString().split('T')[0];
+  const hojeStr = hojeBR();
   const deEl  = document.getElementById('consultaDataDe');
   const ateEl = document.getElementById('consultaDataAte');
   if (deEl  && !deEl.value)  deEl.value  = hojeStr;
@@ -9450,7 +9459,7 @@ async function carregarAssinaturas(silencioso = false) {
   }
 
   const agora = new Date();
-  const hoje  = agora.toISOString().split('T')[0];
+  const hoje  = hojeBR(agora);
 
   _assinaturas = (data.data || []).map(a => {
     const exp = a.expiracao ? new Date(a.expiracao) : null;
@@ -10729,7 +10738,7 @@ let _saiItemSel = null; let _saiColabSel = null;
 let _trfItemSel = null;
 
 function initMovDateFields() {
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeBR();
   ['entData','saiData','trfData'].forEach(id => {
     const el = document.getElementById(id);
     if (el && !el.value) el.value = hoje;
@@ -10836,7 +10845,7 @@ function limparEntrada() {
   _entItemSel = null;
   ['entItemBusca','entQtd','entObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   ['entArmazem','entMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex = 0; });
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeBR();
   const dt = document.getElementById('entData'); if(dt) dt.value = hoje;
   document.getElementById('entPreviewVazio')?.classList.remove('hidden');
   document.getElementById('entPreviewDados')?.classList.add('hidden');
@@ -10846,7 +10855,7 @@ function limparSaida() {
   _saiItemSel = null; _saiColabSel = null;
   ['saiItemBusca','saiQtd','saiObs','saiColabBusca'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   ['saiArmazem','saiMotivo'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex = 0; });
-  const hoje = new Date().toISOString().split('T')[0];
+  const hoje = hojeBR();
   const dt = document.getElementById('saiData'); if(dt) dt.value = hoje;
   document.getElementById('saiSaldoBox')?.classList.add('hidden');
   document.getElementById('saiPreviewVazio')?.classList.remove('hidden');
@@ -10984,7 +10993,7 @@ async function carregarUltimasSaidas() {
 // registrar (sai da origem e entra no destino), como sempre foi.
 let _traEstoque = [], _traItens = [], _traLista = [];
 const traVal = (id) => (document.getElementById(id)?.value || '').trim();
-const traHoje = () => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const traHoje = () => hojeBR();
 const TRA_MEIO = { PROPRIO: 'Meio próprio', TRANSPORTADORA: 'Transportadora', CORREIOS: 'Correios' };
 
 // Entrar na aba começa do zero, igual à transferência entre filiais: nada pela metade
@@ -11341,7 +11350,7 @@ function tflZerarFormulario() {
   set('tflDestino', '');
   set('tflArmazem', '');
   set('tflResponsavel', GCA.usuario?.nome || '');
-  set('tflDia', new Date().toISOString().slice(0, 10));
+  set('tflDia', hojeBR());
   document.getElementById('tflItemSugestoes')?.classList.add('hidden');
   tflDestinoMudou();
 }
@@ -12234,8 +12243,8 @@ async function carregarMovimentacoes() {
   const d30  = new Date(); d30.setDate(d30.getDate() - 30);
   const ini  = document.getElementById('movFiltroInicio');
   const fim  = document.getElementById('movFiltroFim');
-  if (ini && !ini.value) ini.value = d30.toISOString().split('T')[0];
-  if (fim && !fim.value) fim.value = hoje.toISOString().split('T')[0];
+  if (ini && !ini.value) ini.value = hojeBR(d30);
+  if (fim && !fim.value) fim.value = hojeBR(hoje);
 
   // Popula filtro armazém
   const selArm = document.getElementById('movFiltroArmazem');
@@ -12361,7 +12370,7 @@ async function abrirPrevisaoCompra() {
 
   // Busca saídas dos últimos 90 dias
   const d90 = new Date(); d90.setDate(d90.getDate() - 90);
-  const dataInicio = d90.toISOString().split('T')[0];
+  const dataInicio = hojeBR(d90);
   const data = await api(`/movimentacoes?tipo=saida&data_inicio=${dataInicio}&limit=2000`);
   _previsaoSaidas = data?.registros || [];
 
@@ -16189,7 +16198,7 @@ function abrirDevolucaoColab() {
   if (!itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
 
   document.getElementById('devColabNome').textContent = _dadosColabAtual.colaborador.nome;
-  document.getElementById('devData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('devData').value = hojeBR();
 
   // Popula armazéns
   const sel = document.getElementById('devArmazem');
@@ -16806,7 +16815,7 @@ async function salvarDesconto() {
     motivo_desconto: descMotivo,
     parcelas: parseInt(document.getElementById('descParcelas').value)||1,
     mes_primeira_parcela: document.getElementById('descMesParcela').value,
-    status: 'Ativo', data: new Date().toISOString().split('T')[0],
+    status: 'Ativo', data: hojeBR(),
     gerado_por: GCA.usuario?.nome||GCA.usuario?.username,
   };
   const res = await api('/descontos', { method:'POST', body: JSON.stringify(body) });
@@ -17049,7 +17058,7 @@ async function abrirModalSC(id) {
   _scItens = []; _scItemSel = null;
   document.getElementById('scEditId').value = '';
   document.getElementById('scNumero').value = '';
-  document.getElementById('scData').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('scData').value   = hojeBR();
   document.getElementById('scComprador').value = GCA.usuario?.nome || '';
   document.getElementById('scObs').value = '';
   document.getElementById('scStatus').value = 'Pendente';
@@ -17496,7 +17505,7 @@ async function confirmarRecebimentoSC() {
       method:'POST',
       body: JSON.stringify({
         item_id: itemId, armazem_id: armId,
-        data: new Date().toISOString().split('T')[0],
+        data: hojeBR(),
         quantidade: qtdRec,
         motivo: `Recebimento SC ${sc.numero_sc}${nf?` — NF ${nf}`:''}`,
         observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'}`,
@@ -19351,7 +19360,7 @@ function abrirModalDespacho() {
   const checks = document.querySelectorAll('.desc-check:checked');
   if (!checks.length) { toast('Selecione pelo menos um item','warn'); return; }
 
-  document.getElementById('despData').value     = new Date().toISOString().split('T')[0];
+  document.getElementById('despData').value     = hojeBR();
   document.getElementById('despEmpresa').value  = '';
   document.getElementById('despManifesto').value= '';
   document.getElementById('despObs').value      = '';
@@ -19852,7 +19861,7 @@ async function abrirModalNovaRemessa() {
     `<div>• ${escHtml(r.item||'—')} <span style="font-family:var(--font-mono);color:var(--accent-text)">${escHtml(r.serial||'')}</span></div>`
   ).join('');
 
-  document.getElementById('remNovaData').value = new Date().toISOString().split('T')[0];
+  document.getElementById('remNovaData').value = hojeBR();
 
   // Empresa: pré-preenche com a última usada (só existe uma empresa na prática)
   const ultimaEmpresa = _remessasData[0]?.empresa || '';
@@ -22179,8 +22188,8 @@ let _cseUltimoResult  = null;
 async function btdcIniciar() {
   // Preencher datas padrão (mês atual)
   const hoje = new Date();
-  const primeiroDia = new Date(hoje.getFullYear(), hoje.getMonth(), 1).toISOString().split('T')[0];
-  const ultimoDia   = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).toISOString().split('T')[0];
+  const primeiroDia = hojeBR(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+  const ultimoDia   = hojeBR(new Date(hoje.getFullYear(), hoje.getMonth()+1, 0));
   const de  = document.getElementById('btdcDe');
   const ate = document.getElementById('btdcAte');
   if (de  && !de.value)  de.value  = primeiroDia;
@@ -22294,8 +22303,8 @@ function cseIniciar() {
   const dom  = new Date(seg);  dom.setDate(seg.getDate() + 6);
   const de  = document.getElementById('cseDe');
   const ate = document.getElementById('cseAte');
-  if (de  && !de.value)  de.value  = seg.toISOString().split('T')[0];
-  if (ate && !ate.value) ate.value = dom.toISOString().split('T')[0];
+  if (de  && !de.value)  de.value  = hojeBR(seg);
+  if (ate && !ate.value) ate.value = hojeBR(dom);
 }
 
 async function cseBuscar() {
@@ -22418,9 +22427,9 @@ const CTDC_AVISO = {
 function ctdcIniciar() {
   const de = document.getElementById('ctdcDe'), ate = document.getElementById('ctdcAte');
   if (!de.value && !ate.value) {
-    const hoje = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
-    ate.value = hoje.toISOString().slice(0, 10);
-    de.value = new Date(hoje.getTime() - 30 * 86400000).toISOString().slice(0, 10);
+    const hoje = new Date();
+    ate.value = hojeBR(hoje);
+    de.value = hojeBR(new Date(hoje.getTime() - 30 * 86400000));
   }
   if (!_ctdcDados) ctdcBuscar();
 }
@@ -22453,7 +22462,9 @@ async function ctdcBuscar() {
   const res = await api(`/enel/tdcs?${qs}`);
   if (!res?.ok) { lista.innerHTML = `<div class="empty-state"><div class="es-title">${escHtml(res?.erro || 'Erro ao consultar')}</div></div>`; return; }
   _ctdcDados = res;
-  _ctdcAbertos = new Set(res.data.length === 1 ? [res.data[0].tdc] : []);
+  // Mantém abertos os TdCs que já estavam (ex.: depois de mapear um código); busca com 1 resultado abre ele
+  const abertosAntes = _ctdcAbertos;
+  _ctdcAbertos = new Set(res.data.length === 1 ? [res.data[0].tdc] : res.data.filter(t => abertosAntes.has(t.tdc)).map(t => t.tdc));
   const sel = document.getElementById('ctdcEquipe');
   const atual = sel.value;
   sel.innerHTML = '<option value="">Todas as equipes</option>' + (res.equipes || []).map(e => `<option value="${escHtml(e)}">${escHtml(e)}</option>`).join('');
@@ -22510,7 +22521,7 @@ function ctdcRender() {
             t.avisos.map(a => `<tr><td style="font-size:11px;font-weight:700;color:var(--yellow);white-space:nowrap">${escHtml(CTDC_AVISO[a.status] || a.status)}</td>
               <td><span class="td-mono" style="font-size:11px">${escHtml(a.referencia || '')}</span> ${escHtml(a.descricao || (a.tipo === 'SERIAL' ? 'Medidor' : ''))}</td>
               <td style="text-align:right">${a.quantidade != null ? finNum(a.quantidade) : '—'}</td>
-              <td style="font-size:11px;color:var(--text-3)">${escHtml(a.obs || '')}</td></tr>`))}</div>` : ''}
+              <td style="font-size:11px;color:var(--text-3)">${ctdcDetalheAviso(a)}</td></tr>`))}</div>` : ''}
       </div>`;
     return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card);overflow:hidden">
       <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;flex-wrap:wrap" onclick="ctdcToggle('${escJs(t.tdc)}')">
@@ -22527,6 +22538,61 @@ function ctdcRender() {
       </div>${detalhe}
     </div>`;
   }).join('') + (res.data.length > LIMITE ? `<div style="font-size:11px;color:var(--text-3);text-align:center;padding:8px">Mostrando ${LIMITE} de ${res.data.length} TdCs — use o Excel ou filtre para ver o resto.</div>` : '');
+}
+
+// Código da concessionária sem mapeamento: dá para mapear dali mesmo. O mapeamento vale para as
+// próximas baixas automáticas (as já processadas não são refeitas).
+function ctdcDetalheAviso(a) {
+  if (a.status !== 'SEM_MAPEAMENTO' || !a.referencia) return escHtml(a.obs || '');
+  if (a.mapeado) return `<span style="color:var(--green)">✓ já mapeado para <b>${escHtml(a.mapeado.descricao || a.mapeado.material_id)}</b> — vale para as próximas baixas</span>`;
+  return `${escHtml(a.obs || '')} <button class="row-action" style="color:var(--accent-text);border-color:var(--accent);margin-left:6px"
+    onclick="event.stopPropagation();ctdcAbrirMapear('${escJs(a.referencia)}','${escJs(a.descricao || '')}')">🔗 Mapear</button>`;
+}
+
+async function ctdcAbrirMapear(codigo, descricao) {
+  const res = await api('/enel/materiais');
+  const mats = (res?.data || []).slice().sort((x, y) => String(x.descricao).localeCompare(String(y.descricao), 'pt-BR'));
+  document.getElementById('modalCtdcMapear')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.id = 'modalCtdcMapear';
+  m.innerHTML = `
+    <div class="modal-box" style="max-width:520px">
+      <div class="modal-header">
+        <div><div class="modal-title">🔗 Mapear código da ${escHtml(nomeConc())}</div>
+          <div style="font-size:11px;color:var(--text-3)">Liga o código do eOrder a um material do GCA</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCtdcMapear').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--bg)">
+          <div style="font-size:10px;color:var(--text-3)">CÓDIGO NO eORDER</div>
+          <div style="font-size:14px;font-weight:700"><span class="td-mono">${escHtml(codigo)}</span> ${escHtml(descricao)}</div>
+        </div>
+        <label class="form-label">Material do GCA *</label>
+        <select id="ctdcMapMaterial" class="form-input">
+          <option value="">Selecione o material...</option>
+          ${mats.map(x => `<option value="${escHtml(x.id)}">${escHtml(x.descricao)}${x.codigo ? ` (${escHtml(x.codigo)})` : ''}</option>`).join('')}
+        </select>
+        <div style="font-size:11px;color:var(--text-3)">Vale para as próximas baixas automáticas. As baixas já processadas não são refeitas.</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalCtdcMapear').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="ctdcSalvarMapear(this, '${escJs(codigo)}', '${escJs(descricao)}')">Salvar mapeamento</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+}
+
+async function ctdcSalvarMapear(btn, codigo, descricao) {
+  const item_id = document.getElementById('ctdcMapMaterial').value;
+  if (!item_id) { toast('Escolha o material do GCA', 'warn'); return; }
+  btn.disabled = true;
+  const res = await api('/importacao-enel/mapeamento-codigos', { method: 'POST', body: JSON.stringify({ codigo_enel: codigo, descricao_enel: descricao, item_id }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar o mapeamento', 'error'); return; }
+  document.getElementById('modalCtdcMapear')?.remove();
+  toast(`Código ${codigo} mapeado — vale para as próximas baixas`, 'success');
+  ctdcBuscar();
 }
 
 function exportarCtdc() {
@@ -23602,7 +23668,7 @@ function indIniciar() {
   const de = document.getElementById('indDe');
   const ate = document.getElementById('indAte');
   if (de && !de.value) de.value = `${hoje.getFullYear()}-01-01`;
-  if (ate && !ate.value) ate.value = hoje.toISOString().split('T')[0];
+  if (ate && !ate.value) ate.value = hojeBR(hoje);
   if (!window.Chart) {
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
