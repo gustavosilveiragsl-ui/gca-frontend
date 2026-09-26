@@ -11440,9 +11440,9 @@ function tflRenderItens() {
     return;
   }
   const total = _tflItens.reduce((s, i) => s + i.quantidade * (Number(i.valor_un) || 0), 0);
-  tbody.innerHTML = _tflItens.map(i => `
+  tbody.innerHTML = _tflItens.map((i, idx) => `
     <tr>
-      <td class="td-main">${escHtml(i.descricao)}</td>
+      <td class="td-main">${escHtml(i.descricao)}${i.requer_ensaio ? ' <span style="font-size:10px;font-weight:700;color:#a855f7">🔬 NR10</span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(i.codigo || '—')}</td>
       <td style="text-align:center;font-size:11px">${i.saldo}</td>
       <td style="text-align:center"><input type="number" min="1" max="${i.saldo}" value="${i.quantidade}" class="form-input" style="width:80px;text-align:center"
@@ -11450,9 +11450,60 @@ function tflRenderItens() {
       <td style="text-align:right;font-size:11px">${tflDinheiro(i.valor_un)}</td>
       <td style="text-align:right;font-weight:600">${tflDinheiro(i.quantidade * (Number(i.valor_un) || 0))}</td>
       <td><button class="row-action" style="color:var(--red)" onclick="tflRemoverItem('${escJs(i.item_id)}')">✕</button></td>
-    </tr>`).join('') + `
+    </tr>${i.requer_ensaio ? tflLinhaSeriais(i, idx) : ''}`).join('') + `
     <tr><td colspan="5" style="text-align:right;font-size:11px;color:var(--text-3)">Valor total (do cadastro)</td>
         <td style="text-align:right;font-weight:800;color:var(--accent-text)">${tflDinheiro(total)}</td><td></td></tr>`;
+}
+
+// ── Seriais NR10: mesma regra da transferência entre armazéns. Cada peça com serial cadastrado
+// vai bipada; as que ainda não têm serial (pendentes de cadastro) podem ir sem. O laudo vai junto. ──
+function tflLinhaSeriais(i, idx) {
+  const pecas = traPecas(i), minimo = traMinimoSeriais(i), n = (i.bipados || []).length;
+  const cor = n > pecas ? 'var(--red)' : n >= minimo ? 'var(--green)' : 'var(--yellow)';
+  const livres = (i.seriais || []).filter(x => !(i.bipados || []).includes(x));
+  const regra = minimo === pecas
+    ? `bipe os ${pecas} serial(is) — o laudo de cada peça vai junto`
+    : `bipe de ${minimo} a ${pecas} serial(is) — ${i.sem_serial} peça(s) ainda sem serial cadastrado podem ir sem bipar`;
+  return `
+    <tr class="tfl-nr10"><td colspan="7" style="background:var(--bg);padding:8px 12px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="form-input" id="tflSerial_${idx}" list="tflSeriaisDisp_${idx}" placeholder="Bipe o serial e Enter" autocomplete="off"
+          style="width:220px;font-family:var(--font-mono);text-transform:uppercase"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();tflBipar(${idx}, this.value)}">
+        <datalist id="tflSeriaisDisp_${idx}">${livres.map(x => `<option value="${escHtml(x)}">`).join('')}</datalist>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="tflBipar(${idx}, document.getElementById('tflSerial_${idx}').value)">+ Serial</button>
+        <span class="tfl-nr10-conta" style="font-size:11px;font-weight:700;color:${cor}">${n} de ${pecas} bipado(s)</span>
+        <span style="font-size:11px;color:var(--text-3)">🔬 ${regra}</span>
+      </div>
+      ${n ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${i.bipados.map(x => `
+        <span style="display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg-card);border:1px solid var(--border)">${escHtml(x)}
+          <button class="row-action" style="padding:0 4px;color:var(--red)" title="Tirar" onclick="tflTirarSerial(${idx}, '${escJs(x)}')">×</button></span>`).join('')}</div>` : ''}
+    </td></tr>`;
+}
+
+function tflBipar(idx, valor) {
+  const i = _tflItens[idx];
+  if (!i) return;
+  const serial = String(valor || '').trim().toUpperCase().replace(/\s+/g, '');
+  if (!serial) return;
+  i.bipados = i.bipados || [];
+  const origem = document.getElementById('tflArmazem')?.selectedOptions?.[0]?.textContent || 'origem';
+  const aviso = i.bipados.includes(serial) ? `O serial ${serial} já foi bipado`
+    : !(i.seriais || []).includes(serial) ? `O serial ${serial} não está no estoque de ${origem} para "${i.descricao}"`
+    : i.bipados.length >= traPecas(i) ? `Já foram bipados os ${traPecas(i)} seriais — aumente a quantidade para mandar mais`
+    : '';
+  if (aviso) toast(aviso, 'warn', 5000);
+  else i.bipados.push(serial);
+  tflRenderItens();
+  const campo = document.getElementById(`tflSerial_${idx}`);
+  if (campo) { campo.value = aviso ? serial : ''; campo.focus(); if (aviso) campo.select(); }
+}
+
+function tflTirarSerial(idx, serial) {
+  const i = _tflItens[idx];
+  if (!i) return;
+  i.bipados = (i.bipados || []).filter(x => x !== serial);
+  tflRenderItens();
 }
 
 function tflAddVolume() { _tflVolumes.push({ peso: '', dimensoes: '', qtd: {} }); tflRenderVolumes(); }
@@ -11527,6 +11578,11 @@ function tflLimpar() {
 
 async function tflCriar() {
   if (!_tflItens.length) { toast('Adicione ao menos um item', 'warn'); return; }
+  for (const i of _tflItens.filter(x => x.requer_ensaio)) {
+    const n = (i.bipados || []).length, pecas = traPecas(i), minimo = traMinimoSeriais(i);
+    if (n > pecas) { toast(`"${i.descricao}": ${n} seriais bipados para ${pecas} peça(s) — tire ${n - pecas}`, 'warn', 6000); return; }
+    if (n < minimo) { toast(`"${i.descricao}" tem laudo NR10: bipe ${minimo === pecas ? `os ${pecas}` : `pelo menos ${minimo} dos ${pecas}`} seriais que estão indo`, 'warn', 6000); return; }
+  }
   const meio = tflMeio();
   const transporte = meio === 'PROPRIO'
     ? { nome_motorista: tflVal('tflMotorista'), placa_veiculo: tflVal('tflPlaca'), placa_carreta: tflVal('tflCarreta'), horario_saida: tflVal('tflHora'), dia_saida: tflVal('tflDia') }
@@ -11536,7 +11592,7 @@ async function tflCriar() {
   const corpo = {
     unidade_destino: tflVal('tflDestino'), armazem_origem_id: tflVal('tflArmazem'), nome_responsavel: tflVal('tflResponsavel'),
     meio_transporte: meio, transporte,
-    itens: _tflItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade })),
+    itens: _tflItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade, ...(i.requer_ensaio ? { seriais: i.bipados || [] } : {}) })),
     volumes: _tflVolumes.map(v => ({ peso: v.peso, dimensoes: v.dimensoes,
       itens: Object.entries(v.qtd).map(([item_id, quantidade]) => ({ item_id, quantidade })) })),
     centro_custo: tflVal('tflCentroCusto'), area: tflVal('tflArea'), observacao: tflVal('tflObs'),
@@ -11594,6 +11650,7 @@ function tflRenderLista() {
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         ${tflMinhaVez(t) ? `<span style="font-size:10px;font-weight:700;color:var(--accent-text)">👉 ${tflMinhaVez(t)}</span>` : ''}
+        ${t.seriais_nao_recebidos ? `<span style="font-size:10px;font-weight:700;color:#fff;background:var(--red);border-radius:999px;padding:2px 8px;white-space:nowrap">⚠️ ${t.seriais_nao_recebidos} serial(is) não recebido(s)</span>` : ''}
         ${tflBadge(t.status)}
         <button class="row-action" onclick="tflAbrirDetalhe('${escJs(t.id)}')">Ver</button>
         <button class="row-action" onclick="tflBaixar('${escJs(t.id)}','pdf','${escJs(t.numero)}')">PDF</button>
@@ -11627,6 +11684,8 @@ function tflMinhaVez(t) {
   if (t.direcao === 'RECEBIDA' && t.status === 'AGUARDANDO_ACEITE' && rec) return 'Aceitar ou recusar';
   if (t.direcao === 'RECEBIDA' && t.status === 'NF_ANEXADA' && rec) return 'Registrar o recebimento';
   if (t.direcao === 'ENVIADA' && t.status === 'ACEITA' && env) return 'Anexar a nota fiscal';
+  const naoRec = t.seriais_nao_recebidos ?? (t.seriais || []).filter(x => x.situacao === 'NAO_RECEBIDO').length;
+  if (t.direcao === 'ENVIADA' && naoRec && env) return 'Decidir o que fazer com os seriais que não chegaram';
   return '';
 }
 
@@ -11713,6 +11772,7 @@ function tflRenderDetalhe() {
       }).join('')}
         <tr><td colspan="4" style="text-align:right;color:var(--text-3);font-size:11px">Valor total</td><td style="text-align:right;font-weight:800;color:var(--accent-text)">${tflDinheiro(t.valor_total)}</td>${temRec ? '<td></td>' : ''}</tr>
       </tbody></table></div>
+    ${tflBlocoSeriais(t, souOrigem && podeEnv)}
 
     <div class="tfl-secao">Volumes (${(t.volumes || []).length})</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">
@@ -11766,6 +11826,72 @@ function tflRenderDetalhe() {
   document.getElementById('tflDetRodape').innerHTML = botoes.join('');
 }
 
+// ── Seriais NR10 no detalhe: onde está cada um e, se algum não chegou, a providência ──
+const TFL_SIT_SERIAL = {
+  ENVIADO:      ['#64748b', 'aguardando aceite'],
+  EM_TRANSITO:  ['#3b82f6', 'em trânsito'],
+  RECEBIDO:     ['#22c55e', 'recebido'],
+  NAO_RECEBIDO: ['#ef4444', 'não recebido'],
+  DEVOLVIDO:    ['#f59e0b', 'voltou ao estoque de origem'],
+  DESCARTADO:   ['#64748b', 'descartado'],
+  CANCELADO:    ['#64748b', 'ficou na origem'],
+};
+
+function tflBlocoSeriais(t, podeDecidir) {
+  const ss = t.seriais || [];
+  if (!ss.length) return '';
+  const chip = (x) => {
+    const [cor, rot] = TFL_SIT_SERIAL[x.situacao] || ['#64748b', x.situacao];
+    return `<span title="${escHtml(rot)}${x.rastreio ? ' · rastreio ' + escHtml(x.rastreio) : ''}" style="display:inline-flex;gap:4px;align-items:center;font-family:var(--font-mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid ${cor};color:${cor}">${escHtml(x.serial)}<span style="font-family:var(--font-main);font-size:9px">${escHtml(rot)}</span></span>`;
+  };
+  const porLinha = {};
+  ss.forEach(x => { (porLinha[x.linha_id] ||= []).push(x); });
+  const pend = ss.filter(x => x.situacao === 'NAO_RECEBIDO');
+  const resolvidos = ss.filter(x => ['DEVOLVIDO', 'DESCARTADO'].includes(x.situacao) && x.providencia_em);
+  return `
+    <div class="tfl-secao">Seriais NR10 (${ss.length}) — o laudo vai junto com a peça</div>
+    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+      ${(t.itens || []).filter(i => porLinha[i.id]).map(i => `<div>
+        <div style="font-size:11px;color:var(--text-2);margin-bottom:3px">${escHtml(i.descricao)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px">${porLinha[i.id].map(chip).join('')}</div>
+      </div>`).join('')}
+    </div>
+    ${pend.length ? `
+    <div id="tflSeriaisPendentes" style="border:2px solid var(--red);background:rgba(239,68,68,.08);border-radius:var(--radius-md);padding:10px 12px;margin-bottom:14px">
+      <div style="font-size:12px;font-weight:800;color:var(--red);margin-bottom:4px">⚠️ ${pend.length} serial(is) não recebido(s) pelo destino</div>
+      <div style="font-size:11px;color:var(--text-2);margin-bottom:8px">${podeDecidir
+        ? 'Eles saíram do estoque no aceite e não chegaram. Marque e escolha: <strong>voltar ao estoque de origem</strong> (o saldo sobe de novo) ou <strong>descartar</strong> (conta como perda).'
+        : 'Aguardando a filial de origem decidir: voltar ao estoque de lá ou descartar.'}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:${podeDecidir ? '10px' : '0'}">
+        ${pend.map(x => `<label style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;font-weight:700">
+          ${podeDecidir ? `<input type="checkbox" class="tfl-pend-ser" value="${escHtml(x.id)}" checked>` : '•'} ${escHtml(x.serial)}
+          <span style="font-family:var(--font-main);font-weight:400;font-size:10px;color:var(--text-3)">${escHtml(x.descricao || '')}</span></label>`).join('')}
+      </div>
+      ${podeDecidir ? `<div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-primary" onclick="tflProvidencia('${escJs(t.id)}','DEVOLVER')">↩️ Voltar ao estoque de origem</button>
+        <button class="btn btn-ghost" style="color:var(--red);border-color:var(--red)" onclick="tflProvidencia('${escJs(t.id)}','DESCARTAR')">🗑️ Descartar</button>
+      </div>` : ''}
+    </div>` : ''}
+    ${resolvidos.length ? `<div style="font-size:11px;color:var(--text-3);margin:-6px 0 14px">${resolvidos.map(x =>
+      `${escHtml(x.serial)}: ${x.situacao === 'DEVOLVIDO' ? 'voltou ao estoque de origem' : 'descartado'} por ${escHtml(x.providencia_por || '—')} em ${tflDataHora(x.providencia_em)}${x.providencia_obs ? ' — ' + escHtml(x.providencia_obs) : ''}`).join('<br>')}</div>` : ''}`;
+}
+
+async function tflProvidencia(id, acao) {
+  const ids = [...document.querySelectorAll('#tflSeriaisPendentes .tfl-pend-ser:checked')].map(c => c.value);
+  if (!ids.length) { toast('Marque os seriais', 'warn'); return; }
+  let observacao = '';
+  if (acao === 'DESCARTAR') {
+    const m = await tflPedirMotivo('Descartar seriais não recebidos', `${ids.length} serial(is) vão para o descarte e contam como perda. O saldo não muda (já saiu no aceite).`, 'Descartar');
+    if (!m) return;
+    observacao = m;
+  } else if (!confirm(`Voltar ${ids.length} serial(is) ao estoque de ${_tflDetalhe?.nome_armazem_origem || 'origem'}? O saldo sobe junto.`)) return;
+  // Devolver mexe no saldo de um armazém que pode estar em inventário: passa pela liberação.
+  const res = await apiMovimentacao(`/transferencias-filiais/${id}/seriais/providencia`, { ids, acao, observacao });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao registrar a providência', 'error', 8000); return; }
+  toast(acao === 'DEVOLVER' ? `${res.feitos} serial(is) de volta ao estoque` : `${res.feitos} serial(is) descartado(s)`, 'success', 6000);
+  await tflDepoisDeAcao(id);
+}
+
 // Pede um motivo num modal por cima do detalhe. Resolve com o texto, ou null se voltar.
 function tflPedirMotivo(titulo, explicacao, rotulo) {
   return new Promise(resolve => {
@@ -11808,7 +11934,8 @@ async function tflDepoisDeAcao(id) {
 async function tflAceitar(id) {
   const t = _tflDetalhe;
   const quebra = String.fromCharCode(10, 10);
-  if (!confirm(`Aceitar a transferência ${t?.numero || ''}?${quebra}Ao aceitar, o material sai do estoque da filial de origem.`)) return;
+  const nSer = (t?.seriais || []).length;
+  if (!confirm(`Aceitar a transferência ${t?.numero || ''}?${quebra}Ao aceitar, o material sai do estoque da filial de origem.${nSer ? ` Os ${nSer} serial(is) NR10 ficam em trânsito até o recebimento.` : ''}`)) return;
   const res = await api(`/transferencias-filiais/${id}/aceitar`, { method: 'POST', body: '{}' });
   if (!res?.ok) { toast(res?.erro || 'Erro ao aceitar a transferência', 'error', 9000); return; }
   toast(res.mensagem || 'Transferência aceita', 'success', 6000);
@@ -11897,12 +12024,27 @@ async function tflAbrirRecebimento(id) {
         <td style="text-align:center">${i.quantidade}</td>
         <td style="text-align:center"><input type="number" min="0" max="${i.quantidade}" value="${i.quantidade}" id="tflRecQtd_${n}" class="form-input" style="width:80px;text-align:center" oninput="tflRecQtdMudou(${n})"></td>
         <td><input id="tflRecMotivo_${n}" class="form-input" placeholder="só se chegou menos" disabled></td>
-      </tr>`).join('')}</tbody>
+      </tr>${(i.seriais || []).length ? `<tr><td colspan="5" style="background:var(--bg);padding:8px 12px">
+        <div style="font-size:11px;color:var(--text-2);margin-bottom:6px">🔬 Seriais NR10 (o laudo vem junto) — <strong>desmarque o que não chegou</strong>. O que não chegar fica em destaque para a origem decidir.</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px 14px">${i.seriais.map(x => `<label style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-mono);font-size:12px;font-weight:700">
+          <input type="checkbox" class="tfl-rec-ser-${n}" value="${escHtml(x.serial)}" checked onchange="tflRecSerialMudou(${n})"> ${escHtml(x.serial)}</label>`).join('')}</div>
+      </td></tr>` : ''}`).join('')}</tbody>
     </table></div>`;
 
   document.getElementById('tflDetRodape').innerHTML = `
     <button class="btn btn-ghost" style="margin-right:auto" onclick="tflAbrirDetalhe('${escJs(id)}')">← Voltar</button>
     <button class="btn btn-primary" onclick="tflConfirmarRecebimento('${escJs(id)}')">✅ Confirmar recebimento</button>`;
+}
+
+const tflRecMarcados = (n) => [...document.querySelectorAll(`.tfl-rec-ser-${n}:checked`)].map(c => c.value);
+
+// Desmarcar um serial já baixa a quantidade que chegou (as peças sem serial continuam contando)
+function tflRecSerialMudou(n) {
+  const i = _tflPrevia[n];
+  const fator = i.fator || 1;
+  const semSerial = Math.max(0, Math.round(i.quantidade * fator) - i.seriais.length);
+  document.getElementById(`tflRecQtd_${n}`).value = (tflRecMarcados(n).length + semSerial) / fator;
+  tflRecQtdMudou(n);
 }
 
 function tflRecQtdMudou(n) {
@@ -11929,7 +12071,15 @@ async function tflConfirmarRecebimento(id) {
     const motivo = tflVal(`tflRecMotivo_${n}`);
     if (q < i.quantidade && motivo.length < 3) { toast(`"${i.descricao}": informe o motivo da divergência`, 'warn'); return; }
     if (q < i.quantidade) divergencias++;
-    itens.push({ id: i.id, quantidade_recebida: q, motivo_divergencia: motivo });
+    const extra = {};
+    if ((i.seriais || []).length) {
+      const marcados = tflRecMarcados(n), fator = i.fator || 1;
+      const pecas = q * fator, semSerial = Math.max(0, Math.round(i.quantidade * fator) - i.seriais.length);
+      if (pecas < marcados.length) { toast(`"${i.descricao}": ${marcados.length} serial(is) marcado(s), mas chegou só ${q}`, 'warn', 6000); return; }
+      if (pecas > marcados.length + semSerial) { toast(`"${i.descricao}": marque os seriais que chegaram (ou diminua a quantidade)`, 'warn', 6000); return; }
+      extra.seriais_recebidos = marcados;
+    }
+    itens.push({ id: i.id, quantidade_recebida: q, motivo_divergencia: motivo, ...extra });
   }
   if (!confirm(divergencias ? `Confirmar o recebimento com ${divergencias} item(ns) com divergência?` : 'Confirmar o recebimento de todos os itens?')) return;
 
@@ -18318,7 +18468,10 @@ function laudosRender_() {
           <th style="padding:8px;text-align:center;font-size:10px;color:var(--text-3)">Ações</th>
         </tr></thead>
         <tbody>${s.map(x=>{
-          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='ENVIADO_LAUDO' ? '📤 Enviado para Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte' : `📦 ${escHtml(x.nomeArmazem || 'Estoque')}`;
+          const loc = x.statusLocal==='COM_COLAB' ? `👤 ${x.nomeColab||'Colaborador'}` : x.statusLocal==='AGUARDANDO_LAUDO' ? '🔬 Aguardando Laudo' : x.statusLocal==='ENVIADO_LAUDO' ? '📤 Enviado para Laudo' : x.statusLocal==='DESCARTE' ? '🗑️ Descarte'
+            : x.statusLocal==='EM_TRANSITO' ? `🚚 ${escHtml(x.localAtual || 'Em trânsito para outra filial')}`
+            : x.statusLocal==='NAO_RECEBIDO' ? `<span style="color:var(--red);font-weight:700">⚠️ ${escHtml(x.localAtual || 'Não recebido na transferência')}</span>`
+            : `📦 ${escHtml(x.nomeArmazem || 'Estoque')}`;
           const diasCor = x.status==='VENCIDO'?'#ef4444':x.status==='ALERTA_30'?'#f59e0b':'#22c55e';
 
           if (x.status === 'PENDENTE_CADASTRO') {
