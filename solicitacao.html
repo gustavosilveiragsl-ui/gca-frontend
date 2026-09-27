@@ -375,6 +375,7 @@ input,select,textarea{font-family:var(--font-main);}
             </div>
             <button onclick="limparColab()" style="background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-3);font-size:10px;padding:4px 8px;cursor:pointer;flex-shrink:0" title="Trocar colaborador">✕ Limpar</button>
           </div>
+          <div class="alerta-box alerta-warn" id="colAssAviso" style="display:none;margin-top:10px;font-size:12px;line-height:1.45"></div>
         </div>
       </div>
 
@@ -888,6 +889,7 @@ function filtrarCol() {
   const lista = document.getElementById('colLista');
   document.getElementById('colId').value = '';
   document.getElementById('cCol').classList.remove('show');
+  document.getElementById('colAssAviso')?.style.setProperty('display', 'none');
   if (!q) { lista.classList.add('hidden'); return; }
   // Posiciona SEMPRE que mostrar (recalcula caso haja scroll)
   const input = document.getElementById('colBusca');
@@ -900,7 +902,26 @@ function filtrarCol() {
   </div>`).join('');
   lista.classList.remove('hidden');
 }
+// Assinatura pendente do colaborador: avisa quem está pedindo que o almoxarifado só atende
+// o pedido depois que ele assinar a entrega anterior (o pedido pode ser feito mesmo assim).
+async function checarAssinaturaPendente(colId) {
+  const box = document.getElementById('colAssAviso');
+  if (!box) return;
+  box.style.display = 'none'; box.innerHTML = '';
+  if (!colId) return;
+  const res = await req(`/solicitacao-auth/assinaturas-pendentes?colaborador_id=${encodeURIComponent(colId)}`);
+  if (document.getElementById('colId').value !== colId) return;   // trocou de colaborador no meio
+  if (!res?.ok || !res.pendentes) return;
+  const e = res.entregas?.[0] || {};
+  const quando = e.data ? ` de ${e.data.split('-').reverse().join('/')}` : '';
+  const oque = e.placa ? `uma retirada da viatura ${escHtml(e.placa)}${quando}` : `uma entrega${quando}`;
+  box.innerHTML = `✍️ <strong>Este colaborador tem ${oque} aguardando a assinatura dele.</strong><br>
+    Você pode fazer o pedido, mas o almoxarifado só vai atender depois que ele assinar. Peça para ele assinar o link que recebeu.`;
+  box.style.display = 'block';
+}
+
 function limparColab() {
+  document.getElementById('colAssAviso')?.style.setProperty('display', 'none');
   // Limpa colaborador
   document.getElementById('colBusca').value = '';
   document.getElementById('colId').value    = '';
@@ -932,6 +953,7 @@ async function selCol(id, nome, funcao, mat) {
   document.getElementById('colMetaD').textContent = funcao + (mat?' · Mat. '+mat:'');
   document.getElementById('cCol').classList.add('show');
   document.getElementById('colLista').classList.add('hidden');
+  checarAssinaturaPendente(id);
 
   // Buscar itens permitidos para este colaborador
   _idsPermitidos = null;

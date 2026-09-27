@@ -842,6 +842,7 @@ window.addEventListener('pageshow', function(e) {
     <button data-aba="financeiro" onclick="pbAba('financeiro')">Financeiro</button>
     <button data-aba="itens" onclick="pbAba('itens')">Itens e estoque</button>
     <button data-aba="operacao" onclick="pbAba('operacao')">Operação</button>
+    <button data-aba="logistica" onclick="pbAba('logistica')">Logística</button>
     <button data-aba="inventarios" onclick="pbAba('inventarios')">Inventários</button>
     <button data-aba="pessoas" onclick="pbAba('pessoas')">Pessoas e usuários</button>
     <button data-aba="rankings" onclick="pbAba('rankings')">Rankings</button>
@@ -1844,9 +1845,9 @@ window.addEventListener('pageshow', function(e) {
             <div class="kpi-delta warn">aguardando assinatura</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Expirados</span><div class="kpi-icon">⏰</div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes há mais de 10 dias</span><div class="kpi-icon">⏰</div></div>
             <div class="kpi-value" id="assKpiExpirados">—</div>
-            <div class="kpi-delta down">link vencido</div>
+            <div class="kpi-delta down">cobrar a assinatura</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon">✓</div></div>
@@ -1864,7 +1865,7 @@ window.addEventListener('pageshow', function(e) {
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
           <button id="assAbaPendentes" onclick="mudarAbaAss('pendentes')"
             style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent-text);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
-            Pendentes e Expirados
+            Pendentes
           </button>
           <button id="assAbaAssinadas" onclick="mudarAbaAss('assinadas')"
             style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
@@ -1875,12 +1876,12 @@ window.addEventListener('pageshow', function(e) {
         <!-- TABELA -->
         <div class="card">
           <div class="card-header">
-            <div><div class="card-title">Gestão de Assinaturas</div><div class="card-sub" id="assCardSub">Pendentes e expirados</div></div>
+            <div><div class="card-title">Gestão de Assinaturas</div><div class="card-sub" id="assCardSub">Pendentes</div></div>
             <div class="card-actions">
               <select id="assFiltroStatus" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
                 <option value="">Todos os status</option>
                 <option value="PENDENTE">Pendentes</option>
-                <option value="EXPIRADO">Expirados</option>
+                <option value="ANTIGA">Há mais de 10 dias</option>
               </select>
               <select id="assFiltroSetor" class="form-input" style="width:150px;font-size:11px" onchange="filtrarAssinaturas()">
                 <option value="">Todos os setores</option>
@@ -1897,7 +1898,7 @@ window.addEventListener('pageshow', function(e) {
                 <th>Data</th>
                 <th>Itens</th>
                 <th>Status</th>
-                <th>Expira em</th>
+                <th>Pendente há</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -4753,6 +4754,7 @@ window.addEventListener('pageshow', function(e) {
           <button data-aba="recuperacao" onclick="finMudarAba('recuperacao')">♻️ Recuperação e laudos</button>
           <button data-aba="avulsos" onclick="finMudarAba('avulsos')">🧾 Outros custos</button>
           <button data-aba="precos" onclick="finMudarAba('precos')">💲 Histórico de preços</button>
+          <button data-aba="previsao" id="finAbaPrevisao" class="hidden" onclick="finMudarAba('previsao')">📅 Previsão anual</button>
           <button data-aba="config" onclick="finMudarAba('config')">⚙️ Configurações</button>
         </div>
         <div id="finConteudo"></div>
@@ -4839,7 +4841,6 @@ window.addEventListener('pageshow', function(e) {
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⚡ <span class="nome-conc">Concessionária</span> / Materiais</button>
           <button id="indTabMateriais" onclick="indAba('materiais')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📦 Solicitações</button>
           <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">⏰ Fora do Prazo</button>
-          <button id="indTabPrevAnual" onclick="indAba('prevanual')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer">📅 Previsão Anual</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -4867,16 +4868,6 @@ window.addEventListener('pageshow', function(e) {
           <div id="indForaPrazoContent"><div class="empty-state"><div class="es-icon">⏰</div><div class="es-title">Carregando...</div></div></div>
         </div>
 
-        <!-- PREVISÃO ANUAL -->
-        <div id="indSecPrevAnual" style="display:none">
-          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-            <input type="month" id="prevDe"  class="form-input" style="width:150px">
-            <span style="color:var(--text-3);font-size:12px">até</span>
-            <input type="month" id="prevAte" class="form-input" style="width:150px">
-            <button class="btn btn-primary" onclick="carregarIndPrevAnual()">🔍 Simular</button>
-          </div>
-          <div id="indPrevAnualContent"><div class="empty-state"><div class="es-icon">📅</div><div class="es-title">Carregando...</div></div></div>
-        </div>
       </div>
       <!-- ── ARMAZÉNS ── -->
       <div class="view" id="view-catalogo-armazem">
@@ -5319,11 +5310,11 @@ window.addEventListener('pageshow', function(e) {
                 </div>
               </div>
               <div>
-                <label class="form-label">Armazéns permitidos</label>
-                <div id="usrArmazensLista" style="display:flex;flex-direction:column;gap:4px;margin-top:4px;max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px">
+                <label class="form-label">Armazéns permitidos (por filial)</label>
+                <div id="usrArmazensLista" style="display:flex;flex-direction:column;gap:4px;margin-top:4px;max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px">
                   <span style="font-size:11px;color:var(--text-3)">Carregando armazéns...</span>
                 </div>
-                <div style="font-size:10px;color:var(--text-3);margin-top:4px">Deixe todos desmarcados para liberar acesso a todos os armazéns.</div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:4px">Em cada filial, deixe todos desmarcados para liberar todos os armazéns daquela filial.</div>
               </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarUsuario()">Salvar</button>
@@ -5679,8 +5670,13 @@ window.addEventListener('pageshow', function(e) {
         </select>
       </div>
       <div><label class="form-label">Observação</label><input id="devObs" class="form-input" placeholder="Observações adicionais..."></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens para devolver</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px">Itens para devolver</div>
+        <span id="devBuscaInfo" style="font-size:10px;color:var(--text-3)"></span>
+      </div>
+      <input id="devBusca" class="form-input" placeholder="🔎 Buscar item pelo nome ou código..." autocomplete="off" oninput="filtrarDevItens(this.value)">
       <div id="devItensLista" style="display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto"></div>
+      <div id="devBuscaVazio" style="display:none;font-size:12px;color:var(--text-3);text-align:center;padding:10px">Nenhum item com esse nome.</div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="fecharModalDevolucao()">Cancelar</button>
@@ -6216,7 +6212,7 @@ function popularSelectsFiliais() {
   if (wrapCheck) {
     wrapCheck.innerHTML = _filiais.filter(f=>f.status==='ativa').map(f=>
       `<label style="display:flex;align-items:center;gap:6px;font-size:12px">
-         <input type="checkbox" class="usr-uni-check" value="${f.slug}"> ${escHtml(f.nome)}
+         <input type="checkbox" class="usr-uni-check" value="${f.slug}" onchange="usrUnidadesMudou()"> ${escHtml(f.nome)}
        </label>`).join('');
   }
 }
@@ -6316,6 +6312,7 @@ function abrirPainelBrasil() {
 
 function fecharPainelBrasil() {
   clearInterval(PB.timer);
+  pbLogLimparMapa();
   pbFecharGaveta();
   if ((GCA.unidades || []).length > 1) voltarAoMapa(); else mostrarTela('app');
 }
@@ -6360,7 +6357,7 @@ const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
 
 // O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
 async function pbRecarregar(silencioso) {
-  PB.fin = null; PB.pessoas = null; PB.inv = null;
+  PB.fin = null; PB.pessoas = null; PB.inv = null; PB.log = null;
   const corpo = document.getElementById('pbCorpo');
   if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
   const [res] = await Promise.all([api(`/painel-brasil/resumo?${pbQuery()}`), pbGarantirChart()]);
@@ -6396,7 +6393,7 @@ function pbAlertas(f) {
   const a = [];
   if (f.laudos.vencidos) a.push(['vermelho', `${f.laudos.vencidos} laudo(s) NR10 vencido(s) em uso`]);
   if (f.estoque.zerados) a.push(['vermelho', `${f.estoque.zerados} item(ns) zerado(s) com estoque mínimo`]);
-  if (f.operacao.assinaturas_expiradas) a.push(['vermelho', `${f.operacao.assinaturas_expiradas} assinatura(s) com link vencido`]);
+  if (f.operacao.assinaturas_antigas) a.push(['amarelo', `${f.operacao.assinaturas_antigas} assinatura(s) pendente(s) há mais de 10 dias`]);
   if (f.solicitacoes.mais_antiga_horas > 48) a.push(['vermelho', `pedido aberto há ${pbHoras(f.solicitacoes.mais_antiga_horas)}`]);
   else if (f.solicitacoes.mais_antiga_horas > 24) a.push(['amarelo', `pedido aberto há ${pbHoras(f.solicitacoes.mais_antiga_horas)}`]);
   if (f.solicitacoes.urgentes_abertas) a.push(['amarelo', `${f.solicitacoes.urgentes_abertas} pedido(s) urgente(s) em aberto`]);
@@ -6438,13 +6435,14 @@ function pbTituloEscopo() {
 function pbRender() {
   if (!PB.resumo) return;
   Object.values(PB.charts).forEach(c => c?.destroy?.()); PB.charts = {};
+  pbLogLimparMapa();
   const corpo = document.getElementById('pbCorpo');
   if (!PB.resumo.filiais.length) { corpo.innerHTML = '<div class="pb-carregando">Nenhuma filial liberada para você.</div>'; return; }
   const cab = `<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
       <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${pbTituloEscopo()}</div>
       <div style="font-size:12px;color:var(--text-3)">${pbFiliais().length} filial(is) · atualizado às ${new Date(PB.resumo.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
     </div>`;
-  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
+  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, logistica: pbAbaLogistica, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
   corpo.innerHTML = cab + '<div id="pbAbaCorpo"></div>';
   (abas[PB.aba] || pbAbaGeral)(document.getElementById('pbAbaCorpo'));
 }
@@ -6456,16 +6454,16 @@ const pbDet = (tipo, titulo, filial) => `pbAbrirDetalhe('${tipo}', '${escJs(titu
 // ── VISÃO GERAL ──
 function pbAbaGeral(el) {
   const fs = pbFiliais(), t = pbSomar(fs), s = t.soma;
-  const vencidos = s(f => f.laudos.vencidos), zerados = s(f => f.estoque.zerados), expir = s(f => f.operacao.assinaturas_expiradas);
+  const vencidos = s(f => f.laudos.vencidos), zerados = s(f => f.estoque.zerados), expir = s(f => f.operacao.assinaturas_antigas);
   const kpis = [
     pbKpi('Atendimentos no período', pbNum(s(f => f.operacao.atendimentos_periodo)), `hoje ${pbNum(s(f => f.operacao.atendimentos_hoje))} · tempo médio ${pbTempo(t.tempoMedio ? Math.round(t.tempoMedio) : 0)}`, '', pbDet('atendimentos', 'Atendimentos por dia'), 0),
     pbKpi('Solicitações em aberto', pbNum(s(f => f.solicitacoes.abertas)), `${pbNum(s(f => f.solicitacoes.urgentes_abertas))} urgente(s) · mais antiga ${pbHoras(t.maisAntiga || null)}`, t.maisAntiga > 48 ? 'alerta' : t.maisAntiga > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', 'Solicitações em aberto'), 1),
     pbKpi('Espera até atender', pbHoras(t.espera), `pedidos do período (${pbNum(s(f => f.solicitacoes.atendidas_periodo))} atendidos)`, '', '', 2),
-    pbKpi('Assinaturas pendentes', pbNum(s(f => f.operacao.assinaturas_pendentes)), `${pbNum(expir)} com link vencido`, expir ? 'alerta' : '', pbDet('assinaturas_pendentes', 'Assinaturas pendentes'), 3),
+    pbKpi('Assinaturas pendentes', pbNum(s(f => f.operacao.assinaturas_pendentes)), `${pbNum(expir)} há mais de 10 dias`, expir ? 'aviso' : '', pbDet('assinaturas_pendentes', 'Assinaturas pendentes'), 3),
     pbKpi('Abaixo do estoque mínimo', pbNum(s(f => f.estoque.abaixo_minimo) - zerados), `+ ${pbNum(zerados)} zerado(s) · soma das filiais (o mesmo item em 2 filiais conta 2 vezes)`, zerados ? 'alerta' : s(f => f.estoque.abaixo_minimo) ? 'aviso' : '', pbDet('abaixo_minimo', 'Itens abaixo do estoque mínimo'), 4),
     pbKpi('Laudos NR10 vencidos', pbNum(vencidos), `${pbNum(s(f => f.laudos.a_vencer_30d))} vencem em 30 dias`, vencidos ? 'alerta' : '', pbDet('laudos_vencidos', 'Laudos NR10 vencidos (peças em uso)'), 5),
     pbKpi('Acurácia do inventário', pbPct(t.acuracia), `${pbNum(s(f => f.inventario.entregues))}/${pbNum(s(f => f.inventario.armazens))} armazéns entregues no mês`, s(f => f.inventario.pendentes) ? 'aviso' : '', "pbAba('inventarios')", 6),
-    pbKpi('Logística em andamento', pbNum(s(f => f.logistica.aguardando_coleta + f.logistica.em_transito)), `${pbNum(s(f => f.logistica.aguardando_coleta))} aguardando coleta · ${pbNum(s(f => f.logistica.em_transito))} em trânsito`, '', pbDet('logistica', 'Logística em andamento'), 7),
+    pbKpi('Logística em andamento', pbNum(s(f => f.logistica.aguardando_coleta + f.logistica.em_transito)), `${pbNum(s(f => f.logistica.aguardando_coleta))} aguardando coleta · ${pbNum(s(f => f.logistica.em_transito))} em trânsito`, '', "pbAba('logistica')", 7),
     t.fin ? pbKpi('Gasto no período', pbDinheiro(t.fin.gasto), `meta ${pbDinheiro(t.fin.meta)} · consumo ${pbDinheiro(t.fin.consumo)}`, t.fin.meta > 0 && t.fin.gasto > t.fin.meta ? 'alerta' : '', "pbAba('financeiro')", 8)
       : pbKpi('Colaboradores ativos', pbNum(s(f => f.pessoas.colaboradores)), `${pbNum(s(f => f.pessoas.usuarios))} usuários do sistema`, '', "pbAba('pessoas')", 8),
   ].join('');
@@ -6487,11 +6485,11 @@ function pbAbaGeral(el) {
       <div class="pb-grade">
         ${m('Atendimentos', pbNum(f.operacao.atendimentos_periodo), `hoje ${pbNum(f.operacao.atendimentos_hoje)} · ${pbTempo(f.operacao.tempo_medio_seg)}`, '', pbDet('atendimentos', `Atendimentos por dia · ${f.nome}`, f.slug))}
         ${m('Pedidos abertos', pbNum(f.solicitacoes.abertas), `${pbNum(f.solicitacoes.urgentes_abertas)} urgente(s) · espera ${pbHoras(f.solicitacoes.espera_media_horas)}`, f.solicitacoes.mais_antiga_horas > 48 ? 'alerta' : f.solicitacoes.mais_antiga_horas > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', `Solicitações em aberto · ${f.nome}`, f.slug))}
-        ${m('Assinaturas', pbNum(f.operacao.assinaturas_pendentes), `${pbNum(f.operacao.assinaturas_expiradas)} vencida(s)`, f.operacao.assinaturas_expiradas ? 'alerta' : '', pbDet('assinaturas_pendentes', `Assinaturas pendentes · ${f.nome}`, f.slug))}
+        ${m('Assinaturas', pbNum(f.operacao.assinaturas_pendentes), `${pbNum(f.operacao.assinaturas_antigas)} há mais de 10 dias`, f.operacao.assinaturas_antigas ? 'aviso' : '', pbDet('assinaturas_pendentes', `Assinaturas pendentes · ${f.nome}`, f.slug))}
         ${m('Abaixo do mínimo', pbNum(f.estoque.abaixo_minimo - f.estoque.zerados), `+ ${pbNum(f.estoque.zerados)} zerado(s) · de ${pbNum(f.estoque.itens_com_minimo)} com mínimo`, f.estoque.zerados ? 'alerta' : f.estoque.abaixo_minimo ? 'aviso' : '', pbDet('abaixo_minimo', `Abaixo do mínimo · ${f.nome}`, f.slug))}
         ${m('Inventário', f.inventario.armazens ? `${f.inventario.entregues}/${f.inventario.armazens}` : '—', f.inventario.acuracia_media != null ? `acurácia ${pbPct(f.inventario.acuracia_media)}` : 'sem inventário no período', f.inventario.pendentes ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}', 'inventarios')`)}
         ${m('Laudos NR10', pbNum(f.laudos.vencidos), `vencidos · ${pbNum(f.laudos.a_vencer_30d)} em 30 dias`, f.laudos.vencidos ? 'alerta' : f.laudos.a_vencer_30d ? 'aviso' : '', pbDet('laudos_vencidos', `Laudos vencidos · ${f.nome}`, f.slug))}
-        ${m('Logística', pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito), `${pbNum(f.logistica.em_transito)} em trânsito`, '', pbDet('logistica', `Logística · ${f.nome}`, f.slug))}
+        ${m('Logística', pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito), `${pbNum(f.logistica.em_transito)} em trânsito`, '', `pbSoEsta('${escJs(f.slug)}', 'logistica')`)}
         ${fin ? m('Gasto × meta', pbDinheiro(fin.gasto), fin.meta ? `${pct}% de ${pbDinheiro(fin.meta)}` : 'sem meta definida', pct > 100 ? 'alerta' : pct > 90 ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}','financeiro')`) : m('Usuários', pbNum(f.pessoas.usuarios), `${pbNum(f.pessoas.acessos_periodo)} acesso(s) no período`)}
         ${fin ? m('Consumo', pbDinheiro(fin.consumo), `economia ${pbDinheiro(fin.economia)}`, '', `pbSoEsta('${escJs(f.slug)}','financeiro')`) : m('Colaboradores', pbNum(f.pessoas.colaboradores), 'ativos')}
       </div>
@@ -6851,6 +6849,163 @@ function pbItensExcel() {
     ...fs.map(f => ({ key: `s_${f.slug}`, label: f.nome })), { key: 'total', label: 'Total' }, { key: 'valor', label: 'Valor em estoque' }]);
 }
 
+// ── LOGÍSTICA ── mapa do Brasil com as cargas de entrega e as transferências entre filiais em andamento
+const PBL = { entregues: false, marcadores: [] };
+const PB_TRANSF_STATUS = { AGUARDANDO_ACEITE: 'Aguardando aceite', ACEITA: 'Aceita · preparando o envio', NF_ANEXADA: 'NF anexada · a caminho' };
+const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: '📦 Aguardando coleta', EM_TRANSITO: '🚚 Em trânsito', ENTREGUE: '✅ Entregue' })[st] || PB_TRANSF_STATUS[st] || st;
+function pbLogLimparMapa() {
+  if (PB.logAnim) { clearInterval(PB.logAnim); PB.logAnim = null; }
+  if (PB.logMap) { try { PB.logMap.remove(); } catch {} PB.logMap = null; }
+  PBL.marcadores = [];
+}
+function pbLogDados() {
+  const slugs = pbFiliais().map(f => f.slug);
+  const cargas = (PB.log?.cargas || []).filter(c => slugs.includes(c.slug));
+  const transf = (PB.log?.transferencias || []).filter(t => slugs.includes(t.origem_slug) || slugs.includes(t.destino_slug));
+  // Transferência sem a coordenada do armazém: usa a cidade da filial (a mesma do mapa de filiais)
+  const geo = (slug) => { const g = geoDaFilial(slug); return g && g.lat != null ? { lat: g.lat, lng: g.lon } : null; };
+  transf.forEach(t => { t._de = t.de || geo(t.origem_slug); t._para = t.para || geo(t.destino_slug); });
+  return { cargas, transf };
+}
+async function pbAbaLogistica(el) {
+  const dias = PBL.entregues ? 3 : 0;
+  if (!PB.log || PB.log.entregues_dias !== dias) {
+    el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Buscando as logísticas das filiais…</div>';
+    const res = await api(`/painel-brasil/logistica?entregues_dias=${dias}`);
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar a logística')}</div>`; return; }
+    PB.log = res;
+    if (PB.aba !== 'logistica') return;
+  }
+  const { cargas, transf } = pbLogDados();
+  const andamento = cargas.filter(c => c.status !== 'ENTREGUE');
+  const semMapa = cargas.filter(c => !c.para).length + transf.filter(t => !t._de || !t._para).length;
+  const antigas = andamento.filter(c => c.dias > 3).length;
+  const kpis = [
+    pbKpi('Aguardando coleta', pbNum(cargas.filter(c => c.status === 'AGUARDANDO_COLETA').length), 'cargas prontas esperando o transportador', '', '', 0),
+    pbKpi('Em trânsito', pbNum(cargas.filter(c => c.status === 'EM_TRANSITO').length), 'cargas a caminho do destino', '', '', 1),
+    pbKpi('Transferências entre filiais', pbNum(transf.length), 'enviadas e ainda não recebidas', '', '', 2),
+    pbKpi('Há mais de 3 dias', pbNum(antigas), 'cargas em andamento há mais de 3 dias', antigas ? 'aviso' : '', '', 3),
+  ].join('');
+  const pf = (PB.log.por_filial || []).filter(f => pbFiliais().some(x => x.slug === f.slug));
+  const linhas = [
+    ...cargas.map((c, i) => ({ k: `c${i}`, tipo: 'Entrega', filial: c.filial, de: c.origem || '—', para: c.destino, status: c.status, quem: c.transportador || 'sem transportador', desde: c.criado_em, dias: c.status === 'ENTREGUE' ? null : c.dias, qtd: `${c.atendimentos.length} atend.`, mapa: !!c.para })),
+    ...transf.map((t, i) => ({ k: `t${i}`, tipo: `Transferência ${t.numero || ''}`.trim(), filial: `${t.origem} → ${t.destino}`, de: t.armazem_origem || t.origem, para: t.armazem_destino || t.destino, status: t.status, quem: t.meio || '—', desde: t.criado_em, dias: t.dias, qtd: t.valor != null ? pbDinheiro(t.valor) : '—', mapa: !!(t._de && t._para) })),
+  ];
+  PBL.linhas = linhas;
+  el.innerHTML = `
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">${kpis}</div>
+    <div class="pb-bloco" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid var(--border)">
+        <div class="pb-secao" style="margin:0">🗺️ Logística no mapa</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text-3)">
+          <span><b style="color:#fbbf24">━ ━</b> aguardando coleta</span><span><b style="color:#38bdf8">━━</b> em trânsito</span>
+          <span><b style="color:#a855f7">━ ━</b> transferência entre filiais</span>${PBL.entregues ? '<span><b style="color:#22c55e">━━</b> entregue</span>' : ''}
+        </div>
+        <label style="margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer">
+          <input type="checkbox" ${PBL.entregues ? 'checked' : ''} onchange="PBL.entregues=this.checked;pbAbaLogistica(document.getElementById('pbAbaCorpo'))"> Mostrar também as entregues nos últimos 3 dias
+        </label>
+      </div>
+      <div id="pbLogMapa" style="height:520px;background:var(--bg)"></div>
+      ${semMapa ? `<div style="font-size:11px;color:var(--text-3);padding:8px 16px">${pbNum(semMapa)} sem localização no mapa (destino ou armazém sem coordenada) — aparecem só na lista abaixo.</div>` : ''}
+    </div>
+    <div class="pb-grid2" style="grid-template-columns:1fr 2fr">
+      <div class="pb-bloco"><div class="pb-secao">Por filial</div>
+        ${pbTabela([{ key: 'filial', label: 'Filial' }, { key: 'aguardando_coleta', label: 'Aguardando' }, { key: 'em_transito', label: 'Em trânsito' },
+          ...(PBL.entregues ? [{ key: 'entregues', label: 'Entregues (3 dias)' }] : []), { key: 'transferencias', label: 'Transf. filiais' }], pf, { vazio: 'Nenhuma filial.' })}
+      </div>
+      <div class="pb-bloco">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><div class="pb-secao" style="margin:0">Tudo o que está rodando</div>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="pbLogExcel()">📊 Excel</button></div>
+        ${!linhas.length ? '<div class="pb-vazio">Nenhuma logística em andamento.</div>' : `<div class="pb-tabela-wrap" style="max-height:420px"><table class="pb-tabela"><thead><tr>
+          <th>Tipo</th><th>Filial</th><th>De</th><th>Para</th><th>Situação</th><th>Transportador / meio</th><th>Desde</th><th class="num">Dias</th><th class="num">Conteúdo</th></tr></thead><tbody>
+          ${linhas.map((l, i) => `<tr ${l.mapa ? `style="cursor:pointer" title="Ver no mapa" onclick="pbLogFoco(${i})"` : ''}>
+            <td>${escHtml(l.tipo)}</td><td>${escHtml(l.filial)}</td><td style="white-space:normal;min-width:120px">${escHtml(l.de)}</td><td style="white-space:normal;min-width:140px">${escHtml(l.para)}${l.mapa ? '' : ' <span style="font-size:10px;color:var(--text-3)">(sem mapa)</span>'}</td>
+            <td>${escHtml(pbLogStatus(l.status))}</td><td>${escHtml(l.quem)}</td><td>${l.desde ? formatarData(String(l.desde).slice(0, 10)) : '—'}</td>
+            <td class="num ${l.dias > 3 ? 'pb-sit-abaixo' : ''}">${l.dias == null ? '—' : pbNum(l.dias)}</td><td class="num">${escHtml(l.qtd)}</td></tr>`).join('')}
+        </tbody></table></div>`}
+      </div>
+    </div>`;
+  pbLogDesenharMapa(cargas, transf);
+}
+async function pbLogDesenharMapa(cargas, transf) {
+  const cont = document.getElementById('pbLogMapa');
+  if (!cont) return;
+  try { await carregarLeafletSobDemanda(); } catch { cont.innerHTML = '<div class="pb-vazio">Não foi possível carregar o mapa. Verifique a conexão.</div>'; return; }
+  if (typeof L === 'undefined' || !document.body.contains(cont)) return;
+  pbLogLimparMapa();
+  const mapa = L.map(cont, { scrollWheelZoom: true }).setView([-14.5, -47], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mapa);
+  PB.logMap = mapa;
+  const camadas = [], anim = [], origens = {};
+  const pino = (cor) => L.divIcon({ className: '', html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${cor};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16], iconAnchor: [8, 16] });
+  const emoji = (e) => L.divIcon({ className: '', html: `<div class="mapa-emoji-movel">${e}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
+  const pontoOrigem = (c, nome, icone) => {
+    const k = `${c.lat.toFixed(4)},${c.lng.toFixed(4)}`;
+    if (origens[k]) return;
+    origens[k] = L.marker([c.lat, c.lng], { icon: L.divIcon({ className: '', html: `<div class="mapa-origem-pin">${icone}</div>`, iconSize: [34, 34], iconAnchor: [17, 17] }), zIndexOffset: 500 })
+      .addTo(mapa).bindPopup(`<div class="log-popup"><b>${icone} ${escHtml(nome)}</b></div>`);
+    camadas.push(origens[k]);
+  };
+  const marcadores = [];
+  cargas.forEach((c, i) => {
+    if (!c.para) { marcadores[i] = null; return; }
+    const cor = corPorStatusGrupo(c.status), andando = c.status !== 'ENTREGUE';
+    if (c.de) {
+      pontoOrigem(c.de, c.origem || 'Armazém', '🏭');
+      const pts = curvaEntrePontos([c.de.lat, c.de.lng], [c.para.lat, c.para.lng]);
+      camadas.push(L.polyline(pts, { color: cor, weight: andando ? 3 : 2, opacity: andando ? 0.85 : 0.4, dashArray: c.status === 'AGUARDANDO_COLETA' ? '6 8' : null }).addTo(mapa));
+      if (andando) {
+        const m = L.marker(pts[0], { icon: emoji(c.status === 'EM_TRANSITO' ? '🚚' : '📦'), interactive: false, zIndexOffset: 900 }).addTo(mapa);
+        camadas.push(m); anim.push({ m, pts, passo: c.status === 'EM_TRANSITO' ? 0.9 : 0.35, pos: Math.random() * pts.length });
+      }
+    }
+    const atends = c.atendimentos.slice(0, 8).map(a => `<div class="lp-atend"><span class="lp-atend-nome">${escHtml(a.nome || '—')}</span>${a.assinado ? ' ✅' : ''}</div>`).join('');
+    const mk = L.marker([c.para.lat, c.para.lng], { icon: pino(cor) }).addTo(mapa).bindPopup(`<div class="log-popup">
+      <div class="lp-head"><div class="lp-destino">📍 ${escHtml(c.destino)}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${escHtml(pbLogStatus(c.status))}</span></div>
+      <div class="lp-rota-mini">🏢 ${escHtml(c.filial)}${c.origem ? ` · 🏭 ${escHtml(c.origem)} <span class="lp-seta">→</span> ${escHtml(c.destino)}` : ''}</div>
+      <div class="lp-transp">👤 ${escHtml(c.transportador || 'sem transportador')}${c.status !== 'ENTREGUE' && c.dias != null ? ` · há ${c.dias} dia(s)` : ''}</div>
+      <div class="lp-atend-head">${c.atendimentos.length} atendimento(s)</div><div class="lp-atendimentos">${atends}${c.atendimentos.length > 8 ? `<div class="lp-atend">+${c.atendimentos.length - 8}</div>` : ''}</div>
+    </div>`, { maxWidth: 300, minWidth: 240 });
+    camadas.push(mk); marcadores[i] = mk;
+  });
+  transf.forEach((t, j) => {
+    const i = cargas.length + j;
+    if (!t._de || !t._para) { marcadores[i] = null; return; }
+    const cor = '#a855f7';
+    pontoOrigem(t._de, `${t.origem}${t.armazem_origem ? ' · ' + t.armazem_origem : ''}`, '🏢');
+    pontoOrigem(t._para, `${t.destino}${t.armazem_destino ? ' · ' + t.armazem_destino : ''}`, '🏢');
+    const pts = curvaEntrePontos([t._de.lat, t._de.lng], [t._para.lat, t._para.lng]);
+    const linha = L.polyline(pts, { color: cor, weight: 3, opacity: 0.85, dashArray: '10 8' }).addTo(mapa).bindPopup(`<div class="log-popup">
+      <div class="lp-head"><div class="lp-destino">🔁 Transferência ${escHtml(t.numero || '')}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${escHtml(PB_TRANSF_STATUS[t.status] || t.status)}</span></div>
+      <div class="lp-rota-mini">🏢 ${escHtml(t.origem)} <span class="lp-seta">→</span> ${escHtml(t.destino)}</div>
+      <div class="lp-transp">${escHtml(t.armazem_origem || '—')} → ${escHtml(t.armazem_destino || '—')}</div>
+      <div class="lp-transp">🚛 ${escHtml(t.meio || 'meio não informado')}${t.valor != null ? ` · ${pbDinheiro(t.valor)}` : ''} · há ${t.dias ?? 0} dia(s)</div>
+    </div>`);
+    camadas.push(linha); marcadores[i] = linha;
+    const m = L.marker(pts[0], { icon: emoji('🚛'), interactive: false, zIndexOffset: 900 }).addTo(mapa);
+    camadas.push(m); anim.push({ m, pts, passo: 0.6, pos: Math.random() * pts.length });
+  });
+  PBL.marcadores = marcadores;
+  if (camadas.length) mapa.fitBounds(L.featureGroup(camadas).getBounds().pad(0.2), { maxZoom: 11 });
+  if (anim.length && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+    PB.logAnim = setInterval(() => anim.forEach(a => { a.pos += a.passo; if (a.pos >= a.pts.length) a.pos = 0; a.m.setLatLng(a.pts[Math.floor(a.pos)]); }), 90);
+  }
+  setTimeout(() => mapa.invalidateSize(), 60);
+}
+function pbLogFoco(i) {
+  const mk = PBL.marcadores[i];
+  if (!mk || !PB.logMap) return;
+  document.getElementById('pbLogMapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (mk.getLatLng) PB.logMap.setView(mk.getLatLng(), Math.max(PB.logMap.getZoom(), 9));
+  else PB.logMap.fitBounds(mk.getBounds().pad(0.3));
+  mk.openPopup();
+}
+function pbLogExcel() {
+  const ls = (PBL.linhas || []).map(l => ({ ...l, status: pbLogStatus(l.status), desde: l.desde ? formatarData(String(l.desde).slice(0, 10)) : '' }));
+  gcaExportarExcel('Painel_Brasil_Logistica', ls, [{ key: 'tipo', label: 'Tipo' }, { key: 'filial', label: 'Filial' }, { key: 'de', label: 'De' }, { key: 'para', label: 'Para' },
+    { key: 'status', label: 'Situação' }, { key: 'quem', label: 'Transportador / meio' }, { key: 'desde', label: 'Desde' }, { key: 'dias', label: 'Dias' }, { key: 'qtd', label: 'Conteúdo' }]);
+}
+
 // ── INVENTÁRIOS ── todos os inventários do período: no prazo, fora do prazo, não entregues
 const PBV = { situacao: '', tipo: '' };
 const PB_INV_SIT = {
@@ -6956,7 +7111,7 @@ function pbAbaOperacao(el) {
   el.innerHTML = `
     <div class="pb-tabela-wrap"><table class="pb-tabela"><thead><tr>
       <th>Filial</th><th class="num">Atendimentos</th><th class="num">Hoje</th><th class="num">Tempo médio</th><th class="num">Pedidos abertos</th><th class="num">Urgentes</th>
-      <th class="num">Mais antigo</th><th class="num">Espera média</th><th class="num">Assinaturas</th><th class="num">Links vencidos</th><th class="num">Logística</th>
+      <th class="num">Mais antigo</th><th class="num">Espera média</th><th class="num">Assinaturas</th><th class="num">Há +10 dias</th><th class="num">Logística</th>
       <th class="num">Laudos vencidos</th><th class="num">Vencem em 30 dias</th></tr></thead><tbody>
       ${fs.map(f => `<tr><td style="font-weight:700">${escHtml(f.nome)}</td>
         <td class="num">${link('atendimentos', 'Atendimentos por dia', f, pbNum(f.operacao.atendimentos_periodo))}</td><td class="num">${pbNum(f.operacao.atendimentos_hoje)}</td>
@@ -6965,7 +7120,7 @@ function pbAbaOperacao(el) {
         <td class="num ${f.solicitacoes.mais_antiga_horas > 48 ? 'pb-sit-zerado' : f.solicitacoes.mais_antiga_horas > 24 ? 'pb-sit-abaixo' : ''}">${pbHoras(f.solicitacoes.mais_antiga_horas)}</td>
         <td class="num">${pbHoras(f.solicitacoes.espera_media_horas)}</td>
         <td class="num">${link('assinaturas_pendentes', 'Assinaturas pendentes', f, pbNum(f.operacao.assinaturas_pendentes))}</td>
-        <td class="num ${f.operacao.assinaturas_expiradas ? 'pb-sit-zerado' : ''}">${pbNum(f.operacao.assinaturas_expiradas)}</td>
+        <td class="num ${f.operacao.assinaturas_antigas ? 'pb-sit-abaixo' : ''}">${pbNum(f.operacao.assinaturas_antigas)}</td>
         <td class="num">${link('logistica', 'Logística', f, pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito))}</td>
         <td class="num ${f.laudos.vencidos ? 'pb-sit-zerado' : ''}">${link('laudos_vencidos', 'Laudos vencidos', f, pbNum(f.laudos.vencidos))}</td>
         <td class="num">${link('laudos_a_vencer', 'Laudos a vencer em 30 dias', f, pbNum(f.laudos.a_vencer_30d))}</td></tr>`).join('')}
@@ -10318,6 +10473,19 @@ let _armazens = [];
 async function carregarArmazens() {
   const data = await api('/armazens');
   if (data) _armazens = data.data || data.armazens || [];
+  ajustarArmazensDoUsuario();
+}
+
+// O cadastro guarda os armazéns do usuário de todas as filiais juntos. Ao entrar numa filial,
+// GCA.usuario.armazens fica só com os desta filial — nenhum dela marcado = todos (igual ao servidor).
+// Sem isso, quem tem armazém marcado só em outra filial ficava sem armazém nenhum nas listas.
+function ajustarArmazensDoUsuario() {
+  if (!GCA.usuario || !_armazens.length) return;
+  if (GCA.usuario._armazensTodos === undefined) GCA.usuario._armazensTodos = GCA.usuario.armazens ?? null;
+  let lista = GCA.usuario._armazensTodos;
+  if (typeof lista === 'string') { try { lista = JSON.parse(lista || '[]'); } catch { lista = []; } }
+  const daFilial = new Set(_armazens.map(a => a.id));
+  GCA.usuario.armazens = JSON.stringify((Array.isArray(lista) ? lista : []).filter(id => daFilial.has(id)));
 }
 
 // Carrega saldos silenciosamente para consistência NR10
@@ -10359,14 +10527,14 @@ function mudarAbaAss(aba) {
   const sub  = document.getElementById('assCardSub');
   if (btnP) { btnP.style.borderBottom = aba==='pendentes' ? '2px solid var(--accent)' : '2px solid transparent'; btnP.style.color = aba==='pendentes' ? 'var(--accent-text)' : 'var(--text-3)'; }
   if (btnA) { btnA.style.borderBottom = aba==='assinadas' ? '2px solid var(--accent)' : '2px solid transparent'; btnA.style.color = aba==='assinadas' ? 'var(--accent-text)' : 'var(--text-3)'; }
-  if (sub)  sub.textContent = aba==='pendentes' ? 'Pendentes e expirados' : 'Assinados';
+  if (sub)  sub.textContent = aba==='pendentes' ? 'Pendentes' : 'Assinados';
   // Ajusta filtro de status
   const sel = document.getElementById('assFiltroStatus');
   if (sel) {
     if (aba === 'assinadas') {
       sel.innerHTML = '<option value="ASSINADO">Assinados</option>';
     } else {
-      sel.innerHTML = '<option value="">Todos</option><option value="PENDENTE">Pendentes</option><option value="EXPIRADO">Expirados</option>';
+      sel.innerHTML = '<option value="">Todos</option><option value="PENDENTE">Pendentes</option><option value="ANTIGA">Há mais de 10 dias</option>';
     }
     sel.value = '';
   }
@@ -10388,13 +10556,8 @@ async function carregarAssinaturasSilencioso(force = false) {
   const data = await api('/atendimentos/pendentes');
   if (!data) return;
   _assinaturasUltimoFetch = Date.now();
-  const agora = new Date();
-  _assinaturas = (data.data || []).map(a => {
-    const exp = a.expiracao ? new Date(a.expiracao) : null;
-    const expirado = exp && agora > exp;
-    const statusCalc = a.status === 'ASSINADO' ? 'ASSINADO' : (expirado ? 'EXPIRADO' : 'PENDENTE');
-    return { ...a, statusCalc, expiracaoDate: exp };
-  });
+  // O link de assinatura não vence mais: ou está pendente, ou assinado
+  _assinaturas = (data.data || []).map(a => ({ ...a, statusCalc: a.status === 'ASSINADO' ? 'ASSINADO' : 'PENDENTE', diasPendente: assDiasPendente(a) }));
 }
 
 async function carregarAssinaturas(silencioso = false) {
@@ -10414,7 +10577,7 @@ async function carregarAssinaturas(silencioso = false) {
   if (aviso) {
     aviso.style.display = 'flex';
     aviso.querySelector('span').textContent = data.limitado
-      ? `Mostrando assinados dos últimos ${data.diasAssinado || 60} dias (pendentes/expirados sempre completos)`
+      ? `Mostrando assinados dos últimos ${data.diasAssinado || 60} dias (pendentes sempre completos)`
       : 'Mostrando histórico completo de assinados';
     aviso.querySelector('button').textContent = data.limitado ? '📜 Ver histórico completo' : '⚡ Voltar ao modo rápido';
   }
@@ -10422,16 +10585,11 @@ async function carregarAssinaturas(silencioso = false) {
   const agora = new Date();
   const hoje  = hojeBR(agora);
 
-  _assinaturas = (data.data || []).map(a => {
-    const exp = a.expiracao ? new Date(a.expiracao) : null;
-    const expirado = exp && agora > exp;
-    const status = a.status === 'ASSINADO' ? 'ASSINADO' : (expirado ? 'EXPIRADO' : 'PENDENTE');
-    return { ...a, statusCalc: status, expiracaoDate: exp };
-  });
+  _assinaturas = (data.data || []).map(a => ({ ...a, statusCalc: a.status === 'ASSINADO' ? 'ASSINADO' : 'PENDENTE', diasPendente: assDiasPendente(a) }));
 
-  // KPIs
+  // KPIs — "há mais de 10 dias" é só um alerta para cobrar: o link continua valendo
   const pendentes = _assinaturas.filter(a => a.statusCalc === 'PENDENTE').length;
-  const expirados = _assinaturas.filter(a => a.statusCalc === 'EXPIRADO').length;
+  const expirados = _assinaturas.filter(a => a.statusCalc === 'PENDENTE' && a.diasPendente > 10).length;
   const assinados = _assinaturas.filter(a => a.statusCalc === 'ASSINADO' && (a.assinadoEm||'').slice(0,10) === hoje).length;
 
   document.getElementById('assKpiPendentes').textContent = pendentes;
@@ -10466,7 +10624,7 @@ function filtrarAssinaturas(busca) {
     lista = lista.filter(a => a.statusCalc === 'ASSINADO');
   }
 
-  if (filtroStatus) lista = lista.filter(a => a.statusCalc === filtroStatus);
+  if (filtroStatus) lista = lista.filter(a => filtroStatus === 'ANTIGA' ? a.statusCalc === 'PENDENTE' && a.diasPendente > 10 : a.statusCalc === filtroStatus);
   if (filtroSetor)  lista = lista.filter(a => {
     const colab = (_colaboradores||[]).find(c => c.id === a.colaboradorId || c.nome === a.nomeColaborador);
     return (colab?.setor || '').trim() === filtroSetor;
@@ -10522,8 +10680,8 @@ function renderAssinaturas(lista) {
           ? '<span style="color:var(--red);font-weight:600;font-size:11px" title="O atendimento foi salvo, mas o link de assinatura não foi gerado">⚠️ Sem link</span>'
           : '<span style="color:var(--yellow);font-weight:600;font-size:11px">⏳ Pendente</span>';
 
-    const expiraEm = a.expiracaoDate && a.statusCalc === 'PENDENTE'
-      ? formatarTempoRestante(a.expiracaoDate) : '—';
+    const expiraEm = a.statusCalc === 'PENDENTE' && a.diasPendente != null
+      ? (a.diasPendente === 0 ? 'hoje' : `${a.diasPendente} dia${a.diasPendente === 1 ? '' : 's'}`) : '—';
 
     let itens = []; try { itens = JSON.parse(a.itens_json || a.itens || '[]'); } catch {}
     const qtdItens = itens.length || a.qtdItens || 0;
@@ -10552,6 +10710,7 @@ function renderAssinaturas(lista) {
       </div>`;
 
     return `<tr style="${
+      a.statusCalc === 'PENDENTE' && a.diasPendente > 10 ? 'border-left:4px solid var(--red)!important;background:rgba(248,113,113,.05)!important' :
       a.statusCalc === 'PENDENTE' ? 'border-left:4px solid var(--yellow)!important;background:rgba(251,191,36,.05)!important' :
       a.statusCalc === 'EXPIRADO' ? 'border-left:4px solid var(--red)!important;background:rgba(248,113,113,.05)!important' :
       'border-left:4px solid transparent'
@@ -10563,7 +10722,7 @@ function renderAssinaturas(lista) {
       <td>${formatarData(a.data)}</td>
       <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
       <td>${tag}</td>
-      <td style="font-size:11px;color:var(--text-3)">${expiraEm}</td>
+      <td style="font-size:11px;${a.diasPendente > 10 && a.statusCalc === 'PENDENTE' ? 'color:var(--red);font-weight:700' : 'color:var(--text-3)'}">${expiraEm}</td>
       <td>${acoes}</td>
     </tr>`;
   }).join('');
@@ -10610,6 +10769,12 @@ function formatarData(data) {
   if (!data) return '—';
   const [y, m, d] = data.split('-');
   return `${d}/${m}/${y}`;
+}
+
+// Dias desde o atendimento (horário de Brasília) — pendente não vence, só vai ficando antiga
+function assDiasPendente(a) {
+  if (!a?.data || a.status === 'ASSINADO') return null;
+  return Math.max(0, Math.round((new Date(`${hojeBR()}T12:00:00Z`) - new Date(`${a.data}T12:00:00Z`)) / 86400000));
 }
 
 function formatarTempoRestante(data) {
@@ -11112,7 +11277,9 @@ function renderSolicitacoes() {
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
       <td style="font-size:11px;color:var(--text-2)">${escHtml(sol)}${s.base_solicitante ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px" title="${s.base_origem === 'colaborador' ? 'Base do colaborador atendido (o setor do solicitante não tem cidade)' : 'Base do solicitante'}">📍 ${escHtml(s.base_solicitante)}${s.base_origem === 'colaborador' ? ' (colab.)' : ''}</div>` : ''}</td>
-      <td>${(() => {
+      <td>${s.liberada_em && ['PENDENTE', 'VISUALIZADO'].includes(s.status)
+        ? `${formatarDataHora(s.liberada_em).slice(0, 10)}<div style="font-size:10px;color:#22c55e;font-weight:600;margin-top:2px" title="O colaborador tinha assinatura pendente; o pedido foi liberado quando ele assinou">✍️ liberado após assinatura</div>`
+        : (() => {
         // data_hora pode vir como "19/06/2026, 10:30" (pt-BR) ou ISO
         const dh = s.data_hora || s.criado_em || '';
         if (dh.includes('/')) { // formato pt-BR: dd/MM/yyyy, HH:mm
@@ -11503,6 +11670,9 @@ async function atenderSolicitacaoViatura(s, btnEl) {
     const pendente = (_assinaturas || []).find(a => a.destinatarioTipo === 'VIATURA' && a.placa === s.placa &&
       (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
     if (pendente) { toast(`⚠️ A viatura ${escHtml(s.placa)} tem uma entrega pendente de assinatura. Resolva antes de iniciar outra.`, 'error', 6000); return; }
+    const idRetira = s.retirado_por_id || s.solicitante_id;
+    const pendPessoa = idRetira && (_assinaturas || []).find(a => a.colaboradorId === idRetira && a.statusCalc !== 'ASSINADO');
+    if (pendPessoa) { toast(`⚠️ ${escHtml(s.retirado_por_nome || 'Quem vai retirar')} tem uma assinatura pendente (de ${formatarData(pendPessoa.data)}). Resolva antes de iniciar o atendimento.`, 'error', 6000); return; }
     if (await bloqueadoPorInventario(s.armazem_id)) return;
 
     fecharModalSolicitacao();
@@ -15981,7 +16151,7 @@ async function carregarUsuariosView() {
   window._usuariosList = data.data || data.usuarios || [];
   tbody.innerHTML = window._usuariosList.length ? window._usuariosList.map(u => {
     let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = u.base ? [u.base] : []; }
-    const uniStr = unis.map(x => x === 'marica' ? 'Maricá' : 'RdO').join(', ') || '—';
+    const uniStr = unis.map(x => escHtml(getNomeUnidade(x) || x)).join(', ') || '—';
     return `<tr>
       <td class="td-main">${escHtml(u.nome||'—')}<div style="font-size:10px;color:var(--text-3)">${uniStr}</div></td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.username||'—')}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
@@ -16070,8 +16240,8 @@ async function salvarUsuario() {
   const unis = [];
   document.querySelectorAll('.usr-uni-check:checked').forEach(cb => unis.push(cb.value));
   const base = document.getElementById('usrBase')?.value || '';
-  // Coleta armazéns marcados
-  const armazens = [...document.querySelectorAll('#usrArmazensLista input[type=checkbox]:checked')].map(cb => cb.value);
+  // Coleta armazéns marcados (de todas as filiais) + os de filiais que quem edita não enxerga
+  const armazens = [...new Set([...document.querySelectorAll('#usrArmazensLista input[type=checkbox]:checked')].map(cb => cb.value).concat(_usrArmOcultos))];
   const body = {
     nome:     document.getElementById('usrNome').value.trim(),
     username: document.getElementById('usrUsername').value.trim(),
@@ -16098,18 +16268,60 @@ async function salvarUsuario() {
   } else toast(res?.erro || 'Erro ao salvar', 'error');
 }
 
-function renderArmazensUsuario(armazensSelecionados = []) {
+// Armazéns do usuário, filial por filial: aparecem a filial principal dele e as do "acesso
+// múltiplo". Em cada filial, nenhum marcado = todos os armazéns daquela filial (mesma regra do servidor).
+let _usrArmTodos = null;      // [{unidade, nome, armazens:[{id,nome,principal}]}] de todas as filiais que dá para ver
+let _usrArmOcultos = [];      // armazéns marcados em filiais que quem edita não enxerga (são preservados ao salvar)
+async function usrCarregarArmazensFiliais() {
+  if (_usrArmTodos) return _usrArmTodos;
+  const slugs = (_filiais || []).filter(f => f.status === 'ativa').map(f => f.slug);
+  if (!slugs.includes(GCA.unidade)) slugs.push(GCA.unidade);
+  const res = await api(`/usuarios/armazens-por-filial?unidades=${encodeURIComponent(slugs.join(','))}`);
+  _usrArmTodos = res?.ok ? res.data : [{ unidade: GCA.unidade, nome: getNomeUnidade(GCA.unidade) || GCA.unidade, armazens: (_armazens || []).map(a => ({ id: a.id, nome: a.nome, principal: !!a.principal })) }];
+  return _usrArmTodos;
+}
+function usrFiliaisDoFormulario() {
+  const base = document.getElementById('usrBase')?.value || GCA.unidade;
+  const marcadas = [...document.querySelectorAll('.usr-uni-check:checked')].map(cb => cb.value);
+  return [...new Set([base, ...marcadas].filter(Boolean))];
+}
+async function renderArmazensUsuario(armazensSelecionados = [], recalcularOcultos = true) {
   const lista = document.getElementById('usrArmazensLista');
   if (!lista) return;
-  if (!_armazens.length) {
+  const todos = await usrCarregarArmazensFiliais();
+  if (recalcularOcultos) {
+    const visiveis = new Set(todos.flatMap(f => f.armazens.map(a => a.id)));
+    _usrArmOcultos = armazensSelecionados.filter(id => !visiveis.has(id));
+  }
+  const filiais = usrFiliaisDoFormulario().map(u => todos.find(f => f.unidade === u)).filter(Boolean);
+  if (!filiais.length || !filiais.some(f => f.armazens.length)) {
     lista.innerHTML = '<span style="font-size:11px;color:var(--text-3)">Nenhum armazém cadastrado.</span>';
     return;
   }
-  lista.innerHTML = _armazens.map(a => `
-    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer">
-      <input type="checkbox" value="${a.id}" ${armazensSelecionados.includes(a.id) ? 'checked' : ''}>
-      ${escHtml(a.nome)}
-    </label>`).join('');
+  const varias = filiais.length > 1;
+  lista.innerHTML = filiais.map(f => {
+    const marcados = f.armazens.filter(a => armazensSelecionados.includes(a.id)).length;
+    return `<div class="usr-arm-filial" data-unidade="${escHtml(f.unidade)}" style="${varias ? 'padding:6px 0;border-bottom:1px dashed var(--border)' : ''}">
+      ${varias ? `<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--text-1);margin-bottom:4px">🏢 ${escHtml(f.nome)}
+        <span class="usr-arm-resumo" style="font-weight:400;font-size:10px;color:var(--text-3)">${marcados ? `${marcados} de ${f.armazens.length} armazém(ns)` : 'todos os armazéns'}</span></div>` : ''}
+      ${f.armazens.map(a => `<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer;${varias ? 'padding-left:14px' : ''}">
+        <input type="checkbox" value="${a.id}" ${armazensSelecionados.includes(a.id) ? 'checked' : ''} onchange="usrArmResumo(this)">
+        ${escHtml(a.nome)}${a.principal ? ' <span style="color:#f59e0b" title="Armazém principal">⭐</span>' : ''}
+      </label>`).join('') || '<span style="font-size:11px;color:var(--text-3);padding-left:14px">Nenhum armazém cadastrado nesta filial.</span>'}
+    </div>`;
+  }).join('');
+}
+function usrArmResumo(cb) {
+  const grupo = cb.closest('.usr-arm-filial');
+  const resumo = grupo?.querySelector('.usr-arm-resumo');
+  if (!resumo) return;
+  const total = grupo.querySelectorAll('input[type=checkbox]').length, marcados = grupo.querySelectorAll('input[type=checkbox]:checked').length;
+  resumo.textContent = marcados ? `${marcados} de ${total} armazém(ns)` : 'todos os armazéns';
+}
+// Marcou/desmarcou uma filial no acesso múltiplo: redesenha mantendo o que já estava marcado
+function usrUnidadesMudou() {
+  const marcados = [...document.querySelectorAll('#usrArmazensLista input[type=checkbox]:checked')].map(cb => cb.value);
+  renderArmazensUsuario(marcados, false);
 }
 
 function editarUsuario(id) {
@@ -17327,7 +17539,7 @@ function abrirDevolucaoColab() {
     if (temSer) {
       // Item com serial: 1 campo de quantidade (define quantos seriais selecionar) + destino individual por serial
       return `
-      <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${escHtml(it.descricao)}" data-tem-serial="1" data-par="${ePar?'1':'0'}" data-saldo-max="${it.saldoEmMaos}"
+      <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${escHtml(it.descricao)}" data-item-cod="${escHtml(it.codigo || (_itens || []).find(x => x.id === it.item_id)?.codigo || '')}" data-tem-serial="1" data-par="${ePar?'1':'0'}" data-saldo-max="${it.saldoEmMaos}"
         style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
         <div style="flex:1;font-size:12px;color:var(--text-1)">${escHtml(it.descricao)}${serialHint}</div>
         <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
@@ -17340,7 +17552,7 @@ function abrirDevolucaoColab() {
 
     // Item sem serial: 3 campos de quantidade em paralelo (Estoque / Recuperação / Inutilizado)
     return `
-    <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${escHtml(it.descricao)}" data-tem-serial="0" data-saldo-max="${it.saldoEmMaos}"
+    <div class="dev-row" data-item-id="${it.item_id}" data-item-desc="${escHtml(it.descricao)}" data-item-cod="${escHtml(it.codigo || (_itens || []).find(x => x.id === it.item_id)?.codigo || '')}" data-tem-serial="0" data-saldo-max="${it.saldoEmMaos}"
       style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm)">
       <div style="flex:1;font-size:12px;color:var(--text-1)">${escHtml(it.descricao)}</div>
       <div style="font-size:11px;color:var(--text-3)">Em mãos: <strong style="color:#a855f7">${it.saldoEmMaos}</strong></div>
@@ -17365,7 +17577,25 @@ function abrirDevolucaoColab() {
     </div>`;
   }).join('');
 
+  document.getElementById('devBusca').value = '';
+  filtrarDevItens('');
   document.getElementById('modalDevolucaoColab').classList.remove('hidden');
+}
+
+// Busca na lista de devolução: só esconde as linhas (as quantidades já digitadas continuam lá)
+function filtrarDevItens(q) {
+  const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const termos = norm(q).split(/\s+/).filter(Boolean);
+  const linhas = [...document.querySelectorAll('#devItensLista .dev-row')];
+  let visiveis = 0;
+  linhas.forEach(row => {
+    const texto = norm(`${row.dataset.itemDesc} ${row.dataset.itemCod || ''}`);
+    const mostra = !termos.length || termos.every(t => texto.includes(t));
+    row.style.display = mostra ? 'flex' : 'none';
+    if (mostra) visiveis++;
+  });
+  document.getElementById('devBuscaVazio').style.display = linhas.length && !visiveis ? 'block' : 'none';
+  document.getElementById('devBuscaInfo').textContent = termos.length ? `${visiveis} de ${linhas.length} itens` : `${linhas.length} itens em mãos`;
 }
 
 // Valida que a soma dos 3 campos (Estoque/Recuperação/Inutilizado) não passa do saldo em mãos
@@ -24218,6 +24448,7 @@ function finIniciar() {
   const mes = document.getElementById('finMes');
   if (mes && !mes.value) { const d = new Date(); mes.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
   document.getElementById('finFilial').classList.toggle('hidden', GCA.usuario?.role !== 'admin');
+  document.getElementById('finAbaPrevisao')?.classList.toggle('hidden', !temPermissao('painel_financeiro'));
   _finPrecos = null;
   finMarcarAba();
   const seguir = () => { if (!_finDados) finCarregar(); else finRender(); };
@@ -24229,6 +24460,25 @@ function finIniciar() {
   } else seguir();
 }
 
+// Previsão anual (veio dos Indicadores): simulação do estoque mês a mês no armazém principal.
+// Usa as mesmas funções de antes (carregarIndPrevAnual / indRenderizarPrevAnual), agora dentro do Financeiro.
+function finRenderPrevisao() {
+  document.getElementById('finConteudo').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+      <input type="month" id="prevDe"  class="form-input" style="width:150px">
+      <span style="color:var(--text-3);font-size:12px">até</span>
+      <input type="month" id="prevAte" class="form-input" style="width:150px">
+      <button class="btn btn-primary" onclick="carregarIndPrevAnual()">🔍 Simular</button>
+    </div>
+    <div id="indPrevAnualContent"><div class="empty-state"><div class="es-icon">📅</div><div class="es-title">Carregando...</div></div></div>`;
+  if (_indPrevAnualData) {
+    const de = document.getElementById('prevDe'), ate = document.getElementById('prevAte');
+    if (_indPrevAnualData._de) de.value = _indPrevAnualData._de;
+    if (_indPrevAnualData._ate) ate.value = _indPrevAnualData._ate;
+    indRenderizarPrevAnual();
+  } else carregarIndPrevAnual();
+}
+
 function finMarcarAba() {
   document.querySelectorAll('#finAbas button').forEach(b => b.classList.toggle('ativa', b.dataset.aba === _finAba));
 }
@@ -24238,7 +24488,7 @@ async function finCarregar() {
   const mes = document.getElementById('finMes').value;
   if (!mes) { toast('Escolha o mês', 'warn'); return; }
   const todas = document.getElementById('finFilial').value === 'todas';
-  if (['precos', 'config'].includes(_finAba)) { _finAba = 'resumo'; finMarcarAba(); }
+  if (['precos', 'config', 'previsao'].includes(_finAba)) { _finAba = 'resumo'; finMarcarAba(); }
   document.getElementById('finConteudo').innerHTML = finSpinner;
   const res = await api(`/financeiro/painel?mes=${encodeURIComponent(mes)}${todas ? '&filial=todas' : ''}`);
   if (!res?.ok) {
@@ -24254,6 +24504,7 @@ function finRender() {
   Object.values(_finCharts).forEach(c => { try { c.destroy(); } catch {} });
   _finCharts = {};
   if (_finAba === 'precos') return finRenderPrecos();
+  if (_finAba === 'previsao') return finRenderPrevisao();
   if (_finAba === 'config') return finRenderConfig();
   if (!_finDados) {
     document.getElementById('finConteudo').innerHTML = '<div class="empty-state"><div class="es-icon">📊</div><div class="es-title">Escolha o mês e clique em Buscar</div></div>';
@@ -24797,16 +25048,13 @@ function indAba(aba) {
   document.getElementById('indSecEnel').style.display      = aba==='enel'      ? '' : 'none';
   document.getElementById('indSecMateriais').style.display = aba==='materiais' ? '' : 'none';
   document.getElementById('indSecForaPrazo').style.display  = aba==='foraprazo'? '' : 'none';
-  document.getElementById('indSecPrevAnual').style.display  = aba==='prevanual'? '' : 'none';
-  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais'), f=document.getElementById('indTabForaPrazo'), p=document.getElementById('indTabPrevAnual');
+  const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais'), f=document.getElementById('indTabForaPrazo');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
   m.style.color=aba==='materiais'?'var(--accent-text)':'var(--text-3)'; m.style.borderBottomColor=aba==='materiais'?'var(--accent)':'transparent';
   f.style.color=aba==='foraprazo'?'var(--accent-text)':'var(--text-3)'; f.style.borderBottomColor=aba==='foraprazo'?'var(--accent)':'transparent';
-  p.style.color=aba==='prevanual'?'var(--accent-text)':'var(--text-3)'; p.style.borderBottomColor=aba==='prevanual'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
   if (aba === 'foraprazo' && !_indForaPrazoData) carregarIndForaPrazo();
-  if (aba === 'prevanual' && !_indPrevAnualData) carregarIndPrevAnual();
 }
 
 let _indForaPrazoData = null;
@@ -24832,7 +25080,7 @@ async function carregarIndPrevAnual() {
     content.innerHTML = `<div class="empty-state"><div class="es-icon">⚠️</div><div class="es-title">${msg}</div>${dica}</div>`;
     return;
   }
-  _indPrevAnualData = data;
+  _indPrevAnualData = { ...data, _de: de, _ate: ate };
   indRenderizarPrevAnual();
 }
 
@@ -26368,9 +26616,18 @@ function cvFiltrarColab(q) {
   }, 200);
 }
 
-function cvEscolherColab(id) {
+async function cvEscolherColab(id) {
   const c = (_colaboradores || []).find(x => x.id === id);
   if (!c) return;
+  // Quem retira é quem assina: com uma assinatura pendente (dele ou de outra retirada), não retira
+  await carregarAssinaturasSilencioso();
+  const pend = (_assinaturas || []).find(a => a.colaboradorId === id && a.statusCalc !== 'ASSINADO');
+  if (pend) {
+    document.getElementById('cvColabSug').classList.add('hidden');
+    document.getElementById('cvColabBusca').value = '';
+    toast(`⚠️ ${c.nome} tem ${pend.destinatarioTipo === 'VIATURA' ? `uma retirada da viatura ${pend.placa || ''}` : 'um atendimento'} pendente de assinatura (de ${formatarData(pend.data)}). Resolva antes de retirar material.`, 'error', 7000);
+    return;
+  }
   CV.colab = c;
   document.getElementById('cvColabSug').classList.add('hidden');
   document.getElementById('cvColabBusca').value = c.nome;
