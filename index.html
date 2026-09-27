@@ -166,6 +166,8 @@ input,select,textarea{font-family:var(--font-main);}
 @keyframes pbCresce{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .pb-rank-v{font-weight:700;font-variant-numeric:tabular-nums}
 .pb-rank-sub{font-size:10px;color:var(--text-3);margin-bottom:10px}
+.pb-rank-fora{margin-top:12px;padding-top:10px;border-top:1px dashed var(--border);font-size:11px;color:var(--text-3);line-height:1.45}
+.pb-rank-fora b{color:var(--text-2);font-weight:600}
 .pb-gaveta-fundo{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:300;animation:fadeIn .15s ease}
 .pb-gaveta{position:fixed;top:0;right:0;bottom:0;width:min(880px,96vw);background:var(--bg);border-left:1px solid var(--border);z-index:301;display:flex;flex-direction:column;animation:pbEntra .25s cubic-bezier(.2,.8,.2,1)}
 @keyframes pbEntra{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
@@ -6765,7 +6767,7 @@ function pbItensTabela(fsArg) {
     pbKpi('Zerados em alguma filial', pbNum(linhas.filter(l => l.zerado).length), 'com estoque mínimo definido', linhas.some(l => l.zerado) ? 'alerta' : '', '', 2),
     pbKpi('Abaixo do mínimo', pbNum(linhas.filter(l => l.abaixo).length), 'em pelo menos uma filial', linhas.some(l => l.abaixo) ? 'aviso' : '', '', 3)].join('');
   const cel = (x) => !x ? '<td class="num" style="color:var(--text-3)">—</td>'
-    : `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="mínimo ${pbNum(x.minimo)}">${pbNum(x.saldo)}</td>`;
+    : `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="${escHtml(x.por_armazem || 'sem estoque mínimo')}">${pbNum(x.saldo)}</td>`;
   const alvo = document.getElementById('pbItensTabela');
   if (!alvo) return;
   alvo.innerHTML = !linhas.length ? '<div class="pb-vazio">Nenhum item com esses filtros.</div>' : `<div class="pb-tabela-wrap" style="max-height:640px"><table class="pb-tabela"><thead><tr>
@@ -6871,21 +6873,23 @@ function pbUsuariosLista() {
 function pbAbaRankings(el) {
   const fs = PB.resumo.filiais;   // compara sempre todas as filiais visíveis
   const rk = [];
-  const add = (titulo, sub, valor, fmt, menorMelhor) => {
-    const lista = fs.map(f => ({ nome: f.nome, slug: f.slug, v: valor(f) })).filter(x => x.v != null && Number.isFinite(x.v))
-      .sort((a, b) => menorMelhor ? a.v - b.v : b.v - a.v);
-    rk.push({ titulo, sub, lista, fmt, menorMelhor });
+  // motivo = por que uma filial fica fora do ranking (aparece embaixo da lista, para não sumir sem explicação)
+  const add = (titulo, sub, valor, fmt, menorMelhor, motivo) => {
+    const todos = fs.map(f => ({ nome: f.nome, slug: f.slug, v: valor(f) }));
+    const lista = todos.filter(x => x.v != null && Number.isFinite(x.v)).sort((a, b) => menorMelhor ? a.v - b.v : b.v - a.v);
+    const fora = todos.filter(x => !(x.v != null && Number.isFinite(x.v))).map(x => x.nome);
+    rk.push({ titulo, sub, lista, fmt, menorMelhor, fora, motivo: motivo || 'sem dados no período' });
   };
   if (PB.resumo.com_financeiro) {
-    add('Meta financeira', '% do gasto sobre a meta · menor é melhor', f => f.financeiro?.meta > 0 ? f.financeiro.gasto / f.financeiro.meta * 100 : null, pbPct, true);
+    add('Meta financeira', '% do gasto sobre a meta · menor é melhor', f => f.financeiro?.meta > 0 ? f.financeiro.gasto / f.financeiro.meta * 100 : null, pbPct, true, 'sem meta cadastrada');
     add('Recuperação de material', 'economia com recuperação no período · maior é melhor', f => f.financeiro ? f.financeiro.economia : null, pbDinheiro, false);
   }
-  add('Acurácia do estoque', 'média dos inventários entregues no período · maior é melhor', f => f.inventario.acuracia_media, pbPct, false);
-  add('Estoque abastecido', '% dos itens com mínimo que estão zerados ou abaixo · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.abaixo_minimo / f.estoque.itens_com_minimo * 100 : null, pbPct, true);
-  add('Itens zerados', 'itens com estoque mínimo que estão zerados · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.zerados : null, pbNum, true);
-  add('Tempo médio de atendimento', 'no período · menor é melhor', f => f.operacao.tempo_medio_seg, (v) => pbTempo(Math.round(v)), true);
-  add('Espera das solicitações', 'da abertura até o atendimento · menor é melhor', f => f.solicitacoes.espera_media_horas, pbHoras, true);
-  add('Laudos NR10 em dia', '% das peças em uso com laudo vencido · menor é melhor', f => f.laudos.em_uso ? f.laudos.vencidos / f.laudos.em_uso * 100 : null, pbPct, true);
+  add('Acurácia do estoque', 'média dos inventários entregues no período · maior é melhor', f => f.inventario.acuracia_media, pbPct, false, 'sem inventário entregue no período');
+  add('Estoque abastecido', '% dos itens abaixo do mínimo no armazém principal · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.abaixo_minimo / f.estoque.itens_com_minimo * 100 : null, pbPct, true, 'sem estoque mínimo cadastrado');
+  add('Itens zerados', 'itens com mínimo zerados no armazém principal · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.zerados : null, pbNum, true, 'sem estoque mínimo cadastrado');
+  add('Tempo médio de atendimento', 'no período · menor é melhor', f => f.operacao.tempo_medio_seg, (v) => pbTempo(Math.round(v)), true, 'sem atendimento com tempo registrado no período');
+  add('Espera das solicitações', 'da abertura até o atendimento · menor é melhor', f => f.solicitacoes.espera_media_horas, pbHoras, true, 'sem solicitação atendida no período');
+  add('Laudos NR10 em dia', '% das peças em uso com laudo vencido · menor é melhor', f => f.laudos.em_uso ? f.laudos.vencidos / f.laudos.em_uso * 100 : null, pbPct, true, 'sem peça NR10 em uso');
   add('Assinaturas em dia', 'entregas esperando assinatura agora · menor é melhor', f => f.operacao.assinaturas_pendentes, pbNum, true);
 
   // Classificação geral: média da posição em cada ranking (quem aparece em mais rankings e mais bem colocado)
@@ -6898,7 +6902,8 @@ function pbAbaRankings(el) {
     return `<div class="pb-bloco"><div class="pb-secao" style="margin-bottom:2px">${escHtml(r.titulo)}</div><div class="pb-rank-sub">${escHtml(r.sub)}</div>
       <div class="pb-rank">${r.lista.map((x, i) => `<div class="pb-rank-l"><span class="pb-rank-pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}º</span>
         <div style="min-width:0"><div>${escHtml(x.nome)}</div><div class="pb-rank-barra"><i style="width:${Math.max(4, Math.abs(x.v) / max * 100)}%;background:${i === 0 ? '#22c55e' : i === r.lista.length - 1 && r.lista.length > 1 ? '#f87171' : 'var(--accent)'}"></i></div></div>
-        <span class="pb-rank-v">${r.fmt(x.v)}</span></div>`).join('') || '<div class="pb-vazio">Sem dados no período.</div>'}</div></div>`;
+        <span class="pb-rank-v">${r.fmt(x.v)}</span></div>`).join('') || '<div class="pb-vazio">Sem dados no período.</div>'}</div>
+      ${r.fora.length ? `<div class="pb-rank-fora">Fora deste ranking: <b>${r.fora.map(escHtml).join(', ')}</b> — ${escHtml(r.motivo)}.</div>` : ''}</div>`;
   };
   el.innerHTML = `
     <div class="pb-bloco" style="border-color:var(--accent)">
@@ -6907,7 +6912,7 @@ function pbAbaRankings(el) {
         <span class="pb-rank-v">${String(Math.round(x.v * 10) / 10).replace('.', ',')}</span></div>`).join('')}</div>
     </div>
     <div class="pb-grid3">${rk.map(bloco).join('')}</div>
-    <div style="font-size:11px;color:var(--text-3)">Os rankings comparam sempre todas as suas filiais, no período escolhido. Filial sem o dado (ex.: sem inventário no período) fica fora daquele ranking.</div>`;
+    <div style="font-size:11px;color:var(--text-3)">Os rankings comparam sempre todas as suas filiais, no período escolhido. Filial sem o dado fica fora daquele ranking, com o motivo embaixo dele. Estoque mínimo: só o armazém principal de cada filial (mínimo do armazém, senão o do cadastro do item).</div>`;
 }
 
 // Entrar numa filial pelo painel: a mesma troca de filial do sistema
