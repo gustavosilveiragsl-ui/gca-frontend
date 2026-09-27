@@ -85,6 +85,94 @@ input,select,textarea{font-family:var(--font-main);}
 
 /* SELEÇÃO UNIDADE */
 #unidadeView{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:24px;}
+/* ── PAINEL BRASIL ── todas as filiais da pessoa lado a lado (só leitura) */
+#painelBrasilView{min-height:100vh;background:var(--bg);color:var(--text-1);}
+.pb-topo{position:relative;z-index:20;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 28px;background:var(--bg-card);border-bottom:1px solid var(--border);}
+.pb-topo img{height:34px;object-fit:contain}
+.pb-titulo{font-size:17px;font-weight:700;letter-spacing:-.2px}
+.pb-sub{font-size:11px;color:var(--text-3)}
+.pb-topo .pb-acoes{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pb-corpo{padding:24px 28px 48px;max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.pb-hero{display:grid;grid-template-columns:minmax(280px,420px) 1fr;gap:20px;align-items:stretch}
+.pb-mapa{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:center}
+.pb-mapa svg{width:100%;height:auto;display:block}
+.pb-uf{fill:var(--bg);stroke:var(--border);stroke-width:1.2}
+.pb-uf.tem{fill:var(--accent-soft);stroke:var(--accent-text);stroke-width:1.6}
+.pb-pino{cursor:pointer}
+.pb-pino circle.pulso{fill:none;stroke-width:3;opacity:0;animation:pbPulso 2.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pbPulso{0%{opacity:.9;transform:scale(1)}100%{opacity:0;transform:scale(3.6)}}
+.pb-legenda{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text-2);margin-top:8px}
+.pb-legenda span{display:inline-flex;align-items:center;gap:5px}
+.pb-bola{width:10px;height:10px;border-radius:50%;display:inline-block}
+.pb-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pb-kpi{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;animation:fadeUp .35s ease both}
+.pb-kpi .r{font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.pb-kpi .v{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-top:6px;font-variant-numeric:tabular-nums}
+.pb-kpi .d{font-size:11px;color:var(--text-2);margin-top:3px}
+.pb-kpi.alerta{border-color:rgba(248,113,113,.45)} .pb-kpi.alerta .v{color:var(--red)}
+.pb-kpi.aviso{border-color:rgba(251,191,36,.45)} .pb-kpi.aviso .v{color:var(--yellow)}
+.pb-secao{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.pb-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
+.pb-card{background:var(--bg-card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:var(--radius-lg);padding:16px 18px;display:flex;flex-direction:column;gap:12px;animation:fadeUp .35s ease both}
+.pb-card.amarelo{border-left-color:var(--yellow)} .pb-card.vermelho{border-left-color:var(--red)}
+.pb-card-topo{display:flex;align-items:center;gap:10px}
+.pb-card-nome{font-size:16px;font-weight:700}
+.pb-card-cid{font-size:11px;color:var(--text-3)}
+.pb-grade{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pb-m{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px}
+.pb-m .r{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px}
+.pb-m .v{font-size:17px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.pb-m .d{font-size:10px;color:var(--text-3)}
+.pb-m.alerta .v{color:var(--red)} .pb-m.aviso .v{color:var(--yellow)}
+.pb-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pb-chip{font-size:11px;border-radius:999px;padding:3px 10px;border:1px solid}
+.pb-chip.vermelho{color:var(--red);border-color:rgba(248,113,113,.4);background:var(--red-soft)}
+.pb-chip.amarelo{color:var(--yellow);border-color:rgba(251,191,36,.4);background:var(--yellow-soft)}
+.pb-chip.verde{color:var(--green);border-color:rgba(34,197,94,.4);background:var(--green-soft)}
+.pb-graficos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pb-graf{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;height:320px;display:flex;flex-direction:column}
+.pb-graf canvas{flex:1;min-height:0}
+.pb-carregando{text-align:center;padding:60px;color:var(--text-3)}
+@media (max-width:1100px){.pb-hero{grid-template-columns:1fr}.pb-kpis{grid-template-columns:repeat(2,1fr)}.pb-graficos{grid-template-columns:1fr}}
+.pb-filtros{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pb-filtros .form-input{height:34px;padding:0 10px;font-size:12px}
+.pb-atalhos{display:flex;gap:4px;flex-wrap:wrap}
+.pb-atalhos button{font-size:11px;padding:6px 10px;border-radius:999px;border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer}
+.pb-atalhos button.ativo{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent)}
+.pb-abas{display:flex;gap:4px;padding:0 28px;background:var(--bg-card);border-bottom:1px solid var(--border);overflow-x:auto;position:sticky;top:0;z-index:19}
+.pb-abas button{padding:12px 16px;font-size:13px;font-weight:600;color:var(--text-3);background:none;border:0;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap}
+.pb-abas button.ativa{color:var(--accent-text);border-bottom-color:var(--accent)}
+.pb-kpi.clica,.pb-m.clica,.pb-td-clica{cursor:pointer;transition:border-color .15s,transform .15s}
+.pb-kpi.clica:hover,.pb-m.clica:hover{border-color:var(--accent);transform:translateY(-2px)}
+.pb-kpi .ver{font-size:10px;color:var(--accent-text);margin-top:6px;opacity:0;transition:opacity .15s}
+.pb-kpi.clica:hover .ver{opacity:1}
+.pb-tabela-wrap{overflow-x:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.pb-tabela{width:100%;border-collapse:collapse;font-size:12px}
+.pb-tabela th{position:sticky;top:0;background:var(--bg-card);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.pb-tabela td{padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+.pb-tabela tr:hover td{background:var(--bg-hover)}
+.pb-tabela td.num,.pb-tabela th.num{text-align:right;font-variant-numeric:tabular-nums}
+.pb-td-clica{color:var(--accent-text);text-decoration:underline dotted}
+.pb-sit-zerado{color:var(--red);font-weight:700}.pb-sit-abaixo{color:var(--yellow);font-weight:700}
+.pb-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pb-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pb-bloco{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.pb-rank{display:flex;flex-direction:column;gap:8px}
+.pb-rank-l{display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;font-size:12px}
+.pb-rank-pos{font-weight:800;color:var(--text-3);text-align:center}
+.pb-rank-pos.p1{color:#fbbf24}.pb-rank-pos.p2{color:#cbd5e1}.pb-rank-pos.p3{color:#d97706}
+.pb-rank-barra{height:6px;border-radius:3px;background:var(--bg);margin-top:4px;overflow:hidden}
+.pb-rank-barra i{display:block;height:100%;border-radius:3px;background:var(--accent);animation:pbCresce .8s ease both;transform-origin:left}
+@keyframes pbCresce{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.pb-rank-v{font-weight:700;font-variant-numeric:tabular-nums}
+.pb-rank-sub{font-size:10px;color:var(--text-3);margin-bottom:10px}
+.pb-gaveta-fundo{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:300;animation:fadeIn .15s ease}
+.pb-gaveta{position:fixed;top:0;right:0;bottom:0;width:min(880px,96vw);background:var(--bg);border-left:1px solid var(--border);z-index:301;display:flex;flex-direction:column;animation:pbEntra .25s cubic-bezier(.2,.8,.2,1)}
+@keyframes pbEntra{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+.pb-gaveta-topo{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;background:var(--bg-card)}
+.pb-gaveta-corpo{padding:18px 22px;overflow:auto;display:flex;flex-direction:column;gap:18px}
+.pb-vazio{padding:20px;text-align:center;color:var(--text-3);font-size:12px}
+@media (max-width:1100px){.pb-grid2,.pb-grid3{grid-template-columns:1fr}}
 .unidade-card{width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px 32px;animation:fadeUp .3s ease;}
 .unidade-logo{display:flex;justify-content:center;margin-bottom:24px;}
 .unidade-logo img{height:40px;object-fit:contain;}
@@ -94,6 +182,20 @@ input,select,textarea{font-family:var(--font-main);}
 .unidade-btn{padding:16px 20px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);color:var(--text-1);font-size:13px;font-weight:500;text-align:left;display:flex;align-items:center;gap:14px;transition:all var(--transition);}
 .unidade-btn:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);}
 .unidade-btn.destaque{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);}
+.pb-entrada{position:relative;overflow:hidden;width:100%;display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:var(--radius-md);border:1px solid rgba(34,197,94,.5);background:linear-gradient(120deg,rgba(34,197,94,.16),rgba(99,102,241,.14));color:var(--text-1);text-align:left;cursor:pointer;font-family:var(--font-main);transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}
+.pb-entrada:hover{transform:translateY(-1px);border-color:var(--green);box-shadow:0 8px 24px -10px rgba(34,197,94,.55)}
+.pb-entrada:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.pb-entrada::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.08) 50%,transparent 70%);transform:translateX(-100%);animation:pbBrilho 4.5s ease-in-out 1s infinite}
+@keyframes pbBrilho{0%,70%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.pb-entrada .pe-icone{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:rgba(34,197,94,.18);color:var(--green);flex-shrink:0}
+.pb-entrada .pe-icone svg{width:22px;height:22px}
+.pb-entrada .pe-texto{flex:1;min-width:0}
+.pb-entrada .pe-titulo{font-size:14px;font-weight:700;letter-spacing:.3px}
+.pb-entrada .pe-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.pb-entrada .pe-seta{width:18px;height:18px;color:var(--green);flex-shrink:0;transition:transform .15s ease}
+.pb-entrada:hover .pe-seta{transform:translateX(3px)}
+.pb-ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3)}
+.pb-ou::before,.pb-ou::after{content:'';flex:1;height:1px;background:var(--border)}
 /* ── Escolha de filial pelo mapa do Brasil ── */
 .umapa-wrap{width:100%;max-width:1120px;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,400px);gap:36px;align-items:center;}
 .umapa-wrap.sem-mapa{max-width:420px;grid-template-columns:1fr;}
@@ -700,10 +802,48 @@ window.addEventListener('pageshow', function(e) {
       </div>
       <div class="unidade-title" id="unidadeTitulo">Selecione a unidade</div>
       <div class="unidade-sub" id="unidadeSub">Você tem acesso a mais de uma filial</div>
+      <div id="unidadeTopo"></div>
       <div class="unidade-options" id="unidadeOptions"></div>
       <div id="unidadeRodape"></div>
     </div>
   </div>
+</div>
+
+<!-- PAINEL BRASIL -->
+<div id="painelBrasilView" class="hidden">
+  <div class="pb-topo">
+    <img src="./logo-gca.png" alt="GCA">
+    <div>
+      <div class="pb-titulo">🌎 Painel Brasil</div>
+      <div class="pb-sub" id="pbSub">Todas as suas filiais, lado a lado</div>
+    </div>
+    <div class="pb-acoes">
+      <div class="pb-filtros">
+        <select id="pbFilial" class="form-input" style="width:190px" onchange="pbMudarFilial(this.value)"><option value="todas">🇧🇷 Brasil inteiro</option></select>
+        <input type="date" id="pbDe" class="form-input" style="width:140px" onchange="pbMudarPeriodo()">
+        <span style="font-size:11px;color:var(--text-3)">até</span>
+        <input type="date" id="pbAte" class="form-input" style="width:140px" onchange="pbMudarPeriodo()">
+        <div class="pb-atalhos" id="pbAtalhos">
+          <button type="button" data-a="mes" onclick="pbAtalho('mes')">Mês atual</button>
+          <button type="button" data-a="anterior" onclick="pbAtalho('anterior')">Mês anterior</button>
+          <button type="button" data-a="3m" onclick="pbAtalho('3m')">3 meses</button>
+          <button type="button" data-a="ano" onclick="pbAtalho('ano')">Ano</button>
+        </div>
+      </div>
+      <button class="btn btn-ghost" onclick="pbRecarregar()" title="Atualizar os números">↻</button>
+      <button class="btn btn-ghost" id="pbBtnVoltar" onclick="fecharPainelBrasil()">← Escolher filial</button>
+      <button class="btn btn-ghost" onclick="fazerLogout()">Sair</button>
+    </div>
+  </div>
+  <nav class="pb-abas" id="pbAbas">
+    <button data-aba="geral" onclick="pbAba('geral')">Visão geral</button>
+    <button data-aba="financeiro" onclick="pbAba('financeiro')">Financeiro</button>
+    <button data-aba="itens" onclick="pbAba('itens')">Itens e estoque</button>
+    <button data-aba="operacao" onclick="pbAba('operacao')">Operação</button>
+    <button data-aba="pessoas" onclick="pbAba('pessoas')">Pessoas e usuários</button>
+    <button data-aba="rankings" onclick="pbAba('rankings')">Rankings</button>
+  </nav>
+  <div class="pb-corpo" id="pbCorpo"><div class="pb-carregando">Carregando…</div></div>
 </div>
 
 <!-- APP -->
@@ -6141,9 +6281,646 @@ function atualizarIconeTema(tema) {
 }
 
 // ── NAVEGAÇÃO DE TELAS ──
+// ═══════════════════════════════════════════
+// PAINEL BRASIL — o gerente de todos os almoxarifados vê tudo junto (só leitura)
+// Filtro de filial e período no topo; tudo na tela obedece aos dois. Clicar num número abre
+// a gaveta com o detalhe (e o Excel dele).
+// ═══════════════════════════════════════════
+const PB = { de: '', ate: '', filial: 'todas', aba: 'geral', resumo: null, fin: null, itens: null, pessoas: null, chave: '', timer: null, charts: {} };
+
+// Veio da tela de escolha de filial: entra numa filial (a última usada) só para ter a sessão,
+// e abre o painel por cima. Quem já está no sistema (modo "trocar filial") abre direto.
+async function abrirPainelDoLogin() {
+  if (_umapaModoTroca) { cancelarVoltaMapa(); abrirPainelBrasil(); return; }
+  const lista = GCA.unidades || [];
+  const ultima = localStorage.getItem('gca_unidade');
+  sessionStorage.setItem('gca_abrir_painel', '1');
+  await selecionarUnidade(lista.includes(ultima) ? ultima : lista[0]);
+}
+
+function abrirPainelBrasil() {
+  if (!temPermissao('painel_brasil')) { toast('Sem acesso ao Painel Brasil', 'warn'); return; }
+  if (!PB.de) pbAtalho('mes', true);
+  document.getElementById('pbSub').textContent = `${GCA.usuario?.nome || ''} · todas as suas filiais, lado a lado`;
+  mostrarTela('painel');
+  window.scrollTo(0, 0);
+  pbMarcarAba();
+  pbRecarregar();
+  clearInterval(PB.timer);
+  // Atualiza sozinho a cada 5 minutos enquanto estiver aberto
+  PB.timer = setInterval(() => { if (!document.getElementById('painelBrasilView').classList.contains('hidden')) pbRecarregar(true); }, 300000);
+}
+
+function fecharPainelBrasil() {
+  clearInterval(PB.timer);
+  pbFecharGaveta();
+  if ((GCA.unidades || []).length > 1) voltarAoMapa(); else mostrarTela('app');
+}
+
+function pbGarantirChart() {
+  return new Promise(ok => {
+    if (window.Chart) return ok();
+    const sc = document.createElement('script');
+    sc.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+    sc.onload = ok; sc.onerror = ok;
+    document.head.appendChild(sc);
+  });
+}
+
+// ── Período ──
+function pbAtalho(qual, semCarregar) {
+  const hoje = hojeBR(), [a, m] = hoje.split('-').map(Number);
+  const mes = (ano, mm) => `${ano}-${String(mm).padStart(2, '0')}`;
+  const ultimoDia = (ano, mm) => new Date(Date.UTC(ano, mm, 0)).getUTCDate();
+  let de = `${hoje.slice(0, 7)}-01`, ate = hoje;
+  if (qual === 'anterior') { const aa = m === 1 ? a - 1 : a, mm = m === 1 ? 12 : m - 1; de = `${mes(aa, mm)}-01`; ate = `${mes(aa, mm)}-${ultimoDia(aa, mm)}`; }
+  if (qual === '3m') { const d = new Date(Date.UTC(a, m - 3, 1)); de = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`; }
+  if (qual === 'ano') de = `${a}-01-01`;
+  document.getElementById('pbDe').value = de;
+  document.getElementById('pbAte').value = ate;
+  document.querySelectorAll('#pbAtalhos button').forEach(b => b.classList.toggle('ativo', b.dataset.a === qual));
+  if (!semCarregar) pbMudarPeriodo(true);
+  else { PB.de = de; PB.ate = ate; }
+}
+function pbMudarPeriodo(doAtalho) {
+  const de = document.getElementById('pbDe').value, ate = document.getElementById('pbAte').value;
+  if (!de || !ate || de > ate) { toast('Período inválido', 'warn'); return; }
+  if (!doAtalho) document.querySelectorAll('#pbAtalhos button').forEach(b => b.classList.remove('ativo'));
+  PB.de = de; PB.ate = ate;
+  pbRecarregar();
+}
+function pbMudarFilial(slug) { PB.filial = slug || 'todas'; PB.fin = null; PB.pessoas = null; pbRender(); }
+function pbAba(aba) { PB.aba = aba; pbMarcarAba(); pbRender(); window.scrollTo(0, 0); }
+function pbMarcarAba() { document.querySelectorAll('#pbAbas button').forEach(b => b.classList.toggle('ativa', b.dataset.aba === PB.aba)); }
+const pbQuery = (extra = {}) => new URLSearchParams({ de: PB.de, ate: PB.ate, ...extra }).toString();
+const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
+
+// O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
+async function pbRecarregar(silencioso) {
+  PB.fin = null; PB.pessoas = null;
+  const corpo = document.getElementById('pbCorpo');
+  if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
+  const [res] = await Promise.all([api(`/painel-brasil/resumo?${pbQuery()}`), pbGarantirChart()]);
+  if (!res?.ok) { corpo.innerHTML = `<div class="pb-carregando">${escHtml(res?.erro || 'Não foi possível carregar o painel')}</div>`; return; }
+  PB.resumo = res;
+  const sel = document.getElementById('pbFilial');
+  const atual = PB.filial;
+  sel.innerHTML = '<option value="todas">🇧🇷 Brasil inteiro</option>' + res.filiais.map(f => `<option value="${escHtml(f.slug)}">${escHtml(f.nome)}</option>`).join('');
+  PB.filial = res.filiais.some(f => f.slug === atual) ? atual : 'todas';
+  sel.value = PB.filial;
+  pbRender();
+}
+
+// ── Formatos ──
+const pbNum = (n) => (Number(n) || 0).toLocaleString('pt-BR');
+const pbDinheiro = (n) => 'R$ ' + (Number(n) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+const pbPct = (n) => n == null ? '—' : `${String(Math.round(n * 10) / 10).replace('.', ',')}%`;
+function pbHoras(h) {
+  if (h == null) return '—';
+  if (h < 1) return `${Math.round(h * 60)} min`;
+  if (h < 48) return `${String(Math.round(h * 10) / 10).replace('.', ',')} h`;
+  return `${Math.round(h / 24)} dias`;
+}
+function pbTempo(seg) {
+  if (!seg) return '—';
+  const m = Math.floor(seg / 60), s = seg % 60;
+  return m ? `${m} min ${String(s).padStart(2, '0')}s` : `${s}s`;
+}
+const PB_COR = { vermelho: '#f87171', amarelo: '#fbbf24', verde: '#22c55e' };
+
+// Pontos de atenção de uma filial: vermelho = resolver já; amarelo = acompanhar
+function pbAlertas(f) {
+  const a = [];
+  if (f.laudos.vencidos) a.push(['vermelho', `${f.laudos.vencidos} laudo(s) NR10 vencido(s) em uso`]);
+  if (f.estoque.zerados) a.push(['vermelho', `${f.estoque.zerados} item(ns) zerado(s) com estoque mínimo`]);
+  if (f.operacao.assinaturas_expiradas) a.push(['vermelho', `${f.operacao.assinaturas_expiradas} assinatura(s) com link vencido`]);
+  if (f.solicitacoes.mais_antiga_horas > 48) a.push(['vermelho', `pedido aberto há ${pbHoras(f.solicitacoes.mais_antiga_horas)}`]);
+  else if (f.solicitacoes.mais_antiga_horas > 24) a.push(['amarelo', `pedido aberto há ${pbHoras(f.solicitacoes.mais_antiga_horas)}`]);
+  if (f.solicitacoes.urgentes_abertas) a.push(['amarelo', `${f.solicitacoes.urgentes_abertas} pedido(s) urgente(s) em aberto`]);
+  const abaixo = f.estoque.abaixo_minimo - f.estoque.zerados;
+  if (abaixo > 0) a.push(['amarelo', `${abaixo} item(ns) abaixo do mínimo`]);
+  if (f.laudos.a_vencer_30d) a.push(['amarelo', `${f.laudos.a_vencer_30d} laudo(s) vencem em 30 dias`]);
+  if (f.inventario.pendentes) a.push(['amarelo', `${f.inventario.pendentes} armazém(ns) sem inventário no mês`]);
+  if (f.financeiro && f.financeiro.meta > 0 && f.financeiro.gasto > f.financeiro.meta) a.push(['vermelho', 'gasto acima da meta']);
+  return a;
+}
+const pbNivel = (al) => al.some(a => a[0] === 'vermelho') ? 'vermelho' : al.length ? 'amarelo' : 'verde';
+
+// Filiais do filtro atual e a soma delas
+function pbFiliais() {
+  const fs = PB.resumo?.filiais || [];
+  return PB.filial === 'todas' ? fs : fs.filter(f => f.slug === PB.filial);
+}
+function pbSomar(fs) {
+  const soma = (fn) => fs.reduce((t, f) => t + (Number(fn(f)) || 0), 0);
+  const pond = (valor, peso) => { const p = soma(f => valor(f) != null ? peso(f) : 0); return p ? soma(f => valor(f) != null ? valor(f) * peso(f) : 0) / p : null; };
+  const comFin = fs.some(f => f.financeiro);
+  return {
+    soma,
+    tempoMedio: pond(f => f.operacao.tempo_medio_seg, f => f.operacao.atendimentos_periodo),
+    espera: pond(f => f.solicitacoes.espera_media_horas, f => f.solicitacoes.atendidas_periodo),
+    acuracia: pond(f => f.inventario.acuracia_media, f => f.inventario.inventarios_no_periodo),
+    maisAntiga: Math.max(0, ...fs.map(f => f.solicitacoes.mais_antiga_horas || 0)),
+    fin: comFin ? { meta: soma(f => f.financeiro?.meta), gasto: soma(f => f.financeiro?.gasto), consumo: soma(f => f.financeiro?.consumo),
+      economia: soma(f => f.financeiro?.economia), perdas: soma(f => f.financeiro?.perdas), compras: soma(f => f.financeiro?.compras),
+      laudos: soma(f => f.financeiro?.laudos), avulsos: soma(f => f.financeiro?.avulsos), resultado: soma(f => f.financeiro?.resultado_recuperacao) } : null,
+  };
+}
+
+function pbTituloEscopo() {
+  const f = PB.filial === 'todas' ? null : PB.resumo.filiais.find(x => x.slug === PB.filial);
+  return `${f ? escHtml(f.nome) : 'Brasil'} · ${pbPeriodoTexto()}`;
+}
+
+function pbRender() {
+  if (!PB.resumo) return;
+  Object.values(PB.charts).forEach(c => c?.destroy?.()); PB.charts = {};
+  const corpo = document.getElementById('pbCorpo');
+  if (!PB.resumo.filiais.length) { corpo.innerHTML = '<div class="pb-carregando">Nenhuma filial liberada para você.</div>'; return; }
+  const cab = `<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${pbTituloEscopo()}</div>
+      <div style="font-size:12px;color:var(--text-3)">${pbFiliais().length} filial(is) · atualizado às ${new Date(PB.resumo.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
+    </div>`;
+  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
+  corpo.innerHTML = cab + '<div id="pbAbaCorpo"></div>';
+  (abas[PB.aba] || pbAbaGeral)(document.getElementById('pbAbaCorpo'));
+}
+
+const pbKpi = (rot, val, det, cls = '', acao = '', i = 0) =>
+  `<div class="pb-kpi ${cls} ${acao ? 'clica' : ''}" style="animation-delay:${i * 0.04}s" ${acao ? `onclick="${acao}"` : ''}><div class="r">${rot}</div><div class="v">${val}</div><div class="d">${det}</div>${acao ? '<div class="ver">ver detalhe →</div>' : ''}</div>`;
+const pbDet = (tipo, titulo, filial) => `pbAbrirDetalhe('${tipo}', '${escJs(titulo)}'${filial ? `, '${escJs(filial)}'` : ''})`;
+
+// ── VISÃO GERAL ──
+function pbAbaGeral(el) {
+  const fs = pbFiliais(), t = pbSomar(fs), s = t.soma;
+  const vencidos = s(f => f.laudos.vencidos), zerados = s(f => f.estoque.zerados), expir = s(f => f.operacao.assinaturas_expiradas);
+  const kpis = [
+    pbKpi('Atendimentos no período', pbNum(s(f => f.operacao.atendimentos_periodo)), `hoje ${pbNum(s(f => f.operacao.atendimentos_hoje))} · tempo médio ${pbTempo(t.tempoMedio ? Math.round(t.tempoMedio) : 0)}`, '', pbDet('atendimentos', 'Atendimentos por dia'), 0),
+    pbKpi('Solicitações em aberto', pbNum(s(f => f.solicitacoes.abertas)), `${pbNum(s(f => f.solicitacoes.urgentes_abertas))} urgente(s) · mais antiga ${pbHoras(t.maisAntiga || null)}`, t.maisAntiga > 48 ? 'alerta' : t.maisAntiga > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', 'Solicitações em aberto'), 1),
+    pbKpi('Espera até atender', pbHoras(t.espera), `pedidos do período (${pbNum(s(f => f.solicitacoes.atendidas_periodo))} atendidos)`, '', '', 2),
+    pbKpi('Assinaturas pendentes', pbNum(s(f => f.operacao.assinaturas_pendentes)), `${pbNum(expir)} com link vencido`, expir ? 'alerta' : '', pbDet('assinaturas_pendentes', 'Assinaturas pendentes'), 3),
+    pbKpi('Abaixo do estoque mínimo', pbNum(s(f => f.estoque.abaixo_minimo)), `${pbNum(zerados)} zerado(s)`, zerados ? 'alerta' : s(f => f.estoque.abaixo_minimo) ? 'aviso' : '', pbDet('abaixo_minimo', 'Itens abaixo do estoque mínimo'), 4),
+    pbKpi('Laudos NR10 vencidos', pbNum(vencidos), `${pbNum(s(f => f.laudos.a_vencer_30d))} vencem em 30 dias`, vencidos ? 'alerta' : '', pbDet('laudos_vencidos', 'Laudos NR10 vencidos (peças em uso)'), 5),
+    pbKpi('Acurácia do inventário', pbPct(t.acuracia), `${pbNum(s(f => f.inventario.entregues))}/${pbNum(s(f => f.inventario.armazens))} armazéns entregues no mês`, s(f => f.inventario.pendentes) ? 'aviso' : '', pbDet('inventarios', 'Inventários do período'), 6),
+    pbKpi('Logística em andamento', pbNum(s(f => f.logistica.aguardando_coleta + f.logistica.em_transito)), `${pbNum(s(f => f.logistica.aguardando_coleta))} aguardando coleta · ${pbNum(s(f => f.logistica.em_transito))} em trânsito`, '', pbDet('logistica', 'Logística em andamento'), 7),
+    t.fin ? pbKpi('Gasto no período', pbDinheiro(t.fin.gasto), `meta ${pbDinheiro(t.fin.meta)} · consumo ${pbDinheiro(t.fin.consumo)}`, t.fin.meta > 0 && t.fin.gasto > t.fin.meta ? 'alerta' : '', "pbAba('financeiro')", 8)
+      : pbKpi('Colaboradores ativos', pbNum(s(f => f.pessoas.colaboradores)), `${pbNum(s(f => f.pessoas.usuarios))} usuários do sistema`, '', "pbAba('pessoas')", 8),
+  ].join('');
+
+  const cards = fs.map((f, i) => {
+    const al = pbAlertas(f), nivel = pbNivel(al), fin = f.financeiro;
+    const m = (rot, val, det, cls = '', acao = '') => `<div class="pb-m ${cls} ${acao ? 'clica' : ''}" ${acao ? `onclick="${acao}"` : ''}><div class="r">${rot}</div><div class="v">${val}</div><div class="d">${det}</div></div>`;
+    const pct = fin && fin.meta > 0 ? Math.round(fin.gasto / fin.meta * 100) : null;
+    return `<div class="pb-card ${nivel}" style="animation-delay:${i * 0.06}s">
+      <div class="pb-card-topo">
+        <span class="pb-bola" style="background:${PB_COR[nivel]}"></span>
+        <div style="min-width:0"><div class="pb-card-nome">${escHtml(f.nome)}${f.atual ? ' <span style="font-size:10px;color:var(--accent-text);font-weight:600">· você está aqui</span>' : ''}</div>
+        <div class="pb-card-cid">${escHtml([f.cidade, f.uf].filter(Boolean).join(' / ') || '—')} · ${pbNum(f.pessoas.colaboradores)} colaboradores${f.pessoas.viaturas ? ` · ${pbNum(f.pessoas.viaturas)} viaturas` : ''}</div></div>
+        <div style="margin-left:auto;display:flex;gap:6px">
+          ${PB.filial === 'todas' ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="pbSoEsta('${escJs(f.slug)}')" title="Ver só os números desta filial">Ver só esta</button>` : ''}
+          ${f.pode_entrar ? `<button class="btn btn-ghost" style="font-size:11px;padding:5px 10px;white-space:nowrap" onclick="pbEntrar('${escJs(f.slug)}')" title="Entrar no sistema desta filial">Entrar →</button>` : ''}
+        </div>
+      </div>
+      <div class="pb-grade">
+        ${m('Atendimentos', pbNum(f.operacao.atendimentos_periodo), `hoje ${pbNum(f.operacao.atendimentos_hoje)} · ${pbTempo(f.operacao.tempo_medio_seg)}`, '', pbDet('atendimentos', `Atendimentos por dia · ${f.nome}`, f.slug))}
+        ${m('Pedidos abertos', pbNum(f.solicitacoes.abertas), `${pbNum(f.solicitacoes.urgentes_abertas)} urgente(s) · espera ${pbHoras(f.solicitacoes.espera_media_horas)}`, f.solicitacoes.mais_antiga_horas > 48 ? 'alerta' : f.solicitacoes.mais_antiga_horas > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', `Solicitações em aberto · ${f.nome}`, f.slug))}
+        ${m('Assinaturas', pbNum(f.operacao.assinaturas_pendentes), `${pbNum(f.operacao.assinaturas_expiradas)} vencida(s)`, f.operacao.assinaturas_expiradas ? 'alerta' : '', pbDet('assinaturas_pendentes', `Assinaturas pendentes · ${f.nome}`, f.slug))}
+        ${m('Abaixo do mínimo', pbNum(f.estoque.abaixo_minimo), `${pbNum(f.estoque.zerados)} zerado(s) de ${pbNum(f.estoque.itens_com_minimo)}`, f.estoque.zerados ? 'alerta' : f.estoque.abaixo_minimo ? 'aviso' : '', pbDet('abaixo_minimo', `Abaixo do mínimo · ${f.nome}`, f.slug))}
+        ${m('Inventário', f.inventario.armazens ? `${f.inventario.entregues}/${f.inventario.armazens}` : '—', f.inventario.acuracia_media != null ? `acurácia ${pbPct(f.inventario.acuracia_media)}` : 'sem inventário no período', f.inventario.pendentes ? 'aviso' : '', pbDet('inventarios', `Inventários · ${f.nome}`, f.slug))}
+        ${m('Laudos NR10', pbNum(f.laudos.vencidos), `vencidos · ${pbNum(f.laudos.a_vencer_30d)} em 30 dias`, f.laudos.vencidos ? 'alerta' : f.laudos.a_vencer_30d ? 'aviso' : '', pbDet('laudos_vencidos', `Laudos vencidos · ${f.nome}`, f.slug))}
+        ${m('Logística', pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito), `${pbNum(f.logistica.em_transito)} em trânsito`, '', pbDet('logistica', `Logística · ${f.nome}`, f.slug))}
+        ${fin ? m('Gasto × meta', pbDinheiro(fin.gasto), fin.meta ? `${pct}% de ${pbDinheiro(fin.meta)}` : 'sem meta definida', pct > 100 ? 'alerta' : pct > 90 ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}','financeiro')`) : m('Usuários', pbNum(f.pessoas.usuarios), `${pbNum(f.pessoas.acessos_periodo)} acesso(s) no período`)}
+        ${fin ? m('Consumo', pbDinheiro(fin.consumo), `economia ${pbDinheiro(fin.economia)}`, '', `pbSoEsta('${escJs(f.slug)}','financeiro')`) : m('Colaboradores', pbNum(f.pessoas.colaboradores), 'ativos')}
+      </div>
+      <div class="pb-chips">${al.length ? al.map(([c, tx]) => `<span class="pb-chip ${c}">${escHtml(tx)}</span>`).join('') : '<span class="pb-chip verde">Tudo em dia</span>'}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="pb-hero">
+      <div class="pb-mapa">${pbMapa(PB.resumo.filiais)}
+        <div class="pb-legenda"><span><i class="pb-bola" style="background:#22c55e"></i>em dia</span><span><i class="pb-bola" style="background:#fbbf24"></i>acompanhar</span><span><i class="pb-bola" style="background:#f87171"></i>resolver já</span></div>
+      </div>
+      <div class="pb-kpis">${kpis}</div>
+    </div>
+    <div><div class="pb-secao">${PB.filial === 'todas' ? 'Filiais' : 'Filial'}</div><div class="pb-cards">${cards}</div></div>`;
+}
+
+function pbSoEsta(slug, aba) {
+  PB.filial = slug; PB.fin = null; PB.pessoas = null;
+  document.getElementById('pbFilial').value = slug;
+  if (aba) { PB.aba = aba; pbMarcarAba(); }
+  pbRender();
+  window.scrollTo(0, 0);
+}
+
+// Mapa com as filiais: pino na cor do nível de atenção; clicar mostra só aquela filial
+function pbMapa(fs) {
+  if (typeof MAPA_BRASIL === 'undefined') return '';
+  const ufs = new Set();
+  const pinos = fs.map(f => {
+    const g = geoDaFilial(f.slug);
+    if (!g) return '';
+    ufs.add(g.uf);
+    let x, y;
+    if (g.lon != null) [x, y] = umapaProjetar(g.lon, g.lat);
+    else { const e = MAPA_BRASIL.e.find(e => e[0] === g.uf); if (!e) return ''; x = e[2]; y = e[3]; }
+    const cor = PB_COR[pbNivel(pbAlertas(f))];
+    const apagado = PB.filial !== 'todas' && PB.filial !== f.slug;
+    return `<g class="pb-pino" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})" onclick="pbSoEsta('${escJs(f.slug)}')" style="opacity:${apagado ? 0.3 : 1}">
+      <title>${escHtml(f.nome)}</title>
+      <circle class="pulso" r="11" style="stroke:${cor}"></circle>
+      <circle r="11" style="fill:${cor};stroke:var(--bg-card);stroke-width:4"></circle></g>`;
+  }).join('');
+  const estados = MAPA_BRASIL.e.map(e => `<path class="pb-uf ${ufs.has(e[0]) ? 'tem' : ''}" d="${e[4]}"><title>${escHtml(e[1])}</title></path>`).join('');
+  return `<svg viewBox="0 0 ${MAPA_BRASIL.l} ${MAPA_BRASIL.a}" role="img" aria-label="Mapa do Brasil com as filiais">${estados}${pinos}</svg>`;
+}
+
+// ── Tabelas genéricas (usadas nas abas e na gaveta) ──
+function pbTabela(colunas, linhas, opts = {}) {
+  if (!linhas?.length) return `<div class="pb-vazio">${opts.vazio || 'Nada neste período.'}</div>`;
+  const fmt = (c, v) => {
+    if (v == null || v === '') return '—';
+    if (c.tipo === 'din') return pbDinheiro(v);
+    if (c.tipo === 'pct') return pbPct(v);
+    if (c.tipo === 'data') return formatarData(String(v).slice(0, 10));
+    if (typeof v === 'number') return pbNum(v);
+    return escHtml(String(v));
+  };
+  const lim = opts.limite || 500;
+  return `<div class="pb-tabela-wrap" style="${opts.altura ? `max-height:${opts.altura}px` : ''}"><table class="pb-tabela"><thead><tr>${colunas.map(c => `<th class="${c.num || typeof linhas[0][c.key] === 'number' || c.tipo === 'din' ? 'num' : ''}">${escHtml(c.label)}</th>`).join('')}</tr></thead><tbody>
+    ${linhas.slice(0, lim).map(l => `<tr>${colunas.map(c => {
+      const v = l[c.key], num = c.num || typeof v === 'number' || c.tipo === 'din';
+      const cls = [num ? 'num' : '', c.cls ? c.cls(l) : ''].join(' ');
+      return `<td class="${cls}">${fmt(c, v)}</td>`;
+    }).join('')}</tr>`).join('')}
+  </tbody></table></div>${linhas.length > lim ? `<div class="pb-vazio">Mostrando ${lim} de ${pbNum(linhas.length)} — o Excel traz tudo.</div>` : ''}`;
+}
+
+// ── Gaveta de detalhe: uma ou mais seções, cada uma com tabela e Excel ──
+let _pbGavetaSecoes = [];
+function pbGaveta(titulo, sub, secoes) {
+  pbFecharGaveta();
+  _pbGavetaSecoes = secoes;
+  const fundo = document.createElement('div');
+  fundo.className = 'pb-gaveta-fundo'; fundo.id = 'pbGavetaFundo'; fundo.onclick = pbFecharGaveta;
+  const g = document.createElement('div');
+  g.className = 'pb-gaveta'; g.id = 'pbGaveta';
+  g.innerHTML = `<div class="pb-gaveta-topo">
+      <div style="min-width:0;flex:1"><div style="font-size:16px;font-weight:700">${escHtml(titulo)}</div><div style="font-size:11px;color:var(--text-3);margin-top:3px">${sub}</div></div>
+      <button class="btn btn-ghost" onclick="pbFecharGaveta()">✕ Fechar</button>
+    </div>
+    <div class="pb-gaveta-corpo">${secoes.map((sec, i) => `<div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div class="pb-secao" style="margin:0">${escHtml(sec.titulo || '')}${sec.linhas ? ` <span style="font-weight:400;color:var(--text-3)">(${pbNum(sec.linhas.length)})</span>` : ''}</div>
+        ${sec.linhas?.length ? `<button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="pbExcelSecao(${i})">📊 Excel</button>` : ''}
+      </div>
+      ${sec.html || pbTabela(sec.colunas, sec.linhas, { limite: 300 })}
+    </div>`).join('')}</div>`;
+  document.body.appendChild(fundo); document.body.appendChild(g);
+  document.addEventListener('keydown', _pbEsc);
+}
+function _pbEsc(ev) { if (ev.key === 'Escape') pbFecharGaveta(); }
+function pbFecharGaveta() {
+  document.getElementById('pbGaveta')?.remove(); document.getElementById('pbGavetaFundo')?.remove();
+  document.removeEventListener('keydown', _pbEsc);
+}
+function pbExcelSecao(i) {
+  const sec = _pbGavetaSecoes[i];
+  if (!sec?.linhas?.length) return;
+  gcaExportarExcel(`Painel_Brasil_${(sec.titulo || 'detalhe').replace(/[^\wÀ-ú]+/g, '_').slice(0, 25)}`, sec.linhas, sec.colunas.map(c => ({ key: c.key, label: c.label })));
+}
+
+// Detalhe que vem do servidor (listas por trás dos números da operação)
+async function pbAbrirDetalhe(tipo, titulo, filial) {
+  pbGaveta(titulo, 'Carregando…', [{ html: '<div class="pb-carregando"><div class="spinner" style="margin:0 auto"></div></div>' }]);
+  const f = filial || PB.filial;
+  const res = await api(`/painel-brasil/detalhe?${pbQuery({ tipo, filial: f })}`);
+  if (!document.getElementById('pbGaveta')) return;
+  if (!res?.ok) { pbGaveta(titulo, '', [{ html: `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar')}</div>` }]); return; }
+  const nomeF = f === 'todas' ? 'Brasil' : (PB.resumo.filiais.find(x => x.slug === f)?.nome || f);
+  const tipos = { din: ['valor'], data: ['data', 'vencimento', 'desde'], pct: ['acuracia'] };
+  const colunas = res.colunas.map(c => ({ ...c, tipo: Object.keys(tipos).find(t => tipos[t].includes(c.key)),
+    cls: c.key === 'situacao' ? (l) => (l.situacao === 'zerado' || l.situacao === 'vencido' ? 'pb-sit-zerado' : l.situacao === 'abaixo' ? 'pb-sit-abaixo' : '') : null }));
+  pbGaveta(titulo, `${escHtml(nomeF)} · ${pbPeriodoTexto()}`, [{ titulo: 'Lista', colunas, linhas: res.linhas }]);
+}
+
+// ── FINANCEIRO ──
+async function pbCarregarFinanceiro() {
+  if (PB.fin && PB.fin._chave === `${PB.de}|${PB.ate}|${PB.filial}`) return PB.fin;
+  const res = await api(`/painel-brasil/financeiro?${pbQuery({ filial: PB.filial })}`);
+  if (!res?.ok) throw new Error(res?.erro || 'Erro ao carregar o financeiro');
+  PB.fin = { ...res.detalhe, _chave: `${PB.de}|${PB.ate}|${PB.filial}` };
+  return PB.fin;
+}
+
+async function pbAbaFinanceiro(el) {
+  if (!PB.resumo.com_financeiro) { el.innerHTML = '<div class="pb-vazio">O financeiro aparece para quem também tem a permissão "Painel financeiro".</div>'; return; }
+  el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Calculando o financeiro…</div>';
+  let d;
+  try { d = await pbCarregarFinanceiro(); } catch (e) { el.innerHTML = `<div class="pb-vazio">${escHtml(e.message)}</div>`; return; }
+  if (PB.aba !== 'financeiro') return;
+  const fs = pbFiliais(), t = pbSomar(fs).fin || { meta: 0 };
+  const pct = t.meta > 0 ? t.gasto / t.meta * 100 : null;
+  el.innerHTML = `
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">
+      ${pbKpi('Gasto no período', pbDinheiro(d.gasto.total), t.meta ? `${pbPct(pct)} da meta de ${pbDinheiro(t.meta)}` : 'sem meta definida', pct > 100 ? 'alerta' : pct > 90 ? 'aviso' : '', "pbFinDetalhe('gasto')", 0)}
+      ${pbKpi('Compras (SCs)', pbDinheiro(d.gasto.compras.fechamento), `${pbNum(d.compras.scs.length)} SC(s) · real ${pbDinheiro(d.gasto.compras.real)}`, '', "pbFinDetalhe('compras')", 1)}
+      ${pbKpi('Laudos', pbDinheiro(d.gasto.laudos), `${pbNum(d.recuperacao.remessas.length)} remessa(s)`, '', "pbFinDetalhe('laudos')", 2)}
+      ${pbKpi('Custos lançados', pbDinheiro(d.gasto.avulsos_fora_laudo), `${pbNum(d.avulsos.lancamentos.length)} lançamento(s)`, '', "pbFinDetalhe('avulsos')", 3)}
+      ${pbKpi('Consumo (saídas)', pbDinheiro(d.consumo.total), `${pbNum(d.consumo.movimentos)} saída(s) valorizada(s)`, '', "pbFinDetalhe('consumo')", 4)}
+      ${pbKpi('Economia com recuperação', pbDinheiro(d.recuperacao.economia), `resultado ${pbDinheiro(d.recuperacao.resultado)}`, '', "pbFinDetalhe('recuperacao')", 5)}
+      ${pbKpi('Perdas', pbDinheiro(d.perdas.total || 0), 'descartes, reprovados e ajustes de inventário', (d.perdas.total || 0) > 0 ? 'aviso' : '', "pbFinDetalhe('perdas')", 6)}
+      ${pbKpi('Meta do período', t.meta ? pbDinheiro(t.meta) : '—', `${PB.resumo.meses.length} mês(es) · saldo ${t.meta ? pbDinheiro(t.meta - d.gasto.total) : '—'}`, t.meta && d.gasto.total > t.meta ? 'alerta' : '', '', 7)}
+    </div>
+    <div class="pb-grid2">
+      <div class="pb-graf"><div class="pb-secao">Gasto × meta por filial</div><canvas id="pbGrafFin1"></canvas></div>
+      <div class="pb-graf"><div class="pb-secao">Consumo por categoria</div><canvas id="pbGrafFin2"></canvas></div>
+    </div>
+    <div><div class="pb-secao">Por filial</div>${pbTabela([
+      { key: 'filial', label: 'Filial' }, { key: 'meta', label: 'Meta', tipo: 'din' }, { key: 'gasto', label: 'Gasto', tipo: 'din' },
+      { key: 'pct', label: '% da meta', tipo: 'pct', num: true, cls: (l) => l.pct > 100 ? 'pb-sit-zerado' : l.pct > 90 ? 'pb-sit-abaixo' : '' },
+      { key: 'compras', label: 'Compras', tipo: 'din' }, { key: 'laudos', label: 'Laudos', tipo: 'din' }, { key: 'avulsos', label: 'Lançados', tipo: 'din' },
+      { key: 'consumo', label: 'Consumo', tipo: 'din' }, { key: 'economia', label: 'Economia', tipo: 'din' }, { key: 'perdas', label: 'Perdas', tipo: 'din' }],
+      fs.map(f => ({ filial: f.nome, ...(f.financeiro || {}), pct: f.financeiro?.meta ? f.financeiro.gasto / f.financeiro.meta * 100 : null })))}</div>`;
+  const tema = getComputedStyle(document.documentElement);
+  const texto = tema.getPropertyValue('--text-2').trim() || '#94a3b8', grade = tema.getPropertyValue('--border').trim() || '#1e1e2e';
+  if (window.Chart) {
+    PB.charts.f1 = new Chart(document.getElementById('pbGrafFin1'), { type: 'bar', data: { labels: fs.map(f => f.nome), datasets: [
+      { label: 'Gasto', data: fs.map(f => Math.round(f.financeiro?.gasto || 0)), backgroundColor: '#7c83f5', borderRadius: 4 },
+      { label: 'Meta', data: fs.map(f => Math.round(f.financeiro?.meta || 0)), backgroundColor: '#d97706', borderRadius: 4 }] },
+      options: pbOpcoesGrafico(texto, grade, true) });
+    const cats = (d.consumo.por_categoria || []).slice(0, 10);
+    PB.charts.f2 = new Chart(document.getElementById('pbGrafFin2'), { type: 'bar', data: { labels: cats.map(c => c.nome), datasets: [
+      { label: 'Consumo', data: cats.map(c => Math.round(c.valor)), backgroundColor: '#7c83f5', borderRadius: 4 }] },
+      options: { ...pbOpcoesGrafico(texto, grade, true), indexAxis: 'y', plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => pbDinheiro(c.raw) } } } } });
+  }
+}
+
+function pbOpcoesGrafico(texto, grade, dinheiro) {
+  return { responsive: true, maintainAspectRatio: false, animation: { duration: 900 },
+    plugins: { legend: { labels: { color: texto, boxWidth: 12 } }, tooltip: dinheiro ? { callbacks: { label: (c) => `${c.dataset.label}: ${pbDinheiro(c.raw)}` } } : {} },
+    scales: { x: { ticks: { color: texto }, grid: { display: false } }, y: { ticks: { color: texto, precision: 0 }, grid: { color: grade }, beginAtZero: true } } };
+}
+
+// Como cada número do financeiro foi formado
+async function pbFinDetalhe(qual) {
+  let d;
+  try { d = await pbCarregarFinanceiro(); } catch (e) { toast(e.message, 'error'); return; }
+  const esc = PB.filial === 'todas' ? 'Brasil' : PB.resumo.filiais.find(x => x.slug === PB.filial)?.nome;
+  const sub = `${escHtml(esc)} · ${pbPeriodoTexto()}`;
+  const din = (key, label) => ({ key, label, tipo: 'din' });
+  const scsCols = [{ key: 'filial', label: 'Filial' }, { key: 'numero_sc', label: 'SC' }, { key: 'data_abertura', label: 'Abertura', tipo: 'data' }, { key: 'status', label: 'Situação' },
+    { key: 'comprador', label: 'Comprador' }, din('real', 'Pago (real)'), din('recebido_estimado', 'Recebido sem preço'), din('pendente', 'Pendente'), din('fechamento', 'Total no mês')];
+  const remCols = [{ key: 'filial', label: 'Filial' }, { key: 'data_envio', label: 'Envio', tipo: 'data' }, { key: 'empresa', label: 'Empresa' }, { key: 'itens', label: 'Peças' },
+    { key: 'aprovados', label: 'Aprovadas' }, { key: 'reprovados', label: 'Reprovadas' }, din('valor_pago', 'Valor pago')];
+  const avCols = [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'tipo', label: 'Tipo' }, { key: 'descricao', label: 'Descrição' }, { key: 'categoria', label: 'Categoria' }, din('valor', 'Valor')];
+  const grupoCols = (nome) => [{ key: 'nome', label: nome }, { key: 'quantidade', label: 'Quantidade' }, { key: 'movimentos', label: 'Saídas' }, din('valor', 'Valor')];
+  const secoes = {
+    gasto: () => [
+      { titulo: 'Composição do gasto', colunas: [{ key: 'parte', label: 'Parte' }, din('valor', 'Valor'), { key: 'pct', label: '% do gasto', tipo: 'pct', num: true }],
+        linhas: [['Compras (SCs)', d.gasto.compras.fechamento], ['Laudos (remessas e lançados)', d.gasto.laudos], ['Custos lançados à mão', d.gasto.avulsos_fora_laudo]]
+          .map(([parte, valor]) => ({ parte, valor, pct: d.gasto.total ? valor / d.gasto.total * 100 : null })) },
+      { titulo: 'Por filial', colunas: [{ key: 'filial', label: 'Filial' }, din('meta', 'Meta'), din('gasto', 'Gasto'), din('compras', 'Compras'), din('laudos', 'Laudos'), din('avulsos', 'Lançados')],
+        linhas: pbFiliais().map(f => ({ filial: f.nome, ...(f.financeiro || {}) })) },
+      { titulo: 'Compras por categoria', colunas: [{ key: 'categoria', label: 'Categoria' }, din('real', 'Pago'), din('pendente', 'Pendente'), din('fechamento', 'Total')], linhas: d.compras.por_categoria },
+    ],
+    compras: () => [
+      { titulo: 'Solicitações de compra', colunas: scsCols, linhas: d.compras.scs },
+      { titulo: 'Por categoria', colunas: [{ key: 'categoria', label: 'Categoria' }, din('estimado', 'Estimado'), din('real', 'Pago'), din('pendente', 'Pendente'), din('fechamento', 'Total'), din('economia', 'Economia na compra')], linhas: d.compras.por_categoria },
+    ],
+    laudos: () => [{ titulo: 'Remessas para laudo', colunas: remCols, linhas: d.recuperacao.remessas },
+      { titulo: 'Laudos lançados à mão', colunas: avCols, linhas: d.avulsos.lancamentos.filter(l => l.tipo === 'LAUDO') }],
+    avulsos: () => [{ titulo: 'Custos lançados à mão', colunas: avCols, linhas: d.avulsos.lancamentos.filter(l => l.tipo !== 'LAUDO') }],
+    consumo: () => [
+      { titulo: 'Por categoria', colunas: grupoCols('Categoria'), linhas: d.consumo.por_categoria },
+      { titulo: 'Itens que mais pesaram', colunas: [{ key: 'filial', label: 'Filial' }, ...grupoCols('Item')], linhas: d.consumo.por_item },
+      { titulo: 'Por colaborador', colunas: grupoCols('Colaborador'), linhas: d.consumo.por_colaborador },
+      { titulo: 'Por armazém', colunas: [{ key: 'filial', label: 'Filial' }, ...grupoCols('Armazém')], linhas: d.consumo.por_armazem },
+    ],
+    recuperacao: () => [
+      { titulo: 'Resultado', colunas: [{ key: 'parte', label: 'Parte' }, din('valor', 'Valor')], linhas: [
+        { parte: 'Economia (itens recuperados × fator)', valor: d.recuperacao.economia }, { parte: 'Custo dos laudos', valor: -d.recuperacao.custo_laudos },
+        { parte: 'Custo de manutenção', valor: -(d.recuperacao.custo_manutencao || 0) }, { parte: 'Resultado', valor: d.recuperacao.resultado }] },
+      { titulo: 'Recuperado por categoria', colunas: [{ key: 'chave', label: 'Categoria' }, { key: 'quantidade', label: 'Peças' }, din('valor_original', 'Valor novo'), din('valor', 'Economia')], linhas: d.recuperacao.recuperados_por_categoria },
+      { titulo: 'Eventos de recuperação', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'nome_item', label: 'Item' }, { key: 'origem', label: 'Origem' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Economia')],
+        linhas: d.recuperacao.eventos.filter(e => e.tipo === 'RECUPERADO') },
+    ],
+    perdas: () => [
+      { titulo: 'Perdas por origem', colunas: [{ key: 'chave', label: 'Origem' }, { key: 'quantidade', label: 'Peças' }, din('valor', 'Valor')], linhas: d.recuperacao.perdas_por_origem },
+      { titulo: 'Ajustes de inventário', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'tipo', label: 'Tipo' }, { key: 'item', label: 'Item' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Valor')],
+        linhas: d.consumo.ajuste_inventario.movimentos },
+    ],
+  };
+  const titulos = { gasto: 'Como o gasto foi formado', compras: 'Compras do período', laudos: 'Laudos do período', avulsos: 'Custos lançados à mão',
+    consumo: 'Consumo do período (saídas valorizadas)', recuperacao: 'Recuperação de material', perdas: 'Perdas do período' };
+  pbGaveta(titulos[qual], sub, secoes[qual]());
+}
+
+// ── ITENS E ESTOQUE ──
+const PBI = { busca: '', categoria: '', situacao: '', limite: 100 };
+async function pbAbaItens(el) {
+  if (!PB.itens) {
+    el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Juntando os itens de todas as filiais…</div>';
+    const res = await api('/painel-brasil/itens');
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar os itens')}</div>`; return; }
+    PB.itens = res;
+    if (PB.aba !== 'itens') return;
+  }
+  const d = PB.itens, fs = d.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
+  el.innerHTML = `
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)" id="pbItensKpis"></div>
+    <div class="pb-bloco" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <input class="form-input" style="flex:1;min-width:220px" placeholder="🔎 Buscar item ou código…" value="${escHtml(PBI.busca)}" oninput="PBI.busca=this.value;PBI.limite=100;pbItensTabela()">
+      <select class="form-input" style="width:200px" onchange="PBI.categoria=this.value;PBI.limite=100;pbItensTabela()"><option value="">Todas as categorias</option>${d.categorias.map(c => `<option ${PBI.categoria === c ? 'selected' : ''}>${escHtml(c)}</option>`).join('')}</select>
+      <select class="form-input" style="width:210px" onchange="PBI.situacao=this.value;PBI.limite=100;pbItensTabela()">
+        <option value="">Todas as situações</option><option value="zerado" ${PBI.situacao === 'zerado' ? 'selected' : ''}>Zerado em alguma filial</option>
+        <option value="abaixo" ${PBI.situacao === 'abaixo' ? 'selected' : ''}>Abaixo do mínimo</option><option value="sem" ${PBI.situacao === 'sem' ? 'selected' : ''}>Sem saldo nenhum</option></select>
+      <button class="btn btn-ghost" onclick="pbItensExcel()">📊 Excel</button>
+    </div>
+    <div id="pbItensTabela"></div>`;
+  pbItensTabela(fs);
+}
+function pbItensFiltrados(fs) {
+  const q = PBI.busca.trim().toLowerCase(), slugs = fs.map(f => f.slug);
+  return PB.itens.data.map(l => {
+    const pf = Object.fromEntries(Object.entries(l.filiais).filter(([s]) => slugs.includes(s)));
+    if (!Object.keys(pf).length) return null;
+    const saldo = Object.values(pf).reduce((t, x) => t + x.saldo, 0);
+    const valor = Object.values(pf).reduce((t, x) => t + Math.max(0, x.saldo) * x.valor_un, 0);
+    const zerado = Object.values(pf).some(x => x.situacao === 'zerado'), abaixo = Object.values(pf).some(x => x.situacao !== 'ok');
+    return { ...l, pf, saldo, valor, zerado, abaixo };
+  }).filter(l => l
+    && (!q || String(l.descricao).toLowerCase().includes(q) || String(l.codigo).toLowerCase().includes(q))
+    && (!PBI.categoria || l.categoria === PBI.categoria)
+    && (!PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo : l.saldo <= 0)));
+}
+function pbItensTabela(fsArg) {
+  const fs = fsArg || PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
+  const linhas = pbItensFiltrados(fs);
+  const k = document.getElementById('pbItensKpis');
+  if (k) k.innerHTML = [
+    pbKpi('Itens', pbNum(linhas.length), `${pbNum(fs.length)} filial(is) · juntados pelo código`, '', '', 0),
+    pbKpi('Valor em estoque', pbDinheiro(linhas.reduce((t, l) => t + l.valor, 0)), 'saldo × valor do cadastro', '', '', 1),
+    pbKpi('Zerados em alguma filial', pbNum(linhas.filter(l => l.zerado).length), 'com estoque mínimo definido', linhas.some(l => l.zerado) ? 'alerta' : '', '', 2),
+    pbKpi('Abaixo do mínimo', pbNum(linhas.filter(l => l.abaixo).length), 'em pelo menos uma filial', linhas.some(l => l.abaixo) ? 'aviso' : '', '', 3)].join('');
+  const cel = (x) => !x ? '<td class="num" style="color:var(--text-3)">—</td>'
+    : `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="mínimo ${pbNum(x.minimo)}">${pbNum(x.saldo)}</td>`;
+  const alvo = document.getElementById('pbItensTabela');
+  if (!alvo) return;
+  alvo.innerHTML = !linhas.length ? '<div class="pb-vazio">Nenhum item com esses filtros.</div>' : `<div class="pb-tabela-wrap" style="max-height:640px"><table class="pb-tabela"><thead><tr>
+      <th>Item</th><th>Código</th><th>Categoria</th><th>UN</th>${fs.map(f => `<th class="num">${escHtml(f.nome)}</th>`).join('')}<th class="num">Total</th><th class="num">Valor</th></tr></thead><tbody>
+      ${linhas.slice(0, PBI.limite).map(l => `<tr><td style="white-space:normal;min-width:240px">${escHtml(l.descricao)}</td><td>${escHtml(l.codigo || '—')}</td><td>${escHtml(l.categoria)}</td><td>${escHtml(l.un_med)}</td>
+        ${fs.map(f => cel(l.pf[f.slug])).join('')}<td class="num" style="font-weight:700">${pbNum(l.saldo)}</td><td class="num">${pbDinheiro(l.valor)}</td></tr>`).join('')}
+    </tbody></table></div>
+    ${linhas.length > PBI.limite ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="PBI.limite+=200;pbItensTabela()">Mostrar mais (${pbNum(linhas.length - PBI.limite)} restantes)</button></div>` : ''}
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px">Vermelho: zerado · amarelo: abaixo do mínimo · passe o mouse no saldo para ver o mínimo.</div>`;
+}
+function pbItensExcel() {
+  const fs = PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
+  const linhas = pbItensFiltrados(fs).map(l => ({ descricao: l.descricao, codigo: l.codigo, categoria: l.categoria, un: l.un_med,
+    ...Object.fromEntries(fs.map(f => [`s_${f.slug}`, l.pf[f.slug] ? l.pf[f.slug].saldo : ''])), total: l.saldo, valor: Math.round(l.valor * 100) / 100 }));
+  gcaExportarExcel('Painel_Brasil_Itens', linhas, [{ key: 'descricao', label: 'Item' }, { key: 'codigo', label: 'Código' }, { key: 'categoria', label: 'Categoria' }, { key: 'un', label: 'UN' },
+    ...fs.map(f => ({ key: `s_${f.slug}`, label: f.nome })), { key: 'total', label: 'Total' }, { key: 'valor', label: 'Valor em estoque' }]);
+}
+
+// ── OPERAÇÃO ──
+function pbAbaOperacao(el) {
+  const fs = pbFiliais();
+  const link = (tipo, titulo, f, v) => `<span class="pb-td-clica" onclick="${pbDet(tipo, `${titulo} · ${f.nome}`, f.slug)}">${v}</span>`;
+  el.innerHTML = `
+    <div class="pb-tabela-wrap"><table class="pb-tabela"><thead><tr>
+      <th>Filial</th><th class="num">Atendimentos</th><th class="num">Hoje</th><th class="num">Tempo médio</th><th class="num">Pedidos abertos</th><th class="num">Urgentes</th>
+      <th class="num">Mais antigo</th><th class="num">Espera média</th><th class="num">Assinaturas</th><th class="num">Links vencidos</th><th class="num">Logística</th>
+      <th class="num">Laudos vencidos</th><th class="num">Vencem em 30 dias</th></tr></thead><tbody>
+      ${fs.map(f => `<tr><td style="font-weight:700">${escHtml(f.nome)}</td>
+        <td class="num">${link('atendimentos', 'Atendimentos por dia', f, pbNum(f.operacao.atendimentos_periodo))}</td><td class="num">${pbNum(f.operacao.atendimentos_hoje)}</td>
+        <td class="num">${pbTempo(f.operacao.tempo_medio_seg)}</td>
+        <td class="num">${link('solicitacoes_abertas', 'Solicitações em aberto', f, pbNum(f.solicitacoes.abertas))}</td><td class="num">${pbNum(f.solicitacoes.urgentes_abertas)}</td>
+        <td class="num ${f.solicitacoes.mais_antiga_horas > 48 ? 'pb-sit-zerado' : f.solicitacoes.mais_antiga_horas > 24 ? 'pb-sit-abaixo' : ''}">${pbHoras(f.solicitacoes.mais_antiga_horas)}</td>
+        <td class="num">${pbHoras(f.solicitacoes.espera_media_horas)}</td>
+        <td class="num">${link('assinaturas_pendentes', 'Assinaturas pendentes', f, pbNum(f.operacao.assinaturas_pendentes))}</td>
+        <td class="num ${f.operacao.assinaturas_expiradas ? 'pb-sit-zerado' : ''}">${pbNum(f.operacao.assinaturas_expiradas)}</td>
+        <td class="num">${link('logistica', 'Logística', f, pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito))}</td>
+        <td class="num ${f.laudos.vencidos ? 'pb-sit-zerado' : ''}">${link('laudos_vencidos', 'Laudos vencidos', f, pbNum(f.laudos.vencidos))}</td>
+        <td class="num">${link('laudos_a_vencer', 'Laudos a vencer em 30 dias', f, pbNum(f.laudos.a_vencer_30d))}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="pb-grid2">
+      <div class="pb-graf"><div class="pb-secao">Atendimentos e pedidos no período</div><canvas id="pbGrafOp1"></canvas></div>
+      <div class="pb-graf"><div class="pb-secao">Tempo médio de atendimento (min) e espera dos pedidos (h)</div><canvas id="pbGrafOp2"></canvas></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3)">Clique nos números sublinhados para ver a lista. Pedidos abertos, assinaturas, logística e laudos são a situação de agora; atendimentos, tempo e espera são do período escolhido.</div>`;
+  if (!window.Chart) return;
+  const tema = getComputedStyle(document.documentElement);
+  const texto = tema.getPropertyValue('--text-2').trim() || '#94a3b8', grade = tema.getPropertyValue('--border').trim() || '#1e1e2e';
+  PB.charts.o1 = new Chart(document.getElementById('pbGrafOp1'), { type: 'bar', options: pbOpcoesGrafico(texto, grade), data: { labels: fs.map(f => f.nome), datasets: [
+    { label: 'Atendimentos', data: fs.map(f => f.operacao.atendimentos_periodo), backgroundColor: '#7c83f5', borderRadius: 4 },
+    { label: 'Pedidos recebidos', data: fs.map(f => f.solicitacoes.recebidas_periodo), backgroundColor: '#d97706', borderRadius: 4 }] } });
+  PB.charts.o2 = new Chart(document.getElementById('pbGrafOp2'), { type: 'bar', options: pbOpcoesGrafico(texto, grade), data: { labels: fs.map(f => f.nome), datasets: [
+    { label: 'Tempo médio de atendimento (min)', data: fs.map(f => f.operacao.tempo_medio_seg ? Math.round(f.operacao.tempo_medio_seg / 6) / 10 : 0), backgroundColor: '#7c83f5', borderRadius: 4 },
+    { label: 'Espera dos pedidos (h)', data: fs.map(f => f.solicitacoes.espera_media_horas || 0), backgroundColor: '#d97706', borderRadius: 4 }] } });
+}
+
+// ── PESSOAS E USUÁRIOS ──
+async function pbAbaPessoas(el) {
+  el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Carregando pessoas e usuários…</div>';
+  const chave = `${PB.de}|${PB.ate}|${PB.filial}`;
+  if (!PB.pessoas || PB.pessoas._chave !== chave) {
+    const res = await api(`/painel-brasil/pessoas?${pbQuery({ filial: PB.filial })}`);
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar')}</div>`; return; }
+    PB.pessoas = { ...res, _chave: chave };
+    if (PB.aba !== 'pessoas') return;
+  }
+  const d = PB.pessoas;
+  const totalMov = d.ranking_movimentacoes.reduce((t, r) => t + r.total, 0);
+  const totalAc = d.acessos_por_filial.reduce((t, r) => t + r.acessos, 0);
+  const barras = (lista, campo, rotulo, fmt = pbNum) => {
+    const max = Math.max(1, ...lista.map(x => x[campo] || 0));
+    return `<div class="pb-rank">${lista.map((x, i) => `<div class="pb-rank-l"><span class="pb-rank-pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}º</span>
+      <div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(x[rotulo])}</div><div class="pb-rank-barra"><i style="width:${(x[campo] || 0) / max * 100}%"></i></div></div>
+      <span class="pb-rank-v">${fmt(x[campo])}</span></div>`).join('') || '<div class="pb-vazio">Sem dados.</div>'}</div>`;
+  };
+  el.innerHTML = `
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">
+      ${pbKpi('Colaboradores ativos', pbNum(d.colaboradores.total_ativos), `${pbNum(d.colaboradores.por_filial.reduce((t, x) => t + x.inativos, 0))} inativos no cadastro`, '', '', 0)}
+      ${pbKpi('Usuários do sistema', pbNum(d.usuarios.total), 'com acesso a estas filiais', '', 'pbUsuariosLista()', 1)}
+      ${pbKpi('Movimentações no período', pbNum(totalMov), 'atendimentos, entradas, saídas e transferências', '', '', 2)}
+      ${pbKpi('Acessos no período', pbNum(totalAc), 'entradas no sistema (login e troca de filial)', '', '', 3)}
+    </div>
+    <div class="pb-grid3">
+      <div class="pb-bloco"><div class="pb-secao">Colaboradores por filial</div>${barras(d.colaboradores.por_filial, 'ativos', 'filial')}</div>
+      <div class="pb-bloco"><div class="pb-secao">Colaboradores por função</div>${barras(d.colaboradores.por_funcao.slice(0, 10), 'total', 'funcao')}</div>
+      <div class="pb-bloco"><div class="pb-secao">Usuários do sistema por filial</div>${barras(d.usuarios.por_filial, 'total', 'filial')}</div>
+    </div>
+    <div class="pb-grid2">
+      <div><div class="pb-secao">Quem mais movimenta</div>${pbTabela([{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'atendimentos', label: 'Atendimentos' },
+        { key: 'entradas', label: 'Entradas' }, { key: 'saidas', label: 'Saídas' }, { key: 'transferencias', label: 'Transf.' }, { key: 'total', label: 'Total' }], d.ranking_movimentacoes, { limite: 20, vazio: 'Nenhuma movimentação no período.' })}</div>
+      <div><div class="pb-secao">Quem mais acessa</div>${pbTabela([{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'acessos', label: 'Acessos' },
+        { key: 'ultimo_fmt', label: 'Último acesso' }], d.ranking_acessos.map(r => ({ ...r, ultimo_fmt: r.ultimo ? new Date(r.ultimo).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—' })),
+        { limite: 20, vazio: 'Nenhum acesso registrado no período. O registro de acessos começou a contar a partir da publicação do Painel Brasil.' })}</div>
+    </div>`;
+}
+function pbUsuariosLista() {
+  const d = PB.pessoas;
+  pbGaveta('Usuários do sistema', pbTituloEscopo(), [{ titulo: 'Usuários', colunas: [{ key: 'nome', label: 'Nome' }, { key: 'username', label: 'Usuário' }, { key: 'role', label: 'Perfil' },
+    { key: 'filiais', label: 'Filiais' }, { key: 'ultimo_fmt', label: 'Último acesso' }],
+    linhas: d.usuarios.lista.map(u => ({ ...u, ultimo_fmt: u.ultimo_acesso ? new Date(u.ultimo_acesso).toLocaleString('pt-BR') : 'sem acesso no período' })) }]);
+}
+
+// ── RANKINGS DE FILIAIS ──
+function pbAbaRankings(el) {
+  const fs = PB.resumo.filiais;   // compara sempre todas as filiais visíveis
+  const rk = [];
+  const add = (titulo, sub, valor, fmt, menorMelhor) => {
+    const lista = fs.map(f => ({ nome: f.nome, slug: f.slug, v: valor(f) })).filter(x => x.v != null && Number.isFinite(x.v))
+      .sort((a, b) => menorMelhor ? a.v - b.v : b.v - a.v);
+    rk.push({ titulo, sub, lista, fmt, menorMelhor });
+  };
+  if (PB.resumo.com_financeiro) {
+    add('Meta financeira', '% do gasto sobre a meta · menor é melhor', f => f.financeiro?.meta > 0 ? f.financeiro.gasto / f.financeiro.meta * 100 : null, pbPct, true);
+    add('Recuperação de material', 'economia com recuperação no período · maior é melhor', f => f.financeiro ? f.financeiro.economia : null, pbDinheiro, false);
+  }
+  add('Acurácia do estoque', 'média dos inventários entregues no período · maior é melhor', f => f.inventario.acuracia_media, pbPct, false);
+  add('Estoque abastecido', '% dos itens com mínimo que estão zerados ou abaixo · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.abaixo_minimo / f.estoque.itens_com_minimo * 100 : null, pbPct, true);
+  add('Itens zerados', 'itens com estoque mínimo que estão zerados · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.zerados : null, pbNum, true);
+  add('Tempo médio de atendimento', 'no período · menor é melhor', f => f.operacao.tempo_medio_seg, (v) => pbTempo(Math.round(v)), true);
+  add('Espera das solicitações', 'da abertura até o atendimento · menor é melhor', f => f.solicitacoes.espera_media_horas, pbHoras, true);
+  add('Laudos NR10 em dia', '% das peças em uso com laudo vencido · menor é melhor', f => f.laudos.em_uso ? f.laudos.vencidos / f.laudos.em_uso * 100 : null, pbPct, true);
+  add('Assinaturas em dia', 'entregas esperando assinatura agora · menor é melhor', f => f.operacao.assinaturas_pendentes, pbNum, true);
+
+  // Classificação geral: média da posição em cada ranking (quem aparece em mais rankings e mais bem colocado)
+  const pos = {};
+  rk.forEach(r => r.lista.forEach((x, i) => { (pos[x.slug] ||= { nome: x.nome, soma: 0, n: 0 }); pos[x.slug].soma += i + 1; pos[x.slug].n++; }));
+  const geral = Object.values(pos).map(p => ({ nome: p.nome, v: p.soma / p.n, n: p.n })).sort((a, b) => a.v - b.v);
+
+  const bloco = (r) => {
+    const max = Math.max(...r.lista.map(x => Math.abs(x.v)), 1e-9);
+    return `<div class="pb-bloco"><div class="pb-secao" style="margin-bottom:2px">${escHtml(r.titulo)}</div><div class="pb-rank-sub">${escHtml(r.sub)}</div>
+      <div class="pb-rank">${r.lista.map((x, i) => `<div class="pb-rank-l"><span class="pb-rank-pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}º</span>
+        <div style="min-width:0"><div>${escHtml(x.nome)}</div><div class="pb-rank-barra"><i style="width:${Math.max(4, Math.abs(x.v) / max * 100)}%;background:${i === 0 ? '#22c55e' : i === r.lista.length - 1 && r.lista.length > 1 ? '#f87171' : 'var(--accent)'}"></i></div></div>
+        <span class="pb-rank-v">${r.fmt(x.v)}</span></div>`).join('') || '<div class="pb-vazio">Sem dados no período.</div>'}</div></div>`;
+  };
+  el.innerHTML = `
+    <div class="pb-bloco" style="border-color:var(--accent)">
+      <div class="pb-secao" style="margin-bottom:2px">🏆 Classificação geral</div><div class="pb-rank-sub">média da posição da filial em todos os rankings abaixo · menor é melhor</div>
+      <div class="pb-rank">${geral.map((x, i) => `<div class="pb-rank-l"><span class="pb-rank-pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}º</span><div>${escHtml(x.nome)} <span style="font-size:10px;color:var(--text-3)">· em ${x.n} ranking(s)</span></div>
+        <span class="pb-rank-v">${String(Math.round(x.v * 10) / 10).replace('.', ',')}</span></div>`).join('')}</div>
+    </div>
+    <div class="pb-grid3">${rk.map(bloco).join('')}</div>
+    <div style="font-size:11px;color:var(--text-3)">Os rankings comparam sempre todas as suas filiais, no período escolhido. Filial sem o dado (ex.: sem inventário no período) fica fora daquele ranking.</div>`;
+}
+
+// Entrar numa filial pelo painel: a mesma troca de filial do sistema
+function pbEntrar(slug) {
+  clearInterval(PB.timer);
+  pbFecharGaveta();
+  if (slug === GCA.unidade) { fecharPainelBrasil(); return; }
+  confirmarTrocaUnidade(slug);
+}
+
 function mostrarTela(nome) {
-  ['loginView','forgotView','forgotCodigoView','forgotSenhaView','unidadeView','appView'].forEach(id => document.getElementById(id).classList.add('hidden'));
-  const map = { login:'loginView', forgot:'forgotView', forgotCodigo:'forgotCodigoView', forgotSenha:'forgotSenhaView', unidade:'unidadeView', app:'appView' };
+  ['loginView','forgotView','forgotCodigoView','forgotSenhaView','unidadeView','appView','painelBrasilView'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  const map = { login:'loginView', forgot:'forgotView', forgotCodigo:'forgotCodigoView', forgotSenha:'forgotSenhaView', unidade:'unidadeView', app:'appView', painel:'painelBrasilView' };
   if (map[nome]) document.getElementById(map[nome]).classList.remove('hidden');
 }
 
@@ -6346,6 +7123,7 @@ async function fazerLogin() {
     if (data.selecionar_unidade) {
       GCA.tokenTemp = data.token_temp;
       GCA.unidades  = data.unidades || [];
+      GCA.podePainelBrasil = data.usuario?.pode_painel_brasil === true;
       // Carrega filiais antes de mostrar a seleção para garantir descrições corretas
       const filiaisData = await fetch(`${API}/filiais`).then(r=>r.json()).catch(()=>null);
       if (filiaisData?.ok && filiaisData.data?.length) _filiais = filiaisData.data;
@@ -6481,6 +7259,7 @@ const MAPA_BRASIL = {"l":1000,"a":968,"p":{"minLon":-73.990238,"maxLat":5.270972
 function mostrarSelecaoUnidade(nome, unidades) {
   _umapaModoTroca = false;
   document.getElementById('unidadeRodape').innerHTML = '';
+  document.getElementById('unidadeTopo').innerHTML = '';
   document.getElementById('unidadeTitulo').textContent = 'Selecione a unidade';
   mostrarTela('unidade');
   document.getElementById('unidadeSub').textContent = `Olá, ${nome || 'usuário'}! Selecione a filial de acesso.`;
@@ -6498,6 +7277,17 @@ function mostrarSelecaoUnidade(nome, unidades) {
     </button>`;
   }).join('');
   desenharMapaFiliais(unidades);
+  if (GCA.podePainelBrasil) document.getElementById('unidadeTopo').innerHTML = pbBotaoTopo(unidades.length);
+}
+
+// Painel Brasil: só se entra por aqui (escolha de filial / "Trocar filial"), em destaque acima das filiais
+function pbBotaoTopo(qtd) {
+  return `<button class="pb-entrada" id="pbEntrada" type="button" onclick="abrirPainelDoLogin()">
+    <span class="pe-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 0 20M12 2a15.3 15.3 0 0 0 0 20"/></svg></span>
+    <span class="pe-texto"><span class="pe-titulo" style="display:block">PAINEL BRASIL</span><span class="pe-sub" style="display:block">${qtd > 1 ? `Todas as ${qtd} filiais` : 'Todas as filiais'} · visão gerencial</span></span>
+    <svg class="pe-seta" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+  </button>
+  <div class="pb-ou">ou entre em uma filial</div>`;
 }
 
 // ═══════════════════════════════════════════
@@ -6558,6 +7348,7 @@ function voltarAoMapa() {
   document.querySelector(`.unidade-btn[data-slug="${CSS.escape(GCA.unidade)}"]`)?.classList.add('atual');
   document.querySelector(`.unidade-btn[data-slug="${CSS.escape(GCA.unidade)}"] .u-uf`)?.insertAdjacentHTML('beforebegin', '<span class="u-atual">você está aqui</span>');
   document.querySelector(`.umapa-pino[data-slug="${CSS.escape(GCA.unidade)}"]`)?.classList.add('atual');
+  document.getElementById('unidadeTopo').innerHTML = temPermissao('painel_brasil') ? pbBotaoTopo(unidades.length) : '';
   document.getElementById('unidadeRodape').innerHTML = `
     <button class="unidade-cancelar" type="button" onclick="cancelarVoltaMapa()">← Continuar em ${escHtml(atual)}</button>`;
   document.addEventListener('keydown', _umapaEscape);
@@ -6568,6 +7359,7 @@ function cancelarVoltaMapa() {
   _umapaModoTroca = false;
   document.removeEventListener('keydown', _umapaEscape);
   document.getElementById('unidadeRodape').innerHTML = '';
+  document.getElementById('unidadeTopo').innerHTML = '';
   mostrarTela('app');
 }
 
@@ -7269,6 +8061,7 @@ function iniciarApp() {
     viewInicial = temAcesso ? hashView : 'home';
   }
   showView(viewInicial);
+  if (sessionStorage.getItem('gca_abrir_painel') === '1') { sessionStorage.removeItem('gca_abrir_painel'); abrirPainelBrasil(); }
 
   // Botão voltar/avançar do navegador
   window.addEventListener('popstate', () => {
@@ -15237,7 +16030,8 @@ const PERMISSOES_SCHEMA = {
   gestao: { label:'Gestão', icon:'📊', itens:{
     ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
     ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
-    ver_indicadores:'Ver indicadores', relatorios:'Relatórios'
+    ver_indicadores:'Ver indicadores', relatorios:'Relatórios',
+    painel_brasil:'Painel Brasil (todas as filiais da pessoa, lado a lado)'
   }},
   cadastros: { label:'Cadastros', icon:'🗂️', itens:{
     cadastrar_itens:'Cadastrar/editar itens', cadastrar_colaboradores:'Cadastrar/editar colaboradores',
