@@ -816,12 +816,12 @@ window.addEventListener('pageshow', function(e) {
   <div class="pb-topo">
     <img src="./logo-gca.png" alt="GCA">
     <div>
-      <div class="pb-titulo">🌎 Painel Brasil</div>
+      <div class="pb-titulo"><svg viewBox="0 0 28 20" width="28" height="20" role="img" aria-label="Bandeira do Brasil" style="vertical-align:-3px;margin-right:6px;border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.12)"><rect width="28" height="20" rx="3" fill="#009c3b"/><polygon points="14,2.4 25.6,10 14,17.6 2.4,10" fill="#ffdf00"/><circle cx="14" cy="10" r="4.7" fill="#002776"/><path d="M9.5 9.1 Q14 7.4 18.6 10.4" stroke="#ffffff" stroke-width="0.9" fill="none"/></svg>Painel Brasil</div>
       <div class="pb-sub" id="pbSub">Todas as suas filiais, lado a lado</div>
     </div>
     <div class="pb-acoes">
       <div class="pb-filtros">
-        <select id="pbFilial" class="form-input" style="width:190px" onchange="pbMudarFilial(this.value)"><option value="todas">🇧🇷 Brasil inteiro</option></select>
+        <select id="pbFilial" class="form-input" style="width:190px" onchange="pbMudarFilial(this.value)"><option value="todas">Brasil inteiro</option></select>
         <input type="date" id="pbDe" class="form-input" style="width:140px" onchange="pbMudarPeriodo()">
         <span style="font-size:11px;color:var(--text-3)">até</span>
         <input type="date" id="pbAte" class="form-input" style="width:140px" onchange="pbMudarPeriodo()">
@@ -6365,7 +6365,7 @@ async function pbRecarregar(silencioso) {
   PB.resumo = res;
   const sel = document.getElementById('pbFilial');
   const atual = PB.filial;
-  sel.innerHTML = '<option value="todas">🇧🇷 Brasil inteiro</option>' + res.filiais.map(f => `<option value="${escHtml(f.slug)}">${escHtml(f.nome)}</option>`).join('');
+  sel.innerHTML = '<option value="todas">Brasil inteiro</option>' + res.filiais.map(f => `<option value="${escHtml(f.slug)}">${escHtml(f.nome)}</option>`).join('');
   PB.filial = res.filiais.some(f => f.slug === atual) ? atual : 'todas';
   sel.value = PB.filial;
   pbRender();
