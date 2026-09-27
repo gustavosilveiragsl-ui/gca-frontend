@@ -16157,14 +16157,57 @@ async function carregarUsuariosView() {
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.username||'—')}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
       <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
-      <td style="display:flex;gap:4px">
-        <button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
+      <td style="display:flex;gap:4px">${usrPodeGerenciar(u)
+        ? `<button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
         <button class="row-action" style="color:var(--accent-text);border-color:var(--accent)" onclick="abrirPermissoes('${u.id}')">🔐 Permissões</button>
-        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirUsuario('${u.id}','${escJs((u.nome||''))}')">✕</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirUsuario('${u.id}','${escJs((u.nome||''))}')">✕</button>`
+        : u.id === GCA.usuario?.id
+          ? `<button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button><span style="font-size:10px;color:var(--text-3);align-self:center">sua conta</span>`
+          : `<span style="font-size:10px;color:var(--text-3)" title="Contas de administrador e de gestor só podem ser alteradas por um administrador">🔒 só administrador</span>`}
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum usuário</div></div></td></tr>`;
 }
+
+// Hierarquia (a mesma do servidor): admin mexe em tudo. Quem não é admin só mexe em contas
+// abaixo de gestor, só dá as permissões que ele tem, não troca e-mail/login de outra pessoa e
+// não mexe no próprio acesso.
+const USR_ROLES_ABAIXO = ['almoxarife', 'supervisor', 'visualizador', 'seguranca'];
+const USR_PERMS_ADMIN = ['gerenciar_usuarios', 'cancelar_assinado', 'limpar_descartes', 'desbloqueio'];
+const usrSouAdmin = () => GCA.usuario?.role === 'admin';
+function usrPodeGerenciar(u) {
+  if (usrSouAdmin()) return true;
+  return u.id !== GCA.usuario?.id && USR_ROLES_ABAIXO.includes(u.role || 'almoxarife');
+}
+// Trava os campos do formulário conforme quem edita e quem é editado
+function usrTravarFormulario(u) {
+  const admin = usrSouAdmin(), eu = !!u && u.id === GCA.usuario?.id, outro = !!u && !eu;
+  const role = document.getElementById('usrRole');
+  if (role) {
+    [...role.options].forEach(o => { o.hidden = !admin && !USR_ROLES_ABAIXO.includes(o.value) && !(eu && o.value === u.role); });
+    role.disabled = !admin && eu;
+  }
+  ['usrEmail', 'usrUsername'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.readOnly = !admin && outro;
+    el.title = el.readOnly ? 'Só um administrador pode trocar o e-mail ou o login de outra pessoa' : '';
+    el.style.opacity = el.readOnly ? '0.6' : '';
+  });
+  const travaAcesso = !admin && eu;
+  document.querySelectorAll('.usr-uni-check, #usrArmazensLista input[type=checkbox]').forEach(cb => { cb.disabled = travaAcesso; });
+  let aviso = document.getElementById('usrAvisoTrava');
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = 'usrAvisoTrava';
+    aviso.style.cssText = 'font-size:11px;color:var(--text-3);background:var(--bg);border:1px dashed var(--border);border-radius:var(--radius-sm);padding:8px 10px';
+    document.getElementById('usrNome')?.closest('div')?.before(aviso);
+  }
+  aviso.textContent = !admin && eu ? '🔒 Na sua própria conta você troca nome, login, e-mail e senha. Cargo, filiais, armazéns e permissões só um administrador altera.'
+    : !admin && outro ? '🔒 E-mail e login de outra pessoa só um administrador altera (o e-mail é usado na recuperação de senha).' : '';
+  aviso.style.display = aviso.textContent ? '' : 'none';
+}
+let _usrPermTravadas = new Set();
 
 function abrirPermissoes(id) {
   _usrEditandoId = id;
@@ -16181,6 +16224,17 @@ function abrirPermissoes(id) {
   if (!Object.keys(_usrPermissoes).length && PERMISSOES_SCHEMA && PERFIS_PERMISSOES[u.role]) {
     _usrPermissoes = { ...PERFIS_PERMISSOES[u.role] };
   }
+  // Quem não é admin só mexe no que ele mesmo tem, nunca nas administrativas, e não mexe nas próprias
+  _usrPermTravadas = new Set();
+  if (!usrSouAdmin()) {
+    const todas = Object.values(PERMISSOES_SCHEMA).flatMap(m => Object.keys(m.itens));
+    todas.forEach(k => { if (u.id === GCA.usuario?.id || USR_PERMS_ADMIN.includes(k) || !temPermissao(k)) _usrPermTravadas.add(k); });
+  }
+  const somenteLeitura = !usrSouAdmin() && u.id === GCA.usuario?.id;
+  document.getElementById('permissoesSubtitulo').textContent = somenteLeitura
+    ? 'Suas permissões — só um administrador pode alterar'
+    : `Usuário: ${u.nome} (${u.role})${_usrPermTravadas.size ? ' · 🔒 = você não tem essa permissão para dar' : ''}`;
+  document.querySelectorAll('#permissoesPanel .card-actions button').forEach(b => { b.style.display = somenteLeitura ? 'none' : ''; });
   renderPermissoesGrid();
   document.getElementById('permissoesPanel').scrollIntoView({ behavior:'smooth' });
 }
@@ -16199,9 +16253,9 @@ function renderPermissoesGrid() {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         ${Object.entries(mod.itens).map(([key, label]) => `
-        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer">
-          <input type="checkbox" id="perm_${key}" ${_usrPermissoes[key] ? 'checked' : ''}
-            onchange="_usrPermissoes['${key}']=this.checked"> ${label}
+        <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:${_usrPermTravadas.has(key) ? 'not-allowed' : 'pointer'};${_usrPermTravadas.has(key) ? 'opacity:.55' : ''}">
+          <input type="checkbox" id="perm_${key}" ${_usrPermissoes[key] ? 'checked' : ''} ${_usrPermTravadas.has(key) ? 'disabled' : ''}
+            onchange="_usrPermissoes['${key}']=this.checked"> ${label}${_usrPermTravadas.has(key) ? ' 🔒' : ''}
         </label>`).join('')}
       </div>
     </div>`).join('');
@@ -16210,6 +16264,7 @@ function renderPermissoesGrid() {
 function toggleModulo(modKey, checked) {
   const mod = PERMISSOES_SCHEMA[modKey];
   Object.keys(mod.itens).forEach(key => {
+    if (_usrPermTravadas.has(key)) return;
     _usrPermissoes[key] = checked;
     const el = document.getElementById(`perm_${key}`);
     if (el) el.checked = checked;
@@ -16217,7 +16272,7 @@ function toggleModulo(modKey, checked) {
 }
 
 function marcarTodasPermissoes(checked) {
-  Object.values(PERMISSOES_SCHEMA).forEach(mod => Object.keys(mod.itens).forEach(key => { _usrPermissoes[key] = checked; }));
+  Object.values(PERMISSOES_SCHEMA).forEach(mod => Object.keys(mod.itens).forEach(key => { if (!_usrPermTravadas.has(key)) _usrPermissoes[key] = checked; }));
   renderPermissoesGrid();
 }
 
@@ -16342,7 +16397,8 @@ function editarUsuario(id) {
   let unis = []; try { unis = typeof u.unidades==='string' ? JSON.parse(u.unidades||'[]') : (Array.isArray(u.unidades)?u.unidades:[]); } catch { unis = []; }
   document.querySelectorAll('.usr-uni-check').forEach(cb => { cb.checked = unis.includes(cb.value); });
   let armazens = []; try { armazens = typeof u.armazens==='string' ? JSON.parse(u.armazens||'[]') : (Array.isArray(u.armazens)?u.armazens:[]); } catch { armazens = []; }
-  renderArmazensUsuario(armazens);
+  renderArmazensUsuario(armazens).then(() => usrTravarFormulario(u));
+  usrTravarFormulario(u);
   document.getElementById('usrNome').closest('.card').scrollIntoView({ behavior:'smooth' });
 }
 
@@ -16358,7 +16414,8 @@ function limparFormUsuario() {
   document.querySelectorAll('.usr-uni-check').forEach(cb => {
     cb.checked = cb.value === GCA.unidade;
   });
-  renderArmazensUsuario([]);
+  renderArmazensUsuario([]).then(() => usrTravarFormulario(null));
+  usrTravarFormulario(null);
   document.getElementById('permissoesPanel').style.display = 'none';
   _usrEditandoId = null;
 }
@@ -16418,8 +16475,7 @@ const PERMISSOES_SCHEMA = {
     cadastrar_armazens:'Cadastrar armazéns', cadastrar_equipes:'Cadastrar equipes',
     cadastrar_dotacao:'Cadastrar dotação', catalogo_armazem:'Catálogo por Armazém',
     gerenciar_usuarios:'Gerenciar usuários', gerenciar_usuarios_solicitacao:'Usuários de Solicitação',
-    ver_links_externos:'Links Externos',
-    aprovar_recuperacao:'Aprovar recuperação de senha'
+    ver_links_externos:'Links Externos'
   }},
   inventario: { label:'Inventário', icon:'📋', itens:{
     inventario_configurar:'Configurar armazéns (requer inventário)',
