@@ -842,6 +842,7 @@ window.addEventListener('pageshow', function(e) {
     <button data-aba="financeiro" onclick="pbAba('financeiro')">Financeiro</button>
     <button data-aba="itens" onclick="pbAba('itens')">Itens e estoque</button>
     <button data-aba="operacao" onclick="pbAba('operacao')">Operação</button>
+    <button data-aba="inventarios" onclick="pbAba('inventarios')">Inventários</button>
     <button data-aba="pessoas" onclick="pbAba('pessoas')">Pessoas e usuários</button>
     <button data-aba="rankings" onclick="pbAba('rankings')">Rankings</button>
   </nav>
@@ -6359,7 +6360,7 @@ const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
 
 // O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
 async function pbRecarregar(silencioso) {
-  PB.fin = null; PB.pessoas = null;
+  PB.fin = null; PB.pessoas = null; PB.inv = null;
   const corpo = document.getElementById('pbCorpo');
   if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
   const [res] = await Promise.all([api(`/painel-brasil/resumo?${pbQuery()}`), pbGarantirChart()]);
@@ -6443,7 +6444,7 @@ function pbRender() {
       <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${pbTituloEscopo()}</div>
       <div style="font-size:12px;color:var(--text-3)">${pbFiliais().length} filial(is) · atualizado às ${new Date(PB.resumo.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
     </div>`;
-  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
+  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
   corpo.innerHTML = cab + '<div id="pbAbaCorpo"></div>';
   (abas[PB.aba] || pbAbaGeral)(document.getElementById('pbAbaCorpo'));
 }
@@ -6463,7 +6464,7 @@ function pbAbaGeral(el) {
     pbKpi('Assinaturas pendentes', pbNum(s(f => f.operacao.assinaturas_pendentes)), `${pbNum(expir)} com link vencido`, expir ? 'alerta' : '', pbDet('assinaturas_pendentes', 'Assinaturas pendentes'), 3),
     pbKpi('Abaixo do estoque mínimo', pbNum(s(f => f.estoque.abaixo_minimo)), `${pbNum(zerados)} zerado(s)`, zerados ? 'alerta' : s(f => f.estoque.abaixo_minimo) ? 'aviso' : '', pbDet('abaixo_minimo', 'Itens abaixo do estoque mínimo'), 4),
     pbKpi('Laudos NR10 vencidos', pbNum(vencidos), `${pbNum(s(f => f.laudos.a_vencer_30d))} vencem em 30 dias`, vencidos ? 'alerta' : '', pbDet('laudos_vencidos', 'Laudos NR10 vencidos (peças em uso)'), 5),
-    pbKpi('Acurácia do inventário', pbPct(t.acuracia), `${pbNum(s(f => f.inventario.entregues))}/${pbNum(s(f => f.inventario.armazens))} armazéns entregues no mês`, s(f => f.inventario.pendentes) ? 'aviso' : '', pbDet('inventarios', 'Inventários do período'), 6),
+    pbKpi('Acurácia do inventário', pbPct(t.acuracia), `${pbNum(s(f => f.inventario.entregues))}/${pbNum(s(f => f.inventario.armazens))} armazéns entregues no mês`, s(f => f.inventario.pendentes) ? 'aviso' : '', "pbAba('inventarios')", 6),
     pbKpi('Logística em andamento', pbNum(s(f => f.logistica.aguardando_coleta + f.logistica.em_transito)), `${pbNum(s(f => f.logistica.aguardando_coleta))} aguardando coleta · ${pbNum(s(f => f.logistica.em_transito))} em trânsito`, '', pbDet('logistica', 'Logística em andamento'), 7),
     t.fin ? pbKpi('Gasto no período', pbDinheiro(t.fin.gasto), `meta ${pbDinheiro(t.fin.meta)} · consumo ${pbDinheiro(t.fin.consumo)}`, t.fin.meta > 0 && t.fin.gasto > t.fin.meta ? 'alerta' : '', "pbAba('financeiro')", 8)
       : pbKpi('Colaboradores ativos', pbNum(s(f => f.pessoas.colaboradores)), `${pbNum(s(f => f.pessoas.usuarios))} usuários do sistema`, '', "pbAba('pessoas')", 8),
@@ -6488,7 +6489,7 @@ function pbAbaGeral(el) {
         ${m('Pedidos abertos', pbNum(f.solicitacoes.abertas), `${pbNum(f.solicitacoes.urgentes_abertas)} urgente(s) · espera ${pbHoras(f.solicitacoes.espera_media_horas)}`, f.solicitacoes.mais_antiga_horas > 48 ? 'alerta' : f.solicitacoes.mais_antiga_horas > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', `Solicitações em aberto · ${f.nome}`, f.slug))}
         ${m('Assinaturas', pbNum(f.operacao.assinaturas_pendentes), `${pbNum(f.operacao.assinaturas_expiradas)} vencida(s)`, f.operacao.assinaturas_expiradas ? 'alerta' : '', pbDet('assinaturas_pendentes', `Assinaturas pendentes · ${f.nome}`, f.slug))}
         ${m('Abaixo do mínimo', pbNum(f.estoque.abaixo_minimo), `${pbNum(f.estoque.zerados)} zerado(s) de ${pbNum(f.estoque.itens_com_minimo)}`, f.estoque.zerados ? 'alerta' : f.estoque.abaixo_minimo ? 'aviso' : '', pbDet('abaixo_minimo', `Abaixo do mínimo · ${f.nome}`, f.slug))}
-        ${m('Inventário', f.inventario.armazens ? `${f.inventario.entregues}/${f.inventario.armazens}` : '—', f.inventario.acuracia_media != null ? `acurácia ${pbPct(f.inventario.acuracia_media)}` : 'sem inventário no período', f.inventario.pendentes ? 'aviso' : '', pbDet('inventarios', `Inventários · ${f.nome}`, f.slug))}
+        ${m('Inventário', f.inventario.armazens ? `${f.inventario.entregues}/${f.inventario.armazens}` : '—', f.inventario.acuracia_media != null ? `acurácia ${pbPct(f.inventario.acuracia_media)}` : 'sem inventário no período', f.inventario.pendentes ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}', 'inventarios')`)}
         ${m('Laudos NR10', pbNum(f.laudos.vencidos), `vencidos · ${pbNum(f.laudos.a_vencer_30d)} em 30 dias`, f.laudos.vencidos ? 'alerta' : f.laudos.a_vencer_30d ? 'aviso' : '', pbDet('laudos_vencidos', `Laudos vencidos · ${f.nome}`, f.slug))}
         ${m('Logística', pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito), `${pbNum(f.logistica.em_transito)} em trânsito`, '', pbDet('logistica', `Logística · ${f.nome}`, f.slug))}
         ${fin ? m('Gasto × meta', pbDinheiro(fin.gasto), fin.meta ? `${pct}% de ${pbDinheiro(fin.meta)}` : 'sem meta definida', pct > 100 ? 'alerta' : pct > 90 ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}','financeiro')`) : m('Usuários', pbNum(f.pessoas.usuarios), `${pbNum(f.pessoas.acessos_periodo)} acesso(s) no período`)}
@@ -6708,11 +6709,24 @@ async function pbFinDetalhe(qual) {
       { titulo: 'Eventos de recuperação', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'nome_item', label: 'Item' }, { key: 'origem', label: 'Origem' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Economia')],
         linhas: d.recuperacao.eventos.filter(e => e.tipo === 'RECUPERADO') },
     ],
-    perdas: () => [
-      { titulo: 'Perdas por origem', colunas: [{ key: 'chave', label: 'Origem' }, { key: 'quantidade', label: 'Peças' }, din('valor', 'Valor')], linhas: d.recuperacao.perdas_por_origem },
-      { titulo: 'Ajustes de inventário', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'tipo', label: 'Tipo' }, { key: 'item', label: 'Item' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Valor')],
-        linhas: d.consumo.ajuste_inventario.movimentos },
-    ],
+    perdas: () => {
+      const ORIG = { INUTILIZADO_RECUPERACAO: 'Inutilizado na recuperação', DIVERGENCIA_SERIAL: 'Divergência de serial (sumiu na conferência)', DESCARTE_SERIAL: 'Descarte de serial NR10', REPROVADO_LAUDO: 'Reprovado no laudo' };
+      const nomeOrig = (o) => ORIG[o] || o;
+      const movs = d.consumo.ajuste_inventario.movimentos;
+      const cols = [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'item', label: 'Item' }, { key: 'armazem', label: 'Armazém' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Valor')];
+      return [
+        { titulo: 'Como o número foi formado', colunas: [{ key: 'parte', label: 'Parte' }, din('valor', 'Valor')], linhas: [
+          { parte: 'Peças perdidas na recuperação, laudo e seriais', valor: d.recuperacao.perdas },
+          { parte: 'Faltas no inventário (contou menos do que o sistema tinha)', valor: d.consumo.ajuste_inventario.perda },
+          { parte: 'Total de perdas', valor: Math.round((d.recuperacao.perdas + d.consumo.ajuste_inventario.perda) * 100) / 100 }] },
+        { titulo: 'Perdas por motivo', colunas: [{ key: 'motivo', label: 'Motivo' }, { key: 'quantidade', label: 'Peças' }, din('valor', 'Valor')],
+          linhas: d.recuperacao.perdas_por_origem.map(g => ({ ...g, motivo: nomeOrig(g.chave) })) },
+        { titulo: 'Peças perdidas', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'data', label: 'Data', tipo: 'data' }, { key: 'nome_item', label: 'Item' }, { key: 'motivo', label: 'Motivo' }, { key: 'quantidade', label: 'Qtd' }, din('valor', 'Valor')],
+          linhas: d.recuperacao.eventos.filter(e => e.tipo === 'PERDA').map(e => ({ ...e, motivo: nomeOrig(e.origem) })) },
+        { titulo: 'Faltas no inventário (entram nas perdas)', colunas: cols, linhas: movs.filter(m => m.tipo === 'SAIDA') },
+        { titulo: 'Sobras no inventário (NÃO entram nas perdas — só para conferência)', colunas: cols, linhas: movs.filter(m => m.tipo !== 'SAIDA') },
+      ];
+    },
   };
   const titulos = { gasto: 'Como o gasto foi formado', compras: 'Compras do período', laudos: 'Laudos do período', avulsos: 'Custos lançados à mão',
     consumo: 'Consumo do período (saídas valorizadas)', recuperacao: 'Recuperação de material', perdas: 'Perdas do período' };
@@ -6743,7 +6757,7 @@ async function pbAbaItens(el) {
     <div id="pbItensTabela"></div>`;
   pbItensTabela(fs);
 }
-function pbItensFiltrados(fs) {
+function pbItensFiltrados(fs, semSituacao) {
   const q = PBI.busca.trim().toLowerCase(), slugs = fs.map(f => f.slug);
   return PB.itens.data.map(l => {
     const pf = Object.fromEntries(Object.entries(l.filiais).filter(([s]) => slugs.includes(s)));
@@ -6755,28 +6769,35 @@ function pbItensFiltrados(fs) {
   }).filter(l => l
     && (!q || String(l.descricao).toLowerCase().includes(q) || String(l.codigo).toLowerCase().includes(q))
     && (!PBI.categoria || l.categoria === PBI.categoria)
-    && (!PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo : l.saldo <= 0)));
+    && (semSituacao || !PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo : l.saldo <= 0)));
 }
 function pbItensTabela(fsArg) {
   const fs = fsArg || PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
   const linhas = pbItensFiltrados(fs);
+  const todos = pbItensFiltrados(fs, true);   // os números do topo não mudam com o filtro de situação
+  const soZer = todos.filter(l => l.zerado).length, soAb = todos.filter(l => l.abaixo && !l.zerado).length;   // zerado/abaixo em pelo menos uma filial
   const k = document.getElementById('pbItensKpis');
   if (k) k.innerHTML = [
-    pbKpi('Itens', pbNum(linhas.length), `${pbNum(fs.length)} filial(is) · juntados pelo código`, '', '', 0),
-    pbKpi('Valor em estoque', pbDinheiro(linhas.reduce((t, l) => t + l.valor, 0)), 'saldo × valor do cadastro', '', '', 1),
-    pbKpi('Zerados em alguma filial', pbNum(linhas.filter(l => l.zerado).length), 'com estoque mínimo definido', linhas.some(l => l.zerado) ? 'alerta' : '', '', 2),
-    pbKpi('Abaixo do mínimo', pbNum(linhas.filter(l => l.abaixo).length), 'em pelo menos uma filial', linhas.some(l => l.abaixo) ? 'aviso' : '', '', 3)].join('');
-  const cel = (x) => !x ? '<td class="num" style="color:var(--text-3)">—</td>'
-    : `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="${escHtml(x.por_armazem || 'sem estoque mínimo')}">${pbNum(x.saldo)}</td>`;
+    pbKpi('Itens', pbNum(todos.length), `${pbNum(fs.length)} filial(is) · juntados pelo código`, '', '', 0),
+    pbKpi('Valor em estoque', pbDinheiro(todos.reduce((t, l) => t + l.valor, 0)), 'saldo de todos os armazéns × valor do cadastro', '', '', 1),
+    pbKpi('Zerados em alguma filial', pbNum(soZer), 'sem saldo em nenhum armazém da filial', soZer ? 'alerta' : '', '', 2),
+    pbKpi('Só abaixo do mínimo', pbNum(soAb), 'tem saldo, mas menos que o mínimo do principal', soAb ? 'aviso' : '', '', 3)].join('');
+  // Célula: saldo somado de todos os armazéns da filial; a cor compara com o mínimo do armazém principal
+  const cel = (x) => {
+    if (!x) return '<td class="num" style="color:var(--text-3)" title="Item não cadastrado nesta filial — não entra na conta">—</td>';
+    const dica = (x.minimo ? `Mínimo (armazém principal${x.principal ? ' ' + x.principal : ''}): ${pbNum(x.minimo)}` : 'Sem estoque mínimo')
+      + (x.por_armazem ? ` · onde está: ${x.por_armazem}` : ' · sem saldo em nenhum armazém');
+    return `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="${escHtml(dica)}">${pbNum(x.saldo)}</td>`;
+  };
   const alvo = document.getElementById('pbItensTabela');
   if (!alvo) return;
   alvo.innerHTML = !linhas.length ? '<div class="pb-vazio">Nenhum item com esses filtros.</div>' : `<div class="pb-tabela-wrap" style="max-height:640px"><table class="pb-tabela"><thead><tr>
-      <th>Item</th><th>Código</th><th>Categoria</th><th>UN</th>${fs.map(f => `<th class="num">${escHtml(f.nome)}</th>`).join('')}<th class="num">Total</th><th class="num">Valor</th></tr></thead><tbody>
+      <th>Item</th><th>Código</th><th>Categoria</th><th>UN</th>${fs.map(f => `<th class="num">${escHtml(f.nome)}</th>`).join('')}<th class="num" title="Todos os armazéns das filiais">Total</th><th class="num">Valor</th></tr></thead><tbody>
       ${linhas.slice(0, PBI.limite).map(l => `<tr><td style="white-space:normal;min-width:240px">${escHtml(l.descricao)}</td><td>${escHtml(l.codigo || '—')}</td><td>${escHtml(l.categoria)}</td><td>${escHtml(l.un_med)}</td>
         ${fs.map(f => cel(l.pf[f.slug])).join('')}<td class="num" style="font-weight:700">${pbNum(l.saldo)}</td><td class="num">${pbDinheiro(l.valor)}</td></tr>`).join('')}
     </tbody></table></div>
     ${linhas.length > PBI.limite ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="PBI.limite+=200;pbItensTabela()">Mostrar mais (${pbNum(linhas.length - PBI.limite)} restantes)</button></div>` : ''}
-    <div style="font-size:11px;color:var(--text-3);margin-top:8px">Vermelho: zerado · amarelo: abaixo do mínimo · passe o mouse no saldo para ver o mínimo.</div>`;
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px">Número da filial = saldo somado de todos os armazéns dela, comparado com o mínimo do armazém principal (vermelho: zerado · amarelo: abaixo do mínimo) · <b>—</b> = item não cadastrado na filial (não entra na conta) · passe o mouse para ver o mínimo e onde está o saldo.</div>`;
 }
 function pbItensExcel() {
   const fs = PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
@@ -6784,6 +6805,104 @@ function pbItensExcel() {
     ...Object.fromEntries(fs.map(f => [`s_${f.slug}`, l.pf[f.slug] ? l.pf[f.slug].saldo : ''])), total: l.saldo, valor: Math.round(l.valor * 100) / 100 }));
   gcaExportarExcel('Painel_Brasil_Itens', linhas, [{ key: 'descricao', label: 'Item' }, { key: 'codigo', label: 'Código' }, { key: 'categoria', label: 'Categoria' }, { key: 'un', label: 'UN' },
     ...fs.map(f => ({ key: `s_${f.slug}`, label: f.nome })), { key: 'total', label: 'Total' }, { key: 'valor', label: 'Valor em estoque' }]);
+}
+
+// ── INVENTÁRIOS ── todos os inventários do período: no prazo, fora do prazo, não entregues
+const PBV = { situacao: '', tipo: '' };
+const PB_INV_SIT = {
+  no_prazo: ['No prazo', '#22c55e'], fora_prazo: ['Fora do prazo', '#fbbf24'], nao_entregue: ['Não entregue', '#f87171'],
+  em_andamento: ['Em andamento', 'var(--accent-text)'], nao_iniciado: ['Não iniciado', 'var(--text-3)'], sem_prazo: ['Entregue (avulso)', '#22c55e'], sem_data: ['Entregue (sem data)', 'var(--text-2)'],
+};
+const pbInvSit = (k) => { const [t, c] = PB_INV_SIT[k] || [k, 'var(--text-3)']; return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;color:${c};border:1px solid ${c};white-space:nowrap">${escHtml(t)}</span>`; };
+const pbDataHora = (v) => v ? new Date(v).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '—';
+const pbMesTxt = (m) => { const [a, mm] = String(m).split('-'); return `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(mm) - 1] || mm}/${a}`; };
+
+async function pbAbaInventarios(el) {
+  if (!PB.inv) {
+    el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Buscando os inventários das filiais…</div>';
+    const res = await api(`/painel-brasil/inventarios?${pbQuery()}`);
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar os inventários')}</div>`; return; }
+    PB.inv = res;
+    if (PB.aba !== 'inventarios') return;
+  }
+  const slugs = pbFiliais().map(f => f.slug);
+  const linhas = PB.inv.linhas.filter(l => slugs.includes(l.slug));
+  const pf = PB.inv.por_filial.filter(f => slugs.includes(f.slug));
+  const c = (sit) => linhas.filter(l => l.situacao === sit).length;
+  const comPrazo = c('no_prazo') + c('fora_prazo') + c('nao_entregue');
+  const acs = linhas.filter(l => l.acuracia != null && l.status === 'ENTREGUE').map(l => l.acuracia);
+  const kpis = [
+    pbKpi('Inventários no período', pbNum(linhas.length), `${pbNum(linhas.filter(l => l.status === 'ENTREGUE').length)} realizado(s) · ${pbNum(c('sem_prazo'))} avulso(s)`, '', '', 0),
+    pbKpi('Entregues no prazo', pbNum(c('no_prazo')), comPrazo ? `${pbPct(c('no_prazo') / comPrazo * 100)} dos que tinham prazo · até o dia 10` : 'até o dia 10 do mês', '', "pbInvFiltro('no_prazo')", 1),
+    pbKpi('Entregues fora do prazo', pbNum(c('fora_prazo')), 'entregues depois do dia 10', c('fora_prazo') ? 'aviso' : '', "pbInvFiltro('fora_prazo')", 2),
+    pbKpi('Não entregues', pbNum(c('nao_entregue')), 'o prazo passou e não foi entregue', c('nao_entregue') ? 'alerta' : '', "pbInvFiltro('nao_entregue')", 3),
+    pbKpi('Em aberto', pbNum(c('em_andamento') + c('nao_iniciado')), `${pbNum(c('em_andamento'))} em andamento · ${pbNum(c('nao_iniciado'))} não iniciado(s) · ainda no prazo`, '', "pbInvFiltro('aberto')", 4),
+    pbKpi('Acurácia média', pbPct(acs.length ? acs.reduce((t, x) => t + x, 0) / acs.length : null), 'dos inventários entregues', '', '', 5),
+  ].join('');
+  const ranking = pf.filter(f => f.pct_no_prazo != null).sort((a, b) => b.pct_no_prazo - a.pct_no_prazo || (a.nao_entregue - b.nao_entregue));
+  const fora = pf.filter(f => f.pct_no_prazo == null).map(f => f.filial);
+  el.innerHTML = `
+    <div class="pb-kpis" style="grid-template-columns:repeat(3,1fr)">${kpis}</div>
+    <div class="pb-grid2" style="grid-template-columns:2fr 1fr">
+      <div class="pb-bloco"><div class="pb-secao">Por filial</div>
+        ${pbTabela([{ key: 'filial', label: 'Filial' }, { key: 'total', label: 'Inventários' }, { key: 'realizados', label: 'Realizados' }, { key: 'no_prazo', label: 'No prazo' },
+          { key: 'fora_prazo', label: 'Fora do prazo' }, { key: 'nao_entregue', label: 'Não entregues' }, { key: 'aberto', label: 'Em aberto', num: true }, { key: 'sem_prazo', label: 'Avulsos' },
+          { key: 'pct_no_prazo', label: '% no prazo', tipo: 'pct', num: true }, { key: 'acuracia_media', label: 'Acurácia', tipo: 'pct', num: true }],
+          pf.map(f => ({ ...f, aberto: f.em_andamento + f.nao_iniciado })), { vazio: 'Nenhum inventário no período.' })}
+      </div>
+      <div class="pb-bloco"><div class="pb-secao" style="margin-bottom:2px">🏆 Entrega no prazo</div><div class="pb-rank-sub">% dos inventários com prazo entregues até o dia 10 · maior é melhor</div>
+        <div class="pb-rank">${ranking.map((x, i) => `<div class="pb-rank-l"><span class="pb-rank-pos ${i < 3 ? 'p' + (i + 1) : ''}">${i + 1}º</span>
+          <div style="min-width:0"><div>${escHtml(x.filial)} <span style="font-size:10px;color:var(--text-3)">· ${x.no_prazo} de ${x.no_prazo + x.fora_prazo + x.nao_entregue}</span></div>
+          <div class="pb-rank-barra"><i style="width:${Math.max(4, x.pct_no_prazo)}%;background:${x.pct_no_prazo >= 100 ? '#22c55e' : x.pct_no_prazo >= 50 ? 'var(--accent)' : '#f87171'}"></i></div></div>
+          <span class="pb-rank-v">${pbPct(x.pct_no_prazo)}</span></div>`).join('') || '<div class="pb-vazio">Nenhum inventário com prazo no período.</div>'}</div>
+        ${fora.length ? `<div class="pb-rank-fora">Fora deste ranking: <b>${fora.map(escHtml).join(', ')}</b> — sem inventário com prazo no período.</div>` : ''}
+      </div>
+    </div>
+    <div class="pb-bloco">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
+        <div class="pb-secao" style="margin:0">Todos os inventários</div>
+        <select class="form-input" style="width:190px;margin-left:auto" onchange="PBV.situacao=this.value;pbInvTabela()">
+          <option value="">Todas as situações</option>${Object.entries(PB_INV_SIT).map(([k, [t]]) => `<option value="${k}" ${PBV.situacao === k ? 'selected' : ''}>${t}</option>`).join('')}
+          <option value="aberto" ${PBV.situacao === 'aberto' ? 'selected' : ''}>Em aberto (andamento + não iniciado)</option></select>
+        <select class="form-input" style="width:180px" onchange="PBV.tipo=this.value;pbInvTabela()">
+          <option value="">Todos os tipos</option>${['Mensal', 'Avulso', 'Material do cliente'].map(t => `<option ${PBV.tipo === t ? 'selected' : ''}>${t}</option>`).join('')}</select>
+        <button class="btn btn-ghost" onclick="pbInvExcel()">📊 Excel</button>
+      </div>
+      <div id="pbInvTabela"></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px">Mensal: um por armazém que exige inventário, prazo até o dia 10 do mês (horário de Brasília) · Avulso: sem prazo · Material do cliente: inventário do estoque do cliente, mesmo prazo do mensal.</div>
+    </div>`;
+  pbInvTabela();
+}
+function pbInvFiltro(sit) { PBV.situacao = sit; pbAbaInventarios(document.getElementById('pbAbaCorpo')); document.getElementById('pbInvTabela')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+function pbInvFiltradas() {
+  const slugs = pbFiliais().map(f => f.slug);
+  return (PB.inv?.linhas || []).filter(l => slugs.includes(l.slug)
+    && (!PBV.tipo || l.tipo === PBV.tipo)
+    && (!PBV.situacao || (PBV.situacao === 'aberto' ? ['em_andamento', 'nao_iniciado'].includes(l.situacao) : l.situacao === PBV.situacao)));
+}
+function pbInvTabela() {
+  const alvo = document.getElementById('pbInvTabela');
+  if (!alvo) return;
+  const ls = pbInvFiltradas();
+  if (!ls.length) { alvo.innerHTML = '<div class="pb-vazio">Nenhum inventário com esses filtros.</div>'; return; }
+  const n = (v) => v == null ? '—' : pbNum(v);
+  alvo.innerHTML = `<div class="pb-tabela-wrap" style="max-height:560px"><table class="pb-tabela"><thead><tr>
+      <th>Filial</th><th>Tipo</th><th>Armazém</th><th>Mês</th><th>Prazo</th><th>Situação</th><th>Aberto em</th><th>Aberto por</th><th>Entregue em</th><th>Entregue por</th>
+      <th class="num">Dias de atraso</th><th class="num">Itens</th><th class="num">Diverg.</th><th class="num">Acurácia</th><th>Atraso liberado</th></tr></thead><tbody>
+    ${ls.map(l => `<tr><td>${escHtml(l.filial)}</td><td>${escHtml(l.tipo)}</td><td style="white-space:normal;min-width:160px">${escHtml(l.armazem || '—')}${l.motivo ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.motivo)}</div>` : ''}</td>
+      <td>${pbMesTxt(l.mes)}</td><td>${l.prazo ? formatarData(l.prazo) : 'sem prazo'}</td><td>${pbInvSit(l.situacao)}</td>
+      <td>${pbDataHora(l.gerado_em)}</td><td>${escHtml(l.gerado_por || '—')}</td><td>${pbDataHora(l.finalizado_em)}</td><td>${escHtml(l.finalizado_por || '—')}</td>
+      <td class="num" style="${l.dias_atraso ? 'color:#f87171;font-weight:700' : ''}">${n(l.dias_atraso)}</td><td class="num">${n(l.itens_contados)}</td><td class="num">${n(l.divergencias)}</td>
+      <td class="num">${l.acuracia == null ? '—' : pbPct(l.acuracia)}</td><td style="font-size:11px">${escHtml(l.liberado_atraso || '—')}</td></tr>`).join('')}
+    </tbody></table></div>`;
+}
+function pbInvExcel() {
+  const ls = pbInvFiltradas().map(l => ({ ...l, situacao: (PB_INV_SIT[l.situacao] || [l.situacao])[0], mes: pbMesTxt(l.mes), prazo: l.prazo ? formatarData(l.prazo) : 'sem prazo',
+    gerado_em: pbDataHora(l.gerado_em), finalizado_em: pbDataHora(l.finalizado_em) }));
+  gcaExportarExcel('Painel_Brasil_Inventarios', ls, [{ key: 'filial', label: 'Filial' }, { key: 'tipo', label: 'Tipo' }, { key: 'armazem', label: 'Armazém' }, { key: 'mes', label: 'Mês' },
+    { key: 'prazo', label: 'Prazo' }, { key: 'situacao', label: 'Situação' }, { key: 'gerado_em', label: 'Aberto em' }, { key: 'gerado_por', label: 'Aberto por' },
+    { key: 'finalizado_em', label: 'Entregue em' }, { key: 'finalizado_por', label: 'Entregue por' }, { key: 'dias_atraso', label: 'Dias de atraso' },
+    { key: 'itens_contados', label: 'Itens contados' }, { key: 'divergencias', label: 'Divergências' }, { key: 'acuracia', label: 'Acurácia %' }, { key: 'liberado_atraso', label: 'Atraso liberado' }, { key: 'motivo', label: 'Motivo (avulso)' }]);
 }
 
 // ── OPERAÇÃO ──
@@ -6885,8 +7004,8 @@ function pbAbaRankings(el) {
     add('Recuperação de material', 'economia com recuperação no período · maior é melhor', f => f.financeiro ? f.financeiro.economia : null, pbDinheiro, false);
   }
   add('Acurácia do estoque', 'média dos inventários entregues no período · maior é melhor', f => f.inventario.acuracia_media, pbPct, false, 'sem inventário entregue no período');
-  add('Estoque abastecido', '% dos itens abaixo do mínimo no armazém principal · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.abaixo_minimo / f.estoque.itens_com_minimo * 100 : null, pbPct, true, 'sem estoque mínimo cadastrado');
-  add('Itens zerados', 'itens com mínimo zerados no armazém principal · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.zerados : null, pbNum, true, 'sem estoque mínimo cadastrado');
+  add('Estoque abastecido', '% dos itens com saldo abaixo do mínimo · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.abaixo_minimo / f.estoque.itens_com_minimo * 100 : null, pbPct, true, 'sem estoque mínimo cadastrado');
+  add('Itens zerados', 'itens com mínimo sem saldo em nenhum armazém · menor é melhor', f => f.estoque.itens_com_minimo ? f.estoque.zerados : null, pbNum, true, 'sem estoque mínimo cadastrado');
   add('Tempo médio de atendimento', 'no período · menor é melhor', f => f.operacao.tempo_medio_seg, (v) => pbTempo(Math.round(v)), true, 'sem atendimento com tempo registrado no período');
   add('Espera das solicitações', 'da abertura até o atendimento · menor é melhor', f => f.solicitacoes.espera_media_horas, pbHoras, true, 'sem solicitação atendida no período');
   add('Laudos NR10 em dia', '% das peças em uso com laudo vencido · menor é melhor', f => f.laudos.em_uso ? f.laudos.vencidos / f.laudos.em_uso * 100 : null, pbPct, true, 'sem peça NR10 em uso');
@@ -6912,7 +7031,7 @@ function pbAbaRankings(el) {
         <span class="pb-rank-v">${String(Math.round(x.v * 10) / 10).replace('.', ',')}</span></div>`).join('')}</div>
     </div>
     <div class="pb-grid3">${rk.map(bloco).join('')}</div>
-    <div style="font-size:11px;color:var(--text-3)">Os rankings comparam sempre todas as suas filiais, no período escolhido. Filial sem o dado fica fora daquele ranking, com o motivo embaixo dele. Estoque mínimo: só o armazém principal de cada filial (mínimo do armazém, senão o do cadastro do item).</div>`;
+    <div style="font-size:11px;color:var(--text-3)">Os rankings comparam sempre todas as suas filiais, no período escolhido. Filial sem o dado fica fora daquele ranking, com o motivo embaixo dele. Estoque: saldo somado de todos os armazéns da filial × mínimo do armazém principal (o dele, senão o do cadastro do item).</div>`;
 }
 
 // Entrar numa filial pelo painel: a mesma troca de filial do sistema
