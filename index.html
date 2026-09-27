@@ -6462,7 +6462,7 @@ function pbAbaGeral(el) {
     pbKpi('Solicitações em aberto', pbNum(s(f => f.solicitacoes.abertas)), `${pbNum(s(f => f.solicitacoes.urgentes_abertas))} urgente(s) · mais antiga ${pbHoras(t.maisAntiga || null)}`, t.maisAntiga > 48 ? 'alerta' : t.maisAntiga > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', 'Solicitações em aberto'), 1),
     pbKpi('Espera até atender', pbHoras(t.espera), `pedidos do período (${pbNum(s(f => f.solicitacoes.atendidas_periodo))} atendidos)`, '', '', 2),
     pbKpi('Assinaturas pendentes', pbNum(s(f => f.operacao.assinaturas_pendentes)), `${pbNum(expir)} com link vencido`, expir ? 'alerta' : '', pbDet('assinaturas_pendentes', 'Assinaturas pendentes'), 3),
-    pbKpi('Abaixo do estoque mínimo', pbNum(s(f => f.estoque.abaixo_minimo)), `${pbNum(zerados)} zerado(s)`, zerados ? 'alerta' : s(f => f.estoque.abaixo_minimo) ? 'aviso' : '', pbDet('abaixo_minimo', 'Itens abaixo do estoque mínimo'), 4),
+    pbKpi('Abaixo do estoque mínimo', pbNum(s(f => f.estoque.abaixo_minimo) - zerados), `+ ${pbNum(zerados)} zerado(s) · soma das filiais (o mesmo item em 2 filiais conta 2 vezes)`, zerados ? 'alerta' : s(f => f.estoque.abaixo_minimo) ? 'aviso' : '', pbDet('abaixo_minimo', 'Itens abaixo do estoque mínimo'), 4),
     pbKpi('Laudos NR10 vencidos', pbNum(vencidos), `${pbNum(s(f => f.laudos.a_vencer_30d))} vencem em 30 dias`, vencidos ? 'alerta' : '', pbDet('laudos_vencidos', 'Laudos NR10 vencidos (peças em uso)'), 5),
     pbKpi('Acurácia do inventário', pbPct(t.acuracia), `${pbNum(s(f => f.inventario.entregues))}/${pbNum(s(f => f.inventario.armazens))} armazéns entregues no mês`, s(f => f.inventario.pendentes) ? 'aviso' : '', "pbAba('inventarios')", 6),
     pbKpi('Logística em andamento', pbNum(s(f => f.logistica.aguardando_coleta + f.logistica.em_transito)), `${pbNum(s(f => f.logistica.aguardando_coleta))} aguardando coleta · ${pbNum(s(f => f.logistica.em_transito))} em trânsito`, '', pbDet('logistica', 'Logística em andamento'), 7),
@@ -6488,7 +6488,7 @@ function pbAbaGeral(el) {
         ${m('Atendimentos', pbNum(f.operacao.atendimentos_periodo), `hoje ${pbNum(f.operacao.atendimentos_hoje)} · ${pbTempo(f.operacao.tempo_medio_seg)}`, '', pbDet('atendimentos', `Atendimentos por dia · ${f.nome}`, f.slug))}
         ${m('Pedidos abertos', pbNum(f.solicitacoes.abertas), `${pbNum(f.solicitacoes.urgentes_abertas)} urgente(s) · espera ${pbHoras(f.solicitacoes.espera_media_horas)}`, f.solicitacoes.mais_antiga_horas > 48 ? 'alerta' : f.solicitacoes.mais_antiga_horas > 24 ? 'aviso' : '', pbDet('solicitacoes_abertas', `Solicitações em aberto · ${f.nome}`, f.slug))}
         ${m('Assinaturas', pbNum(f.operacao.assinaturas_pendentes), `${pbNum(f.operacao.assinaturas_expiradas)} vencida(s)`, f.operacao.assinaturas_expiradas ? 'alerta' : '', pbDet('assinaturas_pendentes', `Assinaturas pendentes · ${f.nome}`, f.slug))}
-        ${m('Abaixo do mínimo', pbNum(f.estoque.abaixo_minimo), `${pbNum(f.estoque.zerados)} zerado(s) de ${pbNum(f.estoque.itens_com_minimo)}`, f.estoque.zerados ? 'alerta' : f.estoque.abaixo_minimo ? 'aviso' : '', pbDet('abaixo_minimo', `Abaixo do mínimo · ${f.nome}`, f.slug))}
+        ${m('Abaixo do mínimo', pbNum(f.estoque.abaixo_minimo - f.estoque.zerados), `+ ${pbNum(f.estoque.zerados)} zerado(s) · de ${pbNum(f.estoque.itens_com_minimo)} com mínimo`, f.estoque.zerados ? 'alerta' : f.estoque.abaixo_minimo ? 'aviso' : '', pbDet('abaixo_minimo', `Abaixo do mínimo · ${f.nome}`, f.slug))}
         ${m('Inventário', f.inventario.armazens ? `${f.inventario.entregues}/${f.inventario.armazens}` : '—', f.inventario.acuracia_media != null ? `acurácia ${pbPct(f.inventario.acuracia_media)}` : 'sem inventário no período', f.inventario.pendentes ? 'aviso' : '', `pbSoEsta('${escJs(f.slug)}', 'inventarios')`)}
         ${m('Laudos NR10', pbNum(f.laudos.vencidos), `vencidos · ${pbNum(f.laudos.a_vencer_30d)} em 30 dias`, f.laudos.vencidos ? 'alerta' : f.laudos.a_vencer_30d ? 'aviso' : '', pbDet('laudos_vencidos', `Laudos vencidos · ${f.nome}`, f.slug))}
         ${m('Logística', pbNum(f.logistica.aguardando_coleta + f.logistica.em_transito), `${pbNum(f.logistica.em_transito)} em trânsito`, '', pbDet('logistica', `Logística · ${f.nome}`, f.slug))}
@@ -6751,7 +6751,7 @@ async function pbAbaItens(el) {
       <select class="form-input" style="width:200px" onchange="PBI.categoria=this.value;PBI.limite=100;pbItensTabela()"><option value="">Todas as categorias</option>${d.categorias.map(c => `<option ${PBI.categoria === c ? 'selected' : ''}>${escHtml(c)}</option>`).join('')}</select>
       <select class="form-input" style="width:210px" onchange="PBI.situacao=this.value;PBI.limite=100;pbItensTabela()">
         <option value="">Todas as situações</option><option value="zerado" ${PBI.situacao === 'zerado' ? 'selected' : ''}>Zerado em alguma filial</option>
-        <option value="abaixo" ${PBI.situacao === 'abaixo' ? 'selected' : ''}>Abaixo do mínimo</option><option value="sem" ${PBI.situacao === 'sem' ? 'selected' : ''}>Sem saldo nenhum</option></select>
+        <option value="abaixo" ${PBI.situacao === 'abaixo' ? 'selected' : ''}>Só abaixo do mínimo</option><option value="sem" ${PBI.situacao === 'sem' ? 'selected' : ''}>Sem saldo nenhum</option></select>
       <button class="btn btn-ghost" onclick="pbItensExcel()">📊 Excel</button>
     </div>
     <div id="pbItensTabela"></div>`;
@@ -6763,13 +6763,13 @@ function pbItensFiltrados(fs, semSituacao) {
     const pf = Object.fromEntries(Object.entries(l.filiais).filter(([s]) => slugs.includes(s)));
     if (!Object.keys(pf).length) return null;
     const saldo = Object.values(pf).reduce((t, x) => t + x.saldo, 0);
-    const valor = Object.values(pf).reduce((t, x) => t + Math.max(0, x.saldo) * x.valor_un, 0);
+    const valor = Object.values(pf).reduce((t, x) => t + (x.valor ?? Math.max(0, x.saldo) * x.valor_un), 0);
     const zerado = Object.values(pf).some(x => x.situacao === 'zerado'), abaixo = Object.values(pf).some(x => x.situacao !== 'ok');
     return { ...l, pf, saldo, valor, zerado, abaixo };
   }).filter(l => l
     && (!q || String(l.descricao).toLowerCase().includes(q) || String(l.codigo).toLowerCase().includes(q))
     && (!PBI.categoria || l.categoria === PBI.categoria)
-    && (semSituacao || !PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo : l.saldo <= 0)));
+    && (semSituacao || !PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo && !l.zerado : l.saldo <= 0)));
 }
 function pbItensTabela(fsArg) {
   const fs = fsArg || PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
@@ -6778,10 +6778,10 @@ function pbItensTabela(fsArg) {
   const soZer = todos.filter(l => l.zerado).length, soAb = todos.filter(l => l.abaixo && !l.zerado).length;   // zerado/abaixo em pelo menos uma filial
   const k = document.getElementById('pbItensKpis');
   if (k) k.innerHTML = [
-    pbKpi('Itens', pbNum(todos.length), `${pbNum(fs.length)} filial(is) · juntados pelo código`, '', '', 0),
-    pbKpi('Valor em estoque', pbDinheiro(todos.reduce((t, l) => t + l.valor, 0)), 'saldo de todos os armazéns × valor do cadastro', '', '', 1),
-    pbKpi('Zerados em alguma filial', pbNum(soZer), 'sem saldo em nenhum armazém da filial', soZer ? 'alerta' : '', '', 2),
-    pbKpi('Só abaixo do mínimo', pbNum(soAb), 'tem saldo, mas menos que o mínimo do principal', soAb ? 'aviso' : '', '', 3)].join('');
+    pbKpi('Itens', pbNum(todos.length), `itens diferentes em ${pbNum(fs.length)} filial(is) · o mesmo item em várias filiais conta 1 vez`, '', 'pbItensPorFilial()', 0),
+    pbKpi('Valor em estoque', pbDinheiro(todos.reduce((t, l) => t + l.valor, 0)), 'saldo de todos os armazéns × valor do cadastro · por filial e armazém', '', 'pbValorEstoque()', 1),
+    pbKpi('Zerados em alguma filial', pbNum(soZer), 'itens diferentes sem saldo em nenhum armazém de pelo menos uma filial', soZer ? 'alerta' : '', "pbItensSituacao('zerado')", 2),
+    pbKpi('Só abaixo do mínimo', pbNum(soAb), 'itens diferentes com saldo, mas abaixo do mínimo (e não zerados em outra filial)', soAb ? 'aviso' : '', "pbItensSituacao('abaixo')", 3)].join('');
   // Célula: saldo somado de todos os armazéns da filial; a cor compara com o mínimo do armazém principal
   const cel = (x) => {
     if (!x) return '<td class="num" style="color:var(--text-3)" title="Item não cadastrado nesta filial — não entra na conta">—</td>';
@@ -6798,6 +6798,50 @@ function pbItensTabela(fsArg) {
     </tbody></table></div>
     ${linhas.length > PBI.limite ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="PBI.limite+=200;pbItensTabela()">Mostrar mais (${pbNum(linhas.length - PBI.limite)} restantes)</button></div>` : ''}
     <div style="font-size:11px;color:var(--text-3);margin-top:8px">Número da filial = saldo somado de todos os armazéns dela, comparado com o mínimo do armazém principal (vermelho: zerado · amarelo: abaixo do mínimo) · <b>—</b> = item não cadastrado na filial (não entra na conta) · passe o mouse para ver o mínimo e onde está o saldo.</div>`;
+}
+function pbItensSituacao(sit) {
+  PBI.situacao = sit; PBI.limite = 100;
+  pbAbaItens(document.getElementById('pbAbaCorpo'));
+  document.getElementById('pbItensTabela')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// Quantos itens cada filial tem (obedece a busca e a categoria da tela)
+function pbItensPorFilial() {
+  const fs = PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
+  const todos = pbItensFiltrados(fs, true);
+  const linhas = fs.map(f => {
+    const xs = todos.map(l => l.pf[f.slug]).filter(Boolean);
+    const zer = xs.filter(x => x.situacao === 'zerado').length, ab = xs.filter(x => x.situacao === 'abaixo').length;
+    return { filial: f.nome, cadastrados: xs.length, com_saldo: xs.filter(x => x.saldo > 0).length, sem_saldo: xs.filter(x => x.saldo <= 0).length,
+      com_minimo: xs.filter(x => x.minimo > 0).length, zerados: zer, abaixo: ab, ok: xs.filter(x => x.minimo > 0 && x.situacao === 'ok').length,
+      so_nela: todos.filter(l => Object.keys(l.pf).length === 1 && l.pf[f.slug]).length };
+  });
+  const filtro = PBI.busca || PBI.categoria ? ` · com o filtro${PBI.categoria ? ` de categoria "${PBI.categoria}"` : ''}${PBI.busca ? ` e a busca "${PBI.busca}"` : ''}` : '';
+  pbGaveta('Itens por filial', `${pbTituloEscopo()}${escHtml(filtro)}`, [
+    { titulo: 'Itens de cada filial', colunas: [{ key: 'filial', label: 'Filial' }, { key: 'cadastrados', label: 'Cadastrados' }, { key: 'com_saldo', label: 'Com saldo' },
+      { key: 'sem_saldo', label: 'Sem saldo' }, { key: 'com_minimo', label: 'Com mínimo' }, { key: 'ok', label: 'Ok' },
+      { key: 'abaixo', label: 'Só abaixo' }, { key: 'zerados', label: 'Zerados' }, { key: 'so_nela', label: 'Só nesta filial' }], linhas },
+    { html: `<div style="font-size:11px;color:var(--text-3)">Aqui cada filial conta os seus itens, então a soma das filiais pode passar de ${pbNum(todos.length)}: o mesmo item cadastrado em várias filiais aparece em cada uma. "Ok" = com mínimo e saldo no mínimo ou acima · "Só nesta filial" = item que nenhuma outra filial tem. "Zerados" e "Só abaixo" usam o saldo de todos os armazéns da filial e o mínimo do armazém principal.</div>` },
+  ]);
+}
+// Valor parado em estoque: por filial e por armazém de cada filial (estoque inteiro, sem a busca/categoria)
+function pbValorEstoque() {
+  const slugs = PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial).map(f => f.slug);
+  const arms = (PB.itens.armazens || []).filter(a => slugs.includes(a.slug));
+  const total = arms.reduce((t, a) => t + a.valor, 0);
+  const pct = (v) => total ? v / total * 100 : null;
+  const porFilial = slugs.map(sl => {
+    const as = arms.filter(a => a.slug === sl);
+    const v = as.reduce((t, a) => t + a.valor, 0);
+    return { filial: as[0]?.filial || PB.itens.filiais.find(f => f.slug === sl)?.nome, armazens: as.length, pecas: as.reduce((t, a) => t + a.pecas, 0), valor: v, pct: pct(v) };
+  }).sort((a, b) => b.valor - a.valor);
+  const porArm = arms.map(a => ({ ...a, tipo: a.principal ? 'Principal' : '', pct: pct(a.valor) })).sort((a, b) => a.filial.localeCompare(b.filial, 'pt-BR') || b.valor - a.valor);
+  const cols = (primeira) => [...primeira, { key: 'pecas', label: 'Peças' }, { key: 'valor', label: 'Valor', tipo: 'din' }, { key: 'pct', label: '% do total', tipo: 'pct', num: true }];
+  const aviso = PBI.busca || PBI.categoria ? '<div style="font-size:11px;color:var(--text-3)">Mostra o estoque inteiro — a busca e a categoria da tela não se aplicam aqui.</div>' : '';
+  pbGaveta('Valor em estoque', `${pbTituloEscopo()} · total ${pbDinheiro(total)}`, [
+    ...(aviso ? [{ html: aviso }] : []),
+    { titulo: 'Por filial', colunas: cols([{ key: 'filial', label: 'Filial' }, { key: 'armazens', label: 'Armazéns' }]), linhas: porFilial },
+    { titulo: 'Por armazém', colunas: cols([{ key: 'filial', label: 'Filial' }, { key: 'armazem', label: 'Armazém' }, { key: 'tipo', label: '' }, { key: 'itens', label: 'Itens com saldo' }]), linhas: porArm },
+  ]);
 }
 function pbItensExcel() {
   const fs = PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
