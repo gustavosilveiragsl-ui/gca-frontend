@@ -6357,7 +6357,7 @@ const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
 
 // O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
 async function pbRecarregar(silencioso) {
-  PB.fin = null; PB.pessoas = null; PB.inv = null; PB.log = null;
+  PB.fin = null; PB.pessoas = null; PB.inv = null; PB.log = null; PB.itens = null;   // ↻ refaz tudo, inclusive Itens e estoque
   const corpo = document.getElementById('pbCorpo');
   if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
   const [res] = await Promise.all([api(`/painel-brasil/resumo?${pbQuery()}`), pbGarantirChart()]);
