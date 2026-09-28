@@ -4442,7 +4442,7 @@ window.addEventListener('pageshow', function(e) {
               <div id="nsItemSug" class="autocomplete-list hidden"></div>
               <input type="hidden" id="nsItemId">
             </div>
-            <div><label class="form-label" style="margin-bottom:4px">Armazém onde o serial está</label>
+            <div><label id="nsArmazemLabel" class="form-label" style="margin-bottom:4px">Armazém onde o serial está</label>
               <select id="nsArmazem" class="form-input" onchange="atualizarConsistenciaNS()"></select>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -4451,7 +4451,15 @@ window.addEventListener('pageshow', function(e) {
               <select id="nsStatus" class="form-input" onchange="atualizarConsistenciaNS()">
                 <option value="ESTOQUE">📦 Estoque</option>
                 <option value="AGUARDANDO_LAUDO">🔬 Aguardando Laudo</option>
+                <option value="COM_COLAB">👤 Com colaborador</option>
               </select>
+            </div>
+            <div id="nsColabBox" class="hidden" style="position:relative">
+              <label class="form-label" style="margin-bottom:4px">Colaborador que está com a peça *</label>
+              <input id="nsColabBusca" class="form-input" placeholder="Buscar colaborador por nome ou matrícula..." oninput="filtrarColabNS(this.value)" onblur="setTimeout(()=>document.getElementById('nsColabSug').classList.add('hidden'),200)" autocomplete="off">
+              <div id="nsColabSug" class="autocomplete-list hidden"></div>
+              <input type="hidden" id="nsColabId">
+              <div style="font-size:11px;color:var(--text-3);margin-top:4px">Para peça que já está em uso com o colaborador: o serial já nasce com ele. Não mexe no saldo do armazém e não gera ficha de EPI nem assinatura.</div>
             </div>
             <div id="nsMsgConsistencia" style="font-size:11px;min-height:16px"></div>
             <div style="display:flex;gap:8px">
@@ -19495,9 +19503,27 @@ function abrirFormNovoSerial(_ev, itemId, nomeItem, armazemId) {
 }
 function fecharFormNovoSerial() {
   document.getElementById('formNovoSerial').classList.add('hidden');
-  ['nsItemBusca','nsItemId','nsSerial','nsRastreio'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['nsItemBusca','nsItemId','nsSerial','nsRastreio','nsColabBusca','nsColabId'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('nsStatus').value = 'ESTOQUE';
+  document.getElementById('nsColabBox')?.classList.add('hidden');
   document.getElementById('nsMsgConsistencia').textContent='';
+}
+
+// Serial que já nasce com o colaborador (peça que já estava em uso)
+function filtrarColabNS(q) {
+  document.getElementById('nsColabId').value = '';
+  const s = (q || '').trim().toLowerCase();
+  if (s.length < 2) { document.getElementById('nsColabSug').classList.add('hidden'); return; }
+  const lista = (_colaboradores || []).filter(c => (c.status || 'ativo') === 'ativo'
+    && ((c.nome || '').toLowerCase().includes(s) || (c.matricula || '').toLowerCase().includes(s))).slice(0, 10);
+  mostrarAutocomplete('nsColabSug', 'nsColabBusca', lista, 'selecionarColabNS');
+}
+function selecionarColabNS(id) {
+  const c = (_colaboradores || []).find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('nsColabId').value = c.id;
+  document.getElementById('nsColabBusca').value = c.nome;
+  document.getElementById('nsColabSug').classList.add('hidden');
 }
 
 function filtrarItensNS(q) {
@@ -19521,6 +19547,10 @@ function atualizarConsistenciaNS() {
   const status = document.getElementById('nsStatus').value;
   const msg = document.getElementById('nsMsgConsistencia');
   msg.textContent = '';
+  document.getElementById('nsColabBox')?.classList.toggle('hidden', status !== 'COM_COLAB');
+  const lblArm = document.getElementById('nsArmazemLabel');
+  if (lblArm) lblArm.textContent = status === 'COM_COLAB' ? 'Armazém responsável pela peça' : 'Armazém onde o serial está';
+  if (status === 'COM_COLAB' && !(_colaboradores || []).length) carregarColaboradoresAtendimento();
   if (!id) return;
 
   // Checagem de consistência (saldo em estoque x serials já cadastrados) só se aplica ao status Estoque
@@ -19599,9 +19629,13 @@ async function salvarNovoSerial() {
     return;
   }
 
+  const colaboradorId = status === 'COM_COLAB' ? document.getElementById('nsColabId').value : '';
+  if (status === 'COM_COLAB' && !colaboradorId) { toast('Escolha o colaborador que está com a peça','warn'); document.getElementById('nsColabBusca')?.focus(); return; }
+  const nomeColab = colaboradorId ? document.getElementById('nsColabBusca').value : '';
+
   const armazemId = document.getElementById('nsArmazem')?.value || '';
-  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, rastreio, status_local:status, armazem_id: armazemId || undefined }) });
-  if (res?.ok) { toast('Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
+  const res = await api('/laudos/nr10/serial', { method:'POST', body: JSON.stringify({ item_id:itemId, item_nome:item?.descricao||'', serial, rastreio, status_local:status, armazem_id: armazemId || undefined, colaborador_id: colaboradorId || undefined }) });
+  if (res?.ok) { toast(nomeColab ? `Serial cadastrado com ${nomeColab}!` : 'Serial cadastrado!','success'); fecharFormNovoSerial(); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
 }
 
