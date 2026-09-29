@@ -10701,6 +10701,7 @@ function renderAssinaturas(lista) {
     const acoes = a.statusCalc === 'ASSINADO' ? `
       <div style="display:flex;gap:6px">
         ${a.pdfUrl ? `<button class="row-action" onclick="verPdfAtendimento('${a.id}')">📄 Ver PDF</button>` : `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" onclick="regerarPdfAtendimento('${a.id}',this)">🔄 Gerar Comprovante</button>`}
+        ${temPermissao('reabrir_assinatura') ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" title="Anula esta assinatura e gera um link novo para assinar de novo" onclick="abrirReabrirAssinatura('${a.id}')">↩️ Reabrir</button>` : ''}
         <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="abrirModalCancelar('${a.id}',this.dataset.nome,'${a.data}',${qtdItens},true)" data-nome="${escHtml((a.nomeColaborador||'').replace(/"/g,'&quot;'))}">Cancelar</button>
       </div>` : a.statusCalc === 'EXPIRADO' ? `
       <div style="display:flex;gap:6px">
@@ -10725,7 +10726,7 @@ function renderAssinaturas(lista) {
     }">
       <td class="td-main">${a.destinatarioTipo === 'VIATURA'
         ? `<span style="font-family:var(--font-mono);font-weight:700">🚚 ${escHtml(a.placa || '—')}</span><div style="font-size:10px;color:var(--text-3);margin-top:2px">Retirado por ${escHtml(a.retiradoPorNome || a.nomeColaborador || '—')}</div>`
-        : escHtml(a.nomeColaborador||'—')}${a.necessitaLogistica ? `<div style="font-size:10px;font-weight:500;color:var(--accent-text);margin-top:2px">🚚 Logística · ${escHtml(a.destinoEntrega||'—')}</div>` : ''}</td>
+        : escHtml(a.nomeColaborador||'—')}${a.necessitaLogistica ? `<div style="font-size:10px;font-weight:500;color:var(--accent-text);margin-top:2px">🚚 Logística · ${escHtml(a.destinoEntrega||'—')}</div>` : ''}${a.reabertura ? `<div style="font-size:10px;font-weight:500;color:#f59e0b;margin-top:2px" title="Motivo: ${escHtml(a.reabertura.motivo||'')}">↩️ Assinatura reaberta${a.reabertura.vezes > 1 ? ` (${a.reabertura.vezes}x)` : ''} em ${escHtml(formatarData(String(a.reabertura.em||'').slice(0,10)))} por ${escHtml(a.reabertura.por||'—')}</div>` : ''}</td>
       <td style="font-size:11px;color:var(--text-2)">${setor}</td>
       <td>${formatarData(a.data)}</td>
       <td>${qtdItens} ${qtdItens===1?'item':'itens'}</td>
@@ -10800,6 +10801,8 @@ function formatarTempoRestante(data) {
 // dela; depois da coleta o backend bloqueia).
 function assBotaoLogistica(a) {
   if (!temPermissao('logistica_gerenciar_viagens')) return '';
+  // Assinatura reaberta: o material já foi entregue, só falta assinar de novo
+  if (a.reabertura && !a.necessitaLogistica) return '';
   return a.necessitaLogistica
     ? `<button class="row-action" onclick="assTirarLogistica('${escJs(a.id)}')">🚫 Tirar da logística</button>`
     : `<button class="row-action" onclick="assAbrirEnviarLogistica('${escJs(a.id)}')">🚚 Enviar p/ logística</button>`;
@@ -10849,7 +10852,7 @@ async function assTirarLogistica(id) {
 async function regerarLink(id) {
   const atend = _assinaturas.find(a => a.id === id);
   if (!atend) return;
-  const conf = confirm(`${atend.token ? 'Regerar' : 'Gerar'} link para ${atend.nomeColaborador}?\n\nUm novo link será gerado com prazo de 10 dias.`);
+  const conf = confirm(`${atend.token ? 'Regerar' : 'Gerar'} link para ${atend.nomeColaborador}?\n\nUm novo link será gerado (o anterior deixa de valer).`);
   if (!conf) return;
   try {
     const data = await api(`/atendimentos/${id}/regerar-token`, { method: 'POST' });
@@ -10897,6 +10900,60 @@ async function reenviarLink(id, token) {
   const qrDiv = document.getElementById('finalizadoQR');
   gcaMostrarQr(qrDiv, link, 160);
   document.getElementById('modalFinalizado').classList.remove('hidden');
+}
+
+// ── Reabrir assinatura (colaborador assinou errado) ──
+// Anula a assinatura (fica guardada no histórico com o motivo) e gera um link novo.
+function abrirReabrirAssinatura(id) {
+  const atend = (_assinaturas || []).find(a => a.id === id);
+  if (!atend) return;
+  const nome = atend.destinatarioTipo === 'VIATURA' ? (atend.retiradoPorNome || atend.nomeColaborador || '—') : (atend.nomeColaborador || '—');
+  document.getElementById('modalReabrirAss')?.remove();
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id = 'modalReabrirAss';
+  overlay.innerHTML = `
+    <div class="modal-box" style="max-width:520px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">↩️ Reabrir assinatura</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(nome)}${atend.placa ? ` · 🚚 ${escHtml(atend.placa)}` : ''} · atendimento de ${escHtml(formatarData(atend.data))}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+          A assinatura atual é <strong>anulada</strong> e um <strong>link novo</strong> é gerado para ${escHtml(nome)} assinar de novo.
+          A assinatura antiga e o comprovante ficam guardados no histórico, com o motivo.<br>
+          Material, estoque e logística <strong>não mudam</strong>. Enquanto não assinar de novo, ${escHtml(nome)} fica com assinatura pendente e <strong>não recebe outro atendimento</strong>.
+        </div>
+        <div><label class="form-label">Motivo *</label>
+          <textarea id="reabMotivo" class="form-input" rows="3" maxlength="500" placeholder="Ex.: assinatura ilegível, assinou no lugar errado" style="resize:vertical"></textarea></div>
+        <div id="reabErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Voltar</button>
+        <button id="reabBtn" class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="confirmarReabrirAssinatura('${escJs(id)}')">↩️ Reabrir e gerar link</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('reabMotivo')?.focus(), 50);
+}
+
+async function confirmarReabrirAssinatura(id) {
+  const motivo = (document.getElementById('reabMotivo')?.value || '').trim();
+  const erro = document.getElementById('reabErro');
+  if (motivo.length < 5) { erro.textContent = 'Explique o motivo (pelo menos 5 letras).'; document.getElementById('reabMotivo')?.focus(); return; }
+  const btn = document.getElementById('reabBtn');
+  btn.disabled = true; btn.textContent = '⏳ Reabrindo...';
+  const res = await api(`/atendimentos/${encodeURIComponent(id)}/reabrir-assinatura`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  if (!res?.ok) {
+    erro.textContent = res?.erro || 'Erro ao reabrir a assinatura';
+    btn.disabled = false; btn.textContent = '↩️ Reabrir e gerar link';
+    return;
+  }
+  document.getElementById('modalReabrirAss')?.remove();
+  toast('Assinatura reaberta — envie o link novo para assinar de novo.', 'success');
+  await carregarAssinaturas();
+  reenviarLink(id, res.token);
 }
 
 // ── Ver itens ──
@@ -16181,7 +16238,7 @@ async function carregarUsuariosView() {
 // abaixo de gestor, só dá as permissões que ele tem, não troca e-mail/login de outra pessoa e
 // não mexe no próprio acesso.
 const USR_ROLES_ABAIXO = ['almoxarife', 'supervisor', 'visualizador', 'seguranca'];
-const USR_PERMS_ADMIN = ['gerenciar_usuarios', 'cancelar_assinado', 'limpar_descartes', 'desbloqueio'];
+const USR_PERMS_ADMIN = ['gerenciar_usuarios', 'cancelar_assinado', 'limpar_descartes', 'desbloqueio', 'reabrir_assinatura'];
 const usrSouAdmin = () => GCA.usuario?.role === 'admin';
 function usrPodeGerenciar(u) {
   if (usrSouAdmin()) return true;
@@ -16440,7 +16497,8 @@ const PERMISSOES_SCHEMA = {
   }},
   assinaturas: { label:'Assinaturas', icon:'✍️', itens:{
     ver_assinaturas:'Ver assinaturas', reenviar_link:'Reenviar link',
-    cancelar_assinado:'Cancelar atendimento assinado'
+    cancelar_assinado:'Cancelar atendimento assinado',
+    reabrir_assinatura:'Reabrir atendimento assinado (assinar de novo)'
   }},
   solicitacoes: { label:'Solicitações', icon:'📋', itens:{
     ver_solicitacoes:'Ver solicitações', atender_solicitacao:'Atender solicitação',
