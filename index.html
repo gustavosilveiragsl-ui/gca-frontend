@@ -4406,13 +4406,13 @@ window.addEventListener('pageshow', function(e) {
             <div style="font-size:12px;color:var(--text-3)">Controle por item + número de série, com vencimento e status</div>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="abrirFormNovoSerial()">+ Novo Serial</button>
+            <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" data-perm-btn="gerenciar_seriais" onclick="abrirFormNovoSerial()">+ Novo Serial</button>
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()">📍 Localizador NR10</button>
-            <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
+            <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" data-perm-btn="gerenciar_seriais" onclick="abrirDevolucaoNR10()">📮 Devolver ao Estoque</button>
             <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" data-perm-btn="limpar_descartes" onclick="limparDescartes()">🗑️ Limpar Descartes</button>
             <button class="btn btn-ghost" onclick="abrirValoresLaudo()">💲 Valores de Laudo</button>
             <button class="btn btn-ghost" style="color:#16a34a;border-color:#16a34a" onclick="laudosExportarExcel()" title="Exporta o que está na tela, com os filtros aplicados">📊 Exportar Excel</button>
-            <button class="btn btn-ghost" onclick="toggleConfigNR10()">⚙️ Configurações</button>
+            <button class="btn btn-ghost" data-perm-btn="inserir_laudo|ver_laudos_viatura" onclick="toggleConfigNR10()">⚙️ Configurações</button>
           </div>
         </div>
 
@@ -16493,17 +16493,17 @@ function limparFormUsuario() {
 const PERMISSOES_SCHEMA = {
   atendimento: { label:'Atendimento', icon:'🤝', itens:{
     iniciar_atendimento:'Iniciar atendimento', mobilizar_colaborador:'Mobilizar colaborador',
-    consulta_dia:'Consulta do dia', cancelar_atendimento:'Cancelar atendimento'
+    cancelar_atendimento:'Cancelar atendimento'
   }},
   assinaturas: { label:'Assinaturas', icon:'✍️', itens:{
-    ver_assinaturas:'Ver assinaturas', reenviar_link:'Reenviar link',
+    ver_assinaturas:'Ver assinaturas',
     cancelar_assinado:'Cancelar atendimento assinado',
     reabrir_assinatura:'Reabrir atendimento assinado (assinar de novo)'
   }},
   solicitacoes: { label:'Solicitações', icon:'📋', itens:{
-    ver_solicitacoes:'Ver solicitações', atender_solicitacao:'Atender solicitação',
-    editar_solicitacao:'Editar solicitação', cancelar_solicitacao:'Cancelar solicitação',
-    alterar_status_sol:'Alterar status'
+    ver_solicitacoes:'Ver solicitações',
+    editar_solicitacao:'Editar solicitação',
+    alterar_status_sol:'Alterar status (inclui cancelar)'
   }},
   estoque: { label:'Estoque', icon:'📦', itens:{
     ver_estoque:'Consulta de estoque', entrada_material:'Registrar entrada',
@@ -16527,13 +16527,13 @@ const PERMISSOES_SCHEMA = {
     cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
   } },
   enel: { label:'Concessionária', icon:'⚡', itens:{
-    ver_enel:'Ver módulo Concessionária', marcar_instalado:'Marcar como instalado',
+    ver_enel:'Ver módulo Concessionária',
     desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento Concessionária'
   }},
   gestao: { label:'Gestão', icon:'📊', itens:{
     ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
     ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
-    ver_indicadores:'Ver indicadores', relatorios:'Relatórios',
+    ver_indicadores:'Ver indicadores',
     painel_brasil:'Painel Brasil (todas as filiais da pessoa, lado a lado)'
   }},
   cadastros: { label:'Cadastros', icon:'🗂️', itens:{
@@ -17052,16 +17052,16 @@ function temPermissao(perm) {
 const PERFIS_PERMISSOES = {
   admin: null, // admin tem tudo
   almoxarife: {
-    iniciar_atendimento:true, mobilizar_colaborador:true, consulta_dia:true,
-    ver_assinaturas:true, reenviar_link:true,
-    ver_solicitacoes:true, atender_solicitacao:true,
+    iniciar_atendimento:true, mobilizar_colaborador:true,
+    ver_assinaturas:true,
+    ver_solicitacoes:true,
     ver_estoque:true, entrada_material:true, saida_material:true, transferencia:true, ver_movimentacoes:true,
     gerenciar_usuarios_solicitacao:true, ver_links_externos:true,
   },
   gestor: {
-    iniciar_atendimento:true, mobilizar_colaborador:true, consulta_dia:true,
-    ver_assinaturas:true, reenviar_link:true,
-    ver_solicitacoes:true, atender_solicitacao:true, editar_solicitacao:true, cancelar_solicitacao:true, alterar_status_sol:true,
+    iniciar_atendimento:true, mobilizar_colaborador:true,
+    ver_assinaturas:true,
+    ver_solicitacoes:true, editar_solicitacao:true, alterar_status_sol:true,
     ver_estoque:true, entrada_material:true, saida_material:true, transferencia:true, ver_movimentacoes:true,
     consulta_itens:true, consulta_colaboradores:true, consulta_dotacao:true,
     cadastrar_itens:true, cadastrar_colaboradores:true, cadastrar_armazens:true, cadastrar_dotacao:true,
@@ -17069,12 +17069,11 @@ const PERFIS_PERMISSOES = {
     ficha_epi:true, ver_laudos:true, ver_laudos_viatura:true, ver_descarte:true, ver_indicadores:true,
   },
   supervisor: {
-    ver_assinaturas:true, ver_solicitacoes:true, atender_solicitacao:true,
-    editar_solicitacao:true, cancelar_solicitacao:true, alterar_status_sol:true,
+    ver_assinaturas:true, ver_solicitacoes:true,
+    editar_solicitacao:true, alterar_status_sol:true,
     ver_estoque:true, ver_movimentacoes:true,
   },
-  visualizador: {
-    consulta_dia:true, ver_assinaturas:true, ver_solicitacoes:true,
+  visualizador: { ver_assinaturas:true, ver_solicitacoes:true,
     ver_estoque:true, ver_movimentacoes:true,
   }
 };
@@ -19823,7 +19822,7 @@ function laudosRender_() {
               <td style="padding:8px;text-align:center;color:var(--text-3)">—</td>
               <td style="padding:8px;text-align:center"><span style="color:#a855f7;font-size:10px;font-weight:700">⏳ Pendente</span></td>
               <td style="padding:8px;text-align:center">
-                <button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${escJs(x.itemId)}',this.dataset.nome,'${escJs(x.armazemId||'')}')" data-nome="${escHtml((x.itemNome||'').replace(/"/g,'&quot;'))}">+ Cadastrar Serial</button>
+                ${temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#a855f7" onclick="abrirFormNovoSerial(null,'${escJs(x.itemId)}',this.dataset.nome,'${escJs(x.armazemId||'')}')" data-nome="${escHtml((x.itemNome||'').replace(/"/g,'&quot;'))}">+ Cadastrar Serial</button>` : ''}
               </td>
             </tr>`;
           }
