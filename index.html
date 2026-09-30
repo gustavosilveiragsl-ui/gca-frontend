@@ -924,7 +924,7 @@ window.addEventListener('pageshow', function(e) {
         <div class="nav-group-items">
           <button class="nav-item" data-view="consulta-itens" data-perm="consulta_itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
           <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
-          <button class="nav-item so-viatura" style="display:none" data-view="consulta-viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon">🚙</span> Consulta de Viaturas</button>
+          <button class="nav-item so-viatura" style="display:none" data-view="consulta-viaturas" data-perm="consulta_viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon">🚙</span> Consulta de Viaturas</button>
           <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
         </div>
       </div>
@@ -4326,7 +4326,7 @@ window.addEventListener('pageshow', function(e) {
             <button class="btn btn-ghost" onclick="carregarFrota()">↻ Recarregar</button>
             <button class="btn btn-ghost" onclick="abrirConferencias()">🔍 Conferências</button>
             <button class="btn btn-ghost" onclick="abrirCargaPadrao()">📋 Carga padrão</button>
-            <button class="btn btn-primary" onclick="abrirFormFrota()">+ Nova viatura</button>
+            <button class="btn btn-primary" data-perm-btn="cadastrar_viatura" onclick="abrirFormFrota()">+ Nova viatura</button>
           </div>
         </div>
         <input class="search-box" id="vtrBusca" placeholder="Buscar por placa, modelo ou base..." oninput="renderFrota()" style="margin-bottom:12px;width:100%">
@@ -16524,6 +16524,7 @@ const PERMISSOES_SCHEMA = {
     limpar_descartes:'Excluir seriais de descarte'
   }},
   viaturas: { label:'Viaturas', icon:'🚙', itens:{
+    consulta_viaturas:'Consulta de viaturas (frota, carga e conferências)',
     cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
   } },
   enel: { label:'Concessionária', icon:'⚡', itens:{
@@ -25782,8 +25783,8 @@ function renderFrota() {
     <td style="display:flex;gap:4px;justify-content:flex-end">
       <button class="row-action" onclick="abrirCargaViatura('${escJs(v.id)}')">📦 Carga</button>
       <button class="row-action" onclick="abrirQrViatura('${escJs(v.placa)}')">📱 QR</button>
-      <button class="row-action" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>
-      <button class="row-action" style="color:var(--red)" onclick="excluirFrota('${escJs(v.id)}','${escJs(v.placa)}')">✕</button>
+      ${temPermissao('cadastrar_viatura') ? `<button class="row-action" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>
+      <button class="row-action" style="color:var(--red)" onclick="excluirFrota('${escJs(v.id)}','${escJs(v.placa)}')">✕</button>` : ''}
     </td>
   </tr>`).join('');
 }
@@ -25876,7 +25877,7 @@ async function abrirCargaPadrao() {
         <button class="modal-close" onclick="document.getElementById('modalCargaPadrao').remove()">×</button>
       </div>
       <div class="modal-body">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+        <div id="cpForm" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
           <div class="form-group" style="margin:0;flex:1;min-width:150px"><label class="form-label">Tipo de viatura *</label>
             <input id="cpTipo" class="form-input" list="cpTiposLista" placeholder="Ex.: Cesto" style="text-transform:uppercase">
             <datalist id="cpTiposLista">${[...new Set((_frota || []).map(v => (v.tipo || '').trim()).filter(Boolean))].map(t => `<option value="${escHtml(t)}">`).join('')}</datalist>
@@ -25895,6 +25896,7 @@ async function abrirCargaPadrao() {
       </div>
     </div>`;
   document.body.appendChild(modal);
+  if (!temPermissao('cadastrar_viatura')) document.getElementById('cpForm')?.remove();
   cpRender();
 }
 
@@ -25964,7 +25966,7 @@ function cpRender() {
           <td style="padding:8px 14px;font-size:12px">${escHtml(l.item_descricao || l.item_id)}</td>
           <td style="padding:8px;text-align:center;font-size:13px;font-weight:700;color:var(--accent-text)">${l.quantidade}</td>
           <td style="padding:8px 14px;text-align:right">
-            <button class="row-action" style="color:var(--red)" onclick="cpExcluir('${escJs(l.id)}','${escJs(l.item_descricao || '')}')">✕</button>
+            ${temPermissao('cadastrar_viatura') ? `<button class="row-action" style="color:var(--red)" onclick="cpExcluir('${escJs(l.id)}','${escJs(l.item_descricao || '')}')">✕</button>` : ''}
           </td></tr>`).join('')}</tbody>
       </table>
     </div>`).join('');
@@ -26122,6 +26124,7 @@ function renderConferenciaItens(c, itens) {
           ${i.status !== 'DIVERGENTE' ? '<span style="font-size:10px;color:#22c55e">bateu</span>'
             : (i.resolucao
               ? `<span style="font-size:10px;color:var(--text-3)" title="${escHtml(i.resolucao_obs || '')}">${escHtml(i.resolucao)} · ${escHtml(i.resolvido_por || '')}</span>`
+              : !temPermissao('entregar_viatura') ? '<span style="font-size:10px;color:#f59e0b">pendente</span>'
               : `${dif < 0 ? `<button class="row-action" style="color:#f87171" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','BAIXA')">Dar baixa</button>` : ''}
                  ${dif > 0 ? `<button class="row-action" style="color:#22c55e" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','INCLUIR')">Incluir na carga</button>` : ''}
                  <button class="row-action" onclick="resolverConferencia('${escJs(c.id)}','${escJs(i.item_id)}','IGNORAR')">Ignorar</button>`)}
