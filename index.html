@@ -9012,10 +9012,131 @@ function abrirModalItem(id) {
         </div>
       </div>
       <div class="modal-footer">
+        ${temPermissao('cadastrar_itens') ? `<button class="btn btn-ghost" onclick="abrirFichaTecnica('${escJs(item.id)}')">✏️ Ficha técnica</button>` : ''}
+        ${temPermissao('consulta_itens') || temPermissao('cadastrar_itens') ? `<button class="btn btn-primary" onclick="emitirFichaTecnica('${escJs(item.id)}', this)">📄 Emitir ficha técnica</button>` : ''}
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
       </div>
     </div>`;
   document.body.appendChild(overlay);
+}
+
+// ── Ficha técnica do item (modelo do cliente) ──
+// O PDF exige o token, então não dá pra abrir por link direto: baixa como blob.
+async function emitirFichaTecnica(id, btn) {
+  const txt = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const r = await fetch(`${API}/itens/${encodeURIComponent(id)}/ficha-tecnica/pdf`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.erro || 'Erro ao gerar a ficha técnica', 'error'); return; }
+    window.open(URL.createObjectURL(await r.blob()), '_blank');
+  } catch {
+    toast('Erro ao gerar a ficha técnica', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = txt; }
+  }
+}
+
+const FT_CAMPOS = [
+  ['marcas', 'Opções de marca', 'Uma por linha', true],
+  ['cas', 'Opções de CA (quando aplicável)', 'Um por linha', true],
+  ['modelo', 'Modelo/referência', '', false],
+  ['material', 'Tipo de material/composição (quando aplicável)', '', false],
+  ['dimensao', 'Dimensão (quando aplicável)', '', false],
+  ['cor', 'Cor (quando aplicável)', '', false],
+  ['capacidade', 'Capacidade (quando aplicável)', '', false],
+  ['potencia_tensao', 'Potência/tensão (quando aplicável)', '', false],
+  ['outras', 'Outras características', '', true],
+];
+
+async function abrirFichaTecnica(id) {
+  const item = (_itens || []).find(x => x.id === id);
+  const res = await api(`/itens/${encodeURIComponent(id)}/ficha-tecnica`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao abrir a ficha técnica', 'error'); return; }
+  const f = res.ficha_tecnica || {};
+  const vazio = !res.ficha_tecnica;
+  const valor = (k) => {
+    const v = f[k] !== undefined ? f[k] : (vazio ? res.sugestao?.[k] : undefined);
+    return Array.isArray(v) ? v.join('\n') : (v || '');
+  };
+  document.getElementById('modalFichaTecnica')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay';
+  ov.id = 'modalFichaTecnica';
+  ov.innerHTML = `
+    <div class="modal-box" style="max-width:640px;width:100%">
+      <div class="modal-header">
+        <div style="min-width:0"><div class="modal-title">✏️ Ficha técnica</div>
+          <div style="font-size:11px;color:var(--text-3)">${escHtml(item?.descricao || '')} · Concessionária: ${escHtml(res.concessionaria || '—')}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;max-height:65vh;overflow-y:auto">
+        ${vazio ? '<div style="font-size:11px;color:var(--text-3)">Ficha ainda não preenchida: o CA e a descrição do cadastro já vieram como ponto de partida.</div>' : ''}
+        ${FT_CAMPOS.map(([k, rot, dica, longo]) => `<div><label class="form-label" for="ft_${k}">${rot}</label>
+          ${longo ? `<textarea id="ft_${k}" class="form-input" rows="${k === 'outras' ? 4 : 2}" placeholder="${dica}" style="resize:vertical">${escHtml(valor(k))}</textarea>`
+                  : `<input id="ft_${k}" class="form-input" value="${escHtml(valor(k))}">`}</div>`).join('')}
+        <div>
+          <label class="form-label">Fotos do item (até 4, JPG ou PNG)</label>
+          <div id="ftFotos" style="display:flex;gap:8px;flex-wrap:wrap">
+            ${(res.fotos || []).map(ft => `<div style="position:relative;width:110px;height:90px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden">
+              <img src="${escHtml(ft.url)}" alt="Foto da ficha" style="width:100%;height:100%;object-fit:cover">
+              <button class="modal-close" style="position:absolute;top:2px;right:2px;width:22px;height:22px;font-size:14px" title="Tirar esta foto da ficha"
+                onclick="ftRemoverFoto('${escJs(id)}','${escJs(ft.caminho)}')">×</button></div>`).join('')
+              || '<div style="font-size:11px;color:var(--text-3)">Sem fotos próprias — a ficha usa a imagem do cadastro do item.</div>'}
+          </div>
+          ${(res.fotos || []).length < 4 ? `<input type="file" id="ftArquivo" accept="image/jpeg,image/png" multiple style="margin-top:8px;font-size:12px" onchange="ftEnviarFotos('${escJs(id)}', this)">` : ''}
+        </div>
+        <div id="ftErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+        <button class="btn btn-ghost" onclick="emitirFichaTecnica('${escJs(id)}', this)">📄 Emitir</button>
+        <button class="btn btn-primary" id="ftBtnSalvar" onclick="ftSalvar('${escJs(id)}')">💾 Salvar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+
+async function ftSalvar(id, silencioso) {
+  const corpo = {};
+  FT_CAMPOS.forEach(([k, , , longo]) => {
+    const v = document.getElementById('ft_' + k)?.value || '';
+    corpo[k] = (k === 'marcas' || k === 'cas') ? v.split(/\r?\n/).map(x => x.trim()).filter(Boolean) : v;
+  });
+  const btn = document.getElementById('ftBtnSalvar');
+  if (btn) btn.disabled = true;
+  const res = await api(`/itens/${encodeURIComponent(id)}/ficha-tecnica`, { method: 'PUT', body: JSON.stringify(corpo) });
+  if (btn) btn.disabled = false;
+  if (!res?.ok) { document.getElementById('ftErro').textContent = res?.erro || 'Erro ao salvar a ficha técnica'; return false; }
+  const it = (_itens || []).find(x => x.id === id);
+  if (it) it.ficha_tecnica = res.ficha_tecnica;
+  if (!silencioso) toast('Ficha técnica salva!', 'success');
+  return true;
+}
+
+// Fotos: salva o que foi digitado antes, para não perder ao recarregar o formulário
+async function ftEnviarFotos(id, input) {
+  const arquivos = [...(input.files || [])];
+  if (!arquivos.length) return;
+  if (!(await ftSalvar(id, true))) return;
+  const fd = new FormData();
+  arquivos.forEach(a => fd.append('fotos', a));
+  document.getElementById('ftErro').textContent = '⏳ Enviando fotos...';
+  try {
+    const r = await fetch(`${API}/itens/${encodeURIComponent(id)}/ficha-tecnica/fotos`, { method: 'POST', headers: { Authorization: `Bearer ${GCA.token}` }, body: fd });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.ok) { document.getElementById('ftErro').textContent = j.erro || 'Erro ao enviar as fotos'; input.value = ''; return; }
+    toast('Fotos adicionadas à ficha', 'success');
+    abrirFichaTecnica(id);
+  } catch {
+    document.getElementById('ftErro').textContent = 'Erro ao enviar as fotos';
+  }
+}
+
+async function ftRemoverFoto(id, caminho) {
+  if (!(await ftSalvar(id, true))) return;
+  const res = await api(`/itens/${encodeURIComponent(id)}/ficha-tecnica/fotos?caminho=${encodeURIComponent(caminho)}`, { method: 'DELETE' });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao tirar a foto', 'error'); return; }
+  abrirFichaTecnica(id);
 }
 
 // Foto do item em tela cheia (clique fora ou Esc para fechar)
