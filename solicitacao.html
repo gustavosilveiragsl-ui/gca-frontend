@@ -1309,6 +1309,19 @@ function renderItens() {
 // ══════════════════════════════════════════
 // ENVIAR
 // ══════════════════════════════════════════
+// Chave do pedido: se a internet cair antes da resposta e a pessoa tocar em Enviar de novo,
+// o servidor reconhece a mesma chave e não grava o pedido duas vezes. A chave muda se o
+// pedido mudar (outro destino, armazém, itens ou observação) e zera depois de enviado.
+let _sessaoEnvio = null;
+function chaveDoPedido(payload) {
+  if (!_sessaoEnvio) _sessaoEnvio = 'sol_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  const conteudo = [payload.destinatario_tipo, payload.colaborador_destino_id, payload.viatura_id, payload.retirado_por_id,
+    payload.armazem_id, payload.prioridade, payload.obs_geral, payload.itens_json, (_imgs || []).length].join('|');
+  let h = 5381;
+  for (let i = 0; i < conteudo.length; i++) h = ((h * 33) ^ conteudo.charCodeAt(i)) >>> 0;
+  return _sessaoEnvio + ':' + h.toString(36);
+}
+
 async function enviar() {
   const colId   = document.getElementById('colId').value;
   const colNome = document.getElementById('colNomeD').textContent;
@@ -1352,15 +1365,22 @@ async function enviar() {
   if (editId) {
     res = await req('/solicitacao-auth/editar/'+editId, {method:'POST', body: { ...payload, colaborador_id_solicitante: _usr.colaborador_id }});
   } else {
-    res = await req('/solicitacao-auth/solicitacao', {method:'POST',body:payload});
+    res = await req('/solicitacao-auth/solicitacao', {method:'POST',body:{ ...payload, chave_envio: chaveDoPedido(payload) }});
   }
 
   btn.disabled=false; btn.textContent = editId ? '💾 Salvar Edição' : '📤 Enviar Solicitação';
-  if (!res.ok){ msg.textContent='❌ Erro: '+(res.erro||'?'); return; }
+  if (!res.ok){
+    msg.textContent = /conexão/i.test(res.erro || '')
+      ? '❌ Sem resposta do servidor (internet?). Toque em Enviar de novo — se o pedido já tiver chegado, ele não será duplicado.'
+      : '❌ Erro: '+(res.erro||'?');
+    return;
+  }
 
   window._editandoSolId = null;
+  _sessaoEnvio = null;
   btn.textContent = '📤 Enviar Solicitação';
-  document.getElementById('sucId').textContent = editId ? 'Solicitação editada com sucesso!' : 'ID: '+(res.id||'');
+  document.getElementById('sucId').textContent = editId ? 'Solicitação editada com sucesso!'
+    : res.repetido ? 'Este pedido já tinha chegado — ID: '+(res.id||'') : 'ID: '+(res.id||'');
   document.getElementById('pgForm').classList.add('hidden');
   document.getElementById('pgSucesso').classList.remove('hidden');
 }
@@ -1377,7 +1397,7 @@ function novaSol() {
   if (_destino === 'VIATURA') retiranteInicial(); else limparRet();
   document.getElementById('obsGeral').value='';
   if (_arm.length!==1) document.getElementById('armSel').value='';
-  _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null; _idsPermitidos=null;
+  _itens=[]; _imgs=[]; _prio='Normal'; window._editandoSolId=null; _idsPermitidos=null; _sessaoEnvio=null;
   setPrio('Normal'); renderItens(); renderImgs();
   document.getElementById('msgForm').textContent='';
   document.getElementById('btnEnviar').textContent='📤 Enviar Solicitação';

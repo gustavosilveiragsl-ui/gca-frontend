@@ -692,6 +692,16 @@ tbody tr:hover td{background:var(--bg-hover);}
   .ea-topo{position:static;}
   .ea-crono{font-size:24px;}
 }
+
+/* Controle de Materiais por equipe: caixas que abrem as linhas por trás do número */
+.ceq-caixa-clica { cursor:pointer; text-align:left; font:inherit; color:inherit; transition:border-color .15s, box-shadow .15s; }
+.ceq-caixa-clica:hover { border-color:var(--accent-text) !important; }
+.ceq-caixa-clica.ativa { border-color:var(--accent-text) !important; box-shadow:0 0 0 1px var(--accent-text); }
+.ceq-linhas { margin-top:8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); }
+.ceq-linhas table { width:100%; border-collapse:collapse; font-size:12px; }
+.ceq-linhas th { position:sticky; top:0; background:var(--bg-hover); text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-3); padding:6px 10px; }
+.ceq-linhas td { padding:6px 10px; border-top:1px solid var(--border); }
+.ceq-linhas .num { text-align:right; font-variant-numeric:tabular-nums; }
 </style>
 <script>
 // Remove todos os Service Workers registrados (causavam cache stale)
@@ -8536,6 +8546,10 @@ function copiarLink(tipo) {
 // ── Indicador global de carregamento — acompanha toda chamada feita via api() ──
 // (barra fina no topo da tela + contador usado pelo bloqueio de duplo clique abaixo)
 let _apiCallsAtivas = 0;
+// Chamadas em andamento: número de ordem -> grava (POST/PUT/PATCH/DELETE) ou só lê (GET).
+// A trava de duplo clique usa isto para esperar só o que foi disparado depois do clique.
+let _apiSeq = 0;
+const _apiEmAndamento = new Map();
 function _atualizarBarraCarregamento() {
   let bar = document.getElementById('_barraCarregamentoGlobal');
   if (!bar) {
@@ -8618,6 +8632,8 @@ async function gcaMostrarQr(alvo, link, tamanho = 160) {
 
 async function api(path, opts={}) {
   _apiCallsAtivas++; _atualizarBarraCarregamento();
+  const seq = ++_apiSeq;
+  _apiEmAndamento.set(seq, String(opts.method || 'GET').toUpperCase() !== 'GET');
   try {
     const res = await fetch(`${API}${path}`, { ...opts, cache: 'no-store', headers:{'Content-Type':'application/json','Authorization':`Bearer ${GCA.token}`,...(opts.headers||{})} });
     if (res.status === 401) { fazerLogout(); return null; }
@@ -8631,15 +8647,21 @@ async function api(path, opts={}) {
     toast('Erro de conexão. Verifique sua internet e tente novamente.', 'error');
     return { ok: false, erro: 'Erro de conexão: ' + err.message };
   } finally {
+    _apiEmAndamento.delete(seq);
     _apiCallsAtivas--; _atualizarBarraCarregamento();
   }
 }
 
 // ── Bloqueio global contra duplo clique em botões de ação ──
-// Desabilita qualquer botão assim que clicado e só libera de novo quando não há
-// nenhuma chamada api() em andamento (ou depois de um tempo máximo, por segurança),
-// evitando envios duplicados sem precisar de código individual em cada botão.
-// Para excluir um botão específico (ex: um que não deve travar), adicione data-no-guard="1".
+// Desabilita qualquer botão assim que clicado e só libera de novo quando terminam as
+// chamadas api() disparadas depois do clique, evitando envios duplicados sem precisar de
+// código individual em cada botão. Para excluir um botão, adicione data-no-guard="1".
+// - Gravação (salvar, finalizar, enviar): espera a resposta do servidor, por mais que demore.
+//   Antes o botão voltava aos 8 s mesmo sem resposta — em 30/09/2026 dois atendimentos ENEL
+//   foram gravados em dobro assim. O limite de 2 min só evita travar de vez se a conexão cair.
+// - Leitura (abrir, filtrar, atualizar): espera até 8 s, como antes.
+// - Chamadas que já estavam em andamento antes do clique (atualização automática de outra
+//   tela) não seguram o botão.
 document.addEventListener('click', function(ev) {
   const btn = ev.target.closest('button');
   if (!btn || btn.disabled || !btn.hasAttribute('onclick') || btn.dataset.noGuard === '1') return;
@@ -8649,9 +8671,15 @@ document.addEventListener('click', function(ev) {
   btn.style.opacity = '0.6';
   btn.style.cursor  = 'wait';
   const iniciou = Date.now();
+  const desde = _apiSeq;
   const liberar = () => {
     const decorrido = Date.now() - iniciou;
-    if (_apiCallsAtivas > 0 && decorrido < 8000) { setTimeout(liberar, 150); return; }
+    let grava = false, le = false;
+    for (const [seq, ehGravacao] of _apiEmAndamento) {
+      if (seq <= desde) continue;
+      if (ehGravacao) grava = true; else le = true;
+    }
+    if ((grava && decorrido < 120000) || (le && decorrido < 8000)) { setTimeout(liberar, 150); return; }
     btn.disabled = false;
     btn.style.opacity = opacidadeOriginal;
     btn.style.cursor  = cursorOriginal;
@@ -10723,6 +10751,7 @@ async function carregarAssinaturas(silencioso = false) {
   const hoje  = hojeBR(agora);
 
   _assinaturas = (data.data || []).map(a => ({ ...a, statusCalc: a.status === 'ASSINADO' ? 'ASSINADO' : 'PENDENTE', diasPendente: assDiasPendente(a) }));
+  _assinaturasUltimoFetch = Date.now();
 
   // KPIs — "há mais de 10 dias" é só um alerta para cobrar: o link continua valendo
   const pendentes = _assinaturas.filter(a => a.statusCalc === 'PENDENTE').length;
@@ -25764,6 +25793,7 @@ async function carregarControleMateriaisEquipe() {
   const de = document.getElementById('ceqDe')?.value || '', ate = document.getElementById('ceqAte')?.value || '';
   const qs = new URLSearchParams(); if (de) qs.set('de', de); if (ate) qs.set('ate', ate);
   const res = await api('/enel/controle-equipes' + (qs.toString() ? '?' + qs : ''));
+  _ceqLinhasCache.clear();
   _controleEquipes = res?.data||[];
   _controlePeriodo = res?.periodo || null;
   const aviso = document.getElementById('ceqAvisoPeriodo');
@@ -25812,9 +25842,16 @@ function filtrarControleEquipe() {
             const did = 'ceqd_' + (eq.nomeEquipe + '_' + it.materialId).replace(/\W/g, '_');
             const cols = podeDevolver ? 4 : 3;
             const pe = it.periodo;
-            const caixa = (rotulo, valor, cor) => `<div style="flex:1;min-width:110px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
-                <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">${rotulo}</div>
-                <div style="font-size:15px;font-weight:700;color:${cor}">${valor}</div></div>`;
+            // Entregue, Devolvido e Consumido abrem as linhas por trás do número (datas, TdCs)
+            const caixa = (rotulo, valor, cor, tipo, escopo) => {
+              const clica = !!tipo && Number(valor) > 0;
+              const tag = clica ? 'button' : 'div';
+              const extra = clica ? ` type="button" data-no-guard="1" data-tipo="${tipo}" title="Ver ${tipo === 'consumido' ? 'os TdCs' : 'as datas'}"
+                onclick="ceqVerLinhas('${escJs(eq.nomeEquipe)}','${escJs(it.materialId)}','${tipo}','${escopo}','${did}',this)"` : '';
+              return `<${tag} class="ceq-caixa${clica ? ' ceq-caixa-clica' : ''}"${extra} style="flex:1;min-width:110px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+                <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">${rotulo}${clica ? ' <span style="color:var(--accent-text)">▾</span>' : ''}</div>
+                <div style="font-size:15px;font-weight:700;color:${cor}">${valor}</div></${tag}>`;
+            };
             return `<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-size:12px;font-weight:600">
               <span class="ceq-mat" style="cursor:pointer;border-bottom:1px dashed var(--text-3)" title="Ver entregue, devolvido e consumido"
@@ -25827,18 +25864,20 @@ function filtrarControleEquipe() {
           <tr id="${did}" class="ceq-detalhe" style="display:none;border-bottom:1px solid var(--border);background:var(--bg-hover)">
             <td colspan="${cols}" style="padding:10px 12px">
               ${pe ? `<div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">No período ${escHtml(ceqTextoPeriodo())}</div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-                ${caixa('Entregue', pe.entregue||0, 'var(--text)')}
-                ${caixa('Devolvido', pe.devolvido||0, pe.devolvido ? '#f59e0b' : 'var(--text-3)')}
-                ${caixa('Consumido (OS)', pe.baixado||0, 'var(--text)')}
-              </div>
-              <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Desde o início</div>` : ''}
               <div style="display:flex;gap:8px;flex-wrap:wrap">
-                ${caixa('Entregue', it.entregue||0, 'var(--text)')}
-                ${caixa('Devolvido', it.devolvido||0, it.devolvido ? '#f59e0b' : 'var(--text-3)')}
-                ${caixa('Consumido (OS)', it.baixado||0, 'var(--text)')}
+                ${caixa('Entregue', pe.entregue||0, 'var(--text)', 'entregue', 'periodo')}
+                ${caixa('Devolvido', pe.devolvido||0, pe.devolvido ? '#f59e0b' : 'var(--text-3)', 'devolvido', 'periodo')}
+                ${caixa('Consumido (OS)', pe.baixado||0, 'var(--text)', 'consumido', 'periodo')}
+              </div>
+              <div id="${did}_periodo" class="ceq-linhas" hidden></div>
+              <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin:10px 0 6px">Desde o início</div>` : ''}
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${caixa('Entregue', it.entregue||0, 'var(--text)', 'entregue', 'total')}
+                ${caixa('Devolvido', it.devolvido||0, it.devolvido ? '#f59e0b' : 'var(--text-3)', 'devolvido', 'total')}
+                ${caixa('Consumido (OS)', it.baixado||0, 'var(--text)', 'consumido', 'total')}
                 ${caixa('Saldo atual', it.saldoReal||0, (it.saldoReal||0)===0 ? 'var(--red)' : '#22c55e')}
               </div>
+              <div id="${did}_total" class="ceq-linhas" hidden></div>
             </td>
           </tr>`;
           }).join('')}</tbody>
@@ -25847,6 +25886,68 @@ function filtrarControleEquipe() {
     </div>`;
   }).join('');
   if (sum) sum.textContent = `Total: ${lista.length} equipe(s)`;
+}
+
+// Linhas por trás das caixas do detalhe: Entregue (data, hora, quantidade), Devolvido (data,
+// quantidade, motivo) e Consumido (TdC, data, quantidade — somado por TdC). Nas caixas "No
+// período" vale o filtro de datas da tela. Busca uma vez por equipe+material.
+const _ceqLinhasCache = new Map();
+async function ceqVerLinhas(equipe, materialId, tipo, escopo, did, botao) {
+  const box = document.getElementById(`${did}_${escopo}`);
+  if (!box) return;
+  const grupo = botao?.parentElement;
+  const marcar = (b) => grupo?.querySelectorAll('.ceq-caixa-clica').forEach(x => x.classList.toggle('ativa', x === b));
+  if (!box.hidden && box.dataset.tipo === tipo) { box.hidden = true; box.dataset.tipo = ''; marcar(null); return; }
+  box.dataset.tipo = tipo; box.hidden = false; marcar(botao);
+
+  const chave = equipe + '|' + materialId;
+  let d = _ceqLinhasCache.get(chave);
+  if (!d) {
+    box.innerHTML = '<div style="padding:10px;text-align:center"><span class="spinner"></span></div>';
+    d = await api(`/enel/controle-equipes/detalhe?equipe=${encodeURIComponent(equipe)}&material_id=${encodeURIComponent(materialId)}`);
+    if (!d?.ok) { box.innerHTML = `<div style="padding:10px;font-size:12px;color:var(--red)">${escHtml(d?.erro || 'Não foi possível carregar.')}</div>`; return; }
+    _ceqLinhasCache.set(chave, d);
+  }
+  if (box.dataset.tipo !== tipo) return; // trocou de caixa enquanto carregava
+
+  const p = escopo === 'periodo' ? _controlePeriodo : null;
+  const noPeriodo = (x) => { if (!p) return true; const dd = String(x.data || '').slice(0, 10); return (!p.de || dd >= p.de) && (!p.ate || dd <= p.ate); };
+  const num = (v) => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  const hora = (h) => String(h || '').slice(0, 5);
+  const titulo = (txt) => `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;font-size:12px;font-weight:700">${txt}</div>`;
+  const tabela = (cab, linhas) => `<div style="max-height:280px;overflow:auto"><table><thead><tr>${cab}</tr></thead><tbody>${linhas}</tbody></table></div>`;
+  const vazio = '<div style="padding:10px;font-size:12px;color:var(--text-3)">Nada neste período.</div>';
+
+  if (tipo === 'consumido') {
+    // Uma linha por TdC (o mesmo TdC pode ter mais de um lançamento do material)
+    const porTdc = new Map();
+    (d.consumos || []).filter(noPeriodo).forEach(c => {
+      const k = c.tdc || '(sem TdC)';
+      const g = porTdc.get(k) || { tdc: k, data: c.data, hora: c.hora, quantidade: 0 };
+      g.quantidade += Number(c.quantidade || 0);
+      if (`${c.data} ${c.hora}` > `${g.data} ${g.hora}`) { g.data = c.data; g.hora = c.hora; }
+      porTdc.set(k, g);
+    });
+    const lista = [...porTdc.values()].sort((a, b) => `${b.data} ${b.hora}`.localeCompare(`${a.data} ${a.hora}`));
+    const total = lista.reduce((t, g) => t + g.quantidade, 0);
+    box.innerHTML = titulo(`<span>Consumido por TdC</span><span style="font-weight:400;color:var(--text-3)">${num(total)} em ${lista.length} TdC(s)</span>`)
+      + (lista.length ? tabela('<th>TdC</th><th>Data</th><th class="num">Quantidade</th>',
+          lista.map(g => `<tr><td style="font-family:var(--font-mono)">${escHtml(g.tdc)}</td><td>${formatarData(g.data)}</td><td class="num">${num(g.quantidade)}</td></tr>`).join('')) : vazio);
+    return;
+  }
+  if (tipo === 'devolvido') {
+    const lista = (d.devolucoes || []).filter(noPeriodo);
+    const total = lista.reduce((t, x) => t + Number(x.quantidade || 0), 0);
+    box.innerHTML = titulo(`<span>Devoluções</span><span style="font-weight:400;color:var(--text-3)">${num(total)} em ${lista.length} devolução(ões)</span>`)
+      + (lista.length ? tabela('<th>Data</th><th class="num">Quantidade</th><th>Motivo</th><th>Quem</th>',
+          lista.map(x => `<tr><td>${formatarData(x.data)} <span style="color:var(--text-3)">${hora(x.hora)}</span></td><td class="num">${num(x.quantidade)}</td><td>${escHtml(x.motivo || '—')}</td><td>${escHtml(x.usuario || '—')}</td></tr>`).join('')) : vazio);
+    return;
+  }
+  const lista = (d.entregas || []).filter(noPeriodo);
+  const total = lista.reduce((t, x) => t + Number(x.quantidade || 0), 0);
+  box.innerHTML = titulo(`<span>Entregas</span><span style="font-weight:400;color:var(--text-3)">${num(total)} em ${lista.length} entrega(s)</span>`)
+    + (lista.length ? tabela('<th>Data</th><th>Hora</th><th class="num">Quantidade</th><th>Atendente</th>',
+        lista.map(x => `<tr><td>${formatarData(x.data)}</td><td>${hora(x.hora) || '—'}</td><td class="num">${num(x.quantidade)}</td><td>${escHtml(x.usuario || '—')}</td></tr>`).join('')) : vazio);
 }
 
 // Devolução de material (sem serial) da equipe para o estoque — corrige entrega errada
@@ -27902,9 +28003,15 @@ const _recarregarSols = _debounce(() => {
   }
 }, 800);
 
+// Qualquer atendimento que muda (em qualquer filial) dispara isto em todas as telas abertas.
+// A tela de assinaturas busca a lista e já atualiza a guardada (antes buscava duas vezes).
+// Fora dela, a lista guardada só serve para o aviso de pendência nas solicitações e para a
+// conferência antes de um atendimento — que busca de novo quando a lista está velha. Então
+// só marca como velha, e busca já apenas com a tela de solicitações aberta.
 const _recarregarAss = _debounce(() => {
-  if (_viewAtiva('assinaturas')) carregarAssinaturas(true);
-  carregarAssinaturasSilencioso(true); // mudança real detectada — força busca fresca, ignora o cache
+  if (_viewAtiva('assinaturas')) { carregarAssinaturas(true); return; }
+  _assinaturasUltimoFetch = 0;
+  if (_viewAtiva('solicitacoes')) carregarAssinaturasSilencioso(true);
 }, 800);
 
 const _recarregarColabs = _debounce(() => {
