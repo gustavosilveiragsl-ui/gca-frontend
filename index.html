@@ -9070,7 +9070,13 @@ async function abrirFichaTecnica(id) {
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;max-height:65vh;overflow-y:auto">
+        ${(res.tamanhos || []).length > 1 ? `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+          <div style="font-size:12px;color:var(--text-2)">Este item tem <strong>${res.tamanhos.length} tamanhos</strong>: ${escHtml(res.tamanhos.join(', '))}</div>
+          <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:12px;color:var(--text-1);cursor:pointer">
+            <input type="checkbox" id="ftTodos" ${f.compartilhada === false ? '' : 'checked'}> Salvar a ficha (e as fotos) para todos os ${res.tamanhos.length} tamanhos</label>
+        </div>` : ''}
         ${vazio ? '<div style="font-size:11px;color:var(--text-3)">Ficha ainda não preenchida: o CA e a descrição do cadastro já vieram como ponto de partida.</div>' : ''}
+        ${res.herdada ? '<div style="font-size:11px;color:var(--text-3)">Esta ficha foi preenchida em outro tamanho do mesmo item e já vale para este.</div>' : ''}
         ${FT_CAMPOS.map(([k, rot, dica, longo]) => `<div><label class="form-label" for="ft_${k}">${rot}</label>
           ${longo ? `<textarea id="ft_${k}" class="form-input" rows="${k === 'outras' ? 4 : 2}" placeholder="${dica}" style="resize:vertical">${escHtml(valor(k))}</textarea>`
                   : `<input id="ft_${k}" class="form-input" value="${escHtml(valor(k))}">`}</div>`).join('')}
@@ -9102,6 +9108,8 @@ async function ftSalvar(id, silencioso) {
     const v = document.getElementById('ft_' + k)?.value || '';
     corpo[k] = (k === 'marcas' || k === 'cas') ? v.split(/\r?\n/).map(x => x.trim()).filter(Boolean) : v;
   });
+  const todos = document.getElementById('ftTodos');
+  if (todos) corpo.todos_tamanhos = todos.checked;
   const btn = document.getElementById('ftBtnSalvar');
   if (btn) btn.disabled = true;
   const res = await api(`/itens/${encodeURIComponent(id)}/ficha-tecnica`, { method: 'PUT', body: JSON.stringify(corpo) });
@@ -9109,7 +9117,7 @@ async function ftSalvar(id, silencioso) {
   if (!res?.ok) { document.getElementById('ftErro').textContent = res?.erro || 'Erro ao salvar a ficha técnica'; return false; }
   const it = (_itens || []).find(x => x.id === id);
   if (it) it.ficha_tecnica = res.ficha_tecnica;
-  if (!silencioso) toast('Ficha técnica salva!', 'success');
+  if (!silencioso) toast(res.aplicada_em > 1 ? `Ficha técnica salva para os ${res.aplicada_em} tamanhos!` : 'Ficha técnica salva!', 'success');
   return true;
 }
 
