@@ -11553,6 +11553,7 @@ function fecharModalSolicitacao() {
 async function alterarStatusSolicitacao(id) {
   const status = document.getElementById('solNovoStatus')?.value;
   if (!status) { toast('Selecione um status', 'warn'); return; }
+  if (status === 'CANCELADO') return cancelarSolicitacao(id); // pede o motivo, que o solicitante vê no portal
   const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status }) });
   if (res?.ok) {
     const s = _solicitacoes.find(x => x.id === id);
@@ -11643,7 +11644,7 @@ function renderItemSolicitacao(i) {
 }
 
 async function cancelarSolicitacao(id) {
-  const justificativa = prompt('Motivo do cancelamento (obrigatório):');
+  const justificativa = prompt('Motivo do cancelamento (obrigatório — o solicitante vai ver no portal):');
   if (justificativa === null) return; // usuário desistiu do prompt
   if (!justificativa.trim()) { toast('Informe o motivo do cancelamento', 'warn'); return; }
   const res = await api(`/solicitacoes/${id}/status`, { method:'POST', body: JSON.stringify({ status: 'CANCELADO', obs: justificativa.trim() }) });

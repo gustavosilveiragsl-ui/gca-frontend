@@ -1414,6 +1414,7 @@ async function carregarSols() {
       </div>
       <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">${s.destinatario_tipo === 'VIATURA' ? '🚚 Viatura ' + escHtml(s.placa || '') : '🪪 ' + escHtml(s.colaborador_nome||'—')}</div>
       <div style="font-size:11px;color:var(--text-3)">🏭 ${escHtml(s.nome_armazem||'—')} · 📦 ${itens.length} item(ns) · 🕐 ${fmtData(s.data_hora||s.criado_em)}</div>
+      ${s.status==='CANCELADO' && s.cancelamento?.motivo ? `<div style="font-size:11px;color:var(--red);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">❌ Motivo: ${escHtml(s.cancelamento.motivo)}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -1449,7 +1450,13 @@ function abrirDet(s) {
     {k:'FINALIZADO',i:'🏁',l:'Finalizado'},
   ];
   if (s.status==='CANCELADO') {
-    document.getElementById('detTL').innerHTML = `<div style="width:100%;padding:10px;background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);color:var(--red);font-weight:600;font-size:12px;text-align:center">❌ Solicitação Cancelada</div>`;
+    const c = s.cancelamento || {};
+    const quem = c.pelo_solicitante ? 'Cancelada por você' : (c.por ? `Cancelada por ${escHtml(c.por)}` : '');
+    document.getElementById('detTL').innerHTML = `<div style="width:100%;padding:10px 12px;background:var(--red-soft);border:1px solid rgba(248,113,113,.2);border-radius:var(--radius-sm);font-size:12px">
+      <div style="color:var(--red);font-weight:600;text-align:center">❌ Solicitação Cancelada</div>
+      ${c.motivo ? `<div id="detMotivoCanc" style="color:var(--text-1);margin-top:8px;line-height:1.4"><strong>Motivo:</strong> ${escHtml(c.motivo)}</div>` : '<div id="detMotivoCanc" style="color:var(--text-3);margin-top:8px;text-align:center">Motivo não informado</div>'}
+      ${quem || c.em ? `<div style="color:var(--text-3);font-size:11px;margin-top:4px">${quem}${quem && c.em ? ' · ' : ''}${c.em ? fmtData(c.em) : ''}</div>` : ''}
+    </div>`;
   } else {
     const idx = etapas.findIndex(e=>e.k===s.status);
     document.getElementById('detTL').innerHTML = etapas.map((e,i)=>{
