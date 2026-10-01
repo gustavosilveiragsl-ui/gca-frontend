@@ -3425,7 +3425,7 @@ window.addEventListener('pageshow', function(e) {
               <div class="ea-topo-eq" id="eaTopoResumo">0 itens</div>
             </div>
             <div style="margin-left:auto;display:flex;gap:8px">
-              <button class="btn btn-primary ea-btn-grande" onclick="enelFinalizarAtendimento()">✓ Finalizar</button>
+              <button class="btn btn-primary ea-btn-grande ea-btn-finalizar" data-no-guard="1" onclick="enelFinalizarAtendimento()">✓ Finalizar</button>
               <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelCancelarAtendimento()">✕ Cancelar</button>
             </div>
           </div>
@@ -3526,7 +3526,7 @@ window.addEventListener('pageshow', function(e) {
             <div class="ea-passo-corpo">
               <div class="ea-resumo" id="eaResumo"></div>
               <div id="msgAtendimentoEnel" style="font-size:12px;min-height:16px;color:var(--red);margin-bottom:10px"></div>
-              <button class="btn btn-primary ea-btn-grande" style="width:100%;justify-content:center" onclick="enelFinalizarAtendimento()">✓ Finalizar atendimento</button>
+              <button class="btn btn-primary ea-btn-grande ea-btn-finalizar" data-no-guard="1" style="width:100%;justify-content:center" onclick="enelFinalizarAtendimento()">✓ Finalizar atendimento</button>
             </div>
           </div>
         </div>
@@ -22535,7 +22535,7 @@ function enelMsg(txt, ok) { eaMsg(txt, ok === false ? 'erro' : ok === true ? 'ok
 function enelIniciarAtendimento() {
   if (!_enelMateriais.length) carregarMateriaisEnel();
   const agora = new Date();
-  window.__ENEL__.atendimento = { id: 'enel_' + Date.now(), inicio: agora.toISOString(), seg: 0 };
+  window.__ENEL__.atendimento = { id: 'enel_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), inicio: agora.toISOString(), seg: 0 };
   window.__ENEL__.itens = [];
   window.__ENEL__.equipe = null;
   document.getElementById('enelData').value = hojeBR(agora);
@@ -23013,7 +23013,33 @@ function eaRenderItens() {
 function enelRenderItens() { eaRenderItens(); }
 
 // ══ PASSO 3 — FINALIZAR ══
+// Trava do finalizar: um envio por vez, botões desligados e aviso na tela até a resposta.
+// O servidor pode levar mais de 10 s num atendimento com muitos medidores; em 30/09/2026 o
+// botão foi solto antes da resposta, clicado de novo e o atendimento saiu em dobro.
+function enelTravarFinalizar(travar) {
+  window.__ENEL__.finalizando = !!travar;
+  document.querySelectorAll('.ea-btn-finalizar').forEach(b => {
+    b.disabled = !!travar;
+    if (!b.dataset.textoOriginal) b.dataset.textoOriginal = b.textContent;
+    b.textContent = travar ? '⏳ Finalizando...' : b.dataset.textoOriginal;
+  });
+  // Mesma cobertura do atendimento normal: o pedido de justificativa do inventário congelado
+  // (apiMovimentacao) sabe escondê-la para a janela não abrir atrás
+  let overlay = document.getElementById('overlayProcessando');
+  if (travar && !overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'overlayProcessando';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;';
+    overlay.innerHTML = `<div class="spinner" style="width:48px;height:48px;border-width:4px;border-color:rgba(255,255,255,.2);border-top-color:#fff;"></div>
+      <div style="color:#fff;font-size:16px;font-weight:600;">Processando atendimento...</div>
+      <div style="color:rgba(255,255,255,.6);font-size:12px;">Aguarde, não feche a página</div>`;
+    document.body.appendChild(overlay);
+  }
+  if (overlay) overlay.style.display = travar ? 'flex' : 'none';
+}
+
 async function enelFinalizarAtendimento() {
+  if (window.__ENEL__.finalizando) return;
   if (!window.__ENEL__.atendimento) { eaMsg('Nenhum atendimento em andamento.', 'erro'); return; }
   const equipe = window.__ENEL__.equipe;
   if (!equipe?.id) { eaMsg('Selecione a equipe que vai receber.', 'erro'); document.getElementById('enelEquipeBusca')?.focus(); return; }
@@ -23034,11 +23060,18 @@ async function enelFinalizarAtendimento() {
     tempo_segundos: at.seg,
     itens: itens.map(it => ({ materialId: it.materialId, descricao: it.descricao, codigo: it.codigo,
       quantidade: it.quantidade, motivo: it.motivo, obs: it.obs, usaSerial: it.usaSerial, seriais: it.seriais })),
+    chave_envio: at.id,
   };
-  const res = await apiMovimentacao('/enel/atendimentos', corpo);
+  enelTravarFinalizar(true);
+  let res;
+  try {
+    res = await apiMovimentacao('/enel/atendimentos', corpo);
+  } finally {
+    enelTravarFinalizar(false);
+  }
   if (!res?.ok) { eaMsg(res?.erro || 'Erro ao finalizar o atendimento.', 'erro'); return; }
 
-  toast('Atendimento finalizado!', 'success');
+  toast(res.repetido ? 'Este atendimento já estava registrado.' : 'Atendimento finalizado!', 'success');
   if (res.avisos?.length) toast('⚠️ ' + res.avisos.join(' | '), 'warn', 10000);
 
   window.__EA_ULTIMO__ = {
