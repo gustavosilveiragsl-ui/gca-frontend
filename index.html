@@ -702,6 +702,21 @@ tbody tr:hover td{background:var(--bg-hover);}
 .ceq-linhas th { position:sticky; top:0; background:var(--bg-hover); text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-3); padding:6px 10px; }
 .ceq-linhas td { padding:6px 10px; border-top:1px solid var(--border); }
 .ceq-linhas .num { text-align:right; font-variant-numeric:tabular-nums; }
+
+/* Detalhe da remessa de laudo: resumo por item e filtros de situação */
+.rem-resumo { border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg); padding:10px 12px; }
+.rem-resumo-lista { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:4px 14px; margin-top:8px; }
+.rem-resumo-item { display:flex; align-items:baseline; gap:8px; width:100%; text-align:left; font:inherit; font-size:12px; color:var(--text-1);
+  background:none; border:0; border-radius:4px; padding:3px 4px; cursor:pointer; }
+.rem-resumo-item:hover, .rem-resumo-item.ativo { background:var(--bg-hover); }
+.rem-resumo-item.ativo { box-shadow:inset 2px 0 0 var(--accent-text); }
+.rem-resumo-qtd { font-weight:700; color:var(--accent-text); font-variant-numeric:tabular-nums; min-width:34px; }
+.rem-resumo-nome { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rem-resumo-sit { font-size:10px; white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--text-3); }
+.rem-filtro { font:inherit; font-size:11px; font-weight:600; padding:4px 10px; border-radius:999px; cursor:pointer;
+  border:1px solid var(--border); background:var(--bg); color:var(--text-2); }
+.rem-filtro:hover { border-color:var(--text-3); }
+.rem-filtro.ativo { color:var(--cor, var(--accent-text)); border-color:var(--cor, var(--accent-text)); background:var(--bg-hover); }
 </style>
 <script>
 // Remove todos os Service Workers registrados (causavam cache stale)
@@ -6017,7 +6032,12 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
       <div id="remDetValorAviso" class="hidden" style="font-size:11px;color:var(--yellow);background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.35);border-radius:var(--radius-sm);padding:8px 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>
-      <div id="remDetAcoesItens" style="display:flex;justify-content:flex-end;margin-bottom:8px"></div>
+      <div id="remDetResumo" class="rem-resumo"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <div id="remDetFiltroStatus" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        <select id="remDetFiltroItem" class="form-input" style="width:auto;max-width:260px;font-size:11px;padding:5px 8px" onchange="remDetFiltrar({ item: this.value })"></select>
+        <div id="remDetAcoesItens" style="margin-left:auto;display:flex"></div>
+      </div>
       <div style="overflow-x:auto">
         <table>
           <thead><tr>
@@ -21592,8 +21612,75 @@ function abrirDetalheRemessa(id) {
        <button class="row-action" onclick="abrirValoresLaudo()">💲 Abrir tabela</button>` : '';
   document.getElementById('remDetObservacao').value = r.observacao || '';
 
+  // O filtro (situação e item) vale enquanto a mesma remessa estiver aberta — continua depois de
+  // aprovar/reprovar um serial, que reabre o detalhe.
+  if (_remDetFiltro.id !== id) _remDetFiltro = { id, status: '', item: '' };
+  remDetRenderResumo(r);
+  remDetRenderItens(r);
+
+  // Esqueceu um serial ao montar? Da pra incluir aqui, sem ter que criar outra remessa.
+  const acoes = document.getElementById('remDetAcoesItens');
+  if (acoes) acoes.innerHTML = `<button class="btn btn-ghost" style="font-size:11px" onclick="abrirAddItensRemessa()">➕ Adicionar itens</button>`;
+
+  remCarregarFotos(id);
+  document.getElementById('modalDetalheRemessa').classList.remove('hidden');
+}
+
+// ── Detalhe da remessa: resumo por item (como no PDF) e filtros de situação e item ──
+let _remDetFiltro = { id: null, status: '', item: '' };
+const REM_SITUACOES = [
+  ['PENDENTE', '⏳', 'Pendentes', '#eab308'],
+  ['APROVADO', '✅', 'Aprovados', '#22c55e'],
+  ['REPROVADO', '❌', 'Reprovados', '#ef4444'],
+];
+
+function remDetRemessaAberta() { return _remessasData.find(x => x.id === _remDetalheAbertaId); }
+
+function remDetRenderResumo(r) {
+  const itens = r.itens || [];
+  const porItem = new Map();
+  itens.forEach(it => {
+    const nome = it.item || '—';
+    const g = porItem.get(nome) || { nome, total: 0, PENDENTE: 0, APROVADO: 0, REPROVADO: 0 };
+    g.total++; if (g[it.status] != null) g[it.status]++;
+    porItem.set(nome, g);
+  });
+  const lista = [...porItem.values()].sort((a, b) => b.total - a.total || a.nome.localeCompare(b.nome));
+  const conta = (st) => itens.filter(it => it.status === st).length;
+  const sit = (g) => REM_SITUACOES.filter(([st]) => g[st]).map(([st, ic]) => `${ic} ${g[st]}`).join('  ');
+  document.getElementById('remDetResumo').innerHTML = `
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Resumo — ${itens.length} serial(is)</div>
+      <div style="font-size:11px;color:var(--text-3)">${REM_SITUACOES.map(([st, ic, nome]) => `${ic} ${conta(st)} ${nome.toLowerCase()}`).join(' · ')}</div>
+    </div>
+    <div class="rem-resumo-lista">${lista.map(g => `
+      <button type="button" data-no-guard="1" class="rem-resumo-item${_remDetFiltro.item === g.nome ? ' ativo' : ''}" title="Mostrar só ${escHtml(g.nome)}"
+        onclick="remDetFiltrar({ item: _remDetFiltro.item === '${escJs(g.nome)}' ? '' : '${escJs(g.nome)}' })">
+        <span class="rem-resumo-qtd">${g.total}×</span><span class="rem-resumo-nome">${escHtml(g.nome)}</span><span class="rem-resumo-sit">${sit(g)}</span>
+      </button>`).join('')}
+    </div>`;
+
+  const sel = document.getElementById('remDetFiltroItem');
+  sel.innerHTML = `<option value="">Todos os itens (${lista.length})</option>` +
+    lista.map(g => `<option value="${escHtml(g.nome)}">${escHtml(g.nome)} (${g.total})</option>`).join('');
+  sel.value = lista.some(g => g.nome === _remDetFiltro.item) ? _remDetFiltro.item : '';
+  if (!sel.value) _remDetFiltro.item = '';
+}
+
+function remDetRenderItens(r) {
+  const f = _remDetFiltro;
+  const doItem = (r.itens || []).filter(it => !f.item || (it.item || '—') === f.item);
+  const visiveis = doItem.filter(it => !f.status || it.status === f.status);
+
+  // Botões de situação: as contagens seguem o item escolhido
+  const btn = (st, rotulo, cor, n) => `<button type="button" data-no-guard="1" class="rem-filtro${f.status === st ? ' ativo' : ''}" style="--cor:${cor}"
+      onclick="remDetFiltrar({ status: '${st}' })">${rotulo} <span style="opacity:.75">${n}</span></button>`;
+  document.getElementById('remDetFiltroStatus').innerHTML = btn('', 'Todos', 'var(--accent-text)', doItem.length) +
+    REM_SITUACOES.map(([st, ic, nome, cor]) => btn(st, `${ic} ${nome}`, cor, doItem.filter(it => it.status === st).length)).join('');
+
   const statusMap = { PENDENTE: ['#eab308','Pendente'], APROVADO: ['#22c55e','Aprovado'], REPROVADO: ['#ef4444','Reprovado'] };
-  document.getElementById('remDetItensBody').innerHTML = r.itens.map(it => {
+  const filtrado = f.status || f.item;
+  document.getElementById('remDetItensBody').innerHTML = (visiveis.length ? visiveis.map(it => {
     const [cor, label] = statusMap[it.status] || ['#888', it.status];
     return `<tr>
       <td class="td-main">${escHtml(it.item||'—')}</td>
@@ -21613,14 +21700,17 @@ function abrirDetalheRemessa(id) {
         </div>` : ''}
       </td>
     </tr>`;
-  }).join('');
+  }).join('') : `<tr><td colspan="6" style="text-align:center;padding:16px;font-size:12px;color:var(--text-3)">Nenhum serial ${filtrado ? 'com este filtro' : 'nesta remessa'}.</td></tr>`)
+    + (filtrado && visiveis.length ? `<tr><td colspan="6" style="font-size:11px;color:var(--text-3);padding:8px">Mostrando ${visiveis.length} de ${(r.itens || []).length} serial(is) ·
+        <button class="row-action" data-no-guard="1" onclick="remDetFiltrar({ status: '', item: '' })">Limpar filtro</button></td></tr>` : '');
+}
 
-  // Esqueceu um serial ao montar? Da pra incluir aqui, sem ter que criar outra remessa.
-  const acoes = document.getElementById('remDetAcoesItens');
-  if (acoes) acoes.innerHTML = `<button class="btn btn-ghost" style="font-size:11px" onclick="abrirAddItensRemessa()">➕ Adicionar itens</button>`;
-
-  remCarregarFotos(id);
-  document.getElementById('modalDetalheRemessa').classList.remove('hidden');
+function remDetFiltrar(mudanca) {
+  Object.assign(_remDetFiltro, mudanca);
+  const r = remDetRemessaAberta();
+  if (!r) return;
+  remDetRenderResumo(r);
+  remDetRenderItens(r);
 }
 
 // ── Adicionar itens a uma remessa já montada ──
