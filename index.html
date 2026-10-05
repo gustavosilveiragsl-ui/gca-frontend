@@ -1913,6 +1913,8 @@ window.addEventListener('pageshow', function(e) {
               </select>
               <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarAssinaturas(this.value)">
               <button class="btn btn-ghost" onclick="carregarAssinaturas()">↻ Atualizar</button>
+              <button class="btn btn-ghost" onclick="assExportarPendencias(this)" title="Todas as pendências com o link de assinatura de cada uma">📥 Excel pendências</button>
+              <button class="btn btn-primary" onclick="abrirCobrancaAss()" title="Quadro por base para print e mensagens prontas para o WhatsApp">📣 Cobrar assinaturas</button>
             </div>
           </div>
           <table>
@@ -6279,9 +6281,12 @@ window.addEventListener('load', async () => {
   atualizarIconeTema(tema);
 
   // Verifica se é uma tela de assinatura pública (sem login)
-  if (window.location.hash.startsWith('#/assinar')) {
+  if (window.location.hash.startsWith('#/assinar-base')) {
+    const ehBase = await verificarTokenBase();
+    if (ehBase) return; // lista pública da base, sem login
+  } else if (window.location.hash.startsWith('#/assinar')) {
     const ehAssinatura = await verificarTokenAssinatura();
-    if (ehAssinatura) return; // para aqui, não precisa de login
+    if (ehAssinatura) { adicionarVoltarBase(); return; } // para aqui, não precisa de login
   }
 
   // Verifica se é o link público de logística (sem login) — transportador assina coleta/
@@ -8259,6 +8264,7 @@ async function confirmarAssinatura(token, atendimentoId) {
         <div style="font-size:56px;margin-bottom:16px">✅</div>
         <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
         <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Sua assinatura foi registrada com sucesso.</div>
+        ${_tokenBaseDoHash() ? `<button onclick="location.hash='#/assinar-base?token=${_tokenBaseDoHash()}'" style="display:block;margin:0 auto 14px;padding:12px 22px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">← Voltar para a lista da base</button>` : ''}
         ${data.pdf_url ? `<a href="${escHtml(safeUrl(data.pdf_url))}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>` : ''}
       </div>`;
 
@@ -8267,6 +8273,318 @@ async function confirmarAssinatura(token, atendimentoId) {
     if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar recebimento'; }
     alert('Erro de conexão. Tente novamente.');
   }
+}
+
+// ── LINK ÚNICO DA BASE (público, sem login) ──
+// Uma página por base com quem ainda falta assinar: a pessoa toca no próprio nome, vê os
+// itens e assina na mesma tela de sempre. Depois volta para a lista.
+function _tokenBaseDoHash() {
+  const t = new URLSearchParams((location.hash.split('?')[1]) || '').get('base');
+  return /^[a-f0-9]{32}$/.test(t || '') ? t : '';
+}
+function adicionarVoltarBase() {
+  const t = _tokenBaseDoHash();
+  if (!t || document.getElementById('assinVoltarBase')) return;
+  document.getElementById('assinCardConteudo')?.insertAdjacentHTML('afterbegin',
+    `<button id="assinVoltarBase" onclick="location.hash='#/assinar-base?token=${t}'" style="margin-bottom:14px;padding:8px 14px;background:transparent;color:#a5b4fc;border:1px solid #334155;border-radius:10px;font-size:13px;cursor:pointer">← Voltar para a lista da base</button>`);
+}
+function _ouvirTrocaDeLinkPublico() {
+  if (window._assinOuvindoHash) return;
+  window._assinOuvindoHash = true;
+  window.addEventListener('hashchange', async () => {
+    if (location.hash.startsWith('#/assinar-base')) verificarTokenBase();
+    else if (location.hash.startsWith('#/assinar?')) { await verificarTokenAssinatura(); adicionarVoltarBase(); }
+  });
+}
+let _assinBaseLista = [];
+let _assinBaseTokenAtual = '';
+async function verificarTokenBase() {
+  const token = new URLSearchParams(location.hash.replace('#/assinar-base?', '')).get('token') || '';
+  if (!token) return false;
+  // Só o formato do código da base (32 letras/números): o valor vai para os botões da página
+  _assinBaseTokenAtual = /^[a-f0-9]{32}$/.test(token) ? token : '';
+  document.getElementById('telaAssinatura').style.display = 'block';
+  document.getElementById('loadingScreen')?.classList.add('hidden');
+  _ouvirTrocaDeLinkPublico();
+  const card = document.getElementById('assinCardConteudo');
+  card.innerHTML = `<div style="text-align:center;padding:60px 0;color:#94a3b8;font-size:13px">Carregando...</div>`;
+  try {
+    // endereço do servidor: o mesmo API do topo da tela
+    const res = await fetch(`${API}/atendimentos/base/${encodeURIComponent(_assinBaseTokenAtual || 'invalido')}`, { cache: 'no-store' });
+    const d = await res.json();
+    if (!d.ok) {
+      card.innerHTML = `<div style="text-align:center;padding:40px;border:1px solid #334155;border-radius:16px;background:#1e293b">
+        <div style="font-size:44px;margin-bottom:12px">${d.expirado ? '⏰' : '❌'}</div>
+        <div style="font-size:18px;font-weight:600;color:#f1f5f9;margin-bottom:8px">${d.expirado ? 'Link expirado' : 'Link inválido'}</div>
+        <div style="font-size:13px;color:#94a3b8">Peça ao almoxarifado o link atualizado da sua base.</div></div>`;
+      return true;
+    }
+    _assinBaseLista = d.pendentes || [];
+    card.innerHTML = `
+      <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;background:#1e293b">
+        <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
+          <div style="font-size:17px;font-weight:700;color:#f1f5f9">✍️ Assinaturas pendentes</div>
+          <div style="font-size:13px;color:#a5b4fc;margin-top:4px;font-weight:600">${escHtml(d.base)}${d.filial ? ` · ${escHtml(d.filial)}` : ''}</div>
+          ${_assinBaseLista.length ? `<div style="font-size:12px;color:#94a3b8;margin-top:8px">Toque no seu nome para ver os itens e assinar.</div>` : ''}
+        </div>
+        ${_assinBaseLista.length > 8 ? `<div style="padding:12px 12px 0"><input id="assinBaseBusca" placeholder="Buscar seu nome..." oninput="renderListaBase(this.value)"
+            style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;font-size:15px"></div>` : ''}
+        <div id="assinBaseLista" style="padding:12px;display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#64748b;margin-top:14px">Link válido até ${formatarData(String(d.expira_em || '').slice(0, 10))}</div>`;
+    renderListaBase('');
+    return true;
+  } catch (e) {
+    card.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8">Erro ao carregar. Tente novamente.</div>`;
+    return true;
+  }
+}
+function renderListaBase(busca) {
+  const el = document.getElementById('assinBaseLista');
+  if (!el) return;
+  const termo = String(busca || '').trim().toLowerCase();
+  const lista = _assinBaseLista.filter(p => !termo || p.nome.toLowerCase().includes(termo));
+  if (!_assinBaseLista.length) { el.innerHTML = `<div style="text-align:center;padding:28px 10px;color:#4ade80;font-size:15px;font-weight:600">✅ Ninguém pendente nesta base. Obrigado!</div>`; return; }
+  el.innerHTML = lista.length ? lista.map(p => `<button onclick="location.hash='#/assinar?token=${encodeURIComponent(p.token)}&base=${_assinBaseTokenAtual}'"
+      style="display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:14px 16px;border-radius:12px;border:1px solid #334155;background:#0f172a;color:#f1f5f9;cursor:pointer">
+      <span><span style="display:block;font-size:15px;font-weight:600">${escHtml(p.nome)}</span>
+        <span style="display:block;font-size:12px;color:#94a3b8;margin-top:2px">${formatarData(p.data)} · ${p.qtdItens} item(ns)</span></span>
+      <span style="font-size:13px;color:#a5b4fc;font-weight:700;white-space:nowrap">Assinar ›</span></button>`).join('')
+    : `<div style="text-align:center;padding:20px;color:#94a3b8;font-size:13px">Nenhum nome encontrado.</div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// COBRANÇA DE ASSINATURAS — Excel com os links, painel por base (imagem) e mensagens
+// ══════════════════════════════════════════════════════════════════════════
+let _assCob = null;          // { filial, gerado_em, data: [...] }
+let _assCobLinks = {};       // setor -> { token, link, expira_em }
+const ASS_COB_SEM_SETOR = '(sem setor)';
+
+async function assCobBuscar() {
+  const r = await api('/atendimentos/cobranca');
+  if (!r?.ok) { toast(r?.erro || 'Não foi possível carregar as pendências', 'error'); return null; }
+  _assCob = r;
+  return r;
+}
+async function assCobGerarLinks(setores) {
+  const lista = setores.filter(s => s && s !== ASS_COB_SEM_SETOR);
+  if (!lista.length) return {};
+  const r = await api('/atendimentos/cobranca/links-base', { method: 'POST', body: JSON.stringify({ setores: lista }) });
+  if (r?.ok) _assCobLinks = { ..._assCobLinks, ...r.links };
+  return _assCobLinks;
+}
+function assCobAgrupar(lista) {
+  const porBase = new Map();
+  lista.forEach(a => {
+    const b = porBase.get(a.setor) || { setor: a.setor, itens: [], dias: -1, data: '', solicitantes: new Map() };
+    b.itens.push(a);
+    if ((a.dias ?? -1) > b.dias) { b.dias = a.dias ?? 0; b.data = a.data; }
+    if (a.solicitante) b.solicitantes.set(a.solicitante, (b.solicitantes.get(a.solicitante) || 0) + 1);
+    porBase.set(a.setor, b);
+  });
+  return [...porBase.values()].sort((x, y) => y.itens.length - x.itens.length || y.dias - x.dias || x.setor.localeCompare(y.setor));
+}
+const assCobCor = (dias) => dias > 7 ? ['#b91c1c', '#fee2e2'] : dias > 3 ? ['#b45309', '#fef3c7'] : ['#15803d', '#dcfce7'];
+const assCobDataHora = (iso) => { const d = iso ? new Date(iso) : new Date(); return d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', ' às'); };
+const assCobColab = (a) => a.destinatarioTipo === 'VIATURA' ? `${a.retiradoPor || a.colaborador} (placa ${a.placa})` : a.colaborador;
+
+// ── Excel ──
+async function assExportarPendencias(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const r = await assCobBuscar();
+    if (!r) return;
+    if (!r.data.length) { toast('Nenhuma assinatura pendente 🎉', 'success'); return; }
+    const bases = assCobAgrupar(r.data);
+    await assCobGerarLinks(bases.map(b => b.setor));
+    gcaCarregarSheetJS(() => {
+      const cab = ['Base / setor', 'Colaborador', 'Matrícula', 'Função', 'Data do atendimento', 'Dias pendente', 'Itens', 'Qtd. itens',
+        'Atendente', 'Solicitante', 'Prioridade', 'Armazém', 'Logística (destino)', 'Link de assinatura'];
+      const linhas = r.data.map(a => [a.setor, assCobColab(a), a.matricula, a.funcao, formatarData(a.data), a.dias ?? '', a.itens, a.qtdItens,
+        a.atendente, a.solicitante, a.prioridade, a.armazem, a.logistica, a.link]);
+      const ws = XLSX.utils.aoa_to_sheet([cab, ...linhas]);
+      linhas.forEach((l, i) => { const ref = XLSX.utils.encode_cell({ r: i + 1, c: 13 }); if (l[13] && ws[ref]) ws[ref].l = { Target: l[13], Tooltip: 'Abrir para assinar' }; });
+      ws['!cols'] = [24, 30, 11, 22, 12, 8, 50, 8, 22, 26, 10, 24, 22, 60].map(wch => ({ wch }));
+      ws['!autofilter'] = { ref: ws['!ref'] };
+      const cabB = ['Base / setor', 'Pendentes', 'Mais antiga (dias)', 'Data da mais antiga', 'Solicitantes', 'Link da base (cada um toca no nome e assina)'];
+      const linhasB = bases.map(b => [b.setor, b.itens.length, b.dias, formatarData(b.data),
+        [...b.solicitantes].sort((x, y) => y[1] - x[1]).map(([n, q]) => `${n} (${q})`).join(', '), _assCobLinks[b.setor]?.link || '']);
+      const wsB = XLSX.utils.aoa_to_sheet([cabB, ...linhasB]);
+      linhasB.forEach((l, i) => { const ref = XLSX.utils.encode_cell({ r: i + 1, c: 5 }); if (l[5] && wsB[ref]) wsB[ref].l = { Target: l[5] }; });
+      wsB['!cols'] = [28, 10, 16, 16, 50, 60].map(wch => ({ wch }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, wsB, 'Por base');
+      XLSX.utils.book_append_sheet(wb, ws, 'Pendências');
+      const nome = String(r.filial || 'filial').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '_');
+      XLSX.writeFile(wb, `assinaturas_pendentes_${nome}_${hojeBR().split('-').reverse().join('-')}.xlsx`);
+      toast(`✅ Excel com ${r.data.length} pendência(s) em ${bases.length} base(s)`, 'success', 4000);
+    });
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '📥 Excel pendências'; }
+  }
+}
+
+// ── Painel de cobrança ──
+async function abrirCobrancaAss() {
+  document.getElementById('modalCobrancaAss')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCobrancaAss';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:860px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title">📣 Cobrar assinaturas</div><div style="font-size:11px;color:var(--text-3)">Quadro por base para print e mensagens prontas para o WhatsApp</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="font-size:11px" data-no-guard="1" onclick="assCobImagem('copiar', this)">📋 Copiar imagem</button>
+          <button class="btn btn-ghost" style="font-size:11px" data-no-guard="1" onclick="assCobImagem('baixar', this)">⬇️ Baixar imagem</button>
+          <button class="modal-close" onclick="document.getElementById('modalCobrancaAss').remove()">×</button>
+        </div>
+      </div>
+      <div class="modal-body" id="assCobCorpo" style="display:flex;flex-direction:column;gap:16px">
+        <div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  const r = await assCobBuscar();
+  const corpo = document.getElementById('assCobCorpo');
+  if (!corpo) return;
+  if (!r) { corpo.innerHTML = '<div style="padding:20px;color:var(--red)">Não foi possível carregar as pendências.</div>'; return; }
+  const bases = assCobAgrupar(r.data);
+  corpo.innerHTML = `
+    <div style="overflow-x:auto;padding:4px;background:var(--bg);border-radius:var(--radius-sm)">${assCobCartao(r, bases)}</div>
+    ${bases.length ? `<div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-1)">💬 Mensagens por base (WhatsApp)</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <label style="display:flex;gap:6px;align-items:center;font-size:11px;color:var(--text-2);cursor:pointer"><input type="checkbox" id="assCobLinkCada"> Link de cada colaborador (em vez do link da base)</label>
+          <button class="btn btn-ghost" style="font-size:11px" data-no-guard="1" onclick="assCobCopiar(assCobResumoGeral(), 'Resumo geral copiado')">📋 Resumo geral</button>
+        </div>
+      </div>
+      <div id="assCobBases" style="display:flex;flex-direction:column;gap:6px">${bases.map((b, i) => `
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+          <div style="flex:1;min-width:180px"><div style="font-size:12px;font-weight:700">${escHtml(b.setor)}</div>
+            <div style="font-size:11px;color:var(--text-3)">${b.itens.length} pendente(s) · mais antiga há ${b.dias} dia(s)</div></div>
+          <button class="btn btn-ghost" style="font-size:11px" data-no-guard="1" onclick="assCobCopiar(assCobMensagem(${i}), 'Mensagem de ${escJs(b.setor)} copiada')">📋 Copiar mensagem</button>
+          ${b.setor !== ASS_COB_SEM_SETOR ? `<button class="btn btn-ghost" style="font-size:11px" data-no-guard="1" data-link-base="${escHtml(b.setor)}" onclick="assCobCopiar(_assCobLinks[_assCobBases[${i}].setor]?.link || '', 'Link da base copiado')">🔗 Link da base</button>` : ''}
+        </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px">O link da base vale 30 dias e mostra só quem ainda falta assinar. Quem toca no nome vê os itens e assina na mesma tela de sempre.</div>
+    </div>` : ''}`;
+  window._assCobBases = bases;
+  if (bases.length) await assCobGerarLinks(bases.map(b => b.setor));
+}
+
+function assCobCartao(r, bases) {
+  const total = r.data.length;
+  const maisAntiga = bases.reduce((m, b) => b.dias > m.dias ? b : m, { dias: -1, data: '' });
+  const atrasadas = r.data.filter(a => (a.dias ?? 0) > 7).length;
+  const kpi = (rotulo, valor, sub, cor) => `<div style="flex:1;min-width:150px;padding:12px 14px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0">
+      <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em">${rotulo}</div>
+      <div style="font-size:26px;font-weight:800;color:${cor || '#0f172a'};font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px">${valor}</div>
+      ${sub ? `<div style="font-size:11px;color:#64748b">${sub}</div>` : ''}</div>`;
+  const solic = (b) => { const l = [...b.solicitantes].sort((x, y) => y[1] - x[1]); return l.length ? escHtml(l.slice(0, 3).map(([n, q]) => `${n.split(' ')[0]} ${n.split(' ').slice(-1)[0] !== n.split(' ')[0] ? n.split(' ').slice(-1)[0] : ''}`.trim() + ` (${q})`).join(', ')) + (l.length > 3 ? ` +${l.length - 3}` : '') : '<span style="color:#94a3b8">—</span>'; };
+  return `<div id="assCobCartao" style="width:760px;box-sizing:border-box;margin:0 auto;background:#ffffff;color:#0f172a;font-family:'DM Sans',system-ui,sans-serif;padding:26px 28px;border-radius:16px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px">
+      <div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:.1em;color:#6366f1;text-transform:uppercase">Cobrança de assinaturas</div>
+        <div style="font-size:24px;font-weight:800;margin-top:4px">Assinaturas pendentes — ${escHtml(r.filial || '')}</div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px">Atualizado em ${assCobDataHora(r.gerado_em)}</div>
+      </div>
+      <img src="./logo-ceneged.png" alt="" style="height:40px;object-fit:contain">
+    </div>
+    ${total ? `
+    <div style="display:flex;gap:10px;margin-top:18px">
+      ${kpi('Pendentes', total, 'atendimentos sem assinatura')}
+      ${kpi('Bases', bases.length, 'com pendência')}
+      ${kpi('Mais antiga', `${maisAntiga.dias} dia${maisAntiga.dias === 1 ? '' : 's'}`, maisAntiga.data ? `desde ${formatarData(maisAntiga.data)}` : '', assCobCor(maisAntiga.dias)[0])}
+      ${kpi('Há mais de 7 dias', atrasadas, 'precisam de atenção', atrasadas ? '#b91c1c' : '#15803d')}
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-top:18px;font-size:13px">
+      <thead><tr style="text-align:left;color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.05em">
+        <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;color:#64748b;background:#ffffff">Base</th>
+        <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;text-align:center;color:#64748b;background:#ffffff">Pendentes</th>
+        <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;color:#64748b;background:#ffffff">Mais antiga</th>
+        <th style="padding:8px 10px;border-bottom:2px solid #e2e8f0;color:#64748b;background:#ffffff">Solicitantes</th>
+      </tr></thead>
+      <tbody>${bases.map(b => { const [cor, fundo] = assCobCor(b.dias); return `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;font-weight:700;color:#0f172a">${escHtml(b.setor)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;text-align:center;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;color:#0f172a">${b.itens.length}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap"><span style="display:inline-block;padding:3px 9px;border-radius:999px;background:${fundo};color:${cor};font-weight:700;font-size:12px">${b.dias} dia${b.dias === 1 ? '' : 's'}</span>
+          <span style="font-size:11px;color:#64748b;margin-left:6px">${formatarData(b.data)}</span></td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155">${solic(b)}</td>
+      </tr>`; }).join('')}</tbody>
+    </table>` : `<div style="margin-top:24px;padding:28px;text-align:center;border-radius:12px;background:#dcfce7;color:#15803d;font-size:16px;font-weight:700">✅ Nenhuma assinatura pendente</div>`}
+    <div style="margin-top:16px;font-size:11px;color:#94a3b8;display:flex;justify-content:space-between;gap:10px">
+      <span>Cada base recebe um link: toque no seu nome e assine.</span><span>GCA · Gestão de Almoxarifado</span>
+    </div>
+  </div>`;
+}
+
+function assCobMensagem(i) {
+  const b = (window._assCobBases || [])[i];
+  if (!b) return '';
+  const cada = document.getElementById('assCobLinkCada')?.checked || b.setor === ASS_COB_SEM_SETOR || !_assCobLinks[b.setor];
+  const linhas = [...b.itens].sort((x, y) => (y.dias ?? 0) - (x.dias ?? 0)).map(a => {
+    const linha = `• ${assCobColab(a)} — ${formatarData(a.data).slice(0, 5)} (${a.dias} dia${a.dias === 1 ? '' : 's'})`;
+    return cada && a.link ? `${linha}\n${a.link}` : linha;
+  });
+  return [`*📣 Assinaturas pendentes — ${b.setor}*`,
+    `${_assCob?.filial || ''} · ${b.itens.length} pendente(s) · mais antiga há ${b.dias} dia(s)`, '',
+    ...linhas, '',
+    cada ? '✍️ Cada um abre o seu link e assina.' : `✍️ Para assinar, abra o link e toque no seu nome:\n${_assCobLinks[b.setor].link}`].join('\n');
+}
+function assCobResumoGeral() {
+  const bases = window._assCobBases || [];
+  const total = bases.reduce((t, b) => t + b.itens.length, 0);
+  const maisAntiga = bases.reduce((m, b) => Math.max(m, b.dias), 0);
+  return [`*📣 Assinaturas pendentes — ${_assCob?.filial || ''}*`, `Atualizado em ${assCobDataHora(_assCob?.gerado_em)}`,
+    `Total: *${total}* em ${bases.length} base(s) · mais antiga há ${maisAntiga} dia(s)`, '',
+    ...bases.map(b => `${b.dias > 7 ? '🔴' : b.dias > 3 ? '🟡' : '🟢'} *${b.setor}* — ${b.itens.length} (mais antiga ${b.dias} dia${b.dias === 1 ? '' : 's'})`)].join('\n');
+}
+async function assCobCopiar(texto, ok) {
+  if (!texto) { toast('Nada para copiar ainda — aguarde o link carregar', 'warn'); return; }
+  try { await navigator.clipboard.writeText(texto); }
+  catch {
+    const t = document.createElement('textarea'); t.value = texto; document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); } finally { t.remove(); }
+  }
+  toast('✅ ' + ok, 'success', 2500);
+}
+
+// Imagem do quadro (gerador carregado só quando usado)
+function gcaCarregarHtml2canvas() {
+  return new Promise((resolve, reject) => {
+    if (window.html2canvas) return resolve(window.html2canvas);
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => resolve(window.html2canvas);
+    s.onerror = () => reject(new Error('não foi possível carregar o gerador de imagem'));
+    document.head.appendChild(s);
+  });
+}
+async function assCobImagem(acao, btn) {
+  const cartao = document.getElementById('assCobCartao');
+  if (!cartao) { toast('Aguarde o quadro carregar', 'warn'); return; }
+  const rotulo = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando...'; }
+  try {
+    const h2c = await gcaCarregarHtml2canvas();
+    const canvas = await h2c(cartao, { scale: 2, backgroundColor: '#ffffff', useCORS: true, logging: false });
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    if (acao === 'copiar') {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        toast('✅ Imagem copiada — é só colar no WhatsApp (Ctrl+V)', 'success', 3500);
+        return;
+      } catch { toast('Este navegador não deixou copiar a imagem — baixando o arquivo', 'warn', 4000); }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `cobranca_assinaturas_${hojeBR().split('-').reverse().join('-')}.png`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch (e) { toast('Não foi possível gerar a imagem: ' + e.message, 'error', 6000); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = rotulo; } }
 }
 
 // ── LINK PÚBLICO DE LOGÍSTICA ── (sem login — transportador assina coleta/transferência.
