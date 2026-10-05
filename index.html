@@ -7684,8 +7684,23 @@ const FILIAL_GEO = {
 const UMAPA_ROTULO_DESLOC = { RJ: [95, 70, true], SE: [70, 20, true], AL: [80, 5, true], ES: [85, 10, true], DF: [0, -30, true], PI: [-8, 34, false] };
 
 const _semAcento = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\(.*?\)/g, '').trim().toLowerCase();
+// "SÃO LUIS" → "São Luis", "RIO DAS OSTRAS" → "Rio das Ostras"
+function cidadeDoCadastro(c) {
+  return String(c || '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+    .map((p, i) => i && /^(da|de|do|das|dos|e)$/.test(p) ? p : p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+}
+// Primeiro o cadastro da filial (cidade, UF e a coordenada do armazém, que o servidor manda
+// em /filiais); a lista fixa acima fica de reserva. Antes só a lista valia, e filial nova
+// (Maranhão, 05/10/2026) caía no meio do estado em vez de São Luís.
 function geoDaFilial(slug) {
+  const f = (typeof _filiais !== 'undefined' && Array.isArray(_filiais)) ? _filiais.find(x => x.slug === slug) : null;
+  const uf = String(f?.uf || '').trim().toUpperCase();
+  const ufNoMapa = uf && (typeof MAPA_BRASIL === 'undefined' || MAPA_BRASIL.e.some(e => e[0] === uf));
+  const lat = Number(f?.geo?.lat), lon = Number(f?.geo?.lon);
+  if (ufNoMapa && f.geo && Number.isFinite(lat) && Number.isFinite(lon))
+    return { uf, cidade: cidadeDoCadastro(f.cidade) || FILIAL_GEO[slug]?.cidade || '', lon, lat };
   if (FILIAL_GEO[slug]) return FILIAL_GEO[slug];
+  if (ufNoMapa) return { uf, cidade: cidadeDoCadastro(f.cidade), lon: null, lat: null };
   if (typeof MAPA_BRASIL === 'undefined') return null;
   const nome = _semAcento(getNomeUnidade(slug));
   const est = MAPA_BRASIL.e.find(e => _semAcento(e[1]) === nome || e[0].toLowerCase() === nome);
