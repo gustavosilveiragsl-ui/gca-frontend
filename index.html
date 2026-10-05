@@ -3585,7 +3585,10 @@ window.addEventListener('pageshow', function(e) {
                   <option value="ATIVO" selected>Somente válidos</option>
                   <option value="CANCELADO">Somente cancelados</option>
                 </select>
+                <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:pointer;white-space:nowrap" title="Atendimentos em que um bloqueio de medidor parado foi liberado">
+                  <input type="checkbox" id="eaHistDesbloq" onchange="carregarHistAtendEnel()"> 🔓 Só com desbloqueio</label>
                 <button class="btn btn-ghost" onclick="carregarHistAtendEnel()">↻ Atualizar</button>
+                <button class="btn btn-ghost" onclick="exportarHistAtendEnel()">📥 Excel</button>
               </div>
             </div>
             <table id="tbHistAtendEnel">
@@ -22891,7 +22894,9 @@ async function confirmarDesbloqueioEnel() {
   if (!item) { document.getElementById('modalEnelBloqueio').classList.add('hidden'); return; }
   const res = await api('/enel/registrar-desbloqueio', { method: 'POST', body: JSON.stringify({
     equipe: window.__ENEL__.equipe?.prefixo || document.getElementById('enelEquipeBusca').value,
-    material: item.mat.descricao, justificativa: just, data: new Date().toISOString(), senha,
+    material: item.mat.descricao, material_id: item.mat.id, justificativa: just, senha,
+    // liga a liberação a este atendimento quando ele for finalizado
+    chave_atendimento: window.__ENEL__.atendimento?.id || null,
   })});
   if (!res?.ok) { msg.style.color = '#ef4444'; msg.textContent = '❌ ' + (res?.erro || 'Erro ao confirmar desbloqueio.'); return; }
   document.getElementById('modalEnelBloqueio').classList.add('hidden');
@@ -23228,6 +23233,12 @@ function eaAbrirFicha() {
   const totalUn = d.itens.reduce((a, it) => a + Number(it.quantidade), 0);
   document.getElementById('fichaEnelSub').textContent = `Equipe ${d.equipe} · ${formatarData(d.data)} · ${eaTempoFmt(d.tempo_segundos)}`;
   document.getElementById('fichaEnelCorpo').innerHTML = `
+    ${(d.desbloqueios || []).map(l => `<div class="ea-banner aviso" style="animation:none;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:10px">
+      <div><strong>🔓 Desbloqueio — ${escHtml(l.material || 'material')}</strong></div>
+      <div>Motivo: ${escHtml(l.justificativa || '—')}</div>
+      <div style="font-size:11px;opacity:.85">Liberado por ${escHtml(l.usuario || '—')} em ${formatarDataHora(l.data)}</div>
+      ${(l.medidores || []).length ? `<div style="font-size:11px;opacity:.85">Medidores parados: ${l.medidores.map(m => `<span style="font-family:monospace">${escHtml(m.serial)}</span> (${m.diasNaEquipe} dias)`).join(', ')}</div>` : ''}
+    </div>`).join('')}
     ${d.cancelado ? `<div class="ea-banner erro" style="animation:none">
       <span style="font-size:18px">✕</span>
       <span>Atendimento CANCELADO por ${escHtml(d.cancelado_por || '—')}${d.cancelado_em ? ' em ' + formatarDataHora(d.cancelado_em) : ''}${d.motivo_cancelamento ? ` — ${escHtml(d.motivo_cancelamento)}` : ''}</span>
@@ -23342,6 +23353,7 @@ async function carregarHistAtendEnel() {
   if (ate) params.push(`data_fim=${ate}`);
   if (equipe) params.push(`equipe=${encodeURIComponent(equipe)}`);
   if (status) params.push(`status=${status}`);
+  if (document.getElementById('eaHistDesbloq')?.checked) params.push('desbloqueio=1');
   const data = await api('/enel/atendimentos' + (params.length ? '?' + params.join('&') : ''));
   _eaHist = (data?.data || []).map(a => {
     let itens = [];
@@ -23356,7 +23368,8 @@ async function carregarHistAtendEnel() {
     <div class="ea-resumo-card"><b>${validos.length}</b><span>atendimentos</span></div>
     <div class="ea-resumo-card"><b>${validos.reduce((t, a) => t + a.unidades, 0)}</b><span>unidades entregues</span></div>
     <div class="ea-resumo-card"><b>${validos.reduce((t, a) => t + a.seriais, 0)}</b><span>medidores entregues</span></div>
-    <div class="ea-resumo-card"><b style="color:${_eaHist.length - validos.length ? '#fca5a5' : 'var(--text-1)'}">${_eaHist.length - validos.length}</b><span>cancelados</span></div>`;
+    <div class="ea-resumo-card"><b style="color:${_eaHist.length - validos.length ? '#fca5a5' : 'var(--text-1)'}">${_eaHist.length - validos.length}</b><span>cancelados</span></div>
+    <div class="ea-resumo-card"><b style="color:${validos.some(a => a.desbloqueios?.length) ? '#fcd34d' : 'var(--text-1)'}">${validos.filter(a => a.desbloqueios?.length).length}</b><span>com desbloqueio</span></div>`;
 
   tbody.innerHTML = _eaHist.length ? _eaHist.map((a, idx) => {
     const seg = Number(a.tempo_segundos || 0);
@@ -23365,6 +23378,9 @@ async function carregarHistAtendEnel() {
     const tag = cancelado
       ? `<span style="color:#fca5a5;font-size:11px;font-weight:700" title="${escHtml(a.motivo_cancelamento || '')}">✕ Cancelado</span>`
       : '<span style="color:#4ade80;font-size:11px;font-weight:700">✓ Válido</span>';
+    const libs = a.desbloqueios || [];
+    const selo = libs.length ? ` <span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fcd34d;border:1px solid rgba(245,158,11,.5);border-radius:999px;padding:1px 7px;white-space:nowrap"
+        title="${escHtml(libs.map(l => `${l.material}: ${l.justificativa} (${l.usuario})`).join(' | '))}">🔓 Liberado</span>` : '';
     return `<tr style="${cancelado ? 'opacity:.6' : ''}">
       <td style="font-size:11px">${a.criado_em ? formatarDataHora(a.criado_em) : formatarData(a.data)}</td>
       <td class="td-main" style="font-family:var(--font-mono)">${escHtml(a.nome_equipe || '—')}</td>
@@ -23373,7 +23389,7 @@ async function carregarHistAtendEnel() {
       <td style="text-align:center">${a.seriais || '—'}</td>
       <td style="text-align:center;font-family:var(--font-mono);font-size:11px">${tempo}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(a.usuario || '—')}</td>
-      <td>${tag}</td>
+      <td style="white-space:nowrap">${tag}${selo}</td>
       <td style="display:flex;gap:4px;justify-content:flex-end">
         <button class="row-action" onclick="eaVerAtendimento(${idx})">Ver</button>
         ${cancelado ? '' : `<button class="row-action" style="color:var(--red)" onclick="eaAbrirCancelamento(${idx})">Cancelar</button>`}
@@ -23388,7 +23404,31 @@ function eaAtendParaFicha(a) {
     tempo_segundos: a.tempo_segundos, atendente: a.usuario, itens: a.itens,
     cancelado: a.status === 'CANCELADO', motivo_cancelamento: a.motivo_cancelamento,
     cancelado_por: a.cancelado_por, cancelado_em: a.cancelado_em,
+    desbloqueios: a.desbloqueios || [],
   };
+}
+
+// Excel do histórico, com as liberações de bloqueio (motivo, quem liberou e medidores parados)
+function exportarHistAtendEnel() {
+  const fmtLib = (a, campo) => (a.desbloqueios || []).map(l => {
+    if (campo === 'motivo') return `${l.material}: ${l.justificativa}`;
+    if (campo === 'quem') return `${l.usuario} (${formatarDataHora(l.data)})`;
+    return (l.medidores || []).map(m => `${m.serial} (${m.diasNaEquipe} dias)`).join(', ');
+  }).filter(Boolean).join(' | ');
+  gcaExportarExcel('atendimentos_enel', (_eaHist || []).map(a => ({
+    data: a.criado_em ? formatarDataHora(a.criado_em) : formatarData(a.data),
+    equipe: a.nome_equipe || '', materiais: a.itens.length, unidades: a.unidades, seriais: a.seriais,
+    atendente: a.usuario || '', status: a.status === 'CANCELADO' ? 'Cancelado' : 'Válido',
+    motivo_cancelamento: a.motivo_cancelamento || '',
+    desbloqueio: (a.desbloqueios || []).length ? 'Sim' : 'Não',
+    motivo_desbloqueio: fmtLib(a, 'motivo'), liberado_por: fmtLib(a, 'quem'), medidores_parados: fmtLib(a, 'medidores'),
+  })), [
+    { key: 'data', label: 'Data/Hora' }, { key: 'equipe', label: 'Equipe' }, { key: 'materiais', label: 'Materiais' },
+    { key: 'unidades', label: 'Unidades' }, { key: 'seriais', label: 'Seriais' }, { key: 'atendente', label: 'Atendente' },
+    { key: 'status', label: 'Status' }, { key: 'motivo_cancelamento', label: 'Motivo do cancelamento' },
+    { key: 'desbloqueio', label: 'Desbloqueio' }, { key: 'motivo_desbloqueio', label: 'Motivo do desbloqueio' },
+    { key: 'liberado_por', label: 'Liberado por' }, { key: 'medidores_parados', label: 'Medidores parados (dias com a equipe)' },
+  ]);
 }
 
 window.eaVerAtendimento = function (idx) {
