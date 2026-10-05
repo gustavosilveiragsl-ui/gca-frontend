@@ -3804,10 +3804,24 @@ window.addEventListener('pageshow', function(e) {
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
             <div id="cmAbaTitulo" style="font-size:16px;font-weight:700;color:var(--text-1)"></div>
             <div style="display:flex;gap:8px">
-              <input id="cmBuscaAba" class="search-box" placeholder="Buscar modelo ou serial..." oninput="cmRenderModelos()">
+              <input id="cmBuscaAba" class="search-box" placeholder="Buscar modelo ou serial..." oninput="cmRenderModelos();cmInstFiltrar()">
               <button class="btn btn-ghost" onclick="cmRecarregarAba()">↻ Recarregar</button>
             </div>
           </div>
+          <div id="cmInstBarra" class="hidden" style="margin-bottom:12px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card)">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <span style="font-size:12px;font-weight:700;color:var(--text-1)">👷 Instalados por equipe</span>
+              <input id="cmInstEquipe" class="form-input" list="cmInstEquipes" placeholder="Prefixo da equipe (ex.: NI204SLP-B)" style="width:230px;font-size:12px"
+                oninput="clearTimeout(this._t);this._t=setTimeout(cmInstFiltrar,250)" onchange="cmInstFiltrar()">
+              <datalist id="cmInstEquipes"></datalist>
+              <span style="font-size:11px;color:var(--text-3)">Instalados de</span>
+              <input type="date" id="cmInstDe" class="form-input" style="width:150px;font-size:11px" onchange="cmInstFiltrar()">
+              <span style="font-size:11px;color:var(--text-3)">até</span>
+              <input type="date" id="cmInstAte" class="form-input" style="width:150px;font-size:11px" onchange="cmInstFiltrar()">
+              <button class="btn btn-ghost" style="font-size:11px" onclick="cmInstLimpar()">✕ Limpar</button>
+            </div>
+          </div>
+          <div id="cmInstResultado" class="hidden"></div>
           <div id="cmSumario" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
           <div id="cmListaModelos"></div>
         </div>
@@ -23708,6 +23722,96 @@ async function cmAbrirAba(aba) {
   document.getElementById('cmAbaTitulo').textContent = titulos[aba]||aba;
   cmRenderSumario();
   cmRenderModelos();
+  cmInstPreparar();
+}
+
+// O botão "↻ Recarregar" da aba chamava esta função, que não existia (não fazia nada)
+function cmRecarregarAba() { return _cmAbaAtual ? cmAbrirAba(_cmAbaAtual) : null; }
+
+// ── Medidores instalados por equipe ──
+// Quem instalou é a equipe que a baixa automática (eOrder) gravou no medidor, com o TdC e a
+// data da instalação. Digitando parte do prefixo, aparecem todas as equipes que batem.
+function cmInstPreparar() {
+  const ehInstalados = _cmAbaAtual === 'instalados';
+  document.getElementById('cmInstBarra').classList.toggle('hidden', !ehInstalados);
+  if (!ehInstalados) { cmInstMostrar(false); return; }
+  const equipes = [...new Set(_cmDados.map(m => m.equipe_atual).filter(Boolean))].sort();
+  document.getElementById('cmInstEquipes').innerHTML = equipes.map(e => `<option value="${escHtml(e)}"></option>`).join('');
+  cmInstFiltrar();
+}
+
+function cmInstMostrar(equipe) {
+  document.getElementById('cmInstResultado').classList.toggle('hidden', !equipe);
+  document.getElementById('cmListaModelos').style.display = equipe ? 'none' : '';
+  document.getElementById('cmSumario').style.display = equipe ? 'none' : 'flex';
+}
+
+function cmInstLimpar() {
+  ['cmInstEquipe', 'cmInstDe', 'cmInstAte'].forEach(id => { document.getElementById(id).value = ''; });
+  cmInstFiltrar();
+}
+
+let _cmInstLinhas = [];
+function cmInstFiltrar() {
+  if (_cmAbaAtual !== 'instalados') return;
+  const termo = (document.getElementById('cmInstEquipe').value || '').trim().toUpperCase();
+  cmInstMostrar(!!termo);
+  if (!termo) { _cmInstLinhas = []; return; }
+  const de = document.getElementById('cmInstDe').value, ate = document.getElementById('cmInstAte').value;
+  const busca = (document.getElementById('cmBuscaAba')?.value || '').trim().toLowerCase();
+  const dia = (m) => String(m.data_instalacao || '').slice(0, 10);
+  _cmInstLinhas = _cmDados.filter(m => (m.equipe_atual || '').toUpperCase().includes(termo)
+      && (!de || dia(m) >= de) && (!ate || dia(m) <= ate)
+      && (!busca || [m.numero_serie, m.material_descricao, m.os_instalacao].some(v => String(v || '').toLowerCase().includes(busca))))
+    .sort((a, b) => `${dia(b)} ${b.data_hora_instalacao || ''}`.localeCompare(`${dia(a)} ${a.data_hora_instalacao || ''}`)
+      || String(a.numero_serie).localeCompare(String(b.numero_serie)));
+
+  const el = document.getElementById('cmInstResultado');
+  const equipes = [...new Set(_cmInstLinhas.map(m => m.equipe_atual))].sort();
+  if (!_cmInstLinhas.length) {
+    el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-3);font-size:12px">Nenhum medidor instalado por "${escHtml(termo)}"${de || ate ? ' no período' : ''}.</div>`;
+    return;
+  }
+  const porModelo = new Map();
+  _cmInstLinhas.forEach(m => { const k = m.material_descricao || '—'; porModelo.set(k, (porModelo.get(k) || 0) + 1); });
+  const modelos = [...porModelo].sort((a, b) => b[1] - a[1]);
+  const tdcs = new Set(_cmInstLinhas.map(m => m.os_instalacao).filter(Boolean)).size;
+  const variasEquipes = equipes.length > 1;
+  el.innerHTML = `
+    <div style="padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:baseline">
+        <div style="font-size:13px;font-weight:700;color:var(--text-1)">${variasEquipes ? `${equipes.length} equipes` : escHtml(equipes[0])}
+          <span style="font-weight:400;color:var(--text-3)"> · ${_cmInstLinhas.length} medidor(es) instalado(s) em ${tdcs} TdC(s)</span></div>
+        <button class="btn btn-ghost" style="font-size:11px" onclick="cmInstExcel()">📥 Excel</button>
+      </div>
+      <div style="display:flex;gap:6px 16px;flex-wrap:wrap;margin-top:8px;font-size:12px">
+        ${modelos.map(([nome, n]) => `<span><strong style="color:var(--accent-text);font-variant-numeric:tabular-nums">${n}×</strong> ${escHtml(nome)}</span>`).join('')}
+      </div>
+      ${variasEquipes ? `<div style="margin-top:6px;font-size:11px;color:var(--text-3)">Equipes: ${equipes.map(e => `${escHtml(e)} (${_cmInstLinhas.filter(m => m.equipe_atual === e).length})`).join(' · ')}</div>` : ''}
+    </div>
+    <div class="card" style="overflow-x:auto"><table>
+      <thead><tr><th>Instalado em</th><th>Serial</th><th>Modelo</th><th>TdC</th><th>Tipo do TdC</th>${variasEquipes ? '<th>Equipe</th>' : ''}</tr></thead>
+      <tbody>${_cmInstLinhas.map(m => `<tr>
+        <td style="white-space:nowrap">${m.data_instalacao ? formatarData(dia(m)) : '—'}</td>
+        <td style="font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(m.numero_serie || '—')}</td>
+        <td>${escHtml(m.material_descricao || '—')}</td>
+        <td>${m.os_instalacao ? `<button class="row-action" style="font-family:var(--font-mono)" title="Abrir na Consulta TdC" onclick="irParaConsultaTdc('${escJs(m.os_instalacao)}')">${escHtml(m.os_instalacao)}</button>` : '—'}</td>
+        <td style="font-size:11px;color:var(--text-3)">${escHtml(m.tipo_tdc || '—')}</td>
+        ${variasEquipes ? `<td style="font-family:var(--font-mono);font-size:11px">${escHtml(m.equipe_atual || '—')}</td>` : ''}
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+}
+
+function cmInstExcel() {
+  const termo = (document.getElementById('cmInstEquipe').value || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+  gcaExportarExcel(`instalados_${termo || 'equipe'}`, _cmInstLinhas.map(m => ({
+    data: m.data_instalacao ? formatarData(String(m.data_instalacao).slice(0, 10)) : '',
+    serial: m.numero_serie || '', modelo: m.material_descricao || '', tdc: m.os_instalacao || '',
+    tipo: m.tipo_tdc || '', equipe: m.equipe_atual || '',
+  })), [
+    { key: 'data', label: 'Instalado em' }, { key: 'serial', label: 'Serial' }, { key: 'modelo', label: 'Modelo' },
+    { key: 'tdc', label: 'TdC' }, { key: 'tipo', label: 'Tipo do TdC' }, { key: 'equipe', label: 'Equipe' },
+  ]);
 }
 
 function cmAbrirDevolucao() {
