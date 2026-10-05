@@ -4791,10 +4791,11 @@ window.addEventListener('pageshow', function(e) {
           </div>
           <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <input type="month" id="finMes" class="form-input" style="width:160px">
-            <select id="finFilial" class="form-input hidden" style="width:170px">
-              <option value="">Esta filial</option>
-              <option value="todas">Todas as filiais</option>
-            </select>
+            <div id="finFilialBox" class="hidden" style="position:relative">
+              <button type="button" class="btn btn-ghost" id="finFilialBtn" data-no-guard="1" onclick="finFiliaisAbrir(event)" style="min-width:170px;justify-content:space-between;gap:8px">Esta filial ▾</button>
+              <div id="finFiliaisMenu" class="hidden" onclick="event.stopPropagation()"
+                style="position:absolute;right:0;top:calc(100% + 4px);z-index:60;width:250px;padding:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:0 12px 30px rgba(0,0,0,.3)"></div>
+            </div>
             <button class="btn btn-primary" onclick="finCarregar()">🔍 Buscar</button>
             <button class="btn btn-ghost" onclick="finExportar()">📊 Excel</button>
           </div>
@@ -25354,7 +25355,8 @@ const finSpinner = '<div style="text-align:center;padding:60px"><div class="spin
 function finIniciar() {
   const mes = document.getElementById('finMes');
   if (mes && !mes.value) { const d = new Date(); mes.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
-  document.getElementById('finFilial').classList.toggle('hidden', GCA.usuario?.role !== 'admin');
+  document.getElementById('finFilialBox').classList.toggle('hidden', GCA.usuario?.role !== 'admin');
+  finFiliaisRestaurar();
   document.getElementById('finAbaPrevisao')?.classList.toggle('hidden', !temPermissao('painel_financeiro'));
   _finPrecos = null;
   finMarcarAba();
@@ -25394,10 +25396,9 @@ function finMudarAba(aba) { _finAba = aba; finMarcarAba(); finRender(); }
 async function finCarregar() {
   const mes = document.getElementById('finMes').value;
   if (!mes) { toast('Escolha o mês', 'warn'); return; }
-  const todas = document.getElementById('finFilial').value === 'todas';
   if (['precos', 'config', 'previsao'].includes(_finAba)) { _finAba = 'resumo'; finMarcarAba(); }
   document.getElementById('finConteudo').innerHTML = finSpinner;
-  const res = await api(`/financeiro/painel?mes=${encodeURIComponent(mes)}${todas ? '&filial=todas' : ''}`);
+  const res = await api(`/financeiro/painel?mes=${encodeURIComponent(mes)}${finFiliaisParam()}`);
   if (!res?.ok) {
     _finDados = null;
     document.getElementById('finConteudo').innerHTML = `<div class="empty-state"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div>`;
@@ -25447,7 +25448,8 @@ function finRenderResumo() {
   const d = _finDados, a = d.atual, c = a.compras.totais, ant = d.anterior;
   const aReceber = (c.pendente || 0) + (c.recebido_estimado || 0);
   const pctMeta = a.meta ? a.gasto.total / a.meta * 100 : null;
-  let html = d.consolidado ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Consolidado: ${d.filiais.map(f => escHtml(f.nome)).join(', ')}</div>` : '';
+  let html = d.consolidado ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Consolidado: ${d.filiais.map(f => escHtml(f.nome)).join(', ')}</div>`
+    : d.filiais?.[0] && d.filiais[0].slug !== GCA.unidade ? `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Filial: ${escHtml(d.filiais[0].nome)}</div>` : '';
   if (c.recebido_estimado > 0) {
     html += `<div class="fin-aviso">⚠️ ${finR$(c.recebido_estimado)} já recebidos antes deste módulo não têm o preço pago registrado — entram com o valor estimado.</div>`;
   }
@@ -25509,7 +25511,8 @@ function finRenderAvulsos() {
   const d = _finDados, a = d.atual;
   const av = a.avulsos || { total: 0, por_tipo: {}, por_categoria: [], lancamentos: [] };
   const lista = av.lancamentos || [];
-  const podeLancar = !d.consolidado;
+  // Lançar só vendo a própria filial (o lançamento vai para a filial em que está logado)
+  const podeLancar = !d.consolidado && (!d.filiais?.[0] || d.filiais[0].slug === GCA.unidade);
 
   let html = `
     <div class="fin-kpis">
@@ -25523,7 +25526,7 @@ function finRenderAvulsos() {
       <div style="font-size:12px;color:var(--text-3)">Esses valores entram no gasto do mês, na meta e no Excel.</div>
       ${podeLancar
         ? '<button class="btn btn-primary" style="margin-left:auto" onclick="finAbrirCusto()">+ Lançar custo</button>'
-        : '<div style="margin-left:auto;font-size:12px;color:var(--yellow)">Escolha uma filial (sem ser "todas") para lançar</div>'}
+        : '<div style="margin-left:auto;font-size:12px;color:var(--yellow)">Para lançar, escolha "Só esta" no seletor de filiais (o lançamento vai para a filial em que você está)</div>'}
     </div>`;
 
   html += finCard('Lançamentos do mês', '', finTabela(
@@ -25919,16 +25922,78 @@ async function finSalvarConfig() {
   finRenderConfig();
 }
 
+// ── Filiais do painel (admin): esta filial, todas ou só as escolhidas (ex.: Maricá + Rio das
+// Ostras somadas). A escolha fica guardada neste navegador.
+let _finFiliais = null;   // null = só a filial em que está logado
+const finFiliaisDisponiveis = () => [...new Set((GCA.unidades && GCA.unidades.length) ? GCA.unidades : [GCA.unidade])];
+const finFiliaisEscolhidas = () => (_finFiliais && _finFiliais.length) ? _finFiliais : [GCA.unidade];
+const finFiliaisTodas = (sel) => { const t = finFiliaisDisponiveis(); return t.length > 1 && t.every(x => sel.includes(x)); };
+function finFiliaisParam() {
+  if (GCA.usuario?.role !== 'admin') return '';
+  const sel = finFiliaisEscolhidas();
+  if (sel.length === 1 && sel[0] === GCA.unidade) return '';
+  return '&filial=' + (finFiliaisTodas(sel) ? 'todas' : encodeURIComponent(sel.join(',')));
+}
+function finFiliaisRotulo() {
+  const sel = finFiliaisEscolhidas();
+  const btn = document.getElementById('finFilialBtn');
+  if (!btn) return;
+  const texto = sel.length === 1 ? (sel[0] === GCA.unidade ? 'Esta filial' : getNomeUnidade(sel[0]))
+    : finFiliaisTodas(sel) ? 'Todas as filiais' : `${sel.length} filiais`;
+  btn.textContent = texto + ' ▾';
+  btn.title = sel.map(getNomeUnidade).join(' + ');
+}
+function finFiliaisRestaurar() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem('gca_fin_filiais') || 'null');
+    const disp = finFiliaisDisponiveis();
+    _finFiliais = Array.isArray(salvo) && salvo.length && salvo.every(x => disp.includes(x)) ? salvo : null;
+  } catch { _finFiliais = null; }
+  finFiliaisRotulo();
+}
+function finFiliaisAbrir(ev) {
+  ev?.stopPropagation();
+  const menu = document.getElementById('finFiliaisMenu');
+  if (!menu.classList.contains('hidden')) { menu.classList.add('hidden'); return; }
+  const sel = finFiliaisEscolhidas();
+  menu.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Ver os números de</div>
+    <div style="display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto">${finFiliaisDisponiveis().map(slug => `
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:6px;cursor:pointer;font-size:13px">
+        <input type="checkbox" class="fin-filial-op" value="${escHtml(slug)}" ${sel.includes(slug) ? 'checked' : ''}>
+        <span>${escHtml(getNomeUnidade(slug))}${slug === GCA.unidade ? ' <span style="font-size:10px;color:var(--text-3)">(esta)</span>' : ''}</span></label>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <button type="button" class="btn btn-ghost" data-no-guard="1" style="font-size:11px;padding:4px 8px" onclick="document.querySelectorAll('.fin-filial-op').forEach(c => c.checked = true)">Todas</button>
+      <button type="button" class="btn btn-ghost" data-no-guard="1" style="font-size:11px;padding:4px 8px" onclick="document.querySelectorAll('.fin-filial-op').forEach(c => c.checked = c.value === GCA.unidade)">Só esta</button>
+      <button type="button" class="btn btn-primary" data-no-guard="1" style="font-size:11px;padding:4px 10px;margin-left:auto" onclick="finFiliaisAplicar()">Aplicar</button>
+    </div>
+    <div id="finFiliaisErro" style="font-size:11px;color:var(--red);min-height:14px;margin-top:4px"></div>`;
+  menu.classList.remove('hidden');
+  const fechar = () => { menu.classList.add('hidden'); document.removeEventListener('click', fechar); };
+  setTimeout(() => document.addEventListener('click', fechar), 0);
+}
+function finFiliaisAplicar() {
+  const sel = [...document.querySelectorAll('.fin-filial-op:checked')].map(c => c.value);
+  if (!sel.length) { document.getElementById('finFiliaisErro').textContent = 'Marque pelo menos uma filial.'; return; }
+  _finFiliais = sel.length === 1 && sel[0] === GCA.unidade ? null : sel;
+  try { if (_finFiliais) localStorage.setItem('gca_fin_filiais', JSON.stringify(_finFiliais)); else localStorage.removeItem('gca_fin_filiais'); } catch {}
+  document.getElementById('finFiliaisMenu').classList.add('hidden');
+  finFiliaisRotulo();
+  finCarregar();
+}
+
 async function finExportar() {
   const mes = document.getElementById('finMes').value;
   if (!mes) { toast('Escolha o mês', 'warn'); return; }
-  const todas = document.getElementById('finFilial').value === 'todas';
   try {
-    const r = await fetch(`${API}/financeiro/exportar?mes=${encodeURIComponent(mes)}${todas ? '&filial=todas' : ''}`, { headers: { Authorization: `Bearer ${GCA.token}` } });
+    const r = await fetch(`${API}/financeiro/exportar?mes=${encodeURIComponent(mes)}${finFiliaisParam()}`, { headers: { Authorization: `Bearer ${GCA.token}` } });
     if (!r.ok) { const j = await r.json().catch(() => ({})); toast(j.erro || 'Erro ao gerar a planilha', 'error'); return; }
     const url = URL.createObjectURL(await r.blob());
     const a = document.createElement('a');
-    a.href = url; a.download = `financeiro_${mes}${todas ? '_todas' : ''}.xlsx`;
+    const sel = finFiliaisEscolhidas();
+    const sufixo = sel.length === 1 && sel[0] === GCA.unidade ? '' : finFiliaisTodas(sel) ? '_todas' : '_' + sel.join('_');
+    a.href = url; a.download = `financeiro_${mes}${sufixo}.xlsx`;
     document.body.appendChild(a); a.click(); a.remove();
   } catch { toast('Erro ao gerar a planilha', 'error'); }
 }
