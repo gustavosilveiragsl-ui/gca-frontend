@@ -2443,11 +2443,12 @@ window.addEventListener('pageshow', function(e) {
 
         <!-- TABELA -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap">
             <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
               <button id="btnPrevisaoCompra" class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()">🔔 Previsão de Compra</button>
-            <div class="card-actions">
-              <div id="estAbasArmazem" style="display:flex;gap:6px"></div>
+            <!-- quebra linha: com nomes de armazém longos os botões passavam da largura do cartão -->
+            <div class="card-actions" style="flex-wrap:wrap;justify-content:flex-end">
+              <div id="estAbasArmazem" style="display:flex;gap:6px;flex-wrap:wrap"></div>
               <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
               <select class="form-input" id="estFiltroStatus" style="width:140px;font-size:11px" onchange="renderEstoque()">
                 <option value="">Todos os status</option>
@@ -2460,6 +2461,7 @@ window.addEventListener('pageshow', function(e) {
                 <option value="">Todas as categorias</option>
               </select>
               <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
+              <button class="btn btn-ghost" id="btnEstExcel" onclick="exportarEstoqueExcel()" title="Baixa o que está na tela: todos os armazéns (lado a lado e um por aba) ou só o armazém escolhido">📊 Excel</button>
             </div>
           </div>
           <table style="table-layout:fixed;width:100%" id="estTabela">
@@ -5211,21 +5213,61 @@ window.addEventListener('pageshow', function(e) {
 
       <!-- MODAL DETALHE DO INVENTÁRIO -->
       <div class="modal-overlay hidden" id="modalInventarioDetalhe">
-        <div class="modal-box modal-alto" style="max-width:700px;width:100%">
+        <div class="modal-box modal-alto" style="max-width:960px;width:100%">
           <div class="modal-header">
             <div><div class="modal-title">📋 Detalhe do Inventário</div><div style="font-size:11px;color:var(--text-3)" id="invDetInfo"></div></div>
             <button class="modal-close" onclick="document.getElementById('modalInventarioDetalhe').classList.add('hidden')">×</button>
           </div>
           <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
             <div id="invDetAcoes" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <div id="invDetRodadas"></div>
             <div style="overflow-x:auto">
               <table>
                 <thead><tr>
-                  <th>Item</th><th style="text-align:center">Saldo na contagem</th><th style="text-align:center">Contado</th>
+                  <th>Item</th><th style="text-align:center;white-space:normal">Saldo na contagem</th><th style="text-align:center">Contado</th>
+                  <th style="text-align:center" title="Quantas vezes o item foi contado">Contagens</th>
                   <th>Diverg.</th><th>Contado por</th><th></th>
                 </tr></thead>
                 <tbody id="invDetItensBody"></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recontagem: escolher quais itens do inventário voltam para contar -->
+      <div class="modal-overlay hidden" id="modalInvRecontagem">
+        <div class="modal-box modal-alto" style="max-width:560px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title">🔁 Recontar itens</div><div style="font-size:11px;color:var(--text-3)" id="invRecInfo"></div></div>
+            <button class="modal-close" onclick="fecharRecontagemInv()">×</button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+              Os itens escolhidos voltam a ficar sem contagem e são contados de novo pelo mesmo link, sem o saldo do sistema na tela.
+              A contagem anterior fica guardada no histórico do item. Os outros itens continuam com a contagem que já têm.
+            </div>
+            <div id="invRecModos" style="display:flex;flex-direction:column;gap:6px"></div>
+            <div id="invRecEscolha" class="hidden" style="display:flex;flex-direction:column;gap:6px">
+              <input class="search-box" id="invRecBusca" placeholder="Buscar item..." oninput="renderRecontagemItensInv()" style="width:100%">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <button class="row-action" onclick="marcarRecontagemInv('divergentes')">Marcar os divergentes</button>
+                <button class="row-action" onclick="marcarRecontagemInv('nenhum')">Desmarcar todos</button>
+                <span id="invRecContador" style="font-size:11px;color:var(--text-3)"></span>
+              </div>
+              <div id="invRecLista" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md)"></div>
+            </div>
+            <div>
+              <label class="form-label">Motivo da recontagem *</label>
+              <textarea class="form-input" id="invRecMotivo" rows="2" placeholder="Ex.: divergências demais — conferir antes de ajustar o estoque"></textarea>
+            </div>
+            <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="invRecIniciar" checked style="margin-top:2px">
+              <span>Já iniciar a recontagem agora: o armazém fica congelado até finalizar. Desmarque para iniciar depois, pelo card do inventário.</span>
+            </label>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="fecharRecontagemInv()">Cancelar</button>
+              <button class="btn btn-primary" id="invRecBtn" onclick="confirmarRecontagemInv()">🔁 Reabrir para recontagem</button>
             </div>
           </div>
         </div>
@@ -13905,6 +13947,121 @@ function selecionarArmazemEst(id) {
   renderEstoque();
 }
 
+// Status do saldo (a tela e o Excel usam a mesma regra)
+function estStatusDe(s) {
+  const min = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
+  if (s.saldo === 0)                  return 'zerado';
+  if (min > 0 && s.saldo < min)       return 'critico';
+  if (min > 0 && s.saldo < min * 1.3) return 'baixo';
+  return 'ok';
+}
+
+// ── Excel da consulta de estoque ──
+// Em "Todos": uma aba com os armazéns lado a lado (saldo em cada um e o total do item) e uma
+// aba por armazém. Com um armazém escolhido: só a aba dele. Busca, status e categoria da tela
+// valem para a planilha; a aba Filtros diz o que foi aplicado.
+function exportarEstoqueExcel() {
+  if (!_estoqueData.length) { toast('Nenhum saldo carregado', 'warn'); return; }
+  const busca     = (document.getElementById('estBusca')?.value || '').trim().toLowerCase();
+  const filtro    = document.getElementById('estFiltroStatus')?.value || '';
+  const categoria = document.getElementById('estFiltroCategoria')?.value || '';
+
+  const itemPorId = new Map((_itens || []).map(i => [i.id, i]));
+  const catDe = (s) => normCategoriaFiltro(itemPorId.get(s.item_id)?.categoria);
+  let lista = _estArmazem ? _estoqueData.filter(s => s.armazem_id === _estArmazem) : _estoqueData;
+  if (categoria) lista = lista.filter(s => catDe(s) === categoria);
+  if (busca)     lista = lista.filter(s => (s.nome_item || '').toLowerCase().includes(busca) || (s.codigo_item || '').toLowerCase().includes(busca));
+  if (filtro)    lista = lista.filter(s => estStatusDe(s) === filtro);
+  if (!lista.length) { toast('Nenhum item com os filtros escolhidos', 'warn'); return; }
+
+  const STATUS_TXT = { critico: 'Crítico', baixo: 'Baixo', ok: 'OK', zerado: 'Zerado' };
+  const porNome = (a, b) => (a.nome_item || '').localeCompare(b.nome_item || '', 'pt-BR');
+  const valorUn = (s) => Number(itemPorId.get(s.item_id)?.valor_un || 0);
+  const unDe = (s) => itemPorId.get(s.item_id)?.un_med || 'UN';
+  const armazens = [...new Map(lista.map(s => [s.armazem_id, s.nome_armazem || s.armazem_id])).entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'));
+
+  // Uma aba por armazém: o que a tela mostra, com o total em valor no fim
+  const cabArm = ['Status', 'Código', 'Item', 'Categoria', 'Un.', 'Saldo', 'Mínimo', 'Valor un. (R$)', 'Valor total (R$)'];
+  const abaArmazem = (armId) => {
+    const linhas = lista.filter(s => s.armazem_id === armId).sort(porNome).map(s => [
+      STATUS_TXT[estStatusDe(s)], s.codigo_item || '', s.nome_item || '', catDe(s), unDe(s),
+      Number(s.saldo) || 0, Number(s.estoque_min || 0) || '', valorUn(s), (Number(s.saldo) || 0) * valorUn(s),
+    ]);
+    const total = linhas.reduce((t, l) => t + l[8], 0);
+    return [cabArm, ...linhas, [], ['', '', 'TOTAL', '', '', '', '', '', total]];
+  };
+
+  // Todos os armazéns lado a lado: uma linha por item
+  const abaTodos = () => {
+    const porItem = new Map();
+    lista.forEach(s => {
+      const x = porItem.get(s.item_id) || { s, saldos: {} };
+      x.saldos[s.armazem_id] = (x.saldos[s.armazem_id] || 0) + (Number(s.saldo) || 0);
+      porItem.set(s.item_id, x);
+    });
+    const cab = ['Código', 'Item', 'Categoria', 'Un.', ...armazens.map(a => a[1]), 'Saldo total', 'Valor un. (R$)', 'Valor total (R$)'];
+    const linhas = [...porItem.values()].sort((a, b) => porNome(a.s, b.s)).map(({ s, saldos }) => {
+      const tot = armazens.reduce((t, [id]) => t + (saldos[id] || 0), 0);
+      return [s.codigo_item || '', s.nome_item || '', catDe(s), unDe(s), ...armazens.map(([id]) => saldos[id] ?? ''), tot, valorUn(s), tot * valorUn(s)];
+    });
+    const total = linhas.reduce((t, l) => t + l[l.length - 1], 0);
+    const rodape = new Array(cab.length).fill('');
+    rodape[1] = 'TOTAL'; rodape[cab.length - 1] = total;
+    return [cab, ...linhas, [], rodape];
+  };
+
+  const textoSel = (id) => { const el = document.getElementById(id); return el?.value ? el.selectedOptions[0]?.textContent.trim() : 'Todos'; };
+  const filtros = [
+    ['Consulta de Estoque'],
+    ['Gerado em', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })],
+    ['Gerado por', GCA.usuario?.nome || GCA.usuario?.username || ''],
+    ['Filial', GCA.usuario?.unidade || ''],
+    ['Armazém', _estArmazem ? (armazens[0]?.[1] || '') : 'Todos'],
+    ['Busca', busca || '—'],
+    ['Status', textoSel('estFiltroStatus')],
+    ['Categoria', categoria || 'Todas'],
+    ['Linhas exportadas', lista.length],
+  ];
+
+  gcaCarregarSheetJS(() => {
+    const wb = XLSX.utils.book_new();
+    const usados = new Set();
+    // Nome de aba: até 31 letras, sem : \ / ? * [ ] e sem repetir
+    const nomeAba = (n) => {
+      let base = String(n || 'Armazém').replace(/[:\\/?*\[\]]/g, '-').trim().slice(0, 31) || 'Armazém', nome = base, k = 2;
+      while (usados.has(nome.toLowerCase())) { const suf = ` (${k++})`; nome = base.slice(0, 31 - suf.length) + suf; }
+      usados.add(nome.toLowerCase());
+      return nome;
+    };
+    const aba = (nome, linhas, larguras, colsDinheiro) => {
+      const ws = XLSX.utils.aoa_to_sheet(linhas);
+      ws['!cols'] = larguras.map(w => ({ wch: w }));
+      if (linhas.length > 1) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length - 3, c: linhas[0].length - 1 } }) };
+      for (let r = 1; r < linhas.length; r++) colsDinheiro.forEach(c => {
+        const cel = ws[XLSX.utils.encode_cell({ r, c })];
+        if (cel && cel.t === 'n') cel.z = '#,##0.00';
+      });
+      XLSX.utils.book_append_sheet(wb, ws, nomeAba(nome));
+    };
+
+    if (!_estArmazem && armazens.length > 1) {
+      const todos = abaTodos();
+      const n = todos[0].length;
+      aba('Todos os armazéns', todos, [12, 40, 18, 6, ...armazens.map(a => Math.min(Math.max(String(a[1]).length, 10), 24)), 11, 13, 15], [n - 2, n - 1]);
+    }
+    armazens.forEach(([id, nome]) => aba(nome, abaArmazem(id), [9, 12, 40, 18, 6, 9, 9, 13, 15], [7, 8]));
+    const wsF = XLSX.utils.aoa_to_sheet(filtros);
+    wsF['!cols'] = [{ wch: 20 }, { wch: 44 }];
+    XLSX.utils.book_append_sheet(wb, wsF, nomeAba('Filtros'));
+
+    const slug = _estArmazem ? String(armazens[0]?.[1] || 'armazem').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') : 'todos_armazens';
+    const nomeArq = `estoque_${slug}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.xlsx`;
+    XLSX.writeFile(wb, nomeArq);
+    toast(`✅ ${nomeArq} gerado!`, 'success', 3000);
+  });
+}
+
 // manterPagina = clique nos botões de página. Sem ele (filtro, busca, recarregar) volta ao início.
 function renderEstoque(manterPagina) {
   if (!manterPagina) _estPagina = 1;
@@ -13923,14 +14080,7 @@ function renderEstoque(manterPagina) {
   let lista = categoria ? doArmazem.filter(s => catDe(s) === categoria) : doArmazem;
   if (busca)       lista = lista.filter(s => (s.nome_item||'').toLowerCase().includes(busca) || (s.codigo_item||'').toLowerCase().includes(busca));
 
-  // Status
-  const getStatus = s => {
-    const min   = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
-    if (s.saldo === 0)         return 'zerado';
-    if (min > 0 && s.saldo < min)  return 'critico';
-    if (min > 0 && s.saldo < min * 1.3) return 'baixo';
-    return 'ok';
-  };
+  const getStatus = estStatusDe;
 
   if (filtro) lista = lista.filter(s => getStatus(s) === filtro);
 
@@ -15095,6 +15245,9 @@ function renderInventarioHistorico() {
 
   const statusBadge = (r) => {
     if (r.status === 'ENTREGUE') return `<span class="log-badge log-badge-verde">✅ Entregue</span>`;
+    if (r.status === 'RECONTAGEM') return r.congelado
+      ? `<span class="log-badge" style="color:var(--accent-text);border:1px solid var(--accent-text)">🔒 Recontando (${r.rodada}ª)</span>`
+      : `<span class="log-badge log-badge-azul">🔁 Recontagem (${r.rodada}ª) · aguardando início</span>`;
     if (r.bloqueado) return `<span class="log-badge" style="color:var(--red);border:1px solid var(--red)">🔴 Atrasado</span>`;
     if (r.congelado) return `<span class="log-badge" style="color:var(--accent-text);border:1px solid var(--accent-text)">🔒 Contando</span>`;
     return `<span class="log-badge log-badge-azul">⏳ Aguardando início</span>`;
@@ -15116,6 +15269,7 @@ function renderInventarioHistorico() {
         <div class="inv-hist-stat"><b>${r.qtd_divergencias != null ? r.qtd_divergencias : '—'}</b><span>Divergências</span></div>
       </div>
       <div class="inv-hist-meta">${r.finalizado_em ? '✓ ' + formatarData(r.finalizado_em.slice(0,10)) + ' · ' + escHtml(r.finalizado_por||'') : 'Ainda não finalizado'}</div>
+      ${(r.recontagens || []).length ? `<div class="inv-hist-meta" style="color:var(--accent-text)">🔁 ${r.recontagens.length} recontagem(ns) · ${r.recontagens.map(x => `${x.rodada}ª: ${x.qtd_itens} item(ns)${x.finalizada_em ? ' em ' + formatarData(x.finalizada_em.slice(0,10)) : ' em andamento'}`).join(' · ')}</div>` : ''}
       <div class="inv-hist-acoes">
         ${r.status === 'ENTREGUE' ? `
           <button class="row-action" onclick="abrirDetalheInventario('${r.id}')">Ver</button>
@@ -15123,6 +15277,7 @@ function renderInventarioHistorico() {
         ` : r.bloqueado ? `
           <button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_atraso" onclick="liberarAtrasoInventario('${r.armazem_id}','${r.ano_mes}')">🔓 Liberar atraso</button>
         ` : `
+          ${r.status === 'RECONTAGEM' ? `<button class="row-action" onclick="abrirDetalheInventario('${escJs(r.id)}')">Ver</button>` : ''}
           ${r.congelado ? `<button class="row-action" onclick="abrirProgressoInventario('${escJs(r.id)}')">📊 Andamento</button>` : ''}
           ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','${escJs(r.nome_armazem)}')">🔗 Link / QR</button>` : ''}
           ${r.congelado
@@ -15366,7 +15521,7 @@ async function carregarProgressoInventario() {
 
   const inv = res.inventario;
   document.getElementById('invProgInfo').textContent =
-    `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)}${inv.congelado_em ? ' · iniciado ' + formatarData(inv.congelado_em.slice(0,10)) : ''}`;
+    `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)}${inv.recontagem ? ` · 🔁 recontagem (${inv.recontagem.rodada}ª contagem)` : ''}${inv.congelado_em ? ' · iniciado ' + formatarData(inv.congelado_em.slice(0,10)) : ''}`;
 
   const faltando = res.total - res.contados;
   const quando = (d) => {
@@ -15386,7 +15541,7 @@ async function carregarProgressoInventario() {
     <div class="inv-prog-barra" style="height:10px"><div class="inv-prog-fill" style="width:${res.percentual}%"></div></div>
     <div class="inv-prog-txt" style="margin-bottom:16px">
       <span>${faltando} item(ns) faltando</span>
-      <span>${inv.bloqueado ? '🔴 prazo vencido' : 'prazo ' + (inv.prazo_final ? formatarData(inv.prazo_final) : '—')}</span>
+      <span>${inv.bloqueado ? '🔴 prazo vencido' : inv.recontagem ? 'recontagem: sem prazo' : 'prazo ' + (inv.prazo_final ? formatarData(inv.prazo_final) : '—')}</span>
     </div>
 
     <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">👥 Quem está contando</div>
@@ -15428,19 +15583,45 @@ async function carregarProgressoInventario() {
 async function abrirDetalheInventario(id) {
   const res = await api(`/inventario/${id}/itens`);
   if (!res?.ok) { toast(res?.erro || 'Erro ao carregar detalhe', 'error'); return; }
-  _invDetalheAberto = { id, inventario: res.inventario, itens: res.itens };
+  _invDetalheAberto = { id, inventario: res.inventario, itens: res.itens, rodadas: res.rodadas || [] };
   renderDetalheInventario();
   document.getElementById('modalInventarioDetalhe').classList.remove('hidden');
 }
 
-function renderDetalheInventario() {
-  const { inventario: inv, itens } = _invDetalheAberto;
-  document.getElementById('invDetInfo').textContent = `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
+const INV_MODO_RECONTAGEM = { DIVERGENTES: 'só os divergentes', TODOS: 'inventário todo', SELECIONADOS: 'itens escolhidos' };
 
+function renderDetalheInventario() {
+  const { inventario: inv, itens, rodadas } = _invDetalheAberto;
+  const emRecontagem = inv.status === 'RECONTAGEM';
+  document.getElementById('invDetInfo').textContent = `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`
+    + (emRecontagem ? ` · 🔁 ${inv.rodada}ª contagem em andamento` : '');
+
+  // Corrigir e recontar só com o inventário fechado: durante a recontagem a contagem ainda vai mudar
+  const fechado = inv.status === 'ENTREGUE';
   const temDivergenciaPendente = itens.some(i => i.divergencia && !i.corrigido);
-  document.getElementById('invDetAcoes').innerHTML = temDivergenciaPendente
-    ? `<button class="btn btn-primary" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirTodasDivergenciasInv()">⚖️ Corrigir todas as divergências</button>`
-    : '';
+  const podeRecontar = itens.some(i => !i.corrigido);
+  document.getElementById('invDetAcoes').innerHTML = !fechado ? '' : [
+    temDivergenciaPendente ? `<button class="btn btn-primary" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirTodasDivergenciasInv()">⚖️ Corrigir todas as divergências</button>` : '',
+    podeRecontar ? `<button class="btn btn-ghost" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="abrirRecontagemInv()">🔁 Recontar itens</button>` : '',
+  ].join('');
+
+  // Uma linha por rodada, da contagem inicial às recontagens — só quando houve recontagem
+  const rodEl = document.getElementById('invDetRodadas');
+  rodEl.innerHTML = (rodadas || []).length > 1 ? `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">🔁 Contagens</div>
+      ${rodadas.map(r => {
+        const titulo = r.rodada === 1 ? 'Contagem inicial' : `Recontagem (${INV_MODO_RECONTAGEM[r.modo] || 'itens escolhidos'}): ${r.qtd_itens} ${Number(r.qtd_itens) === 1 ? 'item' : 'itens'}`;
+        const quem = r.rodada === 1 ? '' : ` · aberta por ${escHtml(r.aberta_por || '—')}${r.aberta_em ? ' em ' + formatarData(r.aberta_em.slice(0,10)) : ''}`;
+        const fim = r.finalizada_em
+          ? `finalizada em ${formatarData(r.finalizada_em.slice(0,10))}${r.finalizada_por ? ' por ' + escHtml(r.finalizada_por) : ''}${r.qtd_divergencias != null ? ` · <b>${r.qtd_divergencias}</b> divergência(s) · ${Number(r.acuracia_pct).toFixed(1)}%` : ''}`
+          : (r.iniciada_em ? '<span style="color:var(--accent-text)">contando agora</span>' : '<span style="color:var(--accent-text)">aguardando início</span>');
+        return `<div style="font-size:12px;color:var(--text-1);line-height:1.45">
+          <b>${r.rodada}ª</b> · ${titulo}${quem} · ${fim}
+          ${r.rodada > 1 && r.motivo ? `<div style="font-size:11px;color:var(--text-3)">Motivo: ${escHtml(r.motivo)}</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>` : '';
 
   document.getElementById('invDetItensBody').innerHTML = itens.map(it => {
     // Item que sofreu movimentação liberada DEPOIS de ser contado: a contagem estava certa
@@ -15466,22 +15647,34 @@ function renderDetalheInventario() {
         ✔️ Não é divergência — ${escHtml(it.reclassificada_motivo || '')}${it.reclassificada_por ? ' · ' + escHtml(it.reclassificada_por) : ''}
       </div>` : '';
 
-    const tagDiverg = !it.divergencia
+    const tagDiverg = it.em_recontagem
+      ? `<span style="color:var(--accent-text);font-weight:600;font-size:11px">recontando</span>`
+      : !it.divergencia
       ? `<span style="color:var(--text-3);font-size:11px">não</span>`
       : it.divergencia_reclassificada
         ? `<span style="color:var(--text-3);font-weight:600;font-size:11px">justificada</span>`
         : `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>`;
 
+    // Contagens anteriores do item (a última é a que está nas colunas)
+    const anteriores = it.contagens_anteriores || [];
+    const marcaHist = anteriores.length ? `
+      <div style="font-size:10px;color:var(--text-3);margin-top:3px;line-height:1.4">
+        🔁 ${anteriores.map(c => `${c.contagem}ª: <b>${c.saldo_contado ?? '—'}</b>${c.divergencia ? ' (divergente)' : ''}${c.nome_contador ? ' · ' + escHtml(c.nome_contador) : ''}${c.contado_em ? ' · ' + formatarData(c.contado_em.slice(0,10)) : ''}`).join(' — ')}
+      </div>` : '';
+    const nCont = Number(it.qtd_contagens) || 1;
+    const fechado = _invDetalheAberto.inventario.status === 'ENTREGUE';
+
     return `
     <tr>
-      <td class="td-main">${escHtml(it.nome_item||'—')}${marcaMovimento}${avisoLiberacao}${marcaReclass}</td>
+      <td class="td-main" style="white-space:normal;min-width:200px">${escHtml(it.nome_item||'—')}${marcaMovimento}${avisoLiberacao}${marcaReclass}${marcaHist}</td>
       <td style="text-align:center">${it.saldo_na_contagem ?? it.saldo_gca ?? '—'}</td>
       <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
+      <td style="text-align:center;${nCont > 1 ? 'font-weight:700;color:var(--accent-text)' : 'color:var(--text-3)'}">${nCont}ª</td>
       <td>${tagDiverg}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador||'—')}</td>
-      <td style="white-space:nowrap">
-        ${it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${escJs(it.id)}')">Corrigir</button>` : ''}
-        ${it.divergencia ? (it.divergencia_reclassificada
+      <td style="white-space:normal;line-height:2">
+        ${fechado && it.divergencia && !it.corrigido ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="corrigirDivergenciaInv('${escJs(it.id)}')">Corrigir</button>` : ''}
+        ${fechado && it.divergencia ? (it.divergencia_reclassificada
             ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="reclassificarDivergencia('${escJs(it.id)}', true)">Desfazer</button>`
             : `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="reclassificarDivergencia('${escJs(it.id)}', false)">Não é divergência</button>`) : ''}
       </td>
@@ -15523,6 +15716,100 @@ async function corrigirTodasDivergenciasInv() {
   const res = await api(`/inventario/${_invDetalheAberto.id}/corrigir-todas`, { method: 'POST' });
   if (res?.ok) { toast(`${res.corrigidos} divergência(s) corrigida(s)!`, 'success'); await abrirDetalheInventario(_invDetalheAberto.id); carregarInventarioHistorico(); }
   else toast(res?.erro || 'Erro ao corrigir', 'error');
+}
+
+// ── Recontagem: antes de aceitar as divergências, mandar contar de novo ──
+// Só os divergentes, o inventário todo ou os itens escolhidos. Item com o estoque já
+// ajustado não volta: o saldo dele já foi levado à contagem.
+let _invRec = { modo: 'DIVERGENTES', marcados: new Set() };
+const invRecDivergente = (i) => i.divergencia && !i.divergencia_reclassificada && !i.corrigido;
+
+function abrirRecontagemInv() {
+  const { inventario: inv, itens } = _invDetalheAberto;
+  const nDiv = itens.filter(invRecDivergente).length;
+  _invRec = { modo: nDiv ? 'DIVERGENTES' : 'SELECIONADOS', marcados: new Set(itens.filter(invRecDivergente).map(i => i.id)) };
+  document.getElementById('invRecInfo').textContent = `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)} · próxima: ${(Number(inv.rodada) || 1) + 1}ª contagem`;
+  document.getElementById('invRecMotivo').value = '';
+  document.getElementById('invRecBusca').value = '';
+  document.getElementById('invRecIniciar').checked = true;
+  renderRecontagemModosInv();
+  document.getElementById('modalInvRecontagem').classList.remove('hidden');
+}
+
+function fecharRecontagemInv() {
+  document.getElementById('modalInvRecontagem').classList.add('hidden');
+}
+
+function renderRecontagemModosInv() {
+  const itens = _invDetalheAberto.itens;
+  const nDiv = itens.filter(invRecDivergente).length;
+  const nAbertos = itens.filter(i => !i.corrigido).length;
+  const nAjustados = itens.length - nAbertos;
+  const opcoes = [
+    ['DIVERGENTES', 'Só os itens com divergência', nDiv ? `${nDiv} item(ns)` : 'nenhuma divergência pendente', !nDiv],
+    ['TODOS', 'O inventário todo', `${nAbertos} item(ns)${nAjustados ? ` · ${nAjustados} já ajustado(s) ficam de fora` : ''}`, false],
+    ['SELECIONADOS', 'Escolher os itens', 'marque na lista', false],
+  ];
+  document.getElementById('invRecModos').innerHTML = opcoes.map(([valor, titulo, sub, desabilitado]) => `
+    <label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid ${_invRec.modo === valor ? 'var(--accent-text)' : 'var(--border)'};border-radius:var(--radius-md);cursor:${desabilitado ? 'not-allowed' : 'pointer'};opacity:${desabilitado ? .5 : 1}">
+      <input type="radio" name="invRecModo" value="${valor}" ${_invRec.modo === valor ? 'checked' : ''} ${desabilitado ? 'disabled' : ''} onchange="_invRec.modo='${valor}';renderRecontagemModosInv()">
+      <span style="display:flex;flex-direction:column">
+        <span style="font-size:13px;color:var(--text-1);font-weight:600">${titulo}</span>
+        <span style="font-size:11px;color:var(--text-3)">${sub}</span>
+      </span>
+    </label>`).join('');
+  document.getElementById('invRecEscolha').classList.toggle('hidden', _invRec.modo !== 'SELECIONADOS');
+  if (_invRec.modo === 'SELECIONADOS') renderRecontagemItensInv();
+}
+
+function renderRecontagemItensInv() {
+  const q = (document.getElementById('invRecBusca').value || '').trim().toLowerCase();
+  const itens = _invDetalheAberto.itens.filter(i => !q || (i.nome_item || '').toLowerCase().includes(q) || (i.codigo_item || '').toLowerCase().includes(q));
+  document.getElementById('invRecLista').innerHTML = itens.length ? itens.map(i => {
+    const ajustado = !!i.corrigido;
+    const tag = ajustado ? '<span style="color:var(--text-3)">estoque já ajustado</span>'
+      : invRecDivergente(i) ? '<span style="color:#ef4444;font-weight:600">divergente</span>' : '';
+    return `<label style="display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font-size:12px;cursor:${ajustado ? 'not-allowed' : 'pointer'};opacity:${ajustado ? .5 : 1}">
+      <input type="checkbox" ${_invRec.marcados.has(i.id) ? 'checked' : ''} ${ajustado ? 'disabled' : ''} onchange="marcarItemRecontagemInv('${escJs(i.id)}', this.checked)">
+      <span style="flex:1;color:var(--text-1)">${escHtml(i.nome_item || '—')}</span>
+      <span style="font-size:11px;color:var(--text-3);white-space:nowrap">contado ${i.saldo_contado ?? '—'} · sistema ${i.saldo_na_contagem ?? i.saldo_gca ?? '—'}</span>
+      ${tag ? `<span style="font-size:10px;white-space:nowrap">${tag}</span>` : ''}
+    </label>`;
+  }).join('') : '<div style="padding:12px;font-size:12px;color:var(--text-3)">Nenhum item encontrado</div>';
+  document.getElementById('invRecContador').textContent = `${_invRec.marcados.size} item(ns) marcado(s)`;
+}
+
+function marcarItemRecontagemInv(id, marcado) {
+  if (marcado) _invRec.marcados.add(id); else _invRec.marcados.delete(id);
+  document.getElementById('invRecContador').textContent = `${_invRec.marcados.size} item(ns) marcado(s)`;
+}
+
+function marcarRecontagemInv(qual) {
+  _invRec.marcados = new Set(qual === 'divergentes' ? _invDetalheAberto.itens.filter(invRecDivergente).map(i => i.id) : []);
+  renderRecontagemItensInv();
+}
+
+async function confirmarRecontagemInv() {
+  const { inventario: inv } = _invDetalheAberto;
+  const motivo = document.getElementById('invRecMotivo').value.trim();
+  if (_invRec.modo === 'SELECIONADOS' && !_invRec.marcados.size) { toast('Marque pelo menos um item para recontar', 'warn'); return; }
+  if (motivo.length < 5) { toast('Escreva o motivo da recontagem (mínimo 5 letras)', 'warn'); return; }
+  const iniciar = document.getElementById('invRecIniciar').checked;
+
+  const btn = document.getElementById('invRecBtn');
+  btn.disabled = true;
+  const corpo = { modo: _invRec.modo, motivo, iniciar_agora: iniciar };
+  if (_invRec.modo === 'SELECIONADOS') corpo.itens = [..._invRec.marcados];
+  const res = await api(`/inventario/${inv.id}/recontagem`, { method: 'POST', body: JSON.stringify(corpo) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao reabrir para recontagem', 'error'); return; }
+
+  fecharRecontagemInv();
+  document.getElementById('modalInventarioDetalhe').classList.add('hidden');
+  toast(`Recontagem aberta: ${res.itens} item(ns), ${res.rodada}ª contagem${res.iniciada ? ' — armazém congelado, já pode contar pelo link' : '. Clique em "Iniciar contagem" no card quando a equipe estiver pronta'}`, 'success', 7000);
+  carregarInventarioHistorico();
+  // Já mostra o link/QR para mandar a quem vai recontar
+  if (res.iniciada && res.link) abrirLinkInventario(res.link, inv.nome_armazem);
 }
 
 async function verPdfInventario(id) {

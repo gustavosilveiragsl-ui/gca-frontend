@@ -334,8 +334,13 @@ function mostrarApp(anoMes, nome) {
 }
 
 // ── Lista ──
+// Enquanto esta pessoa finaliza, a atualização automática não mexe na tela: o servidor marca o
+// inventário como finalizado antes de terminar a conta, e a lista recarregada no meio mostrava
+// "já foi finalizado" no lugar do resultado.
+let _finalizando = false;
 async function carregarItens() {
   const res = await api('/inventario-enel/contagem/itens');
+  if (_finalizando) return;
   if (!res.ok) {
     if (/finalizad/.test(res.erro || '')) mostrarTelaFinal('Este inventário já foi finalizado.');
     return;
@@ -364,9 +369,10 @@ function renderLista() {
   if (!lista.length) { cont.innerHTML = '<div class="empty">Nenhum material encontrado</div>'; return; }
   cont.innerHTML = lista.map(it => {
     const contado = it.saldo_contado != null;
+    // Material por quantidade é contado às cegas (o servidor não manda o saldo); com serial mostra
     const sistema = it.possui_serie
-      ? `Sistema: <strong>${fmtNum(it.saldo_sistema)}</strong> · ${fmtNum(it.seriais_sistema)} serial(is) em estoque`
-      : `Sistema: <strong>${fmtNum(it.saldo_sistema)}</strong> ${escHtml(it.un_med || '')}`;
+      ? ` · Sistema: <strong>${fmtNum(it.saldo_sistema)}</strong> · ${fmtNum(it.seriais_sistema)} serial(is) em estoque`
+      : (it.un_med ? ` · ${escHtml(it.un_med)}` : '');
     const status = contado
       ? `✓ ${fmtNum(it.saldo_contado)}${it.possui_serie ? ' serial(is)' : ''} — ${escHtml(it.nome_contador || '')}`
       : 'Não contado';
@@ -376,7 +382,7 @@ function renderLista() {
     return `<div class="item-card ${contado ? 'contado' : ''}">
       <div style="flex:1;min-width:0">
         <div class="item-nome">${escHtml(it.descricao || '—')}${it.possui_serie ? '<span class="tag-serial">SERIAL</span>' : ''}</div>
-        <div class="item-cod">${escHtml(it.codigo || '')} · ${sistema}</div>
+        <div class="item-cod">${escHtml(it.codigo || '')}${sistema}</div>
         <div class="item-status ${contado ? 'contado' : ''}">${status}</div>
       </div>
       ${acao}
@@ -389,7 +395,7 @@ function abrirQtd(id) {
   _itemAtual = _itens.find(i => i.id === id);
   if (!_itemAtual) return;
   document.getElementById('qtdNome').textContent = _itemAtual.descricao || '—';
-  document.getElementById('qtdCod').textContent = `${_itemAtual.codigo || ''} · Sistema: ${fmtNum(_itemAtual.saldo_sistema)} ${_itemAtual.un_med || ''}`;
+  document.getElementById('qtdCod').textContent = `${_itemAtual.codigo || ''}${_itemAtual.un_med ? ' · ' + _itemAtual.un_med : ''}`;
   document.getElementById('qtdInput').value = _itemAtual.saldo_contado != null ? _itemAtual.saldo_contado : '';
   document.getElementById('modalQtd').classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('qtdInput'); el.focus(); el.select(); }, 100);
@@ -790,8 +796,10 @@ async function tentarFinalizar() {
     ? `Ainda faltam ${faltam} material(is) sem contagem — vão entrar como 0. Finalizar mesmo assim?`
     : 'Finalizar o inventário? Depois disso não dá mais para contar nada.';
   if (!confirm(msg)) return;
+  _finalizando = true;
   const res = await api('/inventario-enel/contagem/finalizar', { method: 'POST' });
-  if (!res.ok) { alert(res.erro || 'Erro ao finalizar'); return; }
+  // Deu certo: a trava fica — uma atualização que já estava a caminho não pode tapar o resultado
+  if (!res.ok) { _finalizando = false; alert(res.erro || 'Erro ao finalizar'); carregarItens(); return; }
   mostrarTelaFinal(null, res);
 }
 

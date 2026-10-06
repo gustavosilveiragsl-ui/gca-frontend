@@ -159,6 +159,7 @@ let NOME_SESSAO = sessionStorage.getItem('inv_nome_' + TOKEN_LINK) || '';
 let _itens = [];
 let _itemAtual = null;
 let _pollTimer = null;
+let _recontagem = null; // { rodada } quando o inventário foi reaberto para recontar alguns itens
 
 async function api(path, opts = {}) {
   try {
@@ -185,7 +186,7 @@ async function iniciar() {
     document.getElementById('loginBtn').disabled = true;
     return;
   }
-  document.getElementById('loginSub').textContent = `${info.nome_armazem} — ${info.ano_mes}`;
+  document.getElementById('loginSub').textContent = `${info.nome_armazem} — ${info.ano_mes}${info.recontagem ? ` · 🔁 Recontagem (${info.recontagem.rodada}ª contagem)` : ''}`;
 
   if (TOKEN_SESSAO) {
     // Já logado nesta sessão do navegador — pula direto pra contagem
@@ -225,8 +226,13 @@ function mostrarApp(nomeArmazem, anoMes, nome) {
   // pessoas contando ao mesmo tempo veem o progresso umas das outras a cada poucos segundos.
 }
 
+// Enquanto esta pessoa finaliza, a atualização automática não mexe na tela: o servidor marca o
+// inventário como finalizado antes de terminar a conta, e a lista recarregada no meio dizia
+// "finalizado por outra pessoa" para quem tinha acabado de finalizar.
+let _finalizando = false;
 async function carregarItens() {
   const res = await api('/inventario/contagem/itens');
+  if (_finalizando) return;
   if (!res.ok) {
     if (res.erro?.includes('finalizado')) { mostrarTelaFinal('Este inventário já foi finalizado por outra pessoa.'); return; }
     if (res.erro?.includes('Sessão') || res.erro?.includes('Token')) {
@@ -237,7 +243,10 @@ async function carregarItens() {
     return;
   }
   _itens = res.itens;
-  document.getElementById('progressoTxt').textContent = `${res.contados} de ${res.total} contados`;
+  _recontagem = res.recontagem || null;
+  // Na recontagem só aparecem os itens que voltaram para contar
+  if (_recontagem) document.getElementById('appSub').textContent = `🔁 Recontagem (${_recontagem.rodada}ª contagem) — conte só estes itens`;
+  document.getElementById('progressoTxt').textContent = `${res.contados} de ${res.total} ${_recontagem ? 'recontados' : 'contados'}`;
   document.getElementById('progressoFill').style.width = res.total ? `${(res.contados / res.total) * 100}%` : '0%';
   renderLista();
 }
@@ -256,7 +265,7 @@ function renderLista() {
     return `<div class="item-card ${contado ? 'contado' : ''}">
       <div style="flex:1">
         <div class="item-nome">${escHtml(it.nome_item || '—')}</div>
-        <div class="item-cod">${escHtml(it.codigo_item || '')} ${it.un_med ? '· ' + escHtml(it.un_med) : ''} · Saldo no sistema: <strong>${it.saldo_gca ?? '—'}</strong></div>
+        <div class="item-cod">${escHtml(it.codigo_item || '')} ${it.un_med ? '· ' + escHtml(it.un_med) : ''}</div>
         ${posicao ? `<div class="item-cod">📍 ${escHtml(posicao)}</div>` : ''}
         <div class="item-status ${contado ? 'contado' : ''}">${contado ? `✓ ${it.saldo_contado} — ${escHtml(it.nome_contador || '')}` : 'Não contado'}</div>
       </div>
@@ -274,7 +283,8 @@ function abrirModalContar(itemId) {
   if (!_itemAtual) return;
   const posicao = formatarPosicao(_itemAtual);
   document.getElementById('modalItemNome').textContent = _itemAtual.nome_item || '—';
-  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + ' · Saldo no sistema: ' + (_itemAtual.saldo_gca ?? '—') + (posicao ? ' · 📍 ' + posicao : '');
+  // Contagem às cegas: o saldo do sistema não aparece (o servidor nem manda)
+  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + (posicao ? ' · 📍 ' + posicao : '');
   document.getElementById('qtdInput').value = _itemAtual.saldo_contado != null ? _itemAtual.saldo_contado : '';
   document.getElementById('modalContar').classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('qtdInput'); el.focus(); el.select(); }, 100);
@@ -295,13 +305,16 @@ async function confirmarContagem() {
 
 async function tentarFinalizar() {
   const faltam = _itens.filter(i => i.saldo_contado == null).length;
+  const oQue = _recontagem ? 'a recontagem' : 'o inventário';
   const msg = faltam > 0
-    ? `Ainda faltam ${faltam} item(ns) sem contagem — eles vão entrar automaticamente como 0. Confirma finalizar mesmo assim?`
-    : 'Finalizar o inventário? Depois disso não dá mais pra contar nenhum item.';
+    ? `Ainda faltam ${faltam} item(ns) sem contagem — eles vão entrar automaticamente como 0. Confirma finalizar ${oQue} mesmo assim?`
+    : `Finalizar ${oQue}? Depois disso não dá mais pra contar nenhum item.`;
   if (!confirm(msg)) return;
 
+  _finalizando = true;
   const res = await api('/inventario/contagem/finalizar', { method: 'POST' });
-  if (!res.ok) { alert(res.erro || 'Erro ao finalizar'); return; }
+  // Deu certo: a trava fica — uma atualização que já estava a caminho não pode tapar o resultado
+  if (!res.ok) { _finalizando = false; alert(res.erro || 'Erro ao finalizar'); carregarItens(); return; }
   mostrarTelaFinal(null, res);
 }
 
@@ -311,7 +324,9 @@ function mostrarTelaFinal(mensagemCustom, resultado) {
   document.getElementById('telaLogin').classList.add('hidden');
   document.getElementById('telaFinal').classList.add('ativo');
   document.getElementById('telaFinalResumo').textContent = mensagemCustom
-    || `Acurácia: ${resultado.acuracia_pct.toFixed(1)}% — ${resultado.divergencias} de ${resultado.total} item(ns) com divergência.`;
+    || (resultado.recontagem
+      ? `Recontagem finalizada: ${resultado.divergentes_na_recontagem} de ${resultado.recontados} item(ns) recontado(s) ainda com divergência. Acurácia do inventário: ${resultado.acuracia_pct.toFixed(1)}%.`
+      : `Acurácia: ${resultado.acuracia_pct.toFixed(1)}% — ${resultado.divergencias} de ${resultado.total} item(ns) com divergência.`);
 }
 
 function escHtml(s) {
