@@ -578,6 +578,12 @@ tbody tr:hover td{background:var(--bg-hover);}
 .fin-kpi .rot{font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
 .fin-kpi .val{font-size:21px;font-weight:800;color:var(--text-1);margin-top:4px}
 .fin-kpi .sub{font-size:11px;color:var(--text-3);margin-top:4px;line-height:1.5}
+.fin-kpi.clicavel{cursor:pointer;transition:border-color .15s,transform .15s}
+.fin-kpi.clicavel:hover,.fin-kpi.clicavel:focus-visible{border-color:var(--accent-text);transform:translateY(-1px);outline:none}
+.fin-kpi .ver{font-size:10px;color:var(--accent-text);margin-top:6px;font-weight:600}
+.fin-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.fin-filtros .form-input{width:auto;min-width:150px;font-size:12px}
+.fin-filtros .resumo{margin-left:auto;font-size:12px;color:var(--text-2)}
 .fin-tag-est{font-size:9px;font-weight:700;color:var(--yellow);border:1px solid var(--yellow);border-radius:999px;padding:1px 6px;margin-left:6px;white-space:nowrap}
 .fin-grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
 .custo-economia{border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.08);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--text-2);margin-bottom:12px;line-height:1.55}
@@ -4816,6 +4822,20 @@ window.addEventListener('pageshow', function(e) {
       </div>
 
       <!-- MODAL: LANÇAR CUSTO NO MÊS -->
+      <!-- Detalhe de um card do resumo do Painel Financeiro: por filial e de onde vem o valor -->
+      <div class="modal-overlay hidden" id="modalFinDetalhe" onclick="if(event.target===this)finFecharDetalhe()">
+        <div class="modal-box modal-alto" style="max-width:1040px;width:100%">
+          <div class="modal-header">
+            <div>
+              <div class="modal-title" id="finDetTitulo">—</div>
+              <div style="font-size:11px;color:var(--text-3)" id="finDetSub"></div>
+            </div>
+            <button class="modal-close" onclick="finFecharDetalhe()">×</button>
+          </div>
+          <div class="modal-body" id="finDetCorpo"></div>
+        </div>
+      </div>
+
       <div class="modal-overlay hidden" id="modalCustoAvulso">
         <div class="modal-box" style="max-width:560px">
           <div class="modal-header">
@@ -25709,8 +25729,12 @@ function finRender() {
   ({ resumo: finRenderResumo, compras: finRenderCompras, consumo: finRenderConsumo, recuperacao: finRenderRecuperacao, avulsos: finRenderAvulsos })[_finAba]?.();
 }
 
-function finKpi(rotulo, valor, sub, cor) {
-  return `<div class="fin-kpi"><div class="rot">${rotulo}</div><div class="val"${cor ? ` style="color:${cor}"` : ''}>${valor}</div>${sub ? `<div class="sub">${sub}</div>` : ''}</div>`;
+// acao = qual detalhe abre ao clicar no card (finDetalhe). Sem acao, o card é só leitura.
+function finKpi(rotulo, valor, sub, cor, acao) {
+  const clique = acao
+    ? ` clicavel" role="button" tabindex="0" title="Ver os detalhes" onclick="finDetalhe('${acao}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();finDetalhe('${acao}')}`
+    : '';
+  return `<div class="fin-kpi${clique}"><div class="rot">${rotulo}</div><div class="val"${cor ? ` style="color:${cor}"` : ''}>${valor}</div>${sub ? `<div class="sub">${sub}</div>` : ''}${acao ? '<div class="ver">ver detalhes ›</div>' : ''}</div>`;
 }
 
 function finVariacao(atual, anterior, menorEhMelhor = true) {
@@ -25743,22 +25767,22 @@ function finRenderResumo() {
   }
   html += `
     <div class="fin-kpis">
-      ${finKpi('Gasto do mês', finR$(a.gasto.total), `compras ${finR$(c.fechamento)} + laudos ${finR$(a.gasto.laudos)}${a.gasto.avulsos_fora_laudo ? ` + outros ${finR$(a.gasto.avulsos_fora_laudo)}` : ''}<br>${finVariacao(a.gasto.total, ant.gasto)}`)}
-      ${finKpi('Compras — real', finR$(c.real), 'preço confirmado na NF', 'var(--green)')}
-      ${finKpi('Compras — a receber (estimado)', finR$(aReceber), 'ainda sem NF: preço do cadastro na abertura da SC', 'var(--yellow)')}
+      ${finKpi('Gasto do mês', finR$(a.gasto.total), `compras ${finR$(c.fechamento)} + laudos ${finR$(a.gasto.laudos)}${a.gasto.avulsos_fora_laudo ? ` + outros ${finR$(a.gasto.avulsos_fora_laudo)}` : ''}<br>${finVariacao(a.gasto.total, ant.gasto)}`, '', 'gasto')}
+      ${finKpi('Compras — real', finR$(c.real), 'preço confirmado na NF', 'var(--green)', 'compras_real')}
+      ${finKpi('Compras — a receber (estimado)', finR$(aReceber), 'ainda sem NF: preço do cadastro na abertura da SC', 'var(--yellow)', 'compras_receber')}
       ${finKpi('Meta mensal', a.meta ? finR$(a.meta) : '—', a.meta
         ? `<div style="height:6px;background:var(--bg);border-radius:4px;margin:6px 0 4px;overflow:hidden"><div style="height:100%;width:${Math.min(pctMeta, 100)}%;background:${pctMeta > 100 ? 'var(--red)' : 'var(--green)'}"></div></div>${pctMeta.toFixed(0)}% da meta`
-        : 'defina em Configurações')}
+        : 'defina em Configurações', '', 'meta')}
     </div>
     <div class="fin-kpis">
-      ${finKpi('Real × estimado', finR$(c.economia), c.economia >= 0 ? 'pagou menos que o estimado no que já chegou' : 'pagou mais que o estimado no que já chegou', c.economia >= 0 ? 'var(--green)' : 'var(--red)')}
-      ${finKpi('Custo com laudos', finR$(a.recuperacao.custo_laudos), (a.recuperacao.remessas_sem_valor ? `⚠️ ${a.recuperacao.remessas_sem_valor} remessa(s) sem valor pago` : `${a.recuperacao.remessas.length} remessa(s) enviada(s)`) + (a.recuperacao.custo_laudos_avulso ? `<br>inclui ${finR$(a.recuperacao.custo_laudos_avulso)} lançado à mão` : ''))}
-      ${finKpi('Economia com recuperação', finR$(a.recuperacao.economia), `resultado ${finR$(a.recuperacao.resultado)} (economia − laudos${a.recuperacao.custo_manutencao ? ' − manutenção' : ''})` + (a.avulsos?.economia_manutencao ? `<br>inclui ${finR$(a.avulsos.economia_manutencao)} de manutenção` : ''), 'var(--green)')}
-      ${finKpi('Perdas', finR$(a.perdas.total || 0), `recuperação ${finR$(a.perdas.recuperacao || 0)} · inventário ${finR$(a.perdas.ajuste_inventario || 0)}`, 'var(--red)')}
-      ${finKpi('Consumo (saídas)', finR$(a.consumo.total), `${a.consumo.movimentos} saídas<br>${finVariacao(a.consumo.total, ant.consumo)}`)}
+      ${finKpi('Real × estimado', finR$(c.economia), c.economia >= 0 ? 'pagou menos que o estimado no que já chegou' : 'pagou mais que o estimado no que já chegou', c.economia >= 0 ? 'var(--green)' : 'var(--red)', 'real_estimado')}
+      ${finKpi('Custo com laudos', finR$(a.recuperacao.custo_laudos), (a.recuperacao.remessas_sem_valor ? `⚠️ ${a.recuperacao.remessas_sem_valor} remessa(s) sem valor pago` : `${a.recuperacao.remessas.length} remessa(s) enviada(s)`) + (a.recuperacao.custo_laudos_avulso ? `<br>inclui ${finR$(a.recuperacao.custo_laudos_avulso)} lançado à mão` : ''), '', 'laudos')}
+      ${finKpi('Economia com recuperação', finR$(a.recuperacao.economia), `resultado ${finR$(a.recuperacao.resultado)} (economia − laudos${a.recuperacao.custo_manutencao ? ' − manutenção' : ''})` + (a.avulsos?.economia_manutencao ? `<br>inclui ${finR$(a.avulsos.economia_manutencao)} de manutenção` : ''), 'var(--green)', 'economia')}
+      ${finKpi('Perdas', finR$(a.perdas.total || 0), `recuperação ${finR$(a.perdas.recuperacao || 0)} · inventário ${finR$(a.perdas.ajuste_inventario || 0)}`, 'var(--red)', 'perdas')}
+      ${finKpi('Consumo (saídas)', finR$(a.consumo.total), `${a.consumo.movimentos} saídas<br>${finVariacao(a.consumo.total, ant.consumo)}`, '', 'consumo')}
       ${finKpi('Custos lançados à mão', finR$(a.gasto.avulsos || 0), (a.avulsos?.lancamentos?.length || 0)
-        ? `${a.avulsos.lancamentos.length} lançamento(s)<br><span style="cursor:pointer;color:var(--accent-text)" onclick="finMudarAba('avulsos')">ver e lançar</span>`
-        : '<span style="cursor:pointer;color:var(--accent-text)" onclick="finMudarAba(\'avulsos\')">lançar um custo</span>')}
+        ? `${a.avulsos.lancamentos.length} lançamento(s)<br><span style="cursor:pointer;color:var(--accent-text)" onclick="event.stopPropagation();finMudarAba('avulsos')">ver e lançar</span>`
+        : '<span style="cursor:pointer;color:var(--accent-text)" onclick="event.stopPropagation();finMudarAba(\'avulsos\')">lançar um custo</span>', '', 'avulsos')}
     </div>`;
 
   if (d.consolidado) {
@@ -25791,6 +25815,342 @@ function finRenderResumo() {
     });
   }
 }
+
+// ── Listas com filtro por tipo, filial e busca ──
+// Usadas no detalhe dos cards e em "Todos os registros" da recuperação. Cada linha traz o tipo
+// (filtro), o grupo (filtro "só recuperados / só perdas"), a filial, o texto da busca, o valor
+// (total do rodapé) e o HTML das linhas da tabela.
+const _finListas = {};
+function finListaHtml(id, cfg) {
+  _finListas[id] = cfg;
+  const porTexto = (a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR');
+  const tipos = [...new Map(cfg.linhas.map(l => [l.tipo, l.tipoTxt || l.tipo])).entries()].sort(porTexto);
+  const grupos = (cfg.grupos || []).filter(([g]) => cfg.linhas.some(l => l.grupo === g));
+  const filiais = [...new Set(cfg.linhas.map(l => l.filial).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const opcao = (v, t) => `<option value="${escHtml(v)}">${escHtml(t)}</option>`;
+  return `<div class="fin-filtros">
+      ${tipos.length > 1 || grupos.length > 1 ? `<select class="form-input" id="${id}_tipo" onchange="finListaRender('${id}')" title="Filtrar por tipo">
+        <option value="">Todos os tipos</option>
+        ${grupos.length > 1 ? grupos.map(([g, t]) => opcao('grupo:' + g, t)).join('') : ''}
+        ${tipos.map(([v, t]) => opcao(v, t)).join('')}
+      </select>` : ''}
+      ${filiais.length > 1 ? `<select class="form-input" id="${id}_filial" onchange="finListaRender('${id}')" title="Filtrar por filial">
+        <option value="">Todas as filiais</option>${filiais.map(f => opcao(f, f)).join('')}
+      </select>` : ''}
+      <input class="form-input" id="${id}_busca" placeholder="Buscar..." oninput="finListaRender('${id}')" style="min-width:180px">
+      <span class="resumo" id="${id}_resumo"></span>
+    </div>
+    <div id="${id}_tabela"></div>`;
+}
+function finListaRender(id) {
+  const cfg = _finListas[id];
+  if (!cfg || !document.getElementById(`${id}_tabela`)) return;
+  const tipo = document.getElementById(`${id}_tipo`)?.value || '';
+  const filial = document.getElementById(`${id}_filial`)?.value || '';
+  const q = (document.getElementById(`${id}_busca`)?.value || '').trim().toLowerCase();
+  const lista = cfg.linhas.filter(l =>
+    (!tipo || (tipo.startsWith('grupo:') ? l.grupo === tipo.slice(6) : l.tipo === tipo)) &&
+    (!filial || l.filial === filial) && (!q || l.texto.includes(q)));
+  const total = lista.reduce((s, l) => s + (Number(l.valor) || 0), 0);
+  document.getElementById(`${id}_resumo`).innerHTML = cfg.resumo ? cfg.resumo(lista)
+    : `${lista.length} registro(s) · <b>${finR$(total)}</b>`;
+  document.getElementById(`${id}_tabela`).innerHTML = finTabela(cfg.colunas, lista.map(l => l.html),
+    cfg.linhas.length ? 'Nada com esses filtros' : (cfg.vazio || 'Nada neste mês'));
+}
+
+// ── Detalhe dos cards do resumo ──
+// Cada card abre: os números que formam o valor, quanto foi de cada filial (quando há mais de
+// uma) e a lista do que foi, com data — tudo a partir do que o painel já carregou.
+const finColFilial = (cons) => cons ? [{ t: 'Filial' }] : [];
+const finTdFilial = (cons, x) => cons ? `<td style="font-size:11px;white-space:nowrap">${escHtml(x.filial || '')}</td>` : '';
+const finBusca = (...partes) => partes.filter(v => v != null && v !== '').join(' ').toLowerCase();
+const finPct = (v, base) => base ? `${(v / base * 100).toFixed(1)}%` : '—';
+const finSomaPor = (lista, campo) => lista.reduce((m, x) => { m[x.filial || ''] = (m[x.filial || ''] || 0) + (Number(x[campo]) || 0); return m; }, {});
+
+// Meta de várias filiais quando só algumas têm meta: a soma das que têm e quem está sem
+function finMetaParcial(pf) {
+  const com = (pf || []).filter(f => f.meta), sem = (pf || []).filter(f => !f.meta);
+  return { soma: com.reduce((s, f) => s + f.meta, 0), com: com.map(f => f.filial), sem: sem.map(f => f.filial) };
+}
+
+// Tabela "por filial" com linha de total; só faz sentido com mais de uma filial
+function finPorFilial(pf, colunas, linhaDe, totalDe) {
+  if ((pf || []).length < 2) return '';
+  const linhas = pf.map(f => `<tr><td class="td-main">${escHtml(f.filial)}</td>${linhaDe(f)}</tr>`);
+  if (totalDe) linhas.push(`<tr style="border-top:2px solid var(--border)"><td style="font-weight:700">Total</td>${totalDe()}</tr>`);
+  return finCard('Por filial', '', finTabela([{ t: 'Filial' }, ...colunas], linhas));
+}
+
+// Linha de SC que abre os itens ao clicar
+function finLinhaSc(sc, cons, celulasValor, itens, colunasItens, nCols) {
+  return `<tr style="cursor:pointer" onclick="this.nextElementSibling.classList.toggle('hidden')">
+      <td style="white-space:nowrap">${finData(sc.data_abertura)}</td>${finTdFilial(cons, sc)}
+      <td class="td-main">▸ SC ${escHtml(sc.numero_sc || '—')}${sc.estimativa_antiga ? '<span class="fin-tag-est">estimado antigo</span>' : ''}
+        <div style="font-size:10px;color:var(--text-3)">${escHtml(sc.status || '')}${sc.comprador ? ' · ' + escHtml(sc.comprador) : ''} · ${sc.itens.length} item(ns)</div></td>
+      ${celulasValor}
+    </tr>
+    <tr class="hidden"><td colspan="${nCols}" style="background:var(--bg);padding:8px 12px">${finTabela(colunasItens, itens, 'Nenhum item')}</td></tr>`;
+}
+
+const FIN_DETALHES = {
+  gasto(d, a, cons, pf) {
+    const c = a.compras.totais, outros = a.gasto.avulsos_fora_laudo || 0;
+    const pct = a.meta ? a.gasto.total / a.meta * 100 : null;
+    const meta = finMetaParcial(pf);
+    const corMeta = (p) => p == null ? '' : `color:${p > 100 ? 'var(--red)' : 'var(--green)'}`;
+    const comprasDe = (f) => (f.compras_real || 0) + (f.compras_estimado_pendente || 0);
+    const linhas = [
+      ...a.compras.scs.map(sc => ({ tipo: 'SC', tipoTxt: '🛒 Compra (SC)', filial: sc.filial, valor: sc.fechamento, data: sc.data_abertura,
+        texto: finBusca('sc', sc.numero_sc, sc.comprador, sc.status, sc.filial, ...sc.itens.map(i => i.nome)),
+        html: finLinhaSc(sc, cons, `<td style="font-size:11px">🛒 Compra (SC)</td>${finTd(finR$(sc.fechamento), 'font-weight:700')}`,
+          sc.itens.map(i => `<tr><td>${escHtml(i.nome)}<div style="font-size:10px;color:var(--text-3)">${escHtml(i.categoria)}</div></td>${finTd(finNum(i.qtd_solicitada))}${finTd(finR$(i.real))}${finTd(finR$(i.pendente + i.recebido_estimado))}${finTd(finR$(i.fechamento), 'font-weight:700')}</tr>`),
+          [{ t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Real', d: 1 }, { t: 'A receber (est.)', d: 1 }, { t: 'Valor', d: 1 }], cons ? 5 : 4) })),
+      ...a.recuperacao.remessas.map(r => ({ tipo: 'REMESSA', tipoTxt: '♻️ Laudo — remessa', filial: r.filial, valor: r.valor_pago || 0, data: r.data_envio,
+        texto: finBusca('laudo remessa', r.empresa, r.filial),
+        html: `<tr><td style="white-space:nowrap">${finData(r.data_envio)}</td>${finTdFilial(cons, r)}<td class="td-main">Remessa para laudo · ${escHtml(r.empresa || '')}
+          <div style="font-size:10px;color:var(--text-3)">${r.itens} item(ns) · ${r.aprovados} aprovado(s) · ${r.reprovados} reprovado(s)</div></td>
+          <td style="font-size:11px">♻️ Laudo — remessa</td>${finTd(r.valor_pago != null ? finR$(r.valor_pago) : '<span style="color:var(--yellow)">sem valor</span>', 'font-weight:700')}</tr>` })),
+      ...(a.avulsos?.lancamentos || []).map(l => ({ tipo: 'AV_' + l.tipo, tipoTxt: `${FIN_TIPO_CUSTO[l.tipo] || l.tipo} (lançado à mão)`, filial: l.filial, valor: l.valor, data: l.data,
+        texto: finBusca(l.descricao, l.observacao, l.categoria, l.criado_por, l.filial, FIN_TIPO_CUSTO[l.tipo]),
+        html: `<tr><td style="white-space:nowrap">${finData(l.data)}</td>${finTdFilial(cons, l)}<td class="td-main">${escHtml(l.descricao)}
+          <div style="font-size:10px;color:var(--text-3)">${l.observacao ? escHtml(l.observacao) + ' · ' : ''}lançado por ${escHtml(l.criado_por || '—')}</div></td>
+          <td style="font-size:11px">${FIN_TIPO_CUSTO[l.tipo] || escHtml(l.tipo)} (à mão)</td>${finTd(finR$(l.valor), 'font-weight:700')}</tr>` })),
+    ].sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
+    return {
+      titulo: `Gasto do mês — ${finR$(a.gasto.total)}`,
+      html: `<div class="fin-kpis">
+          ${finKpi('Compras (SCs do mês)', finR$(c.fechamento), `real ${finR$(c.real)} + a receber ${finR$(c.pendente + c.recebido_estimado)}`)}
+          ${finKpi('Laudos', finR$(a.gasto.laudos), `remessas ${finR$(a.recuperacao.custo_laudos_remessas ?? a.gasto.laudos)}${a.recuperacao.custo_laudos_avulso ? ` + à mão ${finR$(a.recuperacao.custo_laudos_avulso)}` : ''}`)}
+          ${finKpi('Outros lançados à mão', finR$(outros), 'compra direta, manutenção e outros')}
+          ${finKpi('Meta', a.meta ? finR$(a.meta) : meta.soma ? finR$(meta.soma) : '—', a.meta ? `<span style="${corMeta(pct)}">${pct.toFixed(0)}% usada</span> · ${a.gasto.total > a.meta ? 'passou ' + finR$(a.gasto.total - a.meta) : 'sobram ' + finR$(a.meta - a.gasto.total)}`
+            : meta.soma ? `só de ${meta.com.join(', ')} · sem meta: ${meta.sem.join(', ')}` : 'defina em Configurações')}
+        </div>
+        ${finPorFilial(pf, [{ t: 'Compras', d: 1 }, { t: 'Laudos', d: 1 }, { t: 'Outros', d: 1 }, { t: 'Gasto', d: 1 }, { t: 'Meta', d: 1 }, { t: '% da meta', d: 1 }],
+          f => { const p = f.meta ? f.gasto / f.meta * 100 : null;
+            return `${finTd(finR$(comprasDe(f)))}${finTd(finR$(f.laudos))}${finTd(finR$(f.gasto - comprasDe(f) - f.laudos))}${finTd(finR$(f.gasto), 'font-weight:700')}${finTd(f.meta ? finR$(f.meta) : '—')}${finTd(p == null ? '—' : p.toFixed(0) + '%', corMeta(p))}`; },
+          () => `${finTd(finR$(c.fechamento), 'font-weight:700')}${finTd(finR$(a.gasto.laudos), 'font-weight:700')}${finTd(finR$(outros), 'font-weight:700')}${finTd(finR$(a.gasto.total), 'font-weight:800')}${finTd(a.meta ? finR$(a.meta) : '—', 'font-weight:700')}${finTd(pct == null ? '—' : pct.toFixed(0) + '%', 'font-weight:700;' + corMeta(pct))}`)}
+        ${finCard('O que foi', 'Compras pelo mês de abertura da SC (clique para ver os itens), remessas de laudo pelo envio e lançamentos à mão pela data', finListaHtml('finDetGasto', {
+          linhas, colunas: [{ t: 'Data' }, ...finColFilial(cons), { t: 'O que foi' }, { t: 'Tipo' }, { t: 'Valor', d: 1 }] }))}`,
+      listas: ['finDetGasto'],
+    };
+  },
+
+  meta(d, a, cons, pf) {
+    const parcial = finMetaParcial(pf);
+    const linhas = (pf.length ? pf : [{ filial: d.filiais?.[0]?.nome || '', meta: a.meta, gasto: a.gasto.total }]).map(f => {
+      const p = f.meta ? f.gasto / f.meta * 100 : null;
+      return `<tr><td class="td-main">${escHtml(f.filial)}</td>${finTd(f.meta ? finR$(f.meta) : '<span style="color:var(--text-3)">sem meta</span>')}${finTd(finR$(f.gasto), 'font-weight:700')}
+        ${finTd(p == null ? '—' : p.toFixed(0) + '%', p == null ? '' : `font-weight:700;color:${p > 100 ? 'var(--red)' : 'var(--green)'}`)}
+        ${finTd(!f.meta ? '—' : f.gasto > f.meta ? `<span style="color:var(--red)">passou ${finR$(f.gasto - f.meta)}</span>` : `<span style="color:var(--green)">sobram ${finR$(f.meta - f.gasto)}</span>`)}</tr>`;
+    });
+    return {
+      titulo: `Meta mensal — ${a.meta ? finR$(a.meta) : parcial.soma ? finR$(parcial.soma) + ' (só parte das filiais)' : 'não definida'}`,
+      html: `${finCard('Meta × gasto por filial', 'A meta de cada filial fica em Configurações', finTabela([{ t: 'Filial' }, { t: 'Meta', d: 1 }, { t: 'Gasto do mês', d: 1 }, { t: '% da meta', d: 1 }, { t: 'Situação', d: 1 }], linhas))}
+        <div style="font-size:12px;color:var(--text-3)">Para ver de onde vem o gasto, abra o card <span style="cursor:pointer;color:var(--accent-text)" onclick="finDetalhe('gasto')">Gasto do mês</span>.</div>`,
+    };
+  },
+
+  compras_real(d, a, cons, pf) {
+    const scs = a.compras.scs.filter(sc => sc.real > 0);
+    const porFil = finSomaPor(scs, 'real');
+    return {
+      titulo: `Compras — real — ${finR$(a.compras.totais.real)}`,
+      html: `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Valor pago na nota fiscal, informado no recebimento das SCs abertas neste mês.</div>
+        ${finPorFilial(pf, [{ t: 'Real', d: 1 }], f => finTd(finR$(porFil[f.filial] || 0), 'font-weight:700'), () => finTd(finR$(a.compras.totais.real), 'font-weight:800'))}
+        ${finCard('SCs com preço pago', 'Clique numa SC para ver os itens', finListaHtml('finDetComprasReal', {
+          colunas: [{ t: 'Abertura' }, ...finColFilial(cons), { t: 'SC' }, { t: 'Real × estimado', d: 1 }, { t: 'Real', d: 1 }],
+          linhas: scs.map(sc => ({ tipo: 'SC', filial: sc.filial, valor: sc.real, texto: finBusca(sc.numero_sc, sc.comprador, sc.filial, ...sc.itens.map(i => i.nome)),
+            html: finLinhaSc(sc, cons, `${finTd(finR$(sc.economia), `color:${sc.economia >= 0 ? 'var(--green)' : 'var(--red)'}`)}${finTd(finR$(sc.real), 'font-weight:700')}`,
+              sc.itens.filter(i => i.real > 0).map(i => `<tr><td>${escHtml(i.nome)}</td>${finTd(finNum(i.qtd_com_preco))}${finTd(finR$(i.estimado_un))}${finTd(finR$(i.real_un))}${finTd(finR$(i.real), 'font-weight:700')}</tr>`),
+              [{ t: 'Item' }, { t: 'Qtd. com preço', d: 1 }, { t: 'Estimado un.', d: 1 }, { t: 'Pago un.', d: 1 }, { t: 'Real', d: 1 }], cons ? 5 : 4) })),
+          vazio: 'Nenhuma SC deste mês com preço pago' }))}`,
+      listas: ['finDetComprasReal'],
+    };
+  },
+
+  compras_receber(d, a, cons, pf) {
+    const scs = a.compras.scs.filter(sc => sc.pendente + sc.recebido_estimado > 0).map(sc => ({ ...sc, a_receber: sc.pendente + sc.recebido_estimado }));
+    const porFil = finSomaPor(scs, 'a_receber');
+    const t = a.compras.totais;
+    return {
+      titulo: `Compras — a receber (estimado) — ${finR$(t.pendente + t.recebido_estimado)}`,
+      html: `<div class="fin-kpis">
+          ${finKpi('Ainda não chegou', finR$(t.pendente), 'peças pendentes × estimado da SC', 'var(--yellow)')}
+          ${finKpi('Recebido sem preço', finR$(t.recebido_estimado), 'chegou antes do módulo financeiro: vale o estimado')}
+        </div>
+        ${finPorFilial(pf, [{ t: 'A receber (est.)', d: 1 }], f => finTd(finR$(porFil[f.filial] || 0), 'font-weight:700'), () => finTd(finR$(t.pendente + t.recebido_estimado), 'font-weight:800'))}
+        ${finCard('SCs com valor a receber', 'Clique numa SC para ver os itens', finListaHtml('finDetComprasReceber', {
+          colunas: [{ t: 'Abertura' }, ...finColFilial(cons), { t: 'SC' }, { t: 'Não chegou', d: 1 }, { t: 'A receber (est.)', d: 1 }],
+          linhas: scs.map(sc => ({ tipo: 'SC', filial: sc.filial, valor: sc.a_receber, texto: finBusca(sc.numero_sc, sc.comprador, sc.status, sc.filial, ...sc.itens.map(i => i.nome)),
+            html: finLinhaSc(sc, cons, `${finTd(finR$(sc.pendente), 'color:var(--yellow)')}${finTd(finR$(sc.a_receber), 'font-weight:700')}`,
+              sc.itens.filter(i => i.pendente + i.recebido_estimado > 0).map(i => `<tr><td>${escHtml(i.nome)}</td>${finTd(finNum(i.qtd_solicitada))}${finTd(finNum(i.qtd_recebida))}${finTd(finR$(i.estimado_un))}${finTd(finR$(i.pendente + i.recebido_estimado), 'font-weight:700')}</tr>`),
+              [{ t: 'Item' }, { t: 'Solic.', d: 1 }, { t: 'Receb.', d: 1 }, { t: 'Estimado un.', d: 1 }, { t: 'A receber', d: 1 }], cons ? 5 : 4) })),
+          vazio: 'Nada a receber das SCs deste mês' }))}`,
+      listas: ['finDetComprasReceber'],
+    };
+  },
+
+  real_estimado(d, a, cons, pf) {
+    const scs = a.compras.scs.filter(sc => sc.real > 0);
+    const porFil = finSomaPor(scs, 'economia');
+    const t = a.compras.totais;
+    return {
+      titulo: `Real × estimado — ${finR$(t.economia)}`,
+      html: `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Diferença entre o estimado na abertura da SC e o preço pago, só nas peças que já chegaram com preço. Positivo = pagou menos.</div>
+        ${finPorFilial(pf, [{ t: 'Real × estimado', d: 1 }], f => finTd(finR$(porFil[f.filial] || 0), `font-weight:700;color:${(porFil[f.filial] || 0) >= 0 ? 'var(--green)' : 'var(--red)'}`), () => finTd(finR$(t.economia), 'font-weight:800'))}
+        ${finCard('Por SC', 'Clique numa SC para ver item a item', finListaHtml('finDetRealEst', {
+          colunas: [{ t: 'Abertura' }, ...finColFilial(cons), { t: 'SC' }, { t: 'Estimado', d: 1 }, { t: 'Pago', d: 1 }, { t: 'Diferença', d: 1 }],
+          linhas: scs.map(sc => ({ tipo: 'SC', filial: sc.filial, valor: sc.economia, texto: finBusca(sc.numero_sc, sc.comprador, sc.filial, ...sc.itens.map(i => i.nome)),
+            html: finLinhaSc(sc, cons, `${finTd(finR$(sc.real + sc.economia))}${finTd(finR$(sc.real))}${finTd(finR$(sc.economia), `font-weight:700;color:${sc.economia >= 0 ? 'var(--green)' : 'var(--red)'}`)}`,
+              sc.itens.filter(i => i.real > 0).map(i => `<tr><td>${escHtml(i.nome)}</td>${finTd(finNum(i.qtd_com_preco))}${finTd(finR$(i.estimado_un))}${finTd(finR$(i.real_un))}${finTd(finR$(i.economia), `font-weight:700;color:${i.economia >= 0 ? 'var(--green)' : 'var(--red)'}`)}</tr>`),
+              [{ t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Estimado un.', d: 1 }, { t: 'Pago un.', d: 1 }, { t: 'Diferença', d: 1 }], cons ? 6 : 5) })),
+          vazio: 'Nenhuma SC deste mês com preço pago',
+          resumo: (l) => `${l.length} SC(s) · diferença <b>${finR$(l.reduce((s, x) => s + x.valor, 0))}</b>` }))}`,
+      listas: ['finDetRealEst'],
+    };
+  },
+
+  laudos(d, a, cons, pf) {
+    const r = a.recuperacao;
+    const linhas = [
+      ...r.remessas.map(x => ({ tipo: 'REMESSA', tipoTxt: '♻️ Remessa para laudo', filial: x.filial, valor: x.valor_pago || 0, data: x.data_envio,
+        texto: finBusca('remessa', x.empresa, x.nome_colaborador, x.filial),
+        html: `<tr><td style="white-space:nowrap">${finData(x.data_envio)}</td>${finTdFilial(cons, x)}<td class="td-main">Remessa · ${escHtml(x.empresa || '')}
+          <div style="font-size:10px;color:var(--text-3)">${x.nome_colaborador ? 'enviada por ' + escHtml(x.nome_colaborador) + ' · ' : ''}${x.custo_por_item != null ? finR$(x.custo_por_item) + ' por item' : 'sem valor por item'}</div></td>
+          ${finTd(x.itens)}${finTd(x.aprovados, 'color:var(--green)')}${finTd(x.reprovados, 'color:var(--red)')}${finTd(x.pendentes)}
+          ${finTd(x.valor_pago != null ? finR$(x.valor_pago) : '<span style="color:var(--yellow)">sem valor</span>', 'font-weight:700')}</tr>` })),
+      ...(a.avulsos?.lancamentos || []).filter(l => l.tipo === 'LAUDO').map(l => ({ tipo: 'AV_LAUDO', tipoTxt: '🧾 Lançado à mão', filial: l.filial, valor: l.valor, data: l.data,
+        texto: finBusca(l.descricao, l.observacao, l.criado_por, l.filial),
+        html: `<tr><td style="white-space:nowrap">${finData(l.data)}</td>${finTdFilial(cons, l)}<td class="td-main">${escHtml(l.descricao)}
+          <div style="font-size:10px;color:var(--text-3)">lançado à mão por ${escHtml(l.criado_por || '—')}</div></td>
+          ${finTd(l.quantidade ?? '—')}<td></td><td></td><td></td>${finTd(finR$(l.valor), 'font-weight:700')}</tr>` })),
+    ].sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
+    return {
+      titulo: `Custo com laudos — ${finR$(r.custo_laudos)}`,
+      html: `<div class="fin-kpis">
+          ${finKpi('Remessas enviadas', finR$(r.custo_laudos_remessas ?? r.custo_laudos), `${r.remessas.length} remessa(s)${r.remessas_sem_valor ? ` · ⚠️ ${r.remessas_sem_valor} sem valor pago` : ''}`)}
+          ${finKpi('Lançado à mão', finR$(r.custo_laudos_avulso || 0), 'laudos de antes do módulo de remessas')}
+          ${finKpi('Itens enviados', finNum(r.remessas.reduce((s, x) => s + (x.itens || 0), 0)), `${finNum(r.remessas.reduce((s, x) => s + (x.aprovados || 0), 0))} aprovado(s) · ${finNum(r.remessas.reduce((s, x) => s + (x.reprovados || 0), 0))} reprovado(s)`)}
+        </div>
+        ${finPorFilial(pf, [{ t: 'Custo com laudos', d: 1 }], f => finTd(finR$(f.laudos), 'font-weight:700'), () => finTd(finR$(r.custo_laudos), 'font-weight:800'))}
+        ${finCard('O que foi', 'Remessas pela data de envio', finListaHtml('finDetLaudos', {
+          linhas, colunas: [{ t: 'Data' }, ...finColFilial(cons), { t: 'O que foi' }, { t: 'Itens', d: 1 }, { t: 'Aprov.', d: 1 }, { t: 'Reprov.', d: 1 }, { t: 'Pend.', d: 1 }, { t: 'Valor', d: 1 }],
+          vazio: 'Nenhum laudo neste mês' }))}`,
+      listas: ['finDetLaudos'],
+    };
+  },
+
+  economia(d, a, cons, pf) {
+    const r = a.recuperacao;
+    const recs = r.eventos.filter(e => e.tipo === 'RECUPERADO');
+    const qtdFil = recs.reduce((m, e) => { m[e.filial || ''] = (m[e.filial || ''] || 0) + (Number(e.quantidade) || 0); return m; }, {});
+    const grupo = (lista, rotulo, nome) => finTabela([{ t: rotulo }, { t: 'Qtd.', d: 1 }, { t: 'Valor original', d: 1 }, { t: 'Economia', d: 1 }],
+      lista.map(g => `<tr><td class="td-main">${escHtml(nome(g.chave))}</td>${finTd(finNum(g.quantidade))}${finTd(finR$(g.valor_original), 'color:var(--text-3)')}${finTd(finR$(g.valor), 'font-weight:700;color:var(--green)')}</tr>`), 'Nada recuperado neste mês');
+    return {
+      titulo: `Economia com recuperação — ${finR$(r.economia)}`,
+      html: `<div class="fin-kpis">
+          ${finKpi('Economia', finR$(r.economia), `${finNum(recs.reduce((s, e) => s + e.quantidade, 0))} peça(s) que voltaram ao estoque`, 'var(--green)')}
+          ${finKpi('Custo com laudos', finR$(r.custo_laudos), '')}
+          ${r.custo_manutencao ? finKpi('Custo de manutenção', finR$(r.custo_manutencao), 'consertos lançados à mão') : ''}
+          ${finKpi('Resultado', finR$(r.resultado), 'economia − custos', r.resultado >= 0 ? 'var(--green)' : 'var(--red)')}
+        </div>
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Cada peça que volta ao estoque vale o preço do item novo × o fator de desgaste da categoria, congelados no dia da recuperação.</div>
+        ${finPorFilial(pf, [{ t: 'Peças', d: 1 }, { t: 'Economia', d: 1 }], f => `${finTd(finNum(qtdFil[f.filial] || 0))}${finTd(finR$(f.economia), 'font-weight:700;color:var(--green)')}`, () => `${finTd(finNum(recs.reduce((s, e) => s + e.quantidade, 0)), 'font-weight:700')}${finTd(finR$(r.economia), 'font-weight:800;color:var(--green)')}`)}
+        <div class="fin-grid2">
+          ${finCard('Por tipo de recuperação', '', grupo(r.recuperados_por_origem || [], 'Tipo', (k) => FIN_ORIGEM[k] || k))}
+          ${finCard('Por categoria', '', grupo(r.recuperados_por_categoria || [], 'Categoria', (k) => k))}
+        </div>
+        ${finCard('Peça por peça', 'Data, item, valor do item novo e fator usados na conta', finListaHtml('finDetEconomia', {
+          colunas: [{ t: 'Data' }, ...finColFilial(cons), { t: 'Tipo' }, { t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Valor un.', d: 1 }, { t: 'Fator', d: 1 }, { t: 'Economia', d: 1 }],
+          linhas: recs.map(e => ({ tipo: e.origem, tipoTxt: FIN_ORIGEM[e.origem] || e.origem, filial: e.filial, valor: e.valor, qtd: e.quantidade,
+            texto: finBusca(e.nome_item, e.item_id, e.serial, e.categoria, e.filial, FIN_ORIGEM[e.origem]),
+            html: `<tr><td style="white-space:nowrap">${finData(e.data)}</td>${finTdFilial(cons, e)}<td style="font-size:11px">♻️ ${escHtml(FIN_ORIGEM[e.origem] || e.origem)}${e.estimado ? '<span class="fin-tag-est">estimado</span>' : ''}</td>
+              <td class="td-main">${escHtml(e.nome_item || e.item_id || '')}${e.serial ? `<div style="font-size:10px;color:var(--text-3)">serial ${escHtml(e.serial)}</div>` : ''}</td>
+              ${finTd(finNum(e.quantidade))}${finTd(finR$(e.valor_un))}${finTd(`${finNum(e.fator_pct)}%`)}${finTd(finR$(e.valor), 'font-weight:700;color:var(--green)')}</tr>` })),
+          vazio: 'Nada recuperado neste mês',
+          resumo: (l) => `${l.length} registro(s) · ${finNum(l.reduce((s, x) => s + (Number(x.qtd) || 0), 0))} peça(s) · economia <b style="color:var(--green)">${finR$(l.reduce((s, x) => s + x.valor, 0))}</b>` }))}`,
+      listas: ['finDetEconomia'],
+    };
+  },
+
+  perdas(d, a, cons, pf) {
+    const r = a.recuperacao, aj = a.consumo.ajuste_inventario;
+    const linhas = [
+      ...r.eventos.filter(e => e.tipo === 'PERDA').map(e => ({ tipo: e.origem, tipoTxt: FIN_ORIGEM[e.origem] || e.origem, filial: e.filial, valor: e.valor, data: e.data,
+        texto: finBusca(e.nome_item, e.item_id, e.serial, e.filial, FIN_ORIGEM[e.origem]),
+        html: `<tr><td style="white-space:nowrap">${finData(e.data)}</td>${finTdFilial(cons, e)}<td style="font-size:11px">✖ ${escHtml(FIN_ORIGEM[e.origem] || e.origem)}${e.estimado ? '<span class="fin-tag-est">estimado</span>' : ''}</td>
+          <td class="td-main">${escHtml(e.nome_item || e.item_id || '')}${e.serial ? `<div style="font-size:10px;color:var(--text-3)">serial ${escHtml(e.serial)}</div>` : ''}</td>
+          ${finTd(finNum(e.quantidade))}${finTd(finR$(e.valor), 'font-weight:700;color:var(--red)')}</tr>` })),
+      ...aj.movimentos.filter(m => m.tipo === 'SAIDA').map(m => ({ tipo: 'AJUSTE_INVENTARIO', tipoTxt: 'Ajuste de inventário (falta)', filial: m.filial, valor: m.valor, data: m.data,
+        texto: finBusca(m.item, m.armazem, m.filial, 'inventário'),
+        html: `<tr><td style="white-space:nowrap">${finData(m.data)}</td>${finTdFilial(cons, m)}<td style="font-size:11px">✖ Ajuste de inventário (falta)</td>
+          <td class="td-main">${escHtml(m.item)}<div style="font-size:10px;color:var(--text-3)">${escHtml(m.armazem || '')}</div></td>
+          ${finTd(finNum(m.quantidade))}${finTd(finR$(m.valor), 'font-weight:700;color:var(--red)')}</tr>` })),
+    ].sort((x, y) => String(x.data || '').localeCompare(String(y.data || '')));
+    return {
+      titulo: `Perdas — ${finR$(a.perdas.total || 0)}`,
+      html: `<div class="fin-kpis">
+          ${finKpi('Na recuperação', finR$(a.perdas.recuperacao || 0), 'reprovados, inutilizados, divergências e descartes', 'var(--red)')}
+          ${finKpi('Ajuste de inventário', finR$(a.perdas.ajuste_inventario || 0), 'faltas encontradas na contagem', 'var(--red)')}
+        </div>
+        ${finPorFilial(pf, [{ t: 'Perdas', d: 1 }], f => finTd(finR$(f.perdas), 'font-weight:700;color:var(--red)'), () => finTd(finR$(a.perdas.total || 0), 'font-weight:800;color:var(--red)'))}
+        ${finCard('O que foi', '', finListaHtml('finDetPerdas', {
+          linhas, colunas: [{ t: 'Data' }, ...finColFilial(cons), { t: 'Motivo' }, { t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Valor', d: 1 }],
+          vazio: 'Nenhuma perda neste mês' }))}`,
+      listas: ['finDetPerdas'],
+    };
+  },
+
+  consumo(d, a, cons, pf) {
+    const c = a.consumo;
+    const grupo = (lista, rotulo, comFilial) => finTabela([...(comFilial ? [{ t: 'Filial' }] : []), { t: rotulo }, { t: 'Qtd.', d: 1 }, { t: 'Valor', d: 1 }, { t: '%', d: 1 }],
+      lista.map(g => `<tr>${comFilial ? `<td style="font-size:11px">${escHtml(g.filial || '')}</td>` : ''}<td class="td-main">${escHtml(g.nome)}</td>${finTd(finNum(g.quantidade))}${finTd(finR$(g.valor), 'font-weight:700')}${finTd(finPct(g.valor, c.total), 'color:var(--text-3)')}</tr>`));
+    return {
+      titulo: `Consumo (saídas) — ${finR$(c.total)}`,
+      html: `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">${finNum(c.movimentos)} saída(s) no mês, cada uma pelo preço que o item tinha no dia. Não soma no gasto (o gasto é o que foi comprado).</div>
+        ${finPorFilial(pf, [{ t: 'Consumo', d: 1 }, { t: '%', d: 1 }], f => `${finTd(finR$(f.consumo), 'font-weight:700')}${finTd(finPct(f.consumo, c.total), 'color:var(--text-3)')}`, () => `${finTd(finR$(c.total), 'font-weight:800')}${finTd('100%')}`)}
+        <div class="fin-grid2">
+          ${finCard('Por categoria', '', grupo(c.por_categoria, 'Categoria'))}
+          ${finCard('Por armazém', '', grupo(c.por_armazem, 'Armazém', cons))}
+        </div>
+        ${finCard('Itens de maior valor', 'Os 30 primeiros · a lista completa por colaborador está na aba Consumo', grupo(c.por_item, 'Item', cons))}
+        <div style="text-align:right"><button class="btn btn-ghost" onclick="finFecharDetalhe();finMudarAba('consumo')">Abrir a aba Consumo</button></div>`,
+    };
+  },
+
+  avulsos(d, a, cons, pf) {
+    const av = a.avulsos || { lancamentos: [], por_tipo: {} };
+    const porFil = finSomaPor(av.lancamentos || [], 'valor');
+    return {
+      titulo: `Custos lançados à mão — ${finR$(av.total || 0)}`,
+      html: `<div class="fin-kpis">
+          ${['LAUDO', 'COMPRA_DIRETA', 'MANUTENCAO', 'OUTROS'].map(t => finKpi(FIN_TIPO_CUSTO[t], finR$(av.por_tipo?.[t] || 0), t === 'MANUTENCAO' && av.economia_manutencao ? `economia de ${finR$(av.economia_manutencao)}` : '')).join('')}
+        </div>
+        ${finPorFilial(pf, [{ t: 'Lançado', d: 1 }], f => finTd(finR$(porFil[f.filial] || 0), 'font-weight:700'), () => finTd(finR$(av.total || 0), 'font-weight:800'))}
+        ${finCard('Lançamentos', 'Para lançar ou editar, use a aba Outros custos', finListaHtml('finDetAvulsos', {
+          colunas: [{ t: 'Data' }, ...finColFilial(cons), { t: 'Tipo' }, { t: 'Descrição' }, { t: 'Qtd.', d: 1 }, { t: 'Valor', d: 1 }],
+          linhas: (av.lancamentos || []).map(l => ({ tipo: l.tipo, tipoTxt: FIN_TIPO_CUSTO[l.tipo] || l.tipo, filial: l.filial, valor: l.valor, data: l.data,
+            texto: finBusca(l.descricao, l.observacao, l.categoria, l.criado_por, l.filial),
+            html: `<tr><td style="white-space:nowrap">${finData(l.data)}</td>${finTdFilial(cons, l)}<td style="font-size:11px">${FIN_TIPO_CUSTO[l.tipo] || escHtml(l.tipo)}</td>
+              <td class="td-main">${escHtml(l.descricao)}<div style="font-size:10px;color:var(--text-3)">${l.categoria ? escHtml(l.categoria) + ' · ' : ''}lançado por ${escHtml(l.criado_por || '—')}</div></td>
+              ${finTd(l.quantidade ?? '—')}${finTd(finR$(l.valor), 'font-weight:700')}</tr>` })),
+          vazio: 'Nenhum custo lançado neste mês' }))}
+        <div style="text-align:right"><button class="btn btn-ghost" onclick="finFecharDetalhe();finMudarAba('avulsos')">Abrir a aba Outros custos</button></div>`,
+      listas: ['finDetAvulsos'],
+    };
+  },
+};
+function finDetalhe(qual) {
+  const d = _finDados;
+  if (!d || !FIN_DETALHES[qual]) return;
+  const det = FIN_DETALHES[qual](d, d.atual, d.consolidado, d.por_filial || []);
+  document.getElementById('finDetTitulo').textContent = det.titulo;
+  document.getElementById('finDetSub').textContent = `${finNomeMes(d.mes)} · ${(d.filiais || []).map(f => f.nome).join(', ')}`;
+  document.getElementById('finDetCorpo').innerHTML = det.html;
+  (det.listas || []).forEach(finListaRender);
+  document.getElementById('modalFinDetalhe').classList.remove('hidden');
+}
+function finFecharDetalhe() { document.getElementById('modalFinDetalhe').classList.add('hidden'); }
 
 const FIN_TIPO_CUSTO = { LAUDO: '♻️ Laudo', COMPRA_DIRETA: '🛒 Compra direta', MANUTENCAO: '🔧 Manutenção', OUTROS: '🧾 Outros' };
 
@@ -26088,13 +26448,24 @@ function finRenderRecuperacao() {
         r.perdas_por_origem.map(g => `<tr><td class="td-main">${escHtml(FIN_ORIGEM[g.chave] || g.chave)}</td>${finTd(finNum(g.quantidade))}${finTd(finR$(g.valor_original), 'color:var(--text-3)')}${finTd(finR$(g.valor), 'font-weight:700;color:var(--red)')}</tr>`),
         'Nenhuma perda neste mês'))}
     </div>
-    ${finCard('Todos os registros', 'Valor do item e fator congelados no momento da recuperação ou da perda', finTabela(
-      [...colFilial, { t: 'Data' }, { t: 'Tipo' }, { t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Valor un.', d: 1 }, { t: 'Fator', d: 1 }, { t: 'Valor', d: 1 }],
-      r.eventos.map(e => `<tr>${tdFilial(e)}<td>${finData(e.data)}</td>
+    ${finCard('Todos os registros', 'Valor do item e fator congelados no momento da recuperação ou da perda · filtre por tipo, filial ou item', finListaHtml('finRecRegistros', {
+      colunas: [...colFilial, { t: 'Data' }, { t: 'Tipo' }, { t: 'Item' }, { t: 'Qtd.', d: 1 }, { t: 'Valor un.', d: 1 }, { t: 'Fator', d: 1 }, { t: 'Valor', d: 1 }],
+      grupos: [['RECUPERADO', '♻️ Só recuperados (economia)'], ['PERDA', '✖ Só perdas']],
+      linhas: r.eventos.map(e => ({ tipo: e.origem, tipoTxt: `${e.tipo === 'RECUPERADO' ? '♻️' : '✖'} ${FIN_ORIGEM[e.origem] || e.origem}`, grupo: e.tipo, filial: e.filial, valor: e.valor,
+        texto: finBusca(e.nome_item, e.item_id, e.serial, e.categoria, e.filial, FIN_ORIGEM[e.origem]),
+        html: `<tr>${tdFilial(e)}<td>${finData(e.data)}</td>
         <td><span style="font-size:11px;font-weight:700;color:${e.tipo === 'RECUPERADO' ? 'var(--green)' : 'var(--red)'}">${e.tipo === 'RECUPERADO' ? '♻️' : '✖'} ${escHtml(FIN_ORIGEM[e.origem] || e.origem)}</span>${e.estimado ? '<span class="fin-tag-est">estimado</span>' : ''}</td>
         <td class="td-main">${escHtml(e.nome_item || e.item_id || '')}${e.serial ? `<div style="font-size:10px;color:var(--text-3)">serial ${escHtml(e.serial)}</div>` : ''}</td>
-        ${finTd(finNum(e.quantidade))}${finTd(finR$(e.valor_un))}${finTd(`${finNum(e.fator_pct)}%`)}${finTd(finR$(e.valor), 'font-weight:700')}</tr>`),
-      'Nenhum registro neste mês'))}`;
+        ${finTd(finNum(e.quantidade))}${finTd(finR$(e.valor_un))}${finTd(`${finNum(e.fator_pct)}%`)}${finTd(finR$(e.valor), 'font-weight:700')}</tr>` })),
+      vazio: 'Nenhum registro neste mês',
+      // Economia e perda não se somam: o rodapé mostra as duas separadas
+      resumo: (l) => {
+        const eco = l.filter(x => x.grupo === 'RECUPERADO').reduce((s, x) => s + x.valor, 0);
+        const per = l.filter(x => x.grupo === 'PERDA').reduce((s, x) => s + x.valor, 0);
+        return `${l.length} registro(s)${eco ? ` · economia <b style="color:var(--green)">${finR$(eco)}</b>` : ''}${per ? ` · perdas <b style="color:var(--red)">${finR$(per)}</b>` : ''}`;
+      },
+    }))}`;
+  finListaRender('finRecRegistros');
 }
 
 async function finRenderPrecos() {
