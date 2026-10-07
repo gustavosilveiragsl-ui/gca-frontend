@@ -8951,29 +8951,45 @@ function copiarLink(tipo) {
   window.prompt('Copie o link abaixo (Ctrl+C):', item.url);
 }
 
-// ── INATIVIDADE — logout automático após 30 min ──────────────────────
+// ── INATIVIDADE — logout automático após 30 min sem uso ──────────────
+// A última atividade fica no localStorage, compartilhada entre as abas. Antes cada aba tinha o
+// seu relógio: quem trabalhava numa aba era deslogado porque outra aba do sistema ficou parada
+// (o logout de uma derruba a sessão de todas).
 (function iniciarTimerInatividade() {
-  let timer;
-  const MINUTOS = 10;
-  function resetar() {
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      if (!GCA.token) return; // já deslogado
-      // Avisa o backend para liberar a sessão (senão a trava de login único persiste por até 12h)
-      api('/auth/logout', { method: 'POST' }).catch(() => {});
-      // Remove só as chaves do GCA — não afeta portais externos (tablet, equipes, solicitações)
-      localStorage.removeItem('gca_token');
-      localStorage.removeItem('gca_usuario');
-      localStorage.removeItem('gca_unidade');
-      sessionStorage.clear();
-      toast('Sessão encerrada por inatividade. Faça login novamente.', 'warn', 5000);
-      setTimeout(() => location.reload(), 2000);
-    }, MINUTOS * 60 * 1000);
+  const MINUTOS = 30;
+  const LIMITE = MINUTOS * 60 * 1000;
+  const CHAVE = 'gca_ultima_atividade';
+  let ultimaLocal = 0, encerrada = false;
+  function marcar() {
+    const agora = Date.now();
+    if (agora - ultimaLocal < 5000) return; // grava no máximo a cada 5 s (mousemove dispara muito)
+    ultimaLocal = agora;
+    try { localStorage.setItem(CHAVE, String(agora)); } catch {}
   }
-  ['mousemove','mousedown','keypress','touchstart','scroll','click'].forEach(ev =>
-    document.addEventListener(ev, resetar, { passive: true })
+  function ultimaAtividade() {
+    try { const v = Number(localStorage.getItem(CHAVE)); if (v) return v; } catch {}
+    return ultimaLocal; // sem localStorage: vale só esta aba
+  }
+  function encerrar() {
+    if (encerrada || !GCA.token) return; // já deslogado
+    encerrada = true;
+    // Avisa o backend para liberar a sessão (senão a trava de login único persiste por até 12h)
+    api('/auth/logout', { method: 'POST' }).catch(() => {});
+    // Remove só as chaves do GCA — não afeta portais externos (tablet, equipes, solicitações)
+    localStorage.removeItem('gca_token');
+    localStorage.removeItem('gca_usuario');
+    localStorage.removeItem('gca_unidade');
+    sessionStorage.clear();
+    toast('Sessão encerrada por inatividade. Faça login novamente.', 'warn', 5000);
+    setTimeout(() => location.reload(), 2000);
+  }
+  // Confere a cada 30 s. Comparando com o horário (e não com um setTimeout), também funciona
+  // depois de o computador hibernar.
+  setInterval(() => { if (Date.now() - ultimaAtividade() >= LIMITE) encerrar(); }, 30000);
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev =>
+    document.addEventListener(ev, marcar, { passive: true })
   );
-  resetar();
+  marcar();
 })();
 
 // ── API HELPER ──
