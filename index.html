@@ -20706,7 +20706,7 @@ function laudosRender_() {
             <td style="padding:8px;text-align:center">${stBadge}</td>
             <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
               ${x.anexoUrl?`<a href="${escHtml(safeUrl(x.anexoUrl))}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
-              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')" title="Lançar o PDF e o vencimento do laudo">📄 PDF e vencimento</button>`}
+              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')" title="Lançar a data do ensaio, a validade e o PDF do laudo">📄 Ensaio e PDF</button>`}
               ${['ESTOQUE','AGUARDANDO_LAUDO'].includes(x.statusLocal) && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}')">🗑️ Descartar</button>` : ''}
             </td>
           </tr>`;
@@ -20943,22 +20943,36 @@ function abrirEditarLaudo(idAtivo) {
   const rastreioInfo = document.getElementById('laudoRastreioInfo');
   rastreioInfo.textContent = x.rastreio || 'sem rastreio — peça ao almoxarifado para cadastrar';
   rastreioInfo.style.color = x.rastreio ? 'var(--text-1)' : 'var(--yellow)';
-  document.getElementById('laudoDataVenc').value    = x.dataVenc?x.dataVenc.slice(0,10):'';
+  document.getElementById('laudoDataEnsaio').value  = x.dataEnsaio?x.dataEnsaio.slice(0,10):'';
   document.getElementById('laudoValDias').value     = x.validadeDias||'';
+  laudoPreviaVenc();
   document.getElementById('laudoAnexoUrl').value    = x.anexoUrl||'';
   document.getElementById('laudoItemSerial').textContent = `${escHtml(x.itemNome)} · Serial: ${escHtml(x.serial)}`;
   document.getElementById('modalEditarLaudo').classList.remove('hidden');
+}
+
+// Vencimento = data do ensaio + validade (a mesma conta do servidor), mostrado antes de salvar
+function laudoPreviaVenc() {
+  const el = document.getElementById('laudoVencPrevia');
+  const ensaio = document.getElementById('laudoDataEnsaio').value;
+  const dias = Number(document.getElementById('laudoValDias').value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(ensaio) || !(dias > 0)) { el.textContent = 'Vence em: —'; el.style.color = 'var(--text-3)'; return; }
+  const v = new Date(`${ensaio}T12:00:00Z`); v.setUTCDate(v.getUTCDate() + dias);
+  const venc = v.toISOString().slice(0, 10);
+  const falta = Math.ceil((new Date(`${venc}T23:59:59-03:00`) - new Date()) / 86400000);
+  el.textContent = `Vence em: ${formatarData(venc)} · ${falta < 0 ? `vencido há ${-falta} dia(s)` : `faltam ${falta} dia(s)`}`;
+  el.style.color = falta < 0 ? 'var(--red)' : falta <= 30 ? 'var(--yellow)' : 'var(--green)';
 }
 
 async function salvarLaudo() {
   if (!temPermissao('inserir_laudo')) { toast('Sem permissão para inserir laudos', 'warn'); return; }
   const id = document.getElementById('laudoIdAtivo').value;
   const body = {
-    dt_venc:    document.getElementById('laudoDataVenc').value,
+    dt_ensaio:  document.getElementById('laudoDataEnsaio').value,
     validade_dias: document.getElementById('laudoValDias').value,
     anexo_url:  document.getElementById('laudoAnexoUrl').value.trim(),
   };
-  if (!body.dt_venc || !(Number(body.validade_dias) > 0)) { toast('Informe o vencimento e a validade (dias) do laudo','warn'); return; }
+  if (!body.dt_ensaio || !(Number(body.validade_dias) > 0)) { toast('Informe a data do ensaio e a validade (dias) do laudo','warn'); return; }
   const res = await api(`/laudos/nr10/laudo/${encodeURIComponent(id)}`, { method:'PUT', body: JSON.stringify(body) });
   if (res?.ok) { toast('Laudo salvo!','success'); document.getElementById('modalEditarLaudo').classList.add('hidden'); laudosCarregar_(); }
   else toast(res?.erro||'Erro ao salvar','error');
@@ -30508,7 +30522,7 @@ async function baExcluirEquipe(id) {
 <div class="modal-overlay hidden" id="modalEditarLaudo">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <div><div class="modal-title">📄 PDF e vencimento do laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
+      <div><div class="modal-title">📄 Ensaio e PDF do laudo</div><div style="font-size:11px;color:var(--text-3)" id="laudoItemSerial"></div></div>
       <button class="modal-close" onclick="document.getElementById('modalEditarLaudo').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
@@ -30517,10 +30531,13 @@ async function baExcluirEquipe(id) {
         <div style="font-size:10px;color:var(--text-3)">RASTREIO (Nº DO LAUDO / LOTE)</div>
         <div id="laudoRastreioInfo" style="font-size:14px;font-weight:700;font-family:var(--font-mono);color:var(--text-1)">—</div>
       </div>
+      <!-- Como era antes de 25/09 (pedido do usuário em 08/10): data do ensaio + validade em dias;
+           o vencimento é calculado e mostrado aqui para conferir -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div><label class="form-label">Vencimento do laudo *</label><input id="laudoDataVenc" class="form-input" type="date"></div>
-        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" min="1" placeholder="Ex: 180"></div>
+        <div><label class="form-label">Data do ensaio *</label><input id="laudoDataEnsaio" class="form-input" type="date" oninput="laudoPreviaVenc()"></div>
+        <div><label class="form-label">Validade (dias) *</label><input id="laudoValDias" class="form-input" type="number" min="1" placeholder="Ex: 180" oninput="laudoPreviaVenc()"></div>
       </div>
+      <div id="laudoVencPrevia" style="font-size:12px;color:var(--text-3);margin-top:-4px">Vence em: —</div>
       <div><label class="form-label">Link PDF do Laudo (Drive)</label><input id="laudoAnexoUrl" class="form-input" placeholder="https://drive.google.com/..."></div>
     </div>
     <div class="modal-footer">
