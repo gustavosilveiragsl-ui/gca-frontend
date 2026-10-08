@@ -9725,15 +9725,22 @@ async function iniciarAtendimento() {
   // Se TODOS os armazéns que esta pessoa pode usar estão em contagem, não há de onde tirar
   // material — avisa aqui em vez de deixar montar o atendimento pra falhar no fim. Se só
   // alguns estão, segue: ela ainda pode separar dos outros.
+  // Quem tem a permissão de liberar movimentação durante o inventário também segue: a
+  // justificativa é pedida ao concluir (e o servidor confere a permissão). Antes esta checagem
+  // barrava até quem podia liberar, depois de a tela do atendimento já ter aberto.
   const congelados = await armazensCongelados();
   if (congelados.length) {
     const meus = getUserArmazens();
     const disponiveis = (meus.length ? meus : (_armazens || []).map(a => a.id))
       .filter(id => !congelados.some(c => c.armazem_id === id));
     if (!disponiveis.length) {
-      toast(`🔒 ${escHtml(congelados.map(c => c.nome_armazem).join(', '))} em contagem de inventário — não há armazém liberado para atender agora.`,
-            'error', 7000);
-      return false;
+      const nomes = escHtml(congelados.map(c => c.nome_armazem).join(', '));
+      if (!temPermissao('inventario_liberar_movimentacao')) {
+        toast(`🔒 ${nomes} em contagem de inventário — não há armazém liberado para atender agora.`, 'error', 7000);
+        return false;
+      }
+      // Vindo de uma solicitação o aviso amarelo já apareceu (bloqueadoPorInventario)
+      if (!window._solicitacaoAtendimento) toast(`🔒 ${nomes} em contagem de inventário — será preciso justificar a liberação ao concluir.`, 'warn', 6000);
     }
   }
 
