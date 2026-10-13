@@ -5418,6 +5418,7 @@ window.addEventListener('pageshow', function(e) {
                   <option value="almoxarife">Assistente (acesso limitado)</option>
                   <option value="seguranca">Segurança (gestão de segurança)</option>
                   <option value="visualizador">Visualizador</option>
+                  <option value="painel">Somente Painel Brasil (gerência, só olha)</option>
                 </select>
               </div>
               <div><label class="form-label">Unidade principal</label>
@@ -6443,7 +6444,14 @@ function abrirPainelBrasil() {
   PB.timer = setInterval(() => { if (!document.getElementById('painelBrasilView').classList.contains('hidden')) pbRecarregar(true); }, 300000);
 }
 
+// Somente Painel Brasil: o painel é a tela inteira — sem "Escolher filial" e sem "Entrar"
+function iniciarSomentePainel() {
+  document.getElementById('pbBtnVoltar')?.classList.add('hidden');
+  abrirPainelBrasil();
+}
+
 function fecharPainelBrasil() {
+  if (GCA.usuario?.role === 'painel') return;
   clearInterval(PB.timer);
   pbLogLimparMapa();
   pbFecharGaveta();
@@ -7369,6 +7377,7 @@ function pbAbaRankings(el) {
 
 // Entrar numa filial pelo painel: a mesma troca de filial do sistema
 function pbEntrar(slug) {
+  if (GCA.usuario?.role === 'painel') return;   // Somente Painel Brasil não entra em filial
   clearInterval(PB.timer);
   pbFecharGaveta();
   if (slug === GCA.unidade) { fecharPainelBrasil(); return; }
@@ -7791,7 +7800,7 @@ function umapaProjetar(lon, lat) {
 }
 
 // ── Rodapé da barra lateral ──
-const ROTULO_PERFIL = { admin: 'Administrador', gestor: 'Gestor', almoxarife: 'Assistente', seguranca: 'Segurança', visualizador: 'Visualizador' };
+const ROTULO_PERFIL = { admin: 'Administrador', gestor: 'Gestor', almoxarife: 'Assistente', seguranca: 'Segurança', visualizador: 'Visualizador', painel: 'Somente Painel Brasil' };
 function rotuloPerfil(role) {
   if (!role) return '—';
   return ROTULO_PERFIL[role] || (role.charAt(0).toUpperCase() + role.slice(1));
@@ -8837,6 +8846,8 @@ function atualizarNomeFilialNaTela() {
 
 function iniciarApp() {
   const u = GCA.usuario || {};
+  // Somente Painel Brasil: direto para o painel, sem carregar filial (o servidor nem deixa)
+  if (u.role === 'painel') { iniciarSomentePainel(); return; }
   atualizarNomeFilialNaTela();
   document.getElementById('userName').textContent    = u.nome || u.name || '—';
   document.getElementById('userName').title          = u.nome || u.name || '';
@@ -17186,6 +17197,20 @@ function abrirPermissoes(id) {
     document.getElementById('permissoesGrid').innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-3);padding:20px">Administradores têm acesso total ao sistema.</div>';
     return;
   }
+  // Somente Painel Brasil (13/10/2026): não opera filial; a única escolha é ver ou não o financeiro
+  if (u.role === 'painel') {
+    _usrPermissoes = { painel_brasil: true, ...(_usrPermissoes.painel_financeiro === true ? { painel_financeiro: true } : {}) };
+    _usrExcecoes = {};
+    document.querySelectorAll('#permissoesPanel .card-actions button').forEach(b => { b.style.display = ''; });
+    document.getElementById('permissoesGrid').innerHTML = `<div style="grid-column:span 3;padding:14px;border:1px solid var(--border);border-radius:var(--radius-md)">
+      <div style="font-size:12px;font-weight:700;color:var(--text-1);margin-bottom:4px">Somente Painel Brasil</div>
+      <div style="font-size:11px;color:var(--text-3);margin-bottom:10px">Entra direto no Painel Brasil, com as filiais marcadas no cadastro. Não opera nenhuma filial.</div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer">
+        <input type="checkbox" id="permPainelFin" ${_usrPermissoes.painel_financeiro === true ? 'checked' : ''}
+          onchange="_usrPermissoes = { painel_brasil: true, ...(this.checked ? { painel_financeiro: true } : {}) }"> Ver o Financeiro dentro do painel</label>
+    </div>`;
+    return;
+  }
   if (!Object.keys(_usrPermissoes).length && PERMISSOES_SCHEMA && PERFIS_PERMISSOES[u.role]) {
     _usrPermissoes = { ...PERFIS_PERMISSOES[u.role] };
   }
@@ -18043,6 +18068,7 @@ function temPermissao(perm) {
 // Perfis padrão de permissões
 const PERFIS_PERMISSOES = {
   admin: null, // admin tem tudo
+  painel: { painel_brasil: true },   // Somente Painel Brasil (o financeiro é uma caixa à parte)
   almoxarife: {
     iniciar_atendimento:true, mobilizar_colaborador:true,
     ver_assinaturas:true,
