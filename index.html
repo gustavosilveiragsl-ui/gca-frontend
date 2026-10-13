@@ -5451,6 +5451,7 @@ window.addEventListener('pageshow', function(e) {
                 <button class="btn btn-primary" onclick="salvarPermissoes()">💾 Salvar permissões</button>
               </div>
             </div>
+            <div id="permissoesFiliais" style="padding:12px 16px 0"></div>
             <div id="permissoesGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
           </div>
 
@@ -6748,7 +6749,8 @@ async function pbAbaFinanceiro(el) {
   let d;
   try { d = await pbCarregarFinanceiro(); } catch (e) { el.innerHTML = `<div class="pb-vazio">${escHtml(e.message)}</div>`; return; }
   if (PB.aba !== 'financeiro') return;
-  const fs = pbFiliais(), t = pbSomar(fs).fin || { meta: 0 };
+  // Só as filiais em que a pessoa tem o Painel Financeiro (permissão por filial, 13/10/2026)
+  const fs = pbFiliais().filter(f => f.financeiro), t = pbSomar(fs).fin || { meta: 0 };
   const pct = t.meta > 0 ? t.gasto / t.meta * 100 : null;
   el.innerHTML = `
     <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">
@@ -17084,7 +17086,7 @@ async function carregarUsuariosView() {
     return `<tr>
       <td class="td-main">${escHtml(u.nome||'—')}<div style="font-size:10px;color:var(--text-3)">${uniStr}</div></td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.username||'—')}${u.email?'':' <span style="color:var(--red)" title="Sem e-mail cadastrado — não consegue recuperar a senha sozinho">⚠️</span>'}</td>
-      <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}</td>
+      <td style="font-size:11px;font-weight:600;color:var(--accent-text)">${u.role||'—'}${Object.keys(usrLerObjeto(u.permissoes_filial)).length ? `<div style="font-size:9px;font-weight:400;color:var(--text-3)" title="Permissões próprias em: ${escHtml(Object.keys(usrLerObjeto(u.permissoes_filial)).map(x => getNomeUnidade(x) || x).join(', '))}">✱ permissões por filial</div>` : ''}</td>
       <td>${u.ativo!==false?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
       <td style="display:flex;gap:4px">${usrPodeGerenciar(u)
         ? `<button class="row-action" onclick="editarUsuario('${u.id}')">Editar</button>
@@ -17146,6 +17148,12 @@ function abrirPermissoes(id) {
   document.getElementById('permissoesSubtitulo').textContent = `Usuário: ${escHtml(u.nome)} (${u.role})`;
   try { _usrPermissoes = typeof u.permissoes==='string' ? JSON.parse(u.permissoes||'{}') : (u.permissoes||{}); }
   catch { _usrPermissoes = {}; }
+  _usrExcecoes = JSON.parse(JSON.stringify(usrLerObjeto(u.permissoes_filial)));
+  _usrPermFilial = '';
+  _usrPermAlvo = u;
+  let unisAlvo = []; try { unisAlvo = typeof u.unidades === 'string' ? JSON.parse(u.unidades || '[]') : (Array.isArray(u.unidades) ? u.unidades : []); } catch { unisAlvo = []; }
+  _usrFiliaisAlvo = [...new Set([u.base || u.unidade, ...unisAlvo].filter(Boolean))];
+  document.getElementById('permissoesFiliais').innerHTML = '';
   if (u.role === 'admin') {
     document.getElementById('permissoesGrid').innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-3);padding:20px">Administradores têm acesso total ao sistema.</div>';
     return;
@@ -17154,37 +17162,126 @@ function abrirPermissoes(id) {
     _usrPermissoes = { ...PERFIS_PERMISSOES[u.role] };
   }
   // Quem não é admin só mexe no que ele mesmo tem, nunca nas administrativas, e não mexe nas próprias
-  _usrPermTravadas = new Set();
-  if (!usrSouAdmin()) {
-    const todas = Object.values(PERMISSOES_SCHEMA).flatMap(m => Object.keys(m.itens));
-    todas.forEach(k => { if (u.id === GCA.usuario?.id || USR_PERMS_ADMIN.includes(k) || !temPermissao(k)) _usrPermTravadas.add(k); });
-  }
+  usrCalcularTravadas();
   const somenteLeitura = !usrSouAdmin() && u.id === GCA.usuario?.id;
   document.getElementById('permissoesSubtitulo').textContent = somenteLeitura
     ? 'Suas permissões — só um administrador pode alterar'
     : `Usuário: ${u.nome} (${u.role})${_usrPermTravadas.size ? ' · 🔒 = você não tem essa permissão para dar' : ''}`;
   document.querySelectorAll('#permissoesPanel .card-actions button').forEach(b => { b.style.display = somenteLeitura ? 'none' : ''; });
+  usrRenderAbasFiliais();
   renderPermissoesGrid();
   document.getElementById('permissoesPanel').scrollIntoView({ behavior:'smooth' });
+}
+
+// ── Permissões por filial (13/10/2026): padrão + exceção por filial ──
+// O padrão vale em todas as filiais do usuário. Numa filial, "usar permissões diferentes aqui"
+// cria uma lista própria, que substitui o padrão só ali. Painel Brasil e Gerenciar usuários valem
+// para o sistema todo e só existem no padrão. A regra é a mesma do servidor (permissoes_filial.js).
+const USR_PERMS_GLOBAIS = ['painel_brasil', 'gerenciar_usuarios'];
+let _usrExcecoes = {}, _usrPermFilial = '', _usrFiliaisAlvo = [], _usrPermAlvo = null;
+function usrLerObjeto(v) {
+  if (!v) return {};
+  if (typeof v === 'string') { try { const o = JSON.parse(v); return o && typeof o === 'object' && !Array.isArray(o) ? o : {}; } catch { return {}; } }
+  return typeof v === 'object' && !Array.isArray(v) ? v : {};
+}
+const usrTemExcecao = (slug) => !!_usrExcecoes[slug];
+// O que está sendo editado agora: o padrão ou a lista da filial escolhida
+const usrObjEditando = () => (_usrPermFilial ? _usrExcecoes[_usrPermFilial] : _usrPermissoes);
+// Permissões de uma pessoa numa filial: a exceção dela (+ globais do padrão) ou o padrão
+function usrPermsNaFilial(u, slug) {
+  const padrao = usrLerObjeto(u?.permissoes), exc = usrLerObjeto(u?.permissoes_filial);
+  if (!slug || !exc[slug]) return padrao;
+  const efetivas = { ...usrLerObjeto(exc[slug]) };
+  USR_PERMS_GLOBAIS.forEach(g => { delete efetivas[g]; if (padrao[g] === true) efetivas[g] = true; });
+  return efetivas;
+}
+// O que QUEM EDITA tem no padrão ou na filial (o servidor confere pelo cadastro dele)
+function usrMinhasPerms(slug) {
+  const eu = (window._usuariosList || []).find(x => x.id === GCA.usuario?.id);
+  if (eu) return slug ? usrPermsNaFilial(eu, slug) : usrLerObjeto(eu.permissoes);
+  return (!slug || slug === GCA.unidade) ? (GCA.usuario?.permissoes || {}) : {};
+}
+function usrCalcularTravadas() {
+  const u = _usrPermAlvo;
+  _usrPermTravadas = new Set();
+  const todas = Object.values(PERMISSOES_SCHEMA).flatMap(m => Object.keys(m.itens));
+  if (_usrPermFilial) todas.forEach(k => { if (USR_PERMS_GLOBAIS.includes(k)) _usrPermTravadas.add(k); });
+  if (_usrPermFilial && !usrTemExcecao(_usrPermFilial)) todas.forEach(k => _usrPermTravadas.add(k));  // usa o padrão: só leitura
+  if (usrSouAdmin()) return;
+  const minhas = usrMinhasPerms(_usrPermFilial);
+  todas.forEach(k => { if (u?.id === GCA.usuario?.id || USR_PERMS_ADMIN.includes(k) || minhas[k] !== true) _usrPermTravadas.add(k); });
+}
+function usrRenderAbasFiliais() {
+  const box = document.getElementById('permissoesFiliais');
+  if (!box) return;
+  if (_usrFiliaisAlvo.length < 2 && !Object.keys(_usrExcecoes).length) { box.innerHTML = ''; return; }
+  const eu = _usrPermAlvo?.id === GCA.usuario?.id && !usrSouAdmin();
+  const aba = (slug, rotulo) => `<button class="atend-tab ${_usrPermFilial === slug ? 'active' : ''}" onclick="usrEscolherFilialPerm('${escJs(slug)}')">${rotulo}</button>`;
+  const f = _usrPermFilial;
+  const comLista = Object.keys(_usrExcecoes).filter(x => _usrExcecoes[x]);
+  box.innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:var(--text-3)">Permissões em:</span>
+      ${aba('', '🌐 Padrão (todas as filiais)')}
+      ${_usrFiliaisAlvo.map(slug => aba(slug, `🏢 ${escHtml(getNomeUnidade(slug) || slug)}${usrTemExcecao(slug) ? ' ✱' : ''}`)).join('')}
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.5">
+      ${!f
+        ? `Vale em todas as filiais do usuário${comLista.length ? `, menos nas marcadas com ✱ (${comLista.map(x => escHtml(getNomeUnidade(x) || x)).join(', ')}), que têm permissões próprias` : ''}.`
+        : `<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-1);cursor:${eu ? 'not-allowed' : 'pointer'}">
+            <input type="checkbox" id="usrExcecaoCheck" ${usrTemExcecao(f) ? 'checked' : ''} ${eu ? 'disabled' : ''} onchange="usrAlternarExcecao(this.checked)">
+            Usar permissões diferentes em <b>${escHtml(getNomeUnidade(f) || f)}</b></label>
+          <div>${usrTemExcecao(f)
+            ? 'Esta lista substitui o padrão só nesta filial. Painel Brasil e Gerenciar usuários vêm do padrão (valem para o sistema todo).'
+            : 'Esta filial usa o padrão (mostrado abaixo, só para consulta). Marque a caixa para montar uma lista própria.'}</div>`}
+    </div>`;
+}
+function usrEscolherFilialPerm(slug) {
+  _usrPermFilial = slug;
+  usrCalcularTravadas();
+  usrRenderAbasFiliais();
+  renderPermissoesGrid();
+}
+function usrAlternarExcecao(ligar) {
+  const f = _usrPermFilial;
+  if (!f) return;
+  if (ligar) {
+    // Começa igual ao que vale hoje na filial (o padrão), sem as globais
+    const base = { ..._usrPermissoes };
+    USR_PERMS_GLOBAIS.forEach(g => delete base[g]);
+    _usrExcecoes[f] = Object.fromEntries(Object.entries(base).filter(([, v]) => v === true));
+  } else {
+    _usrExcecoes[f] = null;   // vai como null: a filial volta a usar o padrão
+  }
+  usrCalcularTravadas();
+  usrRenderAbasFiliais();
+  renderPermissoesGrid();
+}
+function usrMarcarPerm(key, valor) {
+  const alvo = usrObjEditando();
+  if (alvo) alvo[key] = valor;
 }
 
 function renderPermissoesGrid() {
   const grid = document.getElementById('permissoesGrid');
   if (!grid || !PERMISSOES_SCHEMA) return;
+  // Na aba de uma filial sem lista própria, a grade mostra o padrão (só leitura)
+  const obj = (_usrPermFilial && usrTemExcecao(_usrPermFilial)) ? _usrExcecoes[_usrPermFilial] : _usrPermissoes;
+  const valor = (k) => (_usrPermFilial && USR_PERMS_GLOBAIS.includes(k)) ? _usrPermissoes[k] === true : obj?.[k] === true;
   grid.innerHTML = Object.entries(PERMISSOES_SCHEMA).map(([modKey, mod]) => `
     <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:12px;font-weight:700;color:var(--text-1)">${mod.label}</div>
         <label style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--text-3);cursor:pointer">
           <input type="checkbox" onchange="toggleModulo('${modKey}',this.checked)"
-            ${Object.keys(mod.itens).every(k => _usrPermissoes[k]) ? 'checked' : ''}> Tudo
+            ${Object.keys(mod.itens).every(k => valor(k)) ? 'checked' : ''}> Tudo
         </label>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px">
         ${Object.entries(mod.itens).map(([key, label]) => `
         <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-2);cursor:${_usrPermTravadas.has(key) ? 'not-allowed' : 'pointer'};${_usrPermTravadas.has(key) ? 'opacity:.55' : ''}">
-          <input type="checkbox" id="perm_${key}" ${_usrPermissoes[key] ? 'checked' : ''} ${_usrPermTravadas.has(key) ? 'disabled' : ''}
-            onchange="_usrPermissoes['${key}']=this.checked"> ${label}${_usrPermTravadas.has(key) ? ' 🔒' : ''}
+          <input type="checkbox" id="perm_${key}" ${valor(key) ? 'checked' : ''} ${_usrPermTravadas.has(key) ? 'disabled' : ''}
+            onchange="usrMarcarPerm('${key}', this.checked)"> ${label}${_usrPermTravadas.has(key) ? (_usrPermFilial && USR_PERMS_GLOBAIS.includes(key) ? ' 🌐' : _usrPermFilial && !usrTemExcecao(_usrPermFilial) ? '' : ' 🔒') : ''}
         </label>`).join('')}
       </div>
     </div>`).join('');
@@ -17194,24 +17291,25 @@ function toggleModulo(modKey, checked) {
   const mod = PERMISSOES_SCHEMA[modKey];
   Object.keys(mod.itens).forEach(key => {
     if (_usrPermTravadas.has(key)) return;
-    _usrPermissoes[key] = checked;
+    usrMarcarPerm(key, checked);
     const el = document.getElementById(`perm_${key}`);
     if (el) el.checked = checked;
   });
 }
 
 function marcarTodasPermissoes(checked) {
-  Object.values(PERMISSOES_SCHEMA).forEach(mod => Object.keys(mod.itens).forEach(key => { if (!_usrPermTravadas.has(key)) _usrPermissoes[key] = checked; }));
+  Object.values(PERMISSOES_SCHEMA).forEach(mod => Object.keys(mod.itens).forEach(key => { if (!_usrPermTravadas.has(key)) usrMarcarPerm(key, checked); }));
   renderPermissoesGrid();
 }
 
 async function salvarPermissoes() {
   if (!_usrEditandoId) return;
   const res = await api(`/usuarios/${_usrEditandoId}`, {
-    method:'PUT', body: JSON.stringify({ permissoes: JSON.stringify(_usrPermissoes) })
+    method:'PUT', body: JSON.stringify({ permissoes: JSON.stringify(_usrPermissoes), permissoes_filial: _usrExcecoes || {} })
   });
   if (res?.ok) {
     toast('Permissões salvas!', 'success');
+    if (res.aviso) toast(res.aviso, 'warn', 8000);
     document.getElementById('permissoesPanel').style.display = 'none';
     _usrEditandoId = null;
     carregarUsuariosView();
@@ -17247,6 +17345,7 @@ async function salvarUsuario() {
     if (!id && res.data?.id && PERFIS_PERMISSOES[body.role]) {
       _usrEditandoId = res.data.id;
       _usrPermissoes = { ...PERFIS_PERMISSOES[body.role] };
+      _usrExcecoes = {};
       await salvarPermissoes();
     }
   } else toast(res?.erro || 'Erro ao salvar', 'error');
@@ -25703,7 +25802,8 @@ const finSpinner = '<div style="text-align:center;padding:60px"><div class="spin
 function finIniciar() {
   const mes = document.getElementById('finMes');
   if (mes && !mes.value) { const d = new Date(); mes.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; }
-  document.getElementById('finFilialBox').classList.toggle('hidden', GCA.usuario?.role !== 'admin');
+  // Admin e gestores com mais de uma filial (13/10/2026); o servidor só soma as filiais em que a pessoa tem o Painel Financeiro
+  finFiliaisMostrarSeletor();
   finFiliaisRestaurar();
   document.getElementById('finAbaPrevisao')?.classList.toggle('hidden', !temPermissao('painel_financeiro'));
   _finPrecos = null;
@@ -25747,12 +25847,34 @@ async function finCarregar() {
   if (['precos', 'config', 'previsao'].includes(_finAba)) { _finAba = 'resumo'; finMarcarAba(); }
   document.getElementById('finConteudo').innerHTML = finSpinner;
   const res = await api(`/financeiro/painel?mes=${encodeURIComponent(mes)}${finFiliaisParam()}`);
+  // A soma guardada neste navegador inclui uma filial que a pessoa não pode mais ver (perdeu o
+  // acesso ou o Painel Financeiro lá): volta para a filial logada em vez de ficar no erro.
+  if (!res?.ok && res?.codigo === 'FILIAL_SEM_ACESSO' && _finFiliais) {
+    _finFiliais = null;
+    try { localStorage.removeItem('gca_fin_filiais'); } catch {}
+    finFiliaisRotulo();
+    toast('Uma das filiais escolhidas não está mais liberada para você — mostrando só esta filial', 'warn', 7000);
+    return finCarregar();
+  }
   if (!res?.ok) {
     _finDados = null;
     document.getElementById('finConteudo').innerHTML = `<div class="empty-state"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div>`;
     return;
   }
   _finDados = res.data;
+  // A escolha guardada só fica com as filiais que o servidor ainda libera (ex.: pediu "todas" e
+  // agora só sobrou esta) — senão o botão diria "2 filiais" mostrando uma
+  if (_finFiliais) {
+    const disp = finFiliaisDisponiveis();
+    const validas = _finFiliais.filter(f => disp.includes(f));
+    if (validas.length !== _finFiliais.length) {
+      _finFiliais = validas.length && !(validas.length === 1 && validas[0] === GCA.unidade) ? validas : null;
+      try { if (_finFiliais) localStorage.setItem('gca_fin_filiais', JSON.stringify(_finFiliais)); else localStorage.removeItem('gca_fin_filiais'); } catch {}
+    }
+  }
+  // Com a lista do servidor, o seletor mostra só as filiais permitidas (e some se for uma só)
+  finFiliaisMostrarSeletor();
+  finFiliaisRotulo();
   finRender();
 }
 
@@ -26354,7 +26476,11 @@ function finAbrirCusto(idx) {
   document.getElementById('custoBtnSalvar').textContent = l ? 'Salvar alterações' : 'Lançar custo';
   document.getElementById('custoId').value = l?.id || '';
   const mes = document.getElementById('finMes').value;
-  document.getElementById('custoData').value = l?.data || `${mes}-${String(new Date().getDate()).padStart(2, '0')}`;
+  // Dia de hoje (Brasília) no mês escolhido; se o mês não tem esse dia (31/09), vai para o último dia dele
+  const diaHoje = Number(hojeBR().slice(8, 10));
+  const [anoMes, mesMes] = mes.split('-').map(Number);
+  const ultimoDia = new Date(Date.UTC(anoMes, mesMes, 0)).getUTCDate();
+  document.getElementById('custoData').value = l?.data || `${mes}-${String(Math.min(diaHoje, ultimoDia)).padStart(2, '0')}`;
   document.getElementById('custoTipo').value = l?.tipo || 'OUTROS';
   document.getElementById('custoDescricao').value = l?.descricao || '';
   document.getElementById('custoCategoria').value = l?.categoria || '';
@@ -26624,11 +26750,17 @@ async function finSalvarConfig() {
 // ── Filiais do painel (admin): esta filial, todas ou só as escolhidas (ex.: Maricá + Rio das
 // Ostras somadas). A escolha fica guardada neste navegador.
 let _finFiliais = null;   // null = só a filial em que está logado
-const finFiliaisDisponiveis = () => [...new Set((GCA.unidades && GCA.unidades.length) ? GCA.unidades : [GCA.unidade])];
+// Depois da primeira busca, vale a lista do servidor (só as filiais em que a pessoa tem o Painel Financeiro)
+const finFiliaisDisponiveis = () => _finDados?.filiais_disponiveis?.length ? _finDados.filiais_disponiveis.map(f => f.slug)
+  : [...new Set((GCA.unidades && GCA.unidades.length) ? GCA.unidades : [GCA.unidade])];
+// Admin sempre; os outros só depois que o servidor disser em quais filiais podem ver (2 ou mais)
+function finFiliaisMostrarSeletor() {
+  const pode = GCA.usuario?.role === 'admin' || (_finDados?.filiais_disponiveis?.length || 0) >= 2;
+  document.getElementById('finFilialBox')?.classList.toggle('hidden', !pode);
+}
 const finFiliaisEscolhidas = () => (_finFiliais && _finFiliais.length) ? _finFiliais : [GCA.unidade];
 const finFiliaisTodas = (sel) => { const t = finFiliaisDisponiveis(); return t.length > 1 && t.every(x => sel.includes(x)); };
 function finFiliaisParam() {
-  if (GCA.usuario?.role !== 'admin') return '';
   const sel = finFiliaisEscolhidas();
   if (sel.length === 1 && sel[0] === GCA.unidade) return '';
   return '&filial=' + (finFiliaisTodas(sel) ? 'todas' : encodeURIComponent(sel.join(',')));
