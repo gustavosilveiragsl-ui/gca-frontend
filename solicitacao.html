@@ -244,6 +244,7 @@ input,select,textarea{font-family:var(--font-main);}
     </div>
     <button class="btn btn-primary" id="btnLogin" onclick="login()">Entrar</button>
     <div id="loginErr" class="login-error hidden"></div>
+    <div id="loginFiliais" class="hidden" style="margin-top:14px"></div>
   </div>
 </div>
 
@@ -797,17 +798,30 @@ function fmtData(dh) {
 // ══════════════════════════════════════════
 // LOGIN
 // ══════════════════════════════════════════
-async function login() {
+// unidade: a filial escolhida, quando a pessoa tem acesso em mais de uma (13/10/2026)
+async function login(unidade) {
   const mat = document.getElementById('lMat').value.trim();
   const sen = document.getElementById('lSen').value.trim();
   const errEl = document.getElementById('loginErr');
   const btn   = document.getElementById('btnLogin');
+  const boxFiliais = document.getElementById('loginFiliais');
   errEl.classList.add('hidden');
   if (!mat || !sen) { errEl.textContent='Preencha matrícula e senha.'; errEl.classList.remove('hidden'); return; }
   btn.disabled=true; btn.textContent='⏳ Verificando...';
-  const res = await req('/solicitacao-auth/login', { method:'POST', body:{matricula:mat,senha:sen} });
+  const corpo = { matricula: mat, senha: sen };
+  if (typeof unidade === 'string' && unidade) corpo.unidade = unidade;
+  const res = await req('/solicitacao-auth/login', { method:'POST', body: corpo });
   btn.disabled=false; btn.textContent='Entrar';
-  if (!res.ok) { errEl.textContent='❌ '+(res.erro||'Credenciais incorretas'); errEl.classList.remove('hidden'); return; }
+  if (!res.ok) { boxFiliais.classList.add('hidden'); errEl.textContent='❌ '+(res.erro||'Credenciais incorretas'); errEl.classList.remove('hidden'); return; }
+  // Acesso em mais de uma filial: escolhe em qual entrar
+  if (res.escolher_filial) {
+    boxFiliais.innerHTML = `<div style="font-size:13px;font-weight:600;margin-bottom:8px;text-align:center">Em qual filial você quer entrar?</div>
+      <div style="display:flex;flex-direction:column;gap:8px">${(res.filiais || []).map(f =>
+        `<button class="btn btn-ghost" style="justify-content:center" onclick="login('${escJs(f.slug)}')">${escHtml(f.nome)}</button>`).join('')}</div>`;
+    boxFiliais.classList.remove('hidden');
+    return;
+  }
+  boxFiliais.classList.add('hidden');
   _usr = res.usuario; _solToken = res.token; _arm = res.armazens || [];
   document.getElementById('pgLogin').classList.add('hidden');
   document.getElementById('pgApp').classList.remove('hidden');
@@ -815,7 +829,7 @@ async function login() {
   const ini = (_usr.nome||'?')[0].toUpperCase();
   document.getElementById('hdrAvatar').textContent = ini;
   document.getElementById('hdrNome').textContent   = _usr.nome;
-  document.getElementById('hdrSub').textContent    = (getNomeFilial(_usr.unidade)) + ' · Ceneged';
+  document.getElementById('hdrSub').textContent    = (_usr.filial_nome || getNomeFilial(_usr.unidade)) + ' · Ceneged';
   carregarDados();
 }
 
