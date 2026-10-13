@@ -977,13 +977,50 @@ function setPrio(p) {
   document.getElementById('imgUrgLabel').textContent = p==='Urgente' ? '⚠️ Obrigatório para solicitações urgentes' : '';
 }
 
-function processarImgs(files) {
+// Fotos reduzidas no próprio celular antes de enviar (13/10/2026 — velocidade): a foto da
+// câmera tem de 3 a 8 MB e subia inteira pela rede móvel, e o servidor ainda a reenviava ao
+// Drive. Com 1600 px no lado maior, em JPEG, fica com uns 200 a 400 KB e continua nítida.
+const IMG_LADO_MAX = 1600, IMG_QUALIDADE = 0.8, IMG_LIMITE = 5 * 1024 * 1024;
+function lerArquivo(f) {
+  return new Promise((ok, erro) => { const rd = new FileReader(); rd.onload = e => ok(e.target.result); rd.onerror = erro; rd.readAsDataURL(f); });
+}
+// Devolve a foto reduzida, ou null quando não dá para reduzir (aí vai a original)
+function reduzirImagem(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const escala = Math.min(1, IMG_LADO_MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.naturalWidth * escala));
+        c.height = Math.max(1, Math.round(img.naturalHeight * escala));
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);   // PNG transparente não fica preto
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const menor = c.toDataURL('image/jpeg', IMG_QUALIDADE);
+        resolve(menor.length < dataUrl.length ? menor : null);
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = dataUrl;
+  });
+}
+let _imgsLendo = 0;
+async function processarImgs(files) {
   for (const f of Array.from(files)) {
-    if (_imgs.length>=3){ toast('Máximo 3 imagens.','warn'); break; }
-    if (f.size>5*1024*1024){ toast(`"${f.name}" excede 5 MB.`,'warn'); continue; }
-    const rd=new FileReader();
-    rd.onload=(e)=>{ _imgs.push({file:f,dataUrl:e.target.result}); renderImgs(); };
-    rd.readAsDataURL(f);
+    if (_imgs.length + _imgsLendo >= 3) { toast('Máximo 3 imagens.','warn'); break; }
+    _imgsLendo++;
+    try {
+      const original = await lerArquivo(f);
+      const reduzida = await reduzirImagem(original);
+      const dataUrl = reduzida || original;
+      // O limite de 5 MB vale para o que vai ser enviado (antes barrava a foto da câmera maior que 5 MB)
+      const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4);
+      if (bytes > IMG_LIMITE) { toast(`"${f.name}" excede 5 MB.`,'warn'); continue; }
+      _imgs.push({ file: { name: reduzida ? f.name.replace(/\.[^.]+$/, '') + '.jpg' : f.name }, dataUrl });
+      renderImgs();
+    } catch { toast(`Não foi possível ler "${f.name}".`,'warn'); }
+    finally { _imgsLendo--; }
   }
 }
 function renderImgs() {

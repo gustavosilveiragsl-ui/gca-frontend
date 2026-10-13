@@ -8303,6 +8303,23 @@ function limparAssinatura() {
   if (_assinCtx && _assinCanvas) _assinCtx.clearRect(0, 0, _assinCanvas.width, _assinCanvas.height);
 }
 
+function assinBotaoComprovante(url) {
+  return `<a href="${escHtml(safeUrl(url))}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>`;
+}
+// Pergunta ao servidor pelo link do comprovante até ele ficar pronto (a cada 2 s, até ~1 min)
+async function assinEsperarComprovante(token, tentativa = 0) {
+  const el = document.getElementById('assinComprovante');
+  if (!el) return;
+  if (tentativa >= 30) { el.textContent = 'O comprovante fica disponível com o almoxarifado.'; return; }
+  try {
+    const r = await fetch(`${API}/atendimentos/comprovante/${encodeURIComponent(token)}`, { cache: 'no-store' });
+    const d = await r.json();
+    if (d.pdf_url) { el.outerHTML = assinBotaoComprovante(d.pdf_url); return; }
+    if (d.falhou) { el.textContent = 'O comprovante fica disponível com o almoxarifado.'; return; }
+  } catch {}
+  setTimeout(() => assinEsperarComprovante(token, tentativa + 1), 2000);
+}
+
 async function confirmarAssinatura(token, atendimentoId) {
   if (!_assinCanvas) return;
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
@@ -8334,8 +8351,10 @@ async function confirmarAssinatura(token, atendimentoId) {
         <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Recebimento confirmado!</div>
         <div style="font-size:13px;color:#94a3b8;margin-bottom:16px">Sua assinatura foi registrada com sucesso.</div>
         ${_tokenBaseDoHash() ? `<button onclick="location.hash='#/assinar-base?token=${_tokenBaseDoHash()}'" style="display:block;margin:0 auto 14px;padding:12px 22px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">← Voltar para a lista da base</button>` : ''}
-        ${data.pdf_url ? `<a href="${escHtml(safeUrl(data.pdf_url))}" target="_blank" style="display:inline-block;padding:12px 24px;background:#1e3a8a;color:#fff;border-radius:8px;text-decoration:none;font-size:14px;font-weight:600">📄 Abrir Comprovante</a>` : ''}
+        ${data.pdf_url ? assinBotaoComprovante(data.pdf_url) : data.comprovante_pendente ? '<div id="assinComprovante" style="font-size:13px;color:#94a3b8">⏳ Gerando o comprovante…</div>' : ''}
       </div>`;
+    // O comprovante (PDF) é gerado logo depois da confirmação, sem a pessoa precisar esperar
+    if (!data.pdf_url && data.comprovante_pendente) assinEsperarComprovante(token);
 
   } catch(e) {
     console.error('[confirmarAssinatura]', e);
@@ -10687,19 +10706,6 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
         await new Promise(r => setTimeout(r, 1500)); // aguarda antes de tentar de novo
       }
     }
-
-    // Atualiza seriais de itens com ensaio NR10
-    const itensComSerial = ATEND.itens.filter(it => it.requerEnsaio && it.seriais?.length);
-    if (itensComSerial.length) {
-      await api('/ensaios/atualizar-seriais', {
-        method: 'POST',
-        body: JSON.stringify({
-          itens:            itensComSerial,
-          colaborador_id:   ATEND.colab.id,
-          nome_colaborador: ATEND.colab.nome,
-        })
-      });
-    }
   } catch (posErr) {
     console.error('[concluirAtendimento] erro pós-salvamento:', posErr);
   } finally {
@@ -10714,6 +10720,22 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     // Token falhou mesmo após 3 tentativas — avisa claramente, não mascara como sucesso
     abrirModalFinalizado(registro, { tokenFalhou: true });
     toast('⚠️ Atendimento salvo, mas o link de assinatura falhou. Gere novamente na tela de Assinaturas.', 'error', 8000);
+  }
+
+  // Atualiza seriais de itens com ensaio NR10 (a consulta por colaborador procura o serial pelo
+  // local_atual que esta chamada grava). Não segura mais a tela (13/10/2026 — velocidade): vai
+  // depois que a conclusão aparece, e o keepalive garante o envio mesmo se a página for fechada.
+  const itensComSerial = ATEND.itens.filter(it => it.requerEnsaio && it.seriais?.length);
+  if (itensComSerial.length) {
+    api('/ensaios/atualizar-seriais', {
+      method: 'POST',
+      keepalive: true,
+      body: JSON.stringify({
+        itens:            itensComSerial,
+        colaborador_id:   ATEND.colab.id,
+        nome_colaborador: ATEND.colab.nome,
+      })
+    }).catch(e => console.error('[concluirAtendimento] seriais NR10:', e));
   }
 }
 
@@ -21057,7 +21079,7 @@ function laudoPreviaVenc() {
   const dias = Number(document.getElementById('laudoValDias').value);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ensaio) || !(dias > 0)) { el.textContent = 'Vence em: —'; el.style.color = 'var(--text-3)'; return; }
   const v = new Date(`${ensaio}T12:00:00Z`); v.setUTCDate(v.getUTCDate() + dias);
-  const venc = v.toISOString().slice(0, 10);
+  const venc = `${v.getUTCFullYear()}-${String(v.getUTCMonth() + 1).padStart(2, '0')}-${String(v.getUTCDate()).padStart(2, '0')}`;
   const falta = Math.ceil((new Date(`${venc}T23:59:59-03:00`) - new Date()) / 86400000);
   el.textContent = `Vence em: ${formatarData(venc)} · ${falta < 0 ? `vencido há ${-falta} dia(s)` : `faltam ${falta} dia(s)`}`;
   el.style.color = falta < 0 ? 'var(--red)' : falta <= 30 ? 'var(--yellow)' : 'var(--green)';
