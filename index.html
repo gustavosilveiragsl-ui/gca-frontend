@@ -1181,11 +1181,14 @@ window.addEventListener('pageshow', function(e) {
                   <option value="Junior">Junior</option>
                 </select>
               </div>
-              <div><label class="form-label">Filial(is) *</label>
-                <select id="colabUnidades" class="form-input">
-                  <option value="ambas">Ambas as filiais</option>
-                  <!-- filiais individuais carregadas dinamicamente -->
+              <div><label class="form-label">Filial principal *</label>
+                <select id="colabUnidades" class="form-input" onchange="colabRenderExtras()">
+                  <!-- filiais carregadas dinamicamente -->
                 </select>
+              </div>
+              <div id="colabFiliaisExtrasBox"><label class="form-label">Também atende em</label>
+                <div id="colabFiliaisExtras" style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;padding:4px 0"></div>
+                <div style="font-size:10px;color:var(--text-3)">Aparece também nessas filiais para ser atendido. O cadastro, a ficha de EPI e o histórico continuam um só.</div>
               </div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarColaborador()">Salvar</button>
@@ -6316,13 +6319,15 @@ function popularSelectsFiliais() {
     extras.forEach(e=>el.appendChild(e));
     if (cur) el.value = cur;
   });
-  // Select filial do colaborador (ambas + individuais)
+  // Filial principal do colaborador (13/10/2026: "Ambas as filiais" saiu — quem atende em mais
+  // de uma filial tem a principal aqui e as outras em "Também atende em")
   const selColabUni = document.getElementById('colabUnidades');
   if (selColabUni) {
     const curColab = selColabUni.value;
-    selColabUni.innerHTML = '<option value="ambas">Ambas as filiais</option>' +
-      _filiais.filter(f=>f.status==='ativa').map(f=>`<option value="${f.slug}">${escHtml(f.nome)}</option>`).join('');
-    if (curColab) selColabUni.value = curColab;
+    selColabUni.innerHTML = '<option value="">— escolha a filial principal —</option>' +
+      _filiais.filter(f => f.status === 'ativa' && colabPodeFilial(f.slug)).map(f=>`<option value="${f.slug}">${escHtml(f.nome)}</option>`).join('');
+    selColabUni.value = curColab || GCA.unidade || '';
+    colabRenderExtras();
   }
 
   // Select unidade no cadastro de usuário (armazém)
@@ -9353,7 +9358,8 @@ function renderColaboradores(lista) {
       : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px">🏖 Férias</span>'
       : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
     return `<tr>
-      <td class="td-main">${escHtml(c.nome||'—')}</td>
+      <td class="td-main">${escHtml(c.nome||'—')}${(c.unidade && c.unidade !== GCA.unidade) || (c.filiais_extras || []).length
+        ? `<div style="font-size:10px;font-weight:400;color:var(--text-3)">${c.unidade === GCA.unidade ? 'desta filial' : colabTagFilial(c).replace(/^ · /, '')}${(c.filiais_extras || []).length ? ` · também em ${c.filiais_extras.map(u => escHtml(getNomeUnidade(u))).join(', ')}` : ''}</div>` : ''}</td>
       <td class="td-mono">${escHtml(c.matricula||'—')}</td>
       <td>${escHtml(c.funcao||'—')}</td>
       <td>${statusTag}</td>
@@ -9830,7 +9836,7 @@ function mostrarAutocomplete(listaId, inputId, resultados, onSelectFn) {
   lista.innerHTML = resultados.map(c => `
     <div class="autocomplete-item" onclick="${onSelectFn}('${c.id}')">
       <div style="font-weight:500;color:var(--text-1)">${escHtml(c.nome)}</div>
-      <div style="font-size:10px;color:var(--text-3)">${escHtml(c.matricula||'—')} • ${escHtml(c.funcao||'—')}</div>
+      <div style="font-size:10px;color:var(--text-3)">${escHtml(c.matricula||'—')} • ${escHtml(c.funcao||'—')}${colabTagFilial(c)}</div>
     </div>`).join('');
   lista.classList.remove('hidden');
 }
@@ -18153,6 +18159,36 @@ function limparFormItem() {
 }
 
 // ════════════ COLABORADORES CRUD ════════════
+// Filiais em que quem está logado pode mexer (admin: todas)
+function colabPodeFilial(slug) {
+  if (GCA.usuario?.role === 'admin') return true;
+  const minhas = (GCA.unidades && GCA.unidades.length) ? GCA.unidades : [GCA.unidade];
+  return minhas.includes(slug);
+}
+// "de Rio das Ostras": colaborador de outra filial que também atende nesta
+function colabTagFilial(c) {
+  if (!c || !c.unidade || c.unidade === GCA.unidade) return '';
+  if (c.unidade === 'ambas') return ' · <span style="color:#d97706" title="Cadastro antigo em Ambas as filiais: escolha a filial principal">Ambas (antigo)</span>';
+  return ` · <span style="color:#6366f1">de ${escHtml(getNomeUnidade(c.unidade))}</span>`;
+}
+// Caixas "Também atende em": todas as filiais ativas menos a principal; as que a pessoa não
+// acessa aparecem travadas (o servidor também não mexe nelas)
+let _colabExtras = [];
+function colabRenderExtras(marcadas) {
+  if (Array.isArray(marcadas)) _colabExtras = marcadas.slice();
+  const box = document.getElementById('colabFiliaisExtras');
+  if (!box) return;
+  const principal = document.getElementById('colabUnidades')?.value || '';
+  const filiais = (_filiais || []).filter(f => f.status === 'ativa' && f.slug !== principal);
+  box.innerHTML = filiais.length ? filiais.map(f => {
+    const pode = colabPodeFilial(f.slug);
+    const marcado = _colabExtras.includes(f.slug);
+    return `<label style="display:flex;align-items:center;gap:5px;cursor:${pode ? 'pointer' : 'not-allowed'};opacity:${pode ? 1 : .55}" ${pode ? '' : 'title="Você não tem acesso a esta filial"'}>
+      <input type="checkbox" class="colab-extra" value="${escHtml(f.slug)}" ${marcado ? 'checked' : ''} ${pode ? '' : 'disabled'}
+        onchange="_colabExtras = [...document.querySelectorAll('.colab-extra:checked')].map(x => x.value)">${escHtml(f.nome)}</label>`;
+  }).join('') : '<span style="color:var(--text-3)">Nenhuma outra filial.</span>';
+}
+
 async function salvarColaborador() {
   const id   = document.getElementById('colabEditId').value;
   const body = {
@@ -18165,13 +18201,16 @@ async function salvarColaborador() {
     data_admissao: document.getElementById('colabAdmissao').value,
     nivel:         document.getElementById('colabNivel').value,
     unidades:      document.getElementById('colabUnidades').value,
+    filiais_extras: [...document.querySelectorAll('.colab-extra:checked')].map(x => x.value),
   };
   if (!body.nome || !body.matricula) { toast('Nome e matrícula obrigatórios', 'warn'); return; }
+  if (!body.unidades) { toast('Escolha a filial principal do colaborador', 'warn'); return; }
   const res = await api(id ? `/colaboradores/${id}` : '/colaboradores', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
   if (res?.ok) {
     toast(id ? 'Colaborador atualizado!' : 'Colaborador cadastrado!', 'success');
+    if (res.aviso) toast(res.aviso, 'warn', 7000);
     limparFormColab();
     carregarColaboradores();
   } else toast(res?.erro || 'Erro ao salvar', 'error');
@@ -18180,6 +18219,11 @@ async function salvarColaborador() {
 async function editarColabForm(id) {
   const c = _colaboradores.find(x => x.id === id);
   if (!c) return;
+  // De outra filial que também atende aqui: o cadastro é editado por quem tem acesso à principal
+  if (c.unidade && c.unidade !== 'ambas' && !colabPodeFilial(c.unidade)) {
+    toast(`${c.nome} é de ${getNomeUnidade(c.unidade)} — o cadastro é editado por quem tem acesso a essa filial.`, 'warn', 7000);
+    return;
+  }
   document.getElementById('colabEditId').value   = id;
   document.getElementById('colabNome').value     = c.nome||'';
   document.getElementById('colabMatricula').value= c.matricula||'';
@@ -18191,7 +18235,10 @@ async function editarColabForm(id) {
   document.getElementById('colabTelefone').value = c.telefone||'';
   document.getElementById('colabAdmissao').value = c.data_admissao||'';
   document.getElementById('colabNivel').value    = c.nivel||'Pleno';
-  document.getElementById('colabUnidades').value = c.unidade||'marica';
+  // Cadastro antigo em "Ambas as filiais": fica sem principal até alguém escolher
+  document.getElementById('colabUnidades').value = c.unidade && c.unidade !== 'ambas' ? c.unidade : '';
+  colabRenderExtras(c.filiais_extras || []);
+  if (c.unidade === 'ambas') toast('Cadastro antigo em "Ambas as filiais": escolha a filial principal e marque as outras em "Também atende em".', 'warn', 8000);
   document.getElementById('colabFormTitulo').textContent = 'Editar Colaborador';
   document.getElementById('colabFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
   // fecha modal se aberto
@@ -18220,6 +18267,10 @@ function limparFormColab() {
   const selFuncao = document.getElementById('colabFuncao');
   if (selFuncao) selFuncao.selectedIndex = 0;
   document.getElementById('colabFormTitulo').textContent = 'Novo Colaborador';
+  // Novo colaborador: principal = filial em que está logado, sem outras filiais
+  const selPrincipal = document.getElementById('colabUnidades');
+  if (selPrincipal) selPrincipal.value = '';
+  _colabExtras = [];
   // Garante que as filiais estejam carregadas no select
   popularSelectsFiliais();
 }
@@ -18395,7 +18446,7 @@ async function abrirConsultaColab(id) {
     tbody.innerHTML = itens.map(it => {
       const cor = it.saldoEmMaos > 0 ? '#22c55e' : it.saldoEmMaos < 0 ? '#ef4444' : 'var(--text-3)';
       return `<tr>
-        <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${escHtml(it.descricao||'—')}</td>
+        <td style="padding:8px;font-size:12px;color:var(--text-1);border-bottom:1px solid var(--border)">${escHtml(it.descricao||'—')}${it.outra_filial ? `<div style="font-size:10px;color:#6366f1">entregue em ${escHtml(getNomeUnidade(it.filial))}</div>` : ''}</td>
         <td style="padding:8px;text-align:center;font-size:12px;color:#22c55e;border-bottom:1px solid var(--border)">${it.totalEntregue}</td>
         <td style="padding:8px;text-align:center;font-size:12px;color:#f59e0b;border-bottom:1px solid var(--border)">${it.totalTrocado}</td>
         <td style="padding:8px;text-align:center;font-size:14px;font-weight:700;color:${cor};border-bottom:1px solid var(--border)">${it.saldoEmMaos}</td>
@@ -18625,8 +18676,12 @@ async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
 
 function abrirDevolucaoColab() {
   if (!_dadosColabAtual) return;
-  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
-  if (!itensComSaldo.length) { toast('Colaborador não possui itens em mãos', 'warn'); return; }
+  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0 && !i.outra_filial);
+  if (!itensComSaldo.length) {
+    const deFora = (_dadosColabAtual.itens||[]).some(i => i.saldoEmMaos > 0 && i.outra_filial);
+    toast(deFora ? 'Os itens em mãos foram entregues em outra filial — a devolução é feita lá.' : 'Colaborador não possui itens em mãos', 'warn', 6000);
+    return;
+  }
 
   document.getElementById('devColabNome').textContent = _dadosColabAtual.colaborador.nome;
   document.getElementById('devData').value = hojeBR();
@@ -18947,7 +19002,8 @@ function abrirTransfColab() {
   if (!_dadosColabAtual) return;
 
   // Filtra EPIs (não podem ser transferidos) e itens sem saldo
-  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0);
+  // Só itens desta filial: os entregues em outra filial são transferidos lá
+  const itensComSaldo = (_dadosColabAtual.itens||[]).filter(i => i.saldoEmMaos > 0 && !i.outra_filial);
   const itensTransf   = itensComSaldo.filter(i => i.categoria !== 'EPI');
   const episBloqueados = itensComSaldo.filter(i => i.categoria === 'EPI');
 

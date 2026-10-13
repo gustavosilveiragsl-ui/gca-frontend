@@ -702,7 +702,7 @@ function filtrarRet() {
   if (!res.length) { lista.innerHTML = '<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
   lista.innerHTML = res.map(c => `<div class="ac-item" onmousedown="selRet('${escJs(c.id)}')">
     <div class="ac-item-nome">${escHtml(c.nome)}</div>
-    <div class="ac-item-sub">${escHtml(c.matricula || '')} · ${escHtml(c.funcao || '')}</div>
+    <div class="ac-item-sub">${escHtml(c.matricula || '')} · ${escHtml(c.funcao || '')}${tagOutraFilial(c)}</div>
   </div>`).join('');
   lista.classList.remove('hidden');
 }
@@ -898,9 +898,13 @@ function filtrarCol() {
   if (!res.length) { lista.innerHTML='<div class="ac-item"><div class="ac-item-nome" style="color:var(--text-3)">Nenhum resultado</div></div>'; lista.classList.remove('hidden'); return; }
   lista.innerHTML = res.map(c=>`<div class="ac-item" onmousedown="selCol('${c.id}','${escJs(c.nome)}','${escJs(c.funcao||'')}','${escJs(c.matricula||'')}')">
     <div class="ac-item-nome">${escHtml(c.nome)}</div>
-    <div class="ac-item-sub">${escHtml(c.matricula||'')} · ${escHtml(c.funcao||'')}</div>
+    <div class="ac-item-sub">${escHtml(c.matricula||'')} · ${escHtml(c.funcao||'')}${tagOutraFilial(c)}</div>
   </div>`).join('');
   lista.classList.remove('hidden');
+}
+// Colaborador de outra filial que também atende nesta (13/10/2026)
+function tagOutraFilial(c) {
+  return c && c.unidade && c.unidade !== 'ambas' && c.unidade !== _usr?.unidade ? ` · de ${escHtml(getNomeFilial(c.unidade))}` : '';
 }
 // Assinatura pendente do colaborador: avisa quem está pedindo que o almoxarifado só atende
 // o pedido depois que ele assinar a entrega anterior (o pedido pode ser feito mesmo assim).
