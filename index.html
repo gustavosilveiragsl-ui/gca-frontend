@@ -1669,16 +1669,16 @@ window.addEventListener('pageshow', function(e) {
 <div class="modal-overlay hidden" id="modalNr10Descartar">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-header">
-      <div class="modal-title">🗑️ Enviar serial para descarte</div>
+      <div class="modal-title" id="nr10DescTitulo">🗑️ Enviar serial para descarte</div>
       <button class="modal-close" onclick="document.getElementById('modalNr10Descartar').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body">
       <div style="font-size:13px;color:var(--text-1);font-weight:600" id="nr10DescItem">—</div>
       <div style="font-size:12px;color:var(--text-3);margin:2px 0 12px">Serial <b id="nr10DescSerial" style="font-family:var(--font-mono);color:var(--accent-text)">—</b></div>
       <div id="nr10DescAviso" style="font-size:11px;color:var(--text-2);background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:8px;padding:8px 10px;margin-bottom:12px"></div>
-      <label class="form-label">Motivo *</label>
+      <label class="form-label" id="nr10DescMotivoLabel">Motivo *</label>
       <textarea id="nr10DescMotivo" class="form-input" rows="3" maxlength="300" placeholder="Ex: rasgou, furou, quebrou..." style="resize:vertical"></textarea>
-      <button class="btn btn-primary" style="width:100%;margin-top:16px;justify-content:center;background:#ef4444;border-color:#ef4444" onclick="nr10ConfirmarDescarte(this)">Enviar para descarte</button>
+      <button class="btn btn-primary" id="nr10DescBotao" style="width:100%;margin-top:16px;justify-content:center;background:#ef4444;border-color:#ef4444" onclick="nr10ConfirmarDescarte(this)">Enviar para descarte</button>
     </div>
   </div>
 </div>
@@ -10813,17 +10813,22 @@ function enviarWhatsApp() {
   if (!ATEND.linkGerado) return;
   const nome = ATEND.colab?.nome || 'Colaborador';
   const dataAtend = ATEND.data ? formatarData(ATEND.data) : new Date().toLocaleDateString('pt-BR');
+  // O link não vence mais (desde 27/09/2026) — a mensagem antiga ainda dizia "válido por 10 dias"
+  const itens = (ATEND.itens || []).filter(it => it && (it.descricao || it.nome));
+  const listaItens = itens.slice(0, 8).map(it => `• ${it.quantidade || 1}× ${it.descricao || it.nome}`).join('\n')
+    + (itens.length > 8 ? `\n• … e mais ${itens.length - 8} item(ns)` : '');
   const msg = encodeURIComponent(
 `Olá, ${nome}! 👋
 
-Você recebeu materiais/EPIs da Ceneged em *${dataAtend}* e precisa confirmar o recebimento.
+Você recebeu materiais/EPIs do almoxarifado em *${dataAtend}*${listaItens ? `:
+${listaItens}` : '.'}
 
-📋 *Confirme clicando no link abaixo:*
+✍️ *Falta só confirmar o recebimento.* Toque no link, confira os itens e assine na tela:
 ${ATEND.linkGerado}
 
-⏰ Este link é válido por *10 dias*.
+⚠️ Enquanto essa assinatura estiver pendente, um novo pedido de material para você fica aguardando no almoxarifado.
 
-Após clicar no link, assine digitalmente na tela e confirme o recebimento. Em caso de dúvidas, entre em contato com o almoxarifado.
+Dúvidas? Fale com o almoxarifado.
 
 _GCA · Sistema de Gestão de Almoxarifado · Ceneged_`
   );
@@ -17536,7 +17541,7 @@ const PERMISSOES_SCHEMA = {
     painel_financeiro:'Painel financeiro (gastos, compras, recuperação e custos lançados)', descontos:'Descontos', protheus:'Lançamentos Protheus'
   }},
   laudos: { label:'Laudos / NR10', icon:'🔬', itens:{
-    ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir laudo', gerenciar_seriais:'Gerenciar seriais',
+    ver_laudos:'Ver laudos NR10', inserir_laudo:'Inserir vencimento do laudo (validade e PDF)', gerenciar_seriais:'Gerenciar seriais (cadastrar, excluir, descartar, mandar para laudo)',
     limpar_descartes:'Excluir seriais de descarte'
   }},
   viaturas: { label:'Viaturas', icon:'🚙', itens:{
@@ -20901,16 +20906,18 @@ function laudosRender_() {
             :x.status==='ALERTA_30'?'<span style="color:#f59e0b;font-size:10px;font-weight:700">⚠️ Alerta</span>'
             :'<span style="color:var(--text-3);font-size:10px">📋 Sem laudo</span>';
           return `<tr style="border-bottom:1px solid var(--border)">
-            <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(x.serial)}</td>
+            <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(x.serial)}${x.cadastradoPor || x.cadastradoEm ? `<div style="font-family:inherit;font-size:9px;font-weight:400;color:var(--text-3);margin-top:2px;font-family:var(--font-sans,inherit)" title="Quem cadastrou o serial">cadastrado ${nr10QuemQuando(x.cadastradoPor, x.cadastradoEm)}</div>` : ''}</td>
             <td style="padding:8px">${nr10CelulaRastreio(x)}</td>
             <td style="padding:8px;font-size:11px;color:var(--text-2)">${loc}${x.statusLocal==='DESCARTE' && x.motivo ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(x.motivo)}</div>` : ''}</td>
-            <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}</td>
+            <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2)">${x.dataVenc?formatarData(x.dataVenc):'—'}${x.dataVenc && (x.laudoPor || x.laudoEm) ? `<div style="font-size:9px;color:var(--text-3);margin-top:2px" title="Quem lançou a validade e o PDF do laudo">lançado ${nr10QuemQuando(x.laudoPor, x.laudoEm)}</div>` : ''}</td>
             <td style="padding:8px;text-align:center;font-weight:700;color:${diasCor}">${x.diasRest!==null?x.diasRest:'—'}</td>
             <td style="padding:8px;text-align:center">${stBadge}</td>
             <td style="padding:8px;text-align:center;display:flex;gap:4px;justify-content:center">
               ${x.anexoUrl?`<a href="${escHtml(safeUrl(x.anexoUrl))}" target="_blank" class="row-action" style="color:#3b82f6">📄 PDF</a>`:''}
-              ${x.status==='AGUARDANDO_LAUDO' ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')" title="Lançar a data do ensaio, a validade e o PDF do laudo">📄 Ensaio e PDF</button>`}
+              ${x.status==='AGUARDANDO_LAUDO' || !temPermissao('inserir_laudo') ? '' : `<button class="row-action" onclick="abrirEditarLaudo('${x.idAtivo}')" title="Lançar a data do ensaio, a validade e o PDF do laudo">📄 Ensaio e PDF</button>`}
+              ${x.statusLocal==='ESTOQUE' && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#6366f1;border-color:#6366f1" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}','laudo')" title="Tirar do estoque e mandar para laudo (aparece na Recuperação)">🔬 Para laudo</button>` : ''}
               ${['ESTOQUE','AGUARDANDO_LAUDO'].includes(x.statusLocal) && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}')">🗑️ Descartar</button>` : ''}
+              ${x.statusLocal==='COM_COLAB' && temPermissao('gerenciar_seriais') ? `<button class="row-action" style="color:#ef4444;border-color:#ef4444" onclick="nr10AbrirDescarte('${escJs(x.idAtivo)}','excluir')" title="Serial lançado errado no nome do colaborador: apaga sem mexer no estoque">✖ Excluir</button>` : ''}
             </td>
           </tr>`;
         }).join('')}</tbody>
@@ -21401,36 +21408,68 @@ async function confirmarDevolucaoNR10() {
 // aguardando laudo só vai para o descarte. As duas contam como perda no Financeiro.
 let _nr10DescarteId = null;
 
-function nr10AbrirDescarte(idAtivo) {
+// Ações do serial na Gestão de Laudos (todas pedem "Gerenciar seriais"):
+//   descartar — rasgou/quebrou: baixa no saldo (se em estoque) e perda no Financeiro
+//   laudo     — em estoque com o laudo vencido: vai para "Aguardando laudo" (Recuperação) e baixa o saldo
+//   excluir   — lançado errado no nome de um colaborador: o serial é apagado, sem mexer no estoque
+let _nr10AcaoModo = 'descartar';
+const NR10_ACOES = {
+  descartar: { titulo: '🗑️ Enviar serial para descarte', botao: 'Enviar para descarte', cor: '#ef4444', motivo: 'Motivo *', placeholder: 'Ex: rasgou, furou, quebrou...', obrigatorio: true, rota: '/laudos/nr10/descartar' },
+  laudo:     { titulo: '🔬 Mandar para laudo (recuperação)', botao: 'Mandar para aguardando laudo', cor: '#6366f1', motivo: 'Motivo', placeholder: 'Ex: laudo vencido', obrigatorio: false, rota: '/laudos/nr10/aguardando-laudo' },
+  excluir:   { titulo: '✖ Excluir serial do colaborador', botao: 'Excluir o serial', cor: '#ef4444', motivo: 'Motivo *', placeholder: 'Ex: serial lançado errado, peça não é dele...', obrigatorio: true, rota: '/laudos/nr10/excluir' },
+};
+function nr10AbrirDescarte(idAtivo, modo = 'descartar') {
   const x = (__LAUDOS_NR10__.lista || []).find(a => a.idAtivo === idAtivo);
   if (!x) return;
   _nr10DescarteId = idAtivo;
+  _nr10AcaoModo = NR10_ACOES[modo] ? modo : 'descartar';
+  const acao = NR10_ACOES[_nr10AcaoModo];
   const item = (_itens || []).find(i => i.id === x.itemId);
   const par = String(item?.un_med || '').toUpperCase() === 'PAR';
+  const baixa = `${par ? 'meio par (0,5)' : '1'} no saldo ${x.nomeArmazem ? `do ${x.nomeArmazem}` : 'do armazém do serial'}`;
+  document.getElementById('nr10DescTitulo').textContent = acao.titulo;
   document.getElementById('nr10DescItem').textContent = x.itemNome || '—';
   document.getElementById('nr10DescSerial').textContent = x.serial || '—';
-  document.getElementById('nr10DescAviso').textContent = x.statusLocal === 'ESTOQUE'
-    ? `Está em estoque: dá baixa de ${par ? 'meio par (0,5)' : '1'} no saldo ${x.nomeArmazem ? `do ${x.nomeArmazem}` : 'do armazém do serial'} e registra como perda no Financeiro.`
+  document.getElementById('nr10DescAviso').textContent =
+    _nr10AcaoModo === 'laudo' ? `Sai do estoque e vai para "Aguardando laudo" (aparece na Recuperação): dá baixa de ${baixa}. O laudo ${x.status === 'VENCIDO' ? 'vencido ' : ''}sai do serial; quando voltar aprovado, o Recuperar devolve ao estoque.`
+    : _nr10AcaoModo === 'excluir' ? `Está com ${x.nomeColab || 'um colaborador'}. O serial sai do nome dele e o cadastro do serial é apagado — o estoque não muda. Fica no histórico quem excluiu, quando e o motivo.`
+    : x.statusLocal === 'ESTOQUE' ? `Está em estoque: dá baixa de ${baixa} e registra como perda no Financeiro.`
     : 'Está aguardando laudo (fora do saldo): só vai para o descarte e registra como perda no Financeiro.';
-  document.getElementById('nr10DescMotivo').value = '';
+  document.getElementById('nr10DescMotivoLabel').textContent = acao.motivo;
+  const campo = document.getElementById('nr10DescMotivo');
+  campo.value = ''; campo.placeholder = acao.placeholder;
+  const botao = document.getElementById('nr10DescBotao');
+  botao.textContent = acao.botao; botao.style.background = acao.cor; botao.style.borderColor = acao.cor;
   document.getElementById('modalNr10Descartar').classList.remove('hidden');
   setTimeout(() => document.getElementById('nr10DescMotivo')?.focus(), 50);
 }
 
 async function nr10ConfirmarDescarte(btn) {
+  const acao = NR10_ACOES[_nr10AcaoModo] || NR10_ACOES.descartar;
   const motivo = document.getElementById('nr10DescMotivo').value.trim();
-  if (motivo.length < 3) { toast('Informe o motivo do descarte', 'warn'); return; }
+  if (acao.obrigatorio && motivo.length < 3) { toast('Informe o motivo', 'warn'); return; }
   if (!_nr10DescarteId) return;
   btn.disabled = true;
-  const res = await apiMovimentacao('/laudos/nr10/descartar', { id_ativo: _nr10DescarteId, motivo });
+  const res = await apiMovimentacao(acao.rota, { id_ativo: _nr10DescarteId, motivo });
   btn.disabled = false;
-  if (!res?.ok) { toast(res?.erro || 'Erro ao descartar', 'error'); return; }
-  toast(res.baixa_saldo
-    ? `Serial enviado para descarte — baixa de ${String(res.baixa_saldo).replace('.', ',')} no saldo do ${res.armazem}.`
-    : 'Serial enviado para descarte.', 'success');
+  if (!res?.ok) { toast(res?.erro || 'Erro', 'error'); return; }
+  const baixa = res.baixa_saldo ? ` — baixa de ${String(res.baixa_saldo).replace('.', ',')} no saldo do ${res.armazem}` : '';
+  toast(_nr10AcaoModo === 'excluir' ? 'Serial excluído do nome do colaborador (estoque sem mudança).'
+    : _nr10AcaoModo === 'laudo' ? `Serial mandado para aguardando laudo${baixa}.`
+    : `Serial enviado para descarte${baixa}.`, 'success', 6000);
   document.getElementById('modalNr10Descartar').classList.add('hidden');
   _nr10DescarteId = null;
   laudosCarregar_();
+}
+
+// "por Fulano Tal em 13/10/2026 14:32" — quem cadastrou o serial / lançou o laudo
+function nr10QuemQuando(por, em) {
+  if (!por && !em) return '';
+  const partes = String(por || '').trim().split(/\s+/).filter(Boolean);
+  const nome = partes.length > 2 ? `${partes[0]} ${partes[partes.length - 1]}` : partes.join(' ');
+  let quando = '';
+  if (em) { const d = new Date(em); quando = isNaN(d) ? String(em) : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); }
+  return `${nome ? `por ${escHtml(nome)}` : ''}${quando ? ` em ${escHtml(quando)}` : ''}`;
 }
 
 // ── LIMPAR DESCARTES — lista para conferir e escolher o que excluir ──
@@ -29197,7 +29236,7 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
           <li>Assine digitalmente na tela</li>
         </ol>
         <div style="margin-top:10px;background:#fff8e1;border:1px solid #f59e0b;border-radius:6px;padding:8px 12px;font-size:11px;color:#92400e;">
-          ⏰ <strong>Atenção:</strong> Este link é válido por 10 dias a partir da data de emissão.
+          ⚠️ <strong>Atenção:</strong> enquanto este recebimento não for assinado, um novo pedido de material para você fica aguardando no almoxarifado.
         </div>
       </div>
     </div>` : '';
