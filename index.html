@@ -493,6 +493,8 @@ tbody tr:hover td{background:var(--bg-hover);}
 .atend-tab{padding:9px 16px;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:-1px}
 .atend-tab:hover{color:var(--text-1)}
 .atend-tab.active{color:var(--accent-text);border-bottom-color:var(--accent)}
+/* Baixa Manual: tabelas com muitas colunas, células mais justas */
+#view-enel-baixa-manual thead th,#view-enel-baixa-manual tbody td{padding-left:10px;padding-right:10px}
 .atend-panel{display:none}
 .atend-panel.active{display:block}
 .atend-start-area{display:flex;align-items:center;justify-content:center;min-height:300px}
@@ -986,23 +988,24 @@ window.addEventListener('pageshow', function(e) {
         <div class="nav-group-items">
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:8px 10px 4px">Operações</div>
           <button class="nav-item" data-view="enel-atendimento" data-perm="atendimento_enel" onclick="showView('enel-atendimento',this)"><span class="ni-icon">🧰</span> Atendimento Material</button>
-          <button class="nav-item" data-view="enel-sol-materiais" data-perm="ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> <span>Solicitações <span class="nome-conc">Concessionária</span></span></button>
-          <button class="nav-item" data-view="enel-entrada" data-perm="ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
-          <button class="nav-item" data-view="enel-saida" data-perm="ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
+          <button class="nav-item" data-view="enel-sol-materiais" data-perm="enel_solicitacoes|ver_enel" onclick="showView('enel-sol-materiais',this)"><span class="ni-icon">📋</span> <span>Solicitações <span class="nome-conc">Concessionária</span></span></button>
+          <button class="nav-item" data-view="enel-entrada" data-perm="enel_entrada_saida|ver_enel" onclick="showView('enel-entrada',this)"><span class="ni-icon">⤴️</span> Entrada Estoque</button>
+          <button class="nav-item" data-view="enel-saida" data-perm="enel_entrada_saida|ver_enel" onclick="showView('enel-saida',this)"><span class="ni-icon">⤵️</span> Saída Estoque</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Medidores</div>
-          <button class="nav-item" data-view="enel-medidores" data-perm="ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
-          <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
-          <button class="nav-item" data-view="enel-sucata" data-perm="ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
+          <button class="nav-item" data-view="enel-medidores" data-perm="enel_medidores|ver_enel" onclick="showView('enel-medidores',this)"><span class="ni-icon">📟</span> Controle De Medidores</button>
+          <button class="nav-item" data-view="enel-transferencia" data-perm="atendimento_enel|ver_enel" onclick="showView('enel-transferencia',this)"><span class="ni-icon">🔄</span> Transferência de Seriais</button>
+          <button class="nav-item" data-view="enel-sucata" data-perm="enel_sucata|ver_enel" onclick="showView('enel-sucata',this)"><span class="ni-icon">🗃️</span> Sucata</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Baixas / <span class="nome-conc">Concessionária</span></div>
-          <button class="nav-item" data-view="enel-baixa-auto" data-perm="ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
-          <button class="nav-item" data-view="enel-baixas" data-perm="ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
-          <button class="nav-item" data-view="enel-tdc" data-perm="ver_enel" onclick="showView('enel-tdc',this)"><span class="ni-icon">🧾</span> Consulta TdC</button>
+          <button class="nav-item" data-view="enel-baixa-auto" data-perm="enel_baixa_automatica|ver_enel" onclick="showView('enel-baixa-auto',this)"><span class="ni-icon">⚡</span> Baixa Automática</button>
+          <button class="nav-item" data-view="enel-baixa-manual" data-perm="baixa_manual_cliente" onclick="showView('enel-baixa-manual',this)"><span class="ni-icon">✍️</span> Baixa Manual</button>
+          <button class="nav-item" data-view="enel-baixas" data-perm="enel_consulta_tdc|ver_enel" onclick="showView('enel-baixas',this)"><span class="ni-icon">🧮</span> Baixas por TdC</button>
+          <button class="nav-item" data-view="enel-tdc" data-perm="enel_consulta_tdc|ver_enel" onclick="showView('enel-tdc',this)"><span class="ni-icon">🧾</span> Consulta TdC</button>
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
-          <button class="nav-item" data-view="enel-controle" data-perm="ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
-          <button class="nav-item" data-view="enel-estoque" data-perm="ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
+          <button class="nav-item" data-view="enel-controle" data-perm="enel_controle_materiais|ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon">🧵</span> Controle De Materiais</button>
+          <button class="nav-item" data-view="enel-estoque" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon">🔎</span> Consulta Estoque</button>
           <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon">📋</span> <span>Inventário <span class="nome-conc">Concessionária</span></span></button>
-          <button class="nav-item" data-view="enel-consulta-saidas" data-perm="ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon">📤</span> Consulta Saídas</button>
-          <button class="nav-item" data-view="enel-cadastro" data-perm="ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
+          <button class="nav-item" data-view="enel-consulta-saidas" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon">📤</span> Consulta Saídas</button>
+          <button class="nav-item" data-view="enel-cadastro" data-perm="enel_cadastro|ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon">⚙️</span> Cadastrar Material</button>
         </div>
       </div>
 
@@ -3320,6 +3323,150 @@ window.addEventListener('pageshow', function(e) {
         </div>
       </div>
 
+      <!-- BAIXA MANUAL — serviços fora do eOrder e revisão de medidores (liberados no bloqueio) -->
+      <div class="view" id="view-enel-baixa-manual">
+        <div style="margin-bottom:16px">
+          <div class="page-title">Baixa Manual</div>
+          <div class="page-sub">Serviços que não vieram do eOrder: registra o serviço e consome o material e o medidor da equipe · revisão dos medidores liberados no bloqueio</div>
+        </div>
+        <div class="atend-tabs" style="flex-wrap:wrap">
+          <button class="atend-tab active" data-aba="registrar" onclick="bmAba('registrar')">✍️ Registrar serviço</button>
+          <button class="atend-tab" data-aba="revisao" onclick="bmAba('revisao')">📟 Revisão de medidores <span id="bmContaRevisao" style="display:none;margin-left:4px;background:var(--yellow);color:#000;border-radius:999px;padding:0 7px;font-size:10px;font-weight:800"></span></button>
+          <button class="atend-tab" data-aba="historico" onclick="bmAba('historico')">📚 Histórico</button>
+        </div>
+
+        <!-- Registrar serviço -->
+        <div id="bmAba-registrar" style="display:flex;flex-direction:column;gap:14px">
+          <div id="bmDaRevisao" class="ea-banner aviso" style="display:none;animation:none"></div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Serviço</div></div>
+            <div class="card-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Ordem (A05…) ou TdC *</label>
+                <input id="bmOrdem" class="form-input" placeholder="Ex.: A056839319" style="font-family:var(--font-mono);text-transform:uppercase" autocomplete="off">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Data da execução *</label>
+                <input id="bmData" class="form-input" type="date">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Equipe *</label>
+                <select id="bmEquipe" class="form-input" onchange="bmEscolherEquipe()"><option value="">Selecione a equipe...</option></select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Tipo de ligação</label>
+                <select id="bmTipo" class="form-input">
+                  <option value="">—</option><option value="M">M · Monofásica</option><option value="B">B · Bifásica</option><option value="T">T · Trifásica</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Cliente (instalação)</label>
+                <input id="bmCliente" class="form-input" placeholder="Ex.: 66996141" style="font-family:var(--font-mono)" autocomplete="off">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Protocolo</label>
+                <input id="bmProtocolo" class="form-input" placeholder="Ex.: MT73939" style="font-family:var(--font-mono);text-transform:uppercase" autocomplete="off" oninput="bmMaiusculas(this)">
+              </div>
+              <div class="form-group" style="margin:0;grid-column:span 2">
+                <label class="form-label">Retorno (o que foi feito) *</label>
+                <textarea id="bmRetorno" class="form-input" rows="2" style="resize:vertical;text-transform:uppercase" placeholder="Ex.: REAPERTO NAS CONEXÕES E RETIRADA DE RETORNO" oninput="bmMaiusculas(this)"></textarea>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Motivo DAB *</label>
+                <input id="bmMotivoDab" class="form-input" style="text-transform:uppercase" placeholder="Ex.: CS SEM COMUNICAÇÃO" autocomplete="off" oninput="bmMaiusculas(this)">
+                <div style="font-size:10px;color:var(--text-3);margin-top:3px">Se não houver, escreva NÃO SE APLICA</div>
+              </div>
+              <div class="form-group" style="margin:0;grid-column:1/-1">
+                <label class="form-label">Observação</label>
+                <textarea id="bmObs" class="form-input" rows="2" style="resize:vertical" placeholder="Opcional"></textarea>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;align-items:start">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🧵 Material usado</div><span style="font-size:11px;color:var(--text-3)">sai do saldo da equipe</span></div>
+              <div class="card-body" id="bmMateriais" style="display:flex;flex-direction:column;gap:8px"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">📟 Medidor instalado</div><span style="font-size:11px;color:var(--text-3)">marca como instalado nesta ordem</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;gap:6px">
+                  <input id="bmSerialNovo" class="form-input" placeholder="Bipe ou digite o serial" style="font-family:var(--font-mono);text-transform:uppercase" autocomplete="off"
+                    onkeydown="if(event.key==='Enter'){event.preventDefault();bmAdicionarSerial()}">
+                  <button class="btn btn-ghost" style="white-space:nowrap" onclick="bmAdicionarSerial()">+ Adicionar</button>
+                </div>
+                <div id="bmMedSel" style="display:flex;flex-direction:column;gap:6px"></div>
+                <div style="font-size:10px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px;margin-top:4px">Com a equipe</div>
+                <input id="bmMedBusca" class="form-input" placeholder="Filtrar pelo serial..." oninput="bmRenderMedidores()" style="font-family:var(--font-mono)" autocomplete="off">
+                <div id="bmMedidores" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button class="btn btn-ghost" onclick="bmLimparForm()">Limpar</button>
+            <button class="btn btn-primary" id="bmBtnRegistrar" onclick="bmRegistrar()">✅ Registrar baixa</button>
+          </div>
+        </div>
+
+        <!-- Revisão de medidores (liberados no bloqueio) -->
+        <div id="bmAba-revisao" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Situação</label>
+                <select id="bmRSituacao" class="form-input" style="width:170px" onchange="bmCarregarRevisao()">
+                  <option value="pendente">⏳ Pendentes</option><option value="resolvidos">✅ Resolvidos</option><option value="todos">Todos</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;flex:1;min-width:180px">
+                <label class="form-label">Buscar</label>
+                <input id="bmRBusca" class="form-input" placeholder="Serial, equipe ou medidor" oninput="bmRenderRevisao()" autocomplete="off">
+              </div>
+              <button class="btn btn-ghost" onclick="bmCarregarRevisao()">🔄 Atualizar</button>
+              <button class="btn btn-ghost" onclick="bmExcelRevisao()">📥 Excel</button>
+            </div>
+            <div style="padding:0 16px 10px;font-size:11px;color:var(--text-3)">Cada medidor liberado pelo almoxarifado no bloqueio da equipe entra aqui. Sai sozinho quando o eOrder marcar como instalado ou quando ele volta ao estoque; se não, confira nos outros sistemas e registre a instalação ou marque como não instalado (continua com a equipe e o bloqueio volta a valer).</div>
+          </div>
+          <div class="card"><div style="overflow-x:auto;width:0;min-width:100%"><table style="width:100%">
+            <thead><tr><th>Serial</th><th>Medidor</th><th>Equipe</th><th>Liberado</th><th>Motivo da liberação</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="bmRevisaoBody"></tbody>
+          </table></div></div>
+        </div>
+
+        <!-- Histórico -->
+        <div id="bmAba-historico" style="display:none">
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-body" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+              <div class="form-group" style="margin:0">
+                <label class="form-label">De</label>
+                <input class="form-input" type="date" id="bmHDe" style="width:140px">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Até</label>
+                <input class="form-input" type="date" id="bmHAte" style="width:140px">
+              </div>
+              <div class="form-group" style="margin:0;min-width:160px">
+                <label class="form-label">Equipe</label>
+                <select id="bmHEquipe" class="form-input"><option value="">Todas as equipes</option></select>
+              </div>
+              <div class="form-group" style="margin:0;flex:1;min-width:160px">
+                <label class="form-label">Buscar</label>
+                <input id="bmHBusca" class="form-input" placeholder="Ordem, cliente, protocolo, serial" autocomplete="off" onkeydown="if(event.key==='Enter')bmCarregarHistorico()">
+              </div>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);padding-bottom:8px">
+                <input type="checkbox" id="bmHEstornados" onchange="bmCarregarHistorico()"> Mostrar estornados</label>
+              <button class="btn btn-primary" onclick="bmCarregarHistorico()">🔍 Buscar</button>
+              <button class="btn btn-ghost" onclick="bmExcelHistorico()">📥 Excel</button>
+            </div>
+          </div>
+          <div id="bmHResumo" class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px"></div>
+          <div class="card"><div style="overflow-x:auto;width:0;min-width:100%"><table style="width:100%">
+            <thead><tr><th>Data</th><th>Ordem</th><th>Equipe</th><th>Cliente</th><th>Lig.</th><th>Retorno</th><th>Material</th><th>Medidor</th><th>Registrado</th><th></th></tr></thead>
+            <tbody id="bmHistBody"></tbody>
+          </table></div></div>
+        </div>
+      </div>
+
       <!-- CONSULTA SAÍDAS DO ESTOQUE -->
       <div class="view" id="view-enel-consulta-saidas">
         <div style="margin-bottom:16px">
@@ -3735,7 +3882,7 @@ window.addEventListener('pageshow', function(e) {
             <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:3px">Medidores em Campo</div>
             <div style="font-size:11px;color:var(--text-3)">Por equipe com prazos e status</div>
           </button>
-          <button onclick="cmAbrirDevolucao()" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+          <button onclick="cmAbrirDevolucao()" data-perm-btn="ver_enel|atendimento_enel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
             <div style="font-size:24px;margin-bottom:8px">↩️</div>
             <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:3px">Devolução</div>
             <div style="font-size:11px;color:var(--text-3)">Retornar seriais ao estoque</div>
@@ -7417,6 +7564,7 @@ const VIEW_TITLES = {
   'enel-transferencia':['Materiais Cliente','/ Transferência de Seriais'],
   'enel-sucata':['Materiais Cliente','/ Sucata'],
   'enel-baixa-auto':['Materiais Cliente','/ Baixa Automática'],
+  'enel-baixa-manual':['Materiais Cliente','/ Baixa Manual'],
   'enel-baixas':['Materiais Cliente','/ Baixas por TdC'],
   'enel-controle':['Materiais Cliente','/ Controle De Materiais'],
   'carga-viatura':['Atendimento','/ Viatura'], 'consulta-viaturas':['Consulta','/ Viaturas'],
@@ -7543,6 +7691,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
   if (nome === 'enel-tdc')           { ctdcIniciar(); }
+  if (nome === 'enel-baixa-manual')  { bmIniciar(); }
   if (nome === 'enel-consulta-saidas') { cseIniciar(); }
   if (nome === 'enel-sol-materiais') { carregarSolicitacoesEnel(); }
   if (nome === 'laudos')             {
@@ -17548,9 +17697,20 @@ const PERMISSOES_SCHEMA = {
     consulta_viaturas:'Consulta de viaturas (frota, carga e conferências)',
     cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
   } },
-  enel: { label:'Concessionária', icon:'⚡', itens:{
-    ver_enel:'Ver módulo Concessionária',
-    desbloqueio:'Desbloqueio de equipamento', atendimento_enel:'Atendimento Concessionária'
+  enel: { label:'Materiais Cliente (concessionária)', icon:'⚡', itens:{
+    ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio e Baixa Manual)',
+    atendimento_enel:'Atendimento Material, transferência e devolução de seriais',
+    desbloqueio:'Desbloqueio de equipamento',
+    enel_solicitacoes:'Solicitações da concessionária',
+    enel_entrada_saida:'Entrada e saída do estoque',
+    enel_medidores:'Controle de Medidores (consultar)',
+    enel_controle_materiais:'Controle de Materiais por equipe (consultar)',
+    enel_consulta_tdc:'Consulta TdC e Baixas por TdC (consultar)',
+    enel_consulta_estoque:'Consulta Estoque e Consulta Saídas (consultar)',
+    enel_baixa_automatica:'Baixa Automática (importar o relatório do eOrder e mapeamentos)',
+    baixa_manual_cliente:'Baixa Manual (serviços fora do eOrder e revisão de medidores)',
+    enel_sucata:'Sucata',
+    enel_cadastro:'Cadastrar material'
   }},
   gestao: { label:'Gestão', icon:'📊', itens:{
     ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
@@ -18023,8 +18183,7 @@ function aplicarPermissoesMenu() {
 
   // Oculta itens de menu sem permissão
   document.querySelectorAll('.nav-item[data-perm]').forEach(btn => {
-    const perm = btn.dataset.perm;
-    if (!temPermissao(perm)) btn.style.display = 'none';
+    if (!btn.dataset.perm.split('|').some(p => temPermissao(p))) btn.style.display = 'none';
   });
 
   // Quick cards do dashboard — aparece bloqueado em vez de sumir
@@ -25264,7 +25423,7 @@ let _ctdcDados = null, _ctdcAbertos = new Set();
 const CTDC_AVISO = {
   SEM_MAPEAMENTO: 'Código sem mapeamento no GCA', SERIAL_NAO_ENCONTRADO: 'Medidor não encontrado no controle',
   EQUIPE_NAO_CADASTRADA: 'Equipe não mapeada', OS_NAO_REALIZADA: 'OS não realizada', SALDO_ZERADO: 'Saldo da equipe insuficiente',
-  REVERTIDO: 'Baixa revertida', ERRO_BAIXA: 'Erro na baixa',
+  REVERTIDO: 'Baixa revertida', ERRO_BAIXA: 'Erro na baixa', JA_BAIXADO_MANUAL: 'Já baixado à mão (Baixa Manual)',
 };
 
 function ctdcIniciar() {
@@ -25387,6 +25546,7 @@ function ctdcRender() {
 // próximas baixas automáticas (as já processadas não são refeitas).
 function ctdcDetalheAviso(a) {
   if (a.status !== 'SEM_MAPEAMENTO' || !a.referencia) return escHtml(a.obs || '');
+  if (!temPermissao('ver_enel') && !temPermissao('enel_baixa_automatica')) return escHtml(a.obs || '');
   if (a.mapeado) return `<span style="color:var(--green)">✓ já mapeado para <b>${escHtml(a.mapeado.descricao || a.mapeado.material_id)}</b> — vale para as próximas baixas</span>`;
   return `${escHtml(a.obs || '')} <button class="row-action" style="color:var(--accent-text);border-color:var(--accent);margin-left:6px"
     onclick="event.stopPropagation();ctdcAbrirMapear('${escJs(a.referencia)}','${escJs(a.descricao || '')}')">🔗 Mapear</button>`;
@@ -25454,6 +25614,567 @@ function exportarCtdc() {
     { key: 'tdc', label: 'TdC' }, { key: 'data', label: 'Data' }, { key: 'tipo_tdc', label: 'Tipo do TdC' }, { key: 'equipe', label: 'Equipe' },
     { key: 'linha', label: 'Tipo' }, { key: 'descricao', label: 'Material / medidor' }, { key: 'codigo', label: 'Código / serial' },
     { key: 'quantidade', label: 'Quantidade' }, { key: 'situacao', label: 'Situação' },
+  ]);
+}
+
+// ═══════════════════════════════════════════
+// BAIXA MANUAL — serviços fora do eOrder (backoffice) e revisão dos medidores liberados no bloqueio
+// ═══════════════════════════════════════════
+const BM_SITUACAO = {
+  PENDENTE: ['⏳ Pendente', 'var(--yellow)'],
+  INSTALADO_EORDER: ['✅ Instalado (eOrder)', 'var(--green)'],
+  INSTALADO_MANUAL: ['✅ Instalado (baixa manual)', 'var(--green)'],
+  DEVOLVIDO: ['↩ Voltou ao estoque', 'var(--text-2)'],
+  NAO_INSTALADO: ['✖ Não instalado — com a equipe', 'var(--text-3)'],
+};
+const BM_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+// Situação do medidor colocado no serviço (só o já instalado é barrado; o resto vai com aviso)
+const BM_SIT_MED = {
+  EQUIPE: ['✓ com a equipe', 'var(--green)'],
+  OUTRA_EQUIPE: ['⚠️ de outra equipe', 'var(--yellow)'],
+  ESTOQUE: ['⚠️ no estoque', 'var(--yellow)'],
+  NOVO: ['🆕 sem registro', '#0ea5e9'],
+};
+// _bmMeds: serial → { numero_serie, situacao, aviso, material_id, descricao }
+let _bmAba = 'registrar', _bmEquipe = null, _bmMateriais = [], _bmMeds = new Map(), _bmDaRevisao = null;
+let _bmRevisao = [], _bmHist = [];
+
+// ── Campo de escolha com digitação (autocompletar) por cima de um <select> ──
+// O <select> continua dono do valor (.value e onchange seguem valendo). Por cima fica um campo
+// de texto: clicar mostra todas as opções, digitar filtra, ↑ ↓ e Enter escolhem. Texto que não
+// bate com nenhuma opção volta ao que estava escolhido.
+function bmCombo(sel) {
+  if (!sel || sel.dataset.combo) return;
+  sel.dataset.combo = '1';
+  const inp = document.createElement('input');
+  inp.className = 'form-input';
+  inp.autocomplete = 'off';
+  inp.style.cssText = sel.style.cssText;
+  inp.placeholder = sel.options[0]?.value === '' ? sel.options[0].text : 'Digite para buscar...';
+  if (sel.id) inp.id = sel.id + 'Txt';
+  sel.style.display = 'none';
+  sel.after(inp);
+  let lista = null, idx = -1, opcoes = [];
+  const sync = () => { const o = sel.selectedOptions[0]; inp.value = o && o.value !== '' ? o.text : ''; };
+  const fechar = () => { lista?.remove(); lista = null; idx = -1; };
+  const escolher = (o) => {
+    fechar();
+    inp.value = o.value === '' ? '' : o.text;
+    if (sel.value === o.value) return;
+    sel.value = o.value;
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  const marcar = () => lista?.querySelectorAll('[data-i]').forEach(el => el.classList.toggle('sel', +el.dataset.i === idx));
+  const abrir = (filtro) => {
+    const q = String(filtro || '').toLowerCase().trim();
+    opcoes = [...sel.options].filter(o => o.value !== '' && (!q || o.text.toLowerCase().includes(q)));
+    if (!lista || !lista.isConnected) { lista = document.createElement('div'); lista.className = 'ea-sug bm-combo-lista'; document.body.appendChild(lista); }
+    const r = inp.getBoundingClientRect();
+    Object.assign(lista.style, { position: 'fixed', left: r.left + 'px', top: (r.bottom + 4) + 'px', right: 'auto', width: Math.max(r.width, 220) + 'px', zIndex: 2000 });
+    idx = q && opcoes.length ? 0 : -1;
+    lista.innerHTML = opcoes.length
+      ? opcoes.map((o, i) => `<div class="ea-sug-item${i === idx ? ' sel' : ''}" data-i="${i}" style="padding:8px 12px;font-size:12px">${escHtml(o.text)}</div>`).join('')
+      : `<div class="ea-sug-item" style="padding:8px 12px;font-size:12px;color:var(--text-3);cursor:default">Nada encontrado para "${escHtml(filtro)}"</div>`;
+    lista.onmousedown = (e) => { const it = e.target.closest('[data-i]'); if (it) { e.preventDefault(); escolher(opcoes[+it.dataset.i]); } };
+  };
+  inp.addEventListener('focus', () => { inp.select(); abrir(''); });
+  inp.addEventListener('click', () => { if (!lista || !lista.isConnected) abrir(''); });
+  inp.addEventListener('input', () => abrir(inp.value));
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!lista || !lista.isConnected) abrir('');
+      idx = Math.max(0, Math.min(opcoes.length - 1, idx + (e.key === 'ArrowDown' ? 1 : -1)));
+      marcar(); lista?.querySelector('.sel')?.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      if (lista && idx >= 0 && opcoes[idx]) { e.preventDefault(); escolher(opcoes[idx]); }
+    } else if (e.key === 'Escape') { fechar(); sync(); }
+  });
+  inp.addEventListener('blur', () => setTimeout(() => {
+    if (!inp.isConnected) return fechar();
+    const t = inp.value.trim().toLowerCase();
+    const vazio = [...sel.options].find(o => o.value === '');
+    if (!t) { if (vazio) escolher(vazio); else { fechar(); sync(); } return; }
+    const exata = [...sel.options].find(o => o.value !== '' && o.text.toLowerCase() === t);
+    if (exata) escolher(exata); else { fechar(); sync(); }
+  }, 150));
+  sel.addEventListener('change', sync);
+  sel._comboSync = sync;
+  sync();
+}
+function bmComboSync(id) { document.getElementById(id)?._comboSync?.(); }
+// Rolar a página fecha a lista aberta (menos a rolagem dentro da própria lista)
+document.addEventListener('scroll', (e) => {
+  if (e.target?.closest?.('.bm-combo-lista')) return;
+  document.querySelectorAll('.bm-combo-lista').forEach(l => l.remove());
+}, true);
+// Retorno, motivo DAB e protocolo: sempre em maiúsculas, sem tirar o cursor do lugar
+function bmMaiusculas(el) {
+  const ini = el.selectionStart, fim = el.selectionEnd;
+  const up = el.value.toUpperCase();
+  if (up !== el.value) { el.value = up; try { el.setSelectionRange(ini, fim); } catch {} }
+}
+
+function bmIniciar() {
+  ['bmEquipe', 'bmTipo', 'bmHEquipe'].forEach(id => bmCombo(document.getElementById(id)));
+  const d = document.getElementById('bmData');
+  d.max = hojeBR();
+  if (!d.value) d.value = hojeBR();
+  const de = document.getElementById('bmHDe'), ate = document.getElementById('bmHAte');
+  if (!de.value && !ate.value) { ate.value = hojeBR(); de.value = hojeBR(new Date(Date.now() - 30 * 86400000)); }
+  if (!_equipes.length) carregarEquipes().then(bmPreencherEquipes); else bmPreencherEquipes();
+  bmRenderMateriais(); bmRenderMedidores();
+  bmAba(_bmAba);
+  if (_bmAba !== 'revisao') bmCarregarRevisao();   // só para o número de pendentes na aba
+}
+
+function bmAba(aba) {
+  _bmAba = aba;
+  document.querySelectorAll('#view-enel-baixa-manual .atend-tab').forEach(b => b.classList.toggle('active', b.dataset.aba === aba));
+  ['registrar', 'revisao', 'historico'].forEach(a => { document.getElementById('bmAba-' + a).style.display = a === aba ? (a === 'registrar' ? 'flex' : '') : 'none'; });
+  if (aba === 'revisao') bmCarregarRevisao();
+  if (aba === 'historico') bmCarregarHistorico();
+}
+
+function bmPreencherEquipes() {
+  const nomes = [...new Set(_equipes.map(e => e.prefixo || e.nome_equipe).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  [['bmEquipe', 'Selecione a equipe...'], ['bmHEquipe', 'Todas as equipes']].forEach(([id, vazio]) => {
+    const sel = document.getElementById(id), atual = sel.value;
+    sel.innerHTML = `<option value="">${vazio}</option>` + nomes.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+    if (nomes.includes(atual)) sel.value = atual;
+    sel._comboSync?.();
+  });
+}
+
+// Equipe escolhida: carrega o material com saldo e os medidores que estão com ela
+async function bmEscolherEquipe(seriaisMarcados) {
+  const equipe = document.getElementById('bmEquipe').value;
+  _bmEquipe = null; _bmMateriais = []; _bmMeds = new Map();
+  if (!equipe) { bmRenderMateriais(); bmRenderMedidores(); return; }
+  document.getElementById('bmMateriais').innerHTML = document.getElementById('bmMedidores').innerHTML = '<div style="text-align:center;padding:14px"><div class="spinner" style="margin:0 auto"></div></div>';
+  const res = await api('/baixa-manual/equipe?equipe=' + encodeURIComponent(equipe));
+  if (document.getElementById('bmEquipe').value !== equipe) return;   // trocou de equipe no meio
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar a equipe', 'error'); bmRenderMateriais(); bmRenderMedidores(); return; }
+  _bmEquipe = { equipe, materiais: res.materiais || [], medidores: res.medidores || [], tipos: res.tipos_medidor || [] };
+  for (const s of seriaisMarcados || []) {
+    const m = _bmEquipe.medidores.find(x => x.numero_serie === s);
+    if (m) _bmMeds.set(m.numero_serie, { numero_serie: m.numero_serie, situacao: 'EQUIPE', aviso: '', material_id: m.id_material, descricao: m.material_descricao });
+  }
+  bmRenderMateriais(); bmRenderMedidores();
+}
+
+function bmRenderMateriais() {
+  const box = document.getElementById('bmMateriais');
+  const aviso = (t) => `<div style="font-size:12px;color:var(--text-3);padding:6px 0">${t}</div>`;
+  if (!_bmEquipe) { box.innerHTML = aviso('Escolha a equipe para ver o material que está com ela.'); return; }
+  if (!_bmEquipe.materiais.length) { box.innerHTML = aviso(`A equipe ${escHtml(_bmEquipe.equipe)} não tem material com saldo.`); return; }
+  box.innerHTML = _bmMateriais.map((m, i) => `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <select class="form-input" style="flex:1;min-width:200px" onchange="bmMatSet(${i},'material_id',this.value)">
+        <option value="">Selecione o material...</option>
+        ${_bmEquipe.materiais.map(x => `<option value="${escHtml(x.material_id)}" ${x.material_id === m.material_id ? 'selected' : ''}>${escHtml(x.material || x.material_id)}${x.codigo ? ` (${escHtml(x.codigo)})` : ''} — saldo ${finNum(x.saldo)}</option>`).join('')}
+      </select>
+      <input class="form-input" type="number" min="0" step="any" style="width:100px" placeholder="Qtd." value="${m.quantidade ?? ''}" oninput="bmMatSet(${i},'quantidade',this.value)">
+      <button class="row-action" style="color:var(--red)" title="Tirar" onclick="bmMatRemover(${i})">✕</button>
+    </div>`).join('')
+    + (_bmMateriais.length ? '' : aviso('Nenhum material neste serviço.'))
+    + `<div><button class="btn btn-ghost" onclick="bmMatAdicionar()">+ Adicionar material</button></div>`;
+  box.querySelectorAll('select').forEach(bmCombo);
+}
+function bmMatAdicionar() { _bmMateriais.push({ material_id: '', quantidade: '' }); bmRenderMateriais(); }
+function bmMatRemover(i) { _bmMateriais.splice(i, 1); bmRenderMateriais(); }
+function bmMatSet(i, campo, valor) { if (_bmMateriais[i]) _bmMateriais[i][campo] = valor; }
+
+// Medidores do serviço: os marcados na lista da equipe e os bipados/digitados (qualquer serial).
+// O que o sistema tem de cada um aparece na hora; só o já instalado é recusado.
+function bmRenderMedidores() {
+  const sel = document.getElementById('bmMedSel'), box = document.getElementById('bmMedidores');
+  const aviso = (t) => `<div style="font-size:12px;color:var(--text-3);padding:6px 0">${t}</div>`;
+  if (!_bmEquipe) { sel.innerHTML = ''; box.innerHTML = aviso('Escolha a equipe para ver os medidores que estão com ela.'); return; }
+  sel.innerHTML = [..._bmMeds.values()].map(m => {
+    const [rot, cor] = BM_SIT_MED[m.situacao] || [m.situacao, 'var(--text-2)'];
+    const tipo = m.situacao !== 'NOVO' ? `<span style="font-size:11px;color:var(--text-2)">${escHtml(m.descricao || '')}</span>`
+      : `<select class="form-input" style="flex:1;min-width:170px;padding:4px 8px;font-size:12px" onchange="bmMedTipo('${escJs(m.numero_serie)}',this.value)">
+          <option value="">Tipo do medidor (opcional)...</option>
+          ${(_bmEquipe.tipos || []).map(t => `<option value="${escHtml(t.id)}" ${t.id === m.material_id ? 'selected' : ''}>${escHtml(t.descricao)}</option>`).join('')}
+        </select>`;
+    return `<div style="border:1px solid ${cor};border-radius:var(--radius-sm);padding:6px 8px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="td-mono" style="font-weight:700">${escHtml(m.numero_serie)}</span>
+        <span style="font-size:11px;font-weight:700;color:${cor};white-space:nowrap">${rot}</span>
+        ${tipo}
+        <button class="row-action" style="margin-left:auto;color:var(--red)" title="Tirar do serviço" onclick="bmMedTirar('${escJs(m.numero_serie)}')">✕</button>
+      </div>
+      ${m.aviso ? `<div style="font-size:11px;color:var(--text-2)">${escHtml(m.aviso)}</div>` : ''}
+    </div>`;
+  }).join('');
+  sel.querySelectorAll('select').forEach(bmCombo);
+  const busca = document.getElementById('bmMedBusca').value.trim().toUpperCase();
+  const meds = _bmEquipe.medidores.filter(m => !busca || String(m.numero_serie).toUpperCase().includes(busca));
+  if (!_bmEquipe.medidores.length) { box.innerHTML = aviso(`Nenhum medidor com a equipe ${escHtml(_bmEquipe.equipe)} — use o campo acima para bipar ou digitar o serial.`); return; }
+  if (!meds.length) { box.innerHTML = aviso('Nenhum serial da equipe com esse filtro.'); return; }
+  const hoje = new Date(`${hojeBR()}T12:00:00Z`);
+  box.innerHTML = meds.map(m => {
+    const marcado = _bmMeds.has(m.numero_serie);
+    const dias = m.data_entrega_equipe ? Math.round((hoje - new Date(`${String(m.data_entrega_equipe).slice(0, 10)}T12:00:00Z`)) / 86400000) : null;
+    return `<label style="display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid ${marcado ? 'var(--accent)' : 'var(--border)'};border-radius:var(--radius-sm);cursor:pointer;flex-wrap:wrap">
+      <input type="checkbox" ${marcado ? 'checked' : ''} onchange="bmMedToggle('${escJs(m.numero_serie)}',this.checked)">
+      <span class="td-mono" style="font-weight:700">${escHtml(m.numero_serie)}</span>
+      <span style="font-size:11px;color:var(--text-2)">${escHtml(m.material_descricao || '')}</span>
+      ${dias != null ? `<span style="margin-left:auto;font-size:11px;color:${dias > 10 ? 'var(--red)' : 'var(--text-3)'}">${dias} dia(s) com a equipe</span>` : ''}
+    </label>`;
+  }).join('');
+}
+function bmMedToggle(serial, marcado) {
+  const m = _bmEquipe?.medidores.find(x => x.numero_serie === serial);
+  if (marcado && m) _bmMeds.set(serial, { numero_serie: serial, situacao: 'EQUIPE', aviso: '', material_id: m.id_material, descricao: m.material_descricao });
+  else _bmMeds.delete(serial);
+  bmRenderMedidores();
+}
+function bmMedTirar(serial) { _bmMeds.delete(serial); bmRenderMedidores(); }
+function bmMedTipo(serial, materialId) {
+  const m = _bmMeds.get(serial); if (!m) return;
+  const t = (_bmEquipe?.tipos || []).find(x => x.id === materialId);
+  m.material_id = t?.id || null; m.descricao = t?.descricao || '';
+}
+
+// Bipou/digitou um serial: da lista da equipe entra direto; os outros o servidor diz o que tem
+async function bmAdicionarSerial() {
+  const inp = document.getElementById('bmSerialNovo');
+  const serial = inp.value.trim().toUpperCase();
+  if (!serial) return;
+  const equipe = document.getElementById('bmEquipe').value;
+  if (!equipe || !_bmEquipe) { toast('Escolha a equipe primeiro', 'warn'); return; }
+  if (_bmMeds.has(serial)) { toast(`O medidor ${serial} já está no serviço`, 'warn'); inp.value = ''; return; }
+  const daEquipe = _bmEquipe.medidores.find(m => String(m.numero_serie).toUpperCase() === serial);
+  if (daEquipe) { inp.value = ''; bmMedToggle(daEquipe.numero_serie, true); return; }
+  const data = document.getElementById('bmData').value || hojeBR();
+  const res = await api(`/baixa-manual/medidor?serial=${encodeURIComponent(serial)}&equipe=${encodeURIComponent(equipe)}&data=${data}`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao consultar o serial', 'error'); return; }
+  if (res.bloqueado) { toast(res.erro, 'error', 8000); return; }
+  _bmMeds.set(res.numero_serie, { numero_serie: res.numero_serie, situacao: res.situacao, aviso: res.aviso || '', material_id: res.material_id || null, descricao: res.descricao || '' });
+  inp.value = '';
+  bmRenderMedidores();
+  if (res.aviso) toast('⚠️ ' + res.aviso, 'warn', 7000);
+}
+
+// Avisos do medidor antes de gravar: a pessoa confere e decide (devolve true para registrar)
+function bmConfirmarAvisos(avisos) {
+  return new Promise(resolve => {
+    document.getElementById('modalBmAvisos')?.remove();
+    const m = document.createElement('div');
+    m.className = 'modal-overlay';
+    m.id = 'modalBmAvisos';
+    m.innerHTML = `
+      <div class="modal-box" style="max-width:520px">
+        <div class="modal-header">
+          <div><div class="modal-title">⚠️ Confira antes de registrar</div>
+            <div style="font-size:11px;color:var(--text-3)">O sistema tem outra informação sobre estes medidores</div></div>
+          <button class="modal-close" data-r="0">×</button>
+        </div>
+        <div class="modal-body"><ul style="margin:0 0 0 18px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--text-1)">
+          ${avisos.map(a => `<li>${escHtml(a)}</li>`).join('')}</ul></div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px">
+          <button class="btn btn-ghost" data-r="0">Voltar e corrigir</button>
+          <button class="btn btn-primary" id="bmAvisosOk" data-r="1">Registrar assim mesmo</button>
+        </div>
+      </div>`;
+    m.addEventListener('click', e => { const r = e.target.closest('[data-r]'); if (!r) return; m.remove(); resolve(r.dataset.r === '1'); });
+    document.body.appendChild(m);
+  });
+}
+
+function bmLimparForm() {
+  ['bmOrdem', 'bmCliente', 'bmProtocolo', 'bmRetorno', 'bmMotivoDab', 'bmObs', 'bmMedBusca', 'bmSerialNovo'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('bmTipo').value = '';
+  document.getElementById('bmData').value = hojeBR();
+  document.getElementById('bmEquipe').value = '';
+  bmComboSync('bmTipo'); bmComboSync('bmEquipe');
+  _bmDaRevisao = null; bmBannerRevisao();
+  bmEscolherEquipe();
+}
+
+function bmBannerRevisao() {
+  const el = document.getElementById('bmDaRevisao');
+  if (!_bmDaRevisao) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const r = _bmDaRevisao;
+  el.style.display = 'flex';
+  el.innerHTML = `<span>🔓 Baixa do medidor <b class="td-mono">${escHtml(r.numero_serie)}</b>, liberado em ${formatarData(String(r.data_liberacao || '').slice(0, 10))} para a equipe <b>${escHtml(r.equipe)}</b> — registrando, ele sai da fila de revisão.</span>
+    <button class="row-action" style="margin-left:auto" onclick="_bmDaRevisao=null;bmBannerRevisao()">Não é desta liberação</button>`;
+}
+
+async function bmRegistrar() {
+  const v = (id) => document.getElementById(id).value.trim();
+  const corpo = {
+    ordem: v('bmOrdem').toUpperCase(), data_execucao: v('bmData'), equipe: v('bmEquipe'), tipo_ligacao: v('bmTipo'),
+    cliente: v('bmCliente'), protocolo: v('bmProtocolo').toUpperCase(), retorno: v('bmRetorno').toUpperCase(), motivo_dab: v('bmMotivoDab').toUpperCase(), obs: v('bmObs'),
+    materiais: [], medidores: [..._bmMeds.values()].map(m => ({ numero_serie: m.numero_serie, material_id: m.material_id || null })),
+  };
+  if (corpo.ordem.length < 3) { toast('Informe a ordem / TdC do serviço', 'warn'); document.getElementById('bmOrdem').focus(); return; }
+  if (!corpo.data_execucao) { toast('Informe a data da execução', 'warn'); return; }
+  if (corpo.data_execucao > hojeBR()) { toast('A data da execução não pode ser futura', 'warn'); return; }
+  if (!corpo.equipe) { toast('Escolha a equipe que fez o serviço', 'warn'); return; }
+  if (corpo.retorno.length < 3) { toast('Descreva o retorno (o que foi feito no serviço)', 'warn'); document.getElementById('bmRetorno').focus(); return; }
+  if (!corpo.motivo_dab) { toast('Informe o motivo DAB (se não houver, escreva NÃO SE APLICA)', 'warn'); document.getElementById('bmMotivoDab').focus(); return; }
+  for (const m of _bmMateriais) {
+    const q = Number(m.quantidade);
+    if (!m.material_id && !m.quantidade) continue;
+    if (!m.material_id || !(q > 0)) { toast('Material sem item ou sem quantidade — complete ou tire a linha', 'warn'); return; }
+    const saldo = Number(_bmEquipe?.materiais.find(x => x.material_id === m.material_id)?.saldo || 0);
+    if (q > saldo) { toast(`Quantidade maior que o saldo da equipe (${finNum(saldo)})`, 'warn'); return; }
+    corpo.materiais.push({ material_id: m.material_id, quantidade: q });
+  }
+  if (new Set(corpo.materiais.map(m => m.material_id)).size !== corpo.materiais.length) { toast('O mesmo material aparece duas vezes — junte numa linha', 'warn'); return; }
+  if (_bmDaRevisao) {
+    if (!_bmMeds.has(_bmDaRevisao.numero_serie)) { toast(`Marque o medidor ${_bmDaRevisao.numero_serie} — ou clique em "Não é desta liberação"`, 'warn'); return; }
+    corpo.desbloqueio_id = String(_bmDaRevisao.desbloqueio_id);
+  }
+  const btn = document.getElementById('bmBtnRegistrar');
+  btn.disabled = true;
+  try {
+    // Medidor que sai do estoque pode cair no inventário em contagem: apiMovimentacao pede a liberação
+    let res = await apiMovimentacao('/baixa-manual/servicos', corpo);
+    if (res?.precisa_confirmar) {
+      if (!await bmConfirmarAvisos(res.avisos || [])) return;
+      res = await apiMovimentacao('/baixa-manual/servicos', { ...corpo, confirmar: true });
+    }
+    if (!res?.ok) { toast(res?.erro || 'Erro ao registrar a baixa', 'error', 7000); return; }
+    const partes = [res.materiais ? `${res.materiais} material(is)` : '', res.medidores ? `${res.medidores} medidor(es)` : '', res.novos ? `${res.novos} serial(is) novo(s) cadastrado(s)` : ''].filter(Boolean);
+    toast(`Baixa registrada — ordem ${corpo.ordem}${partes.length ? ' · ' + partes.join(' · ') : ''}`, 'success');
+    const veioDaRevisao = !!_bmDaRevisao;
+    bmLimparForm();
+    bmCarregarRevisao();
+    if (veioDaRevisao) bmAba('revisao');
+  } finally { btn.disabled = false; }
+}
+
+// ── Revisão de medidores (os liberados no bloqueio da equipe)
+async function bmCarregarRevisao() {
+  const sit = document.getElementById('bmRSituacao').value || 'pendente';
+  const body = document.getElementById('bmRevisaoBody');
+  if (_bmAba === 'revisao') body.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  const res = await api('/baixa-manual/revisao?situacao=' + sit);
+  if (!res?.ok) { body.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div></td></tr>`; return; }
+  _bmRevisao = res.data || [];
+  const conta = document.getElementById('bmContaRevisao');
+  conta.textContent = res.pendentes;
+  conta.style.display = res.pendentes ? '' : 'none';
+  bmRenderRevisao();
+}
+
+function bmRevisaoFiltrada() {
+  const b = document.getElementById('bmRBusca').value.trim().toLowerCase();
+  return !b ? _bmRevisao : _bmRevisao.filter(r => [r.numero_serie, r.equipe, r.equipe_atual, r.material].some(x => String(x || '').toLowerCase().includes(b)));
+}
+
+function bmRenderRevisao() {
+  const body = document.getElementById('bmRevisaoBody');
+  const lista = bmRevisaoFiltrada();
+  if (!lista.length) {
+    const sit = document.getElementById('bmRSituacao').value;
+    body.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:20px"><div class="es-icon">🔓</div><div class="es-title">${_bmRevisao.length ? 'Nada com essa busca' : sit === 'pendente' ? 'Nenhum medidor liberado esperando revisão' : 'Nenhum medidor nesta situação'}</div></div></td></tr>`;
+    return;
+  }
+  body.innerHTML = lista.map(r => {
+    const [rot, cor] = BM_SITUACAO[r.situacao] || [r.situacao, 'var(--text-2)'];
+    const comOutra = r.equipe_atual && r.equipe_atual !== r.equipe;
+    let detalhe = '';
+    if (r.situacao === 'INSTALADO_EORDER' || r.situacao === 'INSTALADO_MANUAL') detalhe = `ordem ${escHtml(r.os_instalacao || '—')}${r.data_instalacao ? ' · ' + formatarData(String(r.data_instalacao).slice(0, 10)) : ''}`;
+    if (r.situacao === 'NAO_INSTALADO') detalhe = escHtml(r.obs_revisao || '');
+    if (r.revisado_por) detalhe += `${detalhe ? '<br>' : ''}${escHtml(r.revisado_por)} · ${formatarDataHora(r.revisado_em)}`;
+    const acoes = r.situacao === 'PENDENTE' ? `<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="row-action" style="color:var(--green);border-color:var(--green)" onclick="bmBaixarDaRevisao('${escJs(r.desbloqueio_id)}','${escJs(r.numero_serie)}')">✅ Foi instalado</button>
+        <button class="row-action" onclick="bmAbrirNaoInstalado('${escJs(r.desbloqueio_id)}','${escJs(r.numero_serie)}')">✖ Não instalado</button></div>` : '';
+    return `<tr>
+      <td class="td-mono" style="font-weight:700">${escHtml(r.numero_serie)}</td>
+      <td style="font-size:11px">${escHtml(r.material || '—')}</td>
+      <td style="font-size:12px;font-weight:600">${escHtml(r.equipe || '—')}${comOutra ? `<div style="font-size:10px;color:var(--yellow);font-weight:400">hoje com ${escHtml(r.equipe_atual)}</div>` : ''}</td>
+      <td style="font-size:11px;white-space:nowrap">${formatarData(String(r.data_liberacao || '').slice(0, 10))}<div style="color:var(--text-3)">${escHtml(r.liberado_por || '')}${r.dias_na_equipe != null ? ` · ${r.dias_na_equipe} dia(s) na equipe` : ''}</div>${r.liberacoes > 1 ? `<div style="color:var(--yellow)">liberado ${r.liberacoes} vezes</div>` : ''}</td>
+      <td style="font-size:11px;color:var(--text-2);white-space:normal;min-width:160px">${escHtml(r.justificativa || '—')}</td>
+      <td style="font-size:11px;white-space:normal;min-width:200px"><span style="font-weight:700;color:${cor};white-space:nowrap">${rot}</span>${detalhe ? `<div style="color:var(--text-3)">${detalhe}</div>` : ''}</td>
+      <td>${acoes}</td>
+    </tr>`;
+  }).join('');
+}
+
+// "Foi instalado": abre o registro já com a equipe e o medidor marcados
+async function bmBaixarDaRevisao(desbloqueioId, serial) {
+  const r = _bmRevisao.find(x => String(x.desbloqueio_id) === String(desbloqueioId) && x.numero_serie === serial);
+  if (!r) return;
+  bmLimparForm();
+  _bmDaRevisao = r;
+  bmAba('registrar');
+  bmBannerRevisao();
+  const equipe = r.equipe_atual || r.equipe;
+  const sel = document.getElementById('bmEquipe');
+  if (![...sel.options].some(o => o.value === equipe)) sel.insertAdjacentHTML('beforeend', `<option value="${escHtml(equipe)}">${escHtml(equipe)}</option>`);
+  sel.value = equipe;
+  sel._comboSync?.();
+  await bmEscolherEquipe([serial]);
+  if (!_bmMeds.has(serial)) { document.getElementById('bmSerialNovo').value = serial; await bmAdicionarSerial(); }
+  document.getElementById('bmOrdem').focus();
+}
+
+function bmAbrirNaoInstalado(desbloqueioId, serial) {
+  const r = _bmRevisao.find(x => String(x.desbloqueio_id) === String(desbloqueioId) && x.numero_serie === serial);
+  if (!r) return;
+  document.getElementById('modalBmNaoInst')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.id = 'modalBmNaoInst';
+  m.innerHTML = `
+    <div class="modal-box" style="max-width:480px">
+      <div class="modal-header">
+        <div><div class="modal-title">✖ Medidor não instalado</div>
+          <div style="font-size:11px;color:var(--text-3)"><span class="td-mono">${escHtml(serial)}</span> · equipe ${escHtml(r.equipe_atual || r.equipe)}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalBmNaoInst').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:var(--text-2)">O medidor continua com a equipe e sai da fila de revisão. Se ele seguir parado, o bloqueio volta a valer na próxima entrega.</div>
+        <label class="form-label">O que foi verificado *</label>
+        <textarea id="bmNaoInstObs" class="form-input" rows="3" style="resize:vertical" placeholder="Ex.: conferido no eOrder e no SGO — sem instalação; medidor no caminhão da equipe"></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalBmNaoInst').remove()">Cancelar</button>
+        <button class="btn btn-primary" id="bmNaoInstBtn" onclick="bmConfirmarNaoInstalado('${escJs(desbloqueioId)}','${escJs(serial)}')">Confirmar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  document.getElementById('bmNaoInstObs').focus();
+}
+
+async function bmConfirmarNaoInstalado(desbloqueioId, serial) {
+  const obs = document.getElementById('bmNaoInstObs').value.trim();
+  if (obs.length < 5) { toast('Conte o que foi verificado', 'warn'); return; }
+  const btn = document.getElementById('bmNaoInstBtn');
+  btn.disabled = true;
+  const res = await api('/baixa-manual/revisao/nao-instalado', { method: 'POST', body: JSON.stringify({ desbloqueio_id: desbloqueioId, numero_serie: serial, obs }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar', 'error'); return; }
+  document.getElementById('modalBmNaoInst')?.remove();
+  toast(`Medidor ${serial} marcado como não instalado`, 'success');
+  bmCarregarRevisao();
+}
+
+function bmExcelRevisao() {
+  const lista = bmRevisaoFiltrada();
+  if (!lista.length) { toast('Nada para exportar', 'warn'); return; }
+  gcaExportarExcel('Revisao_medidores', lista.map(r => ({
+    serial: r.numero_serie, medidor: r.material || '', equipe: r.equipe || '', equipe_atual: r.equipe_atual || '',
+    liberado_em: formatarData(String(r.data_liberacao || '').slice(0, 10)), liberado_por: r.liberado_por || '', motivo: r.justificativa || '',
+    dias: r.dias_na_equipe ?? '', situacao: (BM_SITUACAO[r.situacao] || [r.situacao])[0].replace(/^\S+\s/, ''),
+    ordem: r.os_instalacao || '', instalado_em: r.data_instalacao ? formatarData(String(r.data_instalacao).slice(0, 10)) : '',
+    revisado_por: r.revisado_por || '', revisado_em: r.revisado_em ? formatarDataHora(r.revisado_em) : '', obs: r.obs_revisao || '',
+  })), [
+    { key: 'serial', label: 'Serial' }, { key: 'medidor', label: 'Medidor' }, { key: 'equipe', label: 'Equipe (liberação)' }, { key: 'equipe_atual', label: 'Equipe hoje' },
+    { key: 'liberado_em', label: 'Liberado em' }, { key: 'liberado_por', label: 'Liberado por' }, { key: 'motivo', label: 'Motivo da liberação' },
+    { key: 'dias', label: 'Dias na equipe' }, { key: 'situacao', label: 'Situação' }, { key: 'ordem', label: 'Ordem da instalação' },
+    { key: 'instalado_em', label: 'Instalado em' }, { key: 'revisado_por', label: 'Revisado por' }, { key: 'revisado_em', label: 'Revisado em' }, { key: 'obs', label: 'Obs. da revisão' },
+  ]);
+}
+
+// ── Histórico
+async function bmCarregarHistorico() {
+  const body = document.getElementById('bmHistBody');
+  const qs = new URLSearchParams();
+  const v = (id) => document.getElementById(id).value.trim();
+  if (v('bmHDe')) qs.set('de', v('bmHDe'));
+  if (v('bmHAte')) qs.set('ate', v('bmHAte'));
+  if (v('bmHEquipe')) qs.set('equipe', v('bmHEquipe'));
+  if (v('bmHBusca')) qs.set('busca', v('bmHBusca'));
+  if (document.getElementById('bmHEstornados').checked) qs.set('estornados', '1');
+  body.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  const res = await api('/baixa-manual/servicos?' + qs);
+  if (!res?.ok) { body.innerHTML = `<tr><td colspan="10"><div class="empty-state" style="padding:16px"><div class="es-title">${escHtml(res?.erro || 'Erro ao carregar')}</div></div></td></tr>`; return; }
+  _bmHist = res.data || [];
+  const validos = _bmHist.filter(b => !b.estornado_em);
+  document.getElementById('bmHResumo').innerHTML = [
+    ['Serviços', validos.length, 'var(--accent-text)'],
+    ['Com material', validos.filter(b => (b.materiais || []).length).length, 'var(--green)'],
+    ['Medidores instalados', validos.reduce((t, b) => t + (b.medidores || []).length, 0), '#0ea5e9'],
+    ['Vindos da revisão', validos.filter(b => b.origem === 'REVISAO').length, 'var(--yellow)'],
+  ].map(([l, n, c]) => `<div class="kpi-card"><div class="kpi-value" style="color:${c}">${n}</div><div class="kpi-label">${l}</div></div>`).join('');
+  if (!_bmHist.length) { body.innerHTML = '<tr><td colspan="10"><div class="empty-state" style="padding:20px"><div class="es-icon">📚</div><div class="es-title">Nenhuma baixa manual no período</div></div></td></tr>'; return; }
+  body.innerHTML = _bmHist.map(b => {
+    const est = !!b.estornado_em;
+    const mats = (b.materiais || []).map(m => `${escHtml(m.descricao || m.material_id)} × ${finNum(m.quantidade)}`).join('<br>');
+    const meds = (b.medidores || []).map(m => `<span class="td-mono"${m.aviso ? ` title="${escHtml(m.aviso)}"` : ''}>${escHtml(m.numero_serie)}</span>${m.situacao && m.situacao !== 'EQUIPE' ? ` <span style="font-size:10px;color:${(BM_SIT_MED[m.situacao] || [])[1] || 'var(--text-3)'}">${(BM_SIT_MED[m.situacao] || [m.situacao])[0]}</span>` : ''}`).join('<br>');
+    return `<tr style="${est ? 'opacity:.55' : ''}">
+      <td style="font-size:11px;white-space:nowrap">${formatarData(b.data_execucao)}</td>
+      <td class="td-mono" style="font-weight:700">${escHtml(b.ordem)}${b.origem === 'REVISAO' ? '<div style="font-size:10px;color:var(--yellow);font-family:inherit;font-weight:400">🔓 da revisão</div>' : ''}</td>
+      <td style="font-size:12px;font-weight:600">${escHtml(b.equipe)}</td>
+      <td class="td-mono" style="font-size:11px">${escHtml(b.cliente || '—')}${b.protocolo ? `<div style="color:var(--text-3)">${escHtml(b.protocolo)}</div>` : ''}</td>
+      <td style="font-size:11px">${escHtml(b.tipo_ligacao || '—')}</td>
+      <td style="font-size:11px;white-space:normal;min-width:200px">${escHtml(b.retorno || '—')}${b.motivo_dab ? `<div style="color:var(--text-3)">DAB: ${escHtml(b.motivo_dab)}</div>` : ''}${b.obs ? `<div style="color:var(--text-3)">${escHtml(b.obs)}</div>` : ''}</td>
+      <td style="font-size:11px;white-space:normal;min-width:140px">${mats || '—'}</td>
+      <td style="font-size:11px">${meds || '—'}</td>
+      <td style="font-size:11px;color:var(--text-3);white-space:normal;min-width:160px">${escHtml(b.criado_por || '—')}<div>${formatarDataHora(b.criado_em)}</div>${est ? `<div style="color:var(--red)">Estornado por ${escHtml(b.estornado_por || '—')} · ${formatarDataHora(b.estornado_em)}<br>${escHtml(b.motivo_estorno || '')}</div>` : ''}</td>
+      <td>${est ? '' : `<button class="row-action" style="color:var(--red)" onclick="bmAbrirEstorno('${escJs(b.id)}')">↩ Estornar</button>`}</td>
+    </tr>`;
+  }).join('');
+}
+
+function bmAbrirEstorno(id) {
+  const b = _bmHist.find(x => x.id === id);
+  if (!b) return;
+  const itens = [...(b.materiais || []).map(m => `${escHtml(m.descricao || m.material_id)} × ${finNum(m.quantidade)} volta ao saldo da equipe`),
+    ...(b.medidores || []).map(m => `medidor <span class="td-mono">${escHtml(m.numero_serie)}</span> ${!m.antes ? 'sai do Controle de Medidores (foi cadastrado nesta baixa)'
+      : m.antes.localizacao === 'ESTOQUE' ? 'volta para o estoque (e para o saldo)' : `volta para a equipe ${escHtml(m.antes.equipe_atual || b.equipe)} (deixa de estar instalado)`}`)];
+  document.getElementById('modalBmEstorno')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay';
+  m.id = 'modalBmEstorno';
+  m.innerHTML = `
+    <div class="modal-box" style="max-width:500px">
+      <div class="modal-header">
+        <div><div class="modal-title">↩ Estornar baixa manual</div>
+          <div style="font-size:11px;color:var(--text-3)">Ordem <span class="td-mono">${escHtml(b.ordem)}</span> · ${escHtml(b.equipe)} · ${formatarData(b.data_execucao)}</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalBmEstorno').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:12px;color:var(--text-2)">${itens.length ? 'Ao estornar:<ul style="margin:4px 0 0 18px">' + itens.map(i => `<li>${i}</li>`).join('') + '</ul>' : 'O registro deixa de valer (não tinha material nem medidor).'}</div>
+        <label class="form-label">Motivo do estorno *</label>
+        <textarea id="bmEstornoMotivo" class="form-input" rows="2" style="resize:vertical" placeholder="Ex.: lançado na equipe errada"></textarea>
+      </div>
+      <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalBmEstorno').remove()">Cancelar</button>
+        <button class="btn btn-primary" style="background:var(--red);border-color:var(--red)" id="bmEstornoBtn" onclick="bmConfirmarEstorno('${escJs(id)}')">Estornar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  document.getElementById('bmEstornoMotivo').focus();
+}
+
+async function bmConfirmarEstorno(id) {
+  const motivo = document.getElementById('bmEstornoMotivo').value.trim();
+  if (motivo.length < 5) { toast('Informe o motivo do estorno', 'warn'); return; }
+  const btn = document.getElementById('bmEstornoBtn');
+  btn.disabled = true;
+  const res = await api(`/baixa-manual/servicos/${encodeURIComponent(id)}/estornar`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao estornar', 'error'); return; }
+  document.getElementById('modalBmEstorno')?.remove();
+  toast('Baixa estornada' + (res.avisos?.length ? ' — ' + res.avisos.join('; ') : ''), res.avisos?.length ? 'warn' : 'success', res.avisos?.length ? 9000 : 3500);
+  bmCarregarHistorico();
+  bmCarregarRevisao();
+}
+
+// Excel no formato da planilha "Controle ST CORTE" (+ medidor, origem e quem registrou)
+function bmExcelHistorico() {
+  if (!_bmHist.length) { toast('Faça uma busca primeiro', 'warn'); return; }
+  gcaExportarExcel('Baixa_manual', _bmHist.map(b => ({
+    cliente: b.cliente || '', ordem: b.ordem, tipo: b.tipo_ligacao || '', equipe: b.equipe,
+    material: (b.materiais || []).map(m => `${m.descricao || m.material_id} x ${m.quantidade}`).join('; '),
+    medidor: (b.medidores || []).map(m => m.numero_serie).join('; '),
+    aviso_medidor: (b.medidores || []).filter(m => m.aviso).map(m => m.aviso).join('; '),
+    protocolo: b.protocolo || '', data: formatarData(b.data_execucao), mes: BM_MESES[Number(String(b.data_execucao).slice(5, 7)) - 1] || '',
+    retorno: b.retorno || '', motivo_dab: b.motivo_dab || '', obs: b.obs || '', origem: b.origem === 'REVISAO' ? 'Revisão de medidores' : 'Manual',
+    por: b.criado_por || '', em: formatarDataHora(b.criado_em),
+    estorno: b.estornado_em ? `Estornado por ${b.estornado_por || '—'} em ${formatarDataHora(b.estornado_em)}: ${b.motivo_estorno || ''}` : '',
+  })), [
+    { key: 'cliente', label: 'Cliente' }, { key: 'ordem', label: 'Ordem' }, { key: 'tipo', label: 'Tipo de Ligação' }, { key: 'equipe', label: 'Equipe / PREFIXO' },
+    { key: 'material', label: 'Material utilizado' }, { key: 'medidor', label: 'Medidor instalado' }, { key: 'protocolo', label: 'Protocolo' },
+    { key: 'data', label: 'Data da execução' }, { key: 'mes', label: 'Mês referência' }, { key: 'retorno', label: 'Retorno' }, { key: 'motivo_dab', label: 'Motivo DAB' },
+    { key: 'obs', label: 'Observação' }, { key: 'aviso_medidor', label: 'Aviso do medidor' }, { key: 'origem', label: 'Origem' }, { key: 'por', label: 'Registrado por' }, { key: 'em', label: 'Registrado em' }, { key: 'estorno', label: 'Estorno' },
   ]);
 }
 
@@ -30469,6 +31190,7 @@ async function baVerLog(importId) {
       'SEM_MAPEAMENTO':       '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Sem Mapeamento</span>',
       'SALDO_ZERADO':         '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Saldo Zerado</span>',
       'OS_NAO_REALIZADA':     '<span style="background:var(--border);color:var(--text-3);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">— Não Realizada</span>',
+      'JA_BAIXADO_MANUAL':    '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">✍️ Já baixado à mão</span>',
     };
     return m[s] || `<span style="font-size:10px">${s}</span>`;
   };
