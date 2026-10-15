@@ -4082,6 +4082,36 @@ window.addEventListener('pageshow', function(e) {
             style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
             👥 Mapeamento Equipes
           </button>
+          <button id="ba-aba-robo" onclick="baAba('robo')"
+            style="padding:9px 18px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            🤖 Robô eOrder
+          </button>
+        </div>
+
+        <!-- ABA: ROBÔ eORDER (importa sozinho às 22h e avisa por e-mail) -->
+        <div id="ba-pane-robo" style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start">
+            <div class="card">
+              <div class="card-header"><div class="card-title">🤖 Robô eOrder</div><span style="font-size:11px;color:var(--text-3)">todo dia às 22h</span></div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:var(--text-2);line-height:1.5">
+                <div>Às 22h o robô entra no eOrder, exporta os TdCs <b>finalizados ontem e hoje</b> (busca salva _FECHAMENTO_CENEGED), baixa o Excel e importa aqui. O que já foi baixado não baixa de novo.</div>
+                <div>Sempre chega um e-mail: <b>✅ deu certo</b> (resumo e avisos) ou <b>❌ deu errado</b> (onde parou e a imagem da tela, para fazer à mão). Se o robô não der sinal até as 23h30, também chega o aviso.</div>
+                <label class="form-label" style="margin-top:4px">E-mails que recebem os avisos</label>
+                <textarea id="baRoboEmails" class="form-input" rows="3" style="resize:vertical" placeholder="nome@empresa.com.br, outro@empresa.com.br"></textarea>
+                <div style="display:flex;gap:8px;flex-wrap:wrap">
+                  <button class="btn btn-primary" onclick="baRoboSalvar()">💾 Salvar e-mails</button>
+                  <button class="btn btn-ghost" onclick="baRoboTestar()">✉️ Enviar e-mail de teste</button>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="card-title">Últimas execuções do robô</div><button class="btn btn-ghost" onclick="baRoboCarregar()" title="Atualizar">🔄</button></div>
+              <div style="overflow-x:auto;width:0;min-width:100%"><table style="width:100%">
+                <thead><tr><th>Quando</th><th>Período</th><th>Situação</th><th style="text-align:right">TdCs</th><th style="text-align:right">Avisos</th></tr></thead>
+                <tbody id="baRoboExec"></tbody>
+              </table></div>
+            </div>
+          </div>
         </div>
 
         <!-- ABA: IMPORTAR -->
@@ -31041,7 +31071,7 @@ function initBaixaAuto() {
 
 // ── Abas internas
 function baAba(aba) {
-  ['importar','historico','codigos','equipes'].forEach(a => {
+  ['importar','historico','codigos','equipes','robo'].forEach(a => {
     document.getElementById('ba-pane-' + a).style.display   = a === aba ? 'block' : 'none';
     const btn = document.getElementById('ba-aba-' + a);
     if (btn) {
@@ -31052,6 +31082,35 @@ function baAba(aba) {
   if (aba === 'historico') baCarregarHistorico();
   if (aba === 'codigos')   baCarregarCodigos();
   if (aba === 'equipes')   baCarregarEquipes();
+  if (aba === 'robo')      baRoboCarregar();
+}
+
+// ── Robô eOrder: e-mails dos avisos e últimas execuções
+async function baRoboCarregar() {
+  const corpo = document.getElementById('baRoboExec');
+  corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:16px"><div class="spinner" style="margin:0 auto"></div></td></tr>';
+  const res = await api('/robo-eorder/config');
+  if (!res?.ok) { corpo.innerHTML = `<tr><td colspan="5" style="color:var(--text-3)">${escHtml(res?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  document.getElementById('baRoboEmails').value = (res.emails || []).join(', ');
+  const per = (e) => !e.periodo_de ? '—' : e.periodo_de === e.periodo_ate ? formatarData(e.periodo_de) : `${formatarData(e.periodo_de)} a ${formatarData(e.periodo_ate)}`;
+  const sit = (e) => e.status === 'CONCLUIDO' ? '<span style="color:var(--green);font-weight:700">✅ Importado</span>'
+    : e.status === 'ERRO' ? `<span style="color:var(--red);font-weight:700">❌ Falhou</span><div style="font-size:11px;color:var(--text-3);white-space:normal;min-width:220px">${escHtml(e.erro_msg || '')}</div>`
+    : '<span style="color:var(--yellow);font-weight:700">⏳ Processando</span>';
+  corpo.innerHTML = (res.execucoes || []).length ? res.execucoes.map(e => `<tr>
+      <td style="font-size:11px;white-space:nowrap">${formatarDataHora(e.importado_em)}</td><td style="font-size:11px;white-space:nowrap">${per(e)}</td>
+      <td style="font-size:12px">${sit(e)}</td><td style="text-align:right">${e.total_os ?? '—'}</td><td style="text-align:right">${e.alertas ?? '—'}</td></tr>`).join('')
+    : '<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-icon">🤖</div><div class="es-title">O robô ainda não rodou nesta filial</div></div></td></tr>';
+}
+async function baRoboSalvar() {
+  const res = await api('/robo-eorder/config', { method: 'POST', body: JSON.stringify({ emails: document.getElementById('baRoboEmails').value }) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar', 'error'); return; }
+  document.getElementById('baRoboEmails').value = (res.emails || []).join(', ');
+  toast(res.emails?.length ? `E-mails salvos (${res.emails.length})` : 'Sem e-mails: ninguém vai receber os avisos', res.emails?.length ? 'success' : 'warn');
+}
+async function baRoboTestar() {
+  const res = await api('/robo-eorder/testar-email', { method: 'POST', body: '{}' });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao enviar', 'error'); return; }
+  toast('E-mail de teste enviado para ' + res.enviado_para.join(', '), 'success', 6000);
 }
 
 // ── Arquivo selecionado
