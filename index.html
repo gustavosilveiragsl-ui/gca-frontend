@@ -25424,6 +25424,7 @@ const CTDC_AVISO = {
   SEM_MAPEAMENTO: 'Código sem mapeamento no GCA', SERIAL_NAO_ENCONTRADO: 'Medidor não encontrado no controle',
   EQUIPE_NAO_CADASTRADA: 'Equipe não mapeada', OS_NAO_REALIZADA: 'OS não realizada', SALDO_ZERADO: 'Saldo da equipe insuficiente',
   REVERTIDO: 'Baixa revertida', ERRO_BAIXA: 'Erro na baixa', JA_BAIXADO_MANUAL: 'Já baixado à mão (Baixa Manual)',
+  IMPORTADO_A_MAIS: 'O relatório traz menos do que já foi baixado',
 };
 
 function ctdcIniciar() {
@@ -31191,6 +31192,8 @@ async function baVerLog(importId) {
       'SALDO_ZERADO':         '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Saldo Zerado</span>',
       'OS_NAO_REALIZADA':     '<span style="background:var(--border);color:var(--text-3);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">— Não Realizada</span>',
       'JA_BAIXADO_MANUAL':    '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">✍️ Já baixado à mão</span>',
+      'JA_IMPORTADO':         '<span style="background:var(--border);color:var(--text-2);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">↺ Já importado</span>',
+      'IMPORTADO_A_MAIS':     '<span style="background:var(--yellow-soft);color:var(--yellow);padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600">⚠️ Baixado a mais</span>',
     };
     return m[s] || `<span style="font-size:10px">${s}</span>`;
   };
