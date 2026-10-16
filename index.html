@@ -960,6 +960,7 @@ window.addEventListener('pageshow', function(e) {
         <div class="nav-group-items">
           <button class="nav-item" data-view="consulta-itens" data-perm="consulta_itens" onclick="showView('consulta-itens',this)"><span class="ni-icon">🔍</span> Consulta de Itens</button>
           <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon">👥</span> Consulta de Colaboradores</button>
+          <button class="nav-item" data-view="consulta-ultima-retirada" data-perm="consulta_colaboradores" onclick="showView('consulta-ultima-retirada',this)"><span class="ni-icon">📅</span> Última Retirada por Item</button>
           <button class="nav-item so-viatura" style="display:none" data-view="consulta-viaturas" data-perm="consulta_viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon">🚙</span> Consulta de Viaturas</button>
           <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon">📋</span> Consulta de Dotação</button>
         </div>
@@ -2752,6 +2753,45 @@ window.addEventListener('pageshow', function(e) {
             <thead><tr><th>Nome</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Status</th><th>Nível</th><th></th></tr></thead>
             <tbody id="consultaColabBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
           </table>
+        </div>
+      </div>
+
+      <!-- ── ÚLTIMA RETIRADA POR ITEM (16/10/2026) ── -->
+      <div class="view" id="view-consulta-ultima-retirada">
+        <div class="card" style="overflow:visible">
+          <div class="card-header">
+            <div><div class="card-title">Última Retirada por Item</div><div class="card-sub">Todos os colaboradores ativos da filial e quando cada um retirou o item pela última vez — inclusive quem nunca retirou</div></div>
+          </div>
+          <div style="padding:14px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start;border-bottom:1px solid var(--border)">
+            <div style="flex:1;min-width:280px">
+              <label class="form-label">Item — pode escolher mais de um (ex.: todos os tamanhos)</label>
+              <input id="urBusca" class="form-input" placeholder="Digite o nome ou o código do item…" oninput="urSugerir(this.value)" onblur="setTimeout(()=>document.getElementById('urSugestoes').classList.add('hidden'),200)" autocomplete="off">
+              <div id="urSugestoes" class="autocomplete-list hidden"></div>
+              <div id="urEscolhidos" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:22px" onclick="urConsultar()">🔍 Consultar</button>
+          </div>
+          <div id="urResultado" style="display:none">
+            <div id="urResumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px 16px"></div>
+            <div style="padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <input class="search-box" type="text" id="urFiltroNome" placeholder="Buscar nome ou matrícula…" oninput="urRender()" style="width:220px">
+              <select class="form-input" id="urFiltroSetor" style="width:170px;font-size:11px" onchange="urRender()"></select>
+              <select class="form-input" id="urFiltroFuncao" style="width:170px;font-size:11px" onchange="urRender()"></select>
+              <select class="form-input" id="urFiltroSituacao" style="width:190px;font-size:11px" onchange="urRender()">
+                <option value="">Todas as situações</option>
+                <option value="nunca">Nunca retirou</option>
+                <option value="vencida">Troca vencida</option>
+                <option value="em_dia">Em dia</option>
+                <option value="retirou">Já retirou (qualquer data)</option>
+              </select>
+              <button class="btn btn-ghost" style="margin-left:auto" onclick="urExcel()">📊 Excel</button>
+            </div>
+            <div style="overflow-x:auto"><table>
+              <thead><tr><th>Colaborador</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Última retirada</th><th style="text-align:right">Qtd</th><th style="text-align:right">Há</th><th style="text-align:right">Retiradas 12 meses</th><th>Próxima troca</th><th>Situação</th></tr></thead>
+              <tbody id="urBody"></tbody>
+            </table></div>
+            <div id="urRodape" style="padding:10px 16px;font-size:11px;color:var(--text-3)"></div>
+          </div>
         </div>
       </div>
 
@@ -7648,6 +7688,7 @@ const VIEW_TITLES = {
   itens:['Itens','/ Cadastro'], armazens:['Armazéns','/ Cadastro'],
   'consulta-itens':          ['Consulta de Itens','/ Detalhes'],
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
+  'consulta-ultima-retirada':['Última Retirada por Item','/ Consulta'],
   'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'],
   // Telas do menu que não tinham título (o topo mostrava o código da tela)
   'enel-atendimento':['Materiais Cliente','/ Atendimento Material'],
@@ -7798,6 +7839,7 @@ function onViewLoad(nome) {
   if (nome === 'consulta-itens')     carregarConsultaItens();
   if (nome === 'consulta-colaboradores') carregarConsultaColabs();
   if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
+  if (nome === 'consulta-ultima-retirada') urInit();
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -18434,6 +18476,90 @@ async function emaHistorico() {
     <td>${ORIGEM[h.origem] || escHtml(h.origem)}${h.base ? `<div style="font-size:10px;color:var(--text-3)">${emaNum(h.base.por_dia)}/dia × (${h.base.prazo} + ${h.base.seguranca} dias)</div>` : ''}</td><td>${escHtml(h.usuario || '')}</td></tr>`).join('');
   document.getElementById('emaBody').innerHTML = lin ? `<table style="width:100%;font-size:12px"><thead><tr><th>Quando</th><th>Item</th><th style="text-align:right">Antes</th><th style="text-align:right">Depois</th><th>Origem</th><th>Quem</th></tr></thead><tbody>${lin}</tbody></table>`
     : '<div style="padding:32px;text-align:center;color:var(--text-3)">Nenhuma mudança registrada ainda.</div>';
+}
+
+// ═══ Última retirada por item (16/10/2026) ═══
+// Para cada colaborador ativo: última retirada de qualquer um dos itens escolhidos, há quantos dias,
+// retiradas em 12 meses e, se o item tiver durabilidade, a próxima troca e se está vencida.
+let _ur = { escolhidos: [], dados: null };
+const UR_SIT = { nunca: ['Nunca retirou', '#dc2626', 'rgba(220,38,38,.12)'], vencida: ['Troca vencida', '#ea580c', 'rgba(234,88,12,.12)'],
+  em_dia: ['Em dia', '#16a34a', 'rgba(22,163,74,.12)'], sem_prazo: ['Retirou', '#2563eb', 'rgba(37,99,235,.12)'] };
+const urDataBR = iso => iso ? iso.split('-').reverse().join('/') : '—';
+async function urInit() {
+  if (!(_itens || []).length) { const r = await api('/itens?limit=2000'); if (r?.data) _itens = r.data; }
+  urRenderEscolhidos();
+}
+function urSugerir(q) {
+  const lista = document.getElementById('urSugestoes');
+  if (q.trim().length < 2) { lista.classList.add('hidden'); return; }
+  const sem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const b = sem(q);
+  const achados = (_itens || []).filter(i => !_ur.escolhidos.some(e => e.id === i.id) && (sem(i.descricao).includes(b) || sem(i.codigo).includes(b))).slice(0, 15);
+  mostrarAutocompleteItens('urSugestoes', 'urBusca', achados, 'urEscolher');
+}
+function urEscolher(id) {
+  const it = (_itens || []).find(i => i.id === id);
+  if (it && !_ur.escolhidos.some(e => e.id === id)) _ur.escolhidos.push({ id: it.id, descricao: it.descricao, codigo: it.codigo });
+  document.getElementById('urBusca').value = '';
+  document.getElementById('urSugestoes').classList.add('hidden');
+  urRenderEscolhidos();
+}
+function urTirar(id) { _ur.escolhidos = _ur.escolhidos.filter(e => e.id !== id); urRenderEscolhidos(); }
+function urRenderEscolhidos() {
+  document.getElementById('urEscolhidos').innerHTML = _ur.escolhidos.map(e => `<span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 6px 4px 10px;border-radius:999px;background:var(--bg-hover);border:1px solid var(--border)">${escHtml(e.descricao)}<button type="button" onclick="urTirar('${escJs(e.id)}')" title="Tirar" style="border:0;background:none;color:var(--text-3);cursor:pointer;font-size:14px;line-height:1">×</button></span>`).join('')
+    || '<span style="font-size:11px;color:var(--text-3)">Nenhum item escolhido</span>';
+}
+async function urConsultar() {
+  if (!_ur.escolhidos.length) return toast('Escolha pelo menos um item', 'warn');
+  const btn = document.querySelector('[onclick="urConsultar()"]');
+  btn.disabled = true; btn.textContent = '⏳ Consultando…';
+  const r = await api(`/consulta/ultima-retirada?itens=${encodeURIComponent(_ur.escolhidos.map(e => e.id).join(','))}`);
+  btn.disabled = false; btn.textContent = '🔍 Consultar';
+  if (!r?.ok) return toast('Erro: ' + (r?.erro || 'não foi possível consultar'), 'error');
+  _ur.dados = r;
+  const opcoes = (campo, rotulo) => `<option value="">${rotulo}</option>` + [...new Set(r.linhas.map(l => l[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR')).map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+  document.getElementById('urFiltroSetor').innerHTML = opcoes('setor', 'Todos os setores');
+  document.getElementById('urFiltroFuncao').innerHTML = opcoes('funcao', 'Todas as funções');
+  document.getElementById('urFiltroSituacao').value = '';
+  document.getElementById('urFiltroNome').value = '';
+  const s = r.resumo, temPrazo = r.itens.some(i => i.durabilidade);
+  const card = (n, rot, cor, filtro) => `<div onclick="document.getElementById('urFiltroSituacao').value='${filtro}';urRender()" style="cursor:pointer;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--bg-card)"><div style="font-size:22px;font-weight:700;color:${cor}">${n}</div><div style="font-size:11px;color:var(--text-3)">${rot}</div></div>`;
+  document.getElementById('urResumo').innerHTML = card(s.ativos, 'colaboradores ativos', 'var(--text-1)', '') + card(s.retiraram, 'já retiraram', '#2563eb', 'retirou')
+    + card(s.nunca, 'nunca retiraram', '#dc2626', 'nunca') + (temPrazo ? card(s.vencidas, 'troca vencida', '#ea580c', 'vencida') + card(s.em_dia, 'em dia', '#16a34a', 'em_dia') : '');
+  const durs = r.itens.filter(i => i.durabilidade).map(i => `${escHtml(i.descricao)}: ${i.durabilidade} dias`);
+  document.getElementById('urRodape').innerHTML = `Item(ns): ${r.itens.map(i => escHtml(i.descricao)).join(' · ')}. ${durs.length ? 'Durabilidade no cadastro — ' + durs.join(' · ') + '.' : 'O item não tem durabilidade no cadastro, por isso não há próxima troca.'} Contam as entregas registradas (atendimento cancelado não conta) e não as retiradas para viatura.`;
+  document.getElementById('urResultado').style.display = '';
+  urRender();
+}
+function urFiltradas() {
+  const d = _ur.dados; if (!d) return [];
+  const sem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const nome = sem(document.getElementById('urFiltroNome').value), setor = document.getElementById('urFiltroSetor').value,
+    funcao = document.getElementById('urFiltroFuncao').value, sit = document.getElementById('urFiltroSituacao').value;
+  return d.linhas.filter(l => (!nome || sem(l.nome).includes(nome) || sem(l.matricula).includes(nome)) && (!setor || l.setor === setor) && (!funcao || l.funcao === funcao)
+    && (!sit || (sit === 'retirou' ? !!l.ultima : l.situacao === sit)));
+}
+function urRender() {
+  const linhas = urFiltradas(), varios = (_ur.dados?.itens || []).length > 1;
+  document.getElementById('urBody').innerHTML = linhas.map(l => {
+    const [rot, cor, bg] = UR_SIT[l.situacao];
+    return `<tr><td>${escHtml(l.nome)}${l.de_outra_filial ? ' <span style="font-size:10px;color:var(--text-3)">(de outra filial)</span>' : ''}</td><td>${escHtml(l.matricula)}</td><td>${escHtml(l.funcao)}</td><td>${escHtml(l.setor)}</td>
+      <td>${urDataBR(l.ultima)}${varios && l.item_ultima ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.item_ultima)}</div>` : ''}</td>
+      <td style="text-align:right">${l.qtd_ultima ?? '—'}</td><td style="text-align:right">${l.dias == null ? '—' : l.dias + ' dia' + (l.dias === 1 ? '' : 's')}</td>
+      <td style="text-align:right">${l.retiradas_12m}</td><td>${urDataBR(l.proxima_troca)}</td>
+      <td><span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${cor};background:${bg}">${rot}</span></td></tr>`;
+  }).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-3)">Ninguém com esses filtros.</td></tr>';
+}
+function urExcel() {
+  const linhas = urFiltradas();
+  if (!linhas.length) return toast('Nada para exportar', 'warn');
+  const nome = (_ur.dados.itens[0]?.descricao || 'item').replace(/[^\wÀ-ú]+/g, '_').slice(0, 30);
+  gcaExportarExcel(`Ultima_retirada_${nome}`, linhas.map(l => ({ ...l, ultima_br: urDataBR(l.ultima), proxima_br: urDataBR(l.proxima_troca), situacao_txt: UR_SIT[l.situacao][0],
+      outra: l.de_outra_filial ? 'Sim' : '' })),
+    [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' },
+     { key: 'ultima_br', label: 'Última retirada' }, { key: 'item_ultima', label: 'Item retirado' }, { key: 'qtd_ultima', label: 'Qtd na última' }, { key: 'dias', label: 'Dias desde a última' },
+     { key: 'retiradas_12m', label: 'Retiradas 12 meses' }, { key: 'qtd_12m', label: 'Quantidade 12 meses' }, { key: 'durabilidade', label: 'Durabilidade (dias)' },
+     { key: 'proxima_br', label: 'Próxima troca' }, { key: 'situacao_txt', label: 'Situação' }, { key: 'outra', label: 'De outra filial' }]);
 }
 
 function aplicarPermissoesMenu() {
