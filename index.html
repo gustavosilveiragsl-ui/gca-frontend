@@ -5156,6 +5156,7 @@ window.addEventListener('pageshow', function(e) {
             <div style="font-size:13px;color:var(--text-2)" id="catInfoTexto">—</div>
             <div style="display:flex;gap:8px">
               <input class="search-box" type="text" placeholder="Buscar item..." style="width:220px" oninput="catFiltrar(this.value)">
+              <button class="btn btn-ghost" onclick="emaAbrir()" title="Calcula o mínimo pelo consumo real, prazo das compras e dias de segurança">✨ Sugerir mínimos</button>
               <button class="btn btn-primary" onclick="catSalvar()">💾 Salvar</button>
             </div>
           </div>
@@ -5812,6 +5813,43 @@ window.addEventListener('pageshow', function(e) {
   </div>
 </div>
 <!-- MODAL PREVISÃO DE COMPRA -->
+<div class="modal-overlay hidden" id="modalEstMinAuto">
+  <div class="modal-box" style="max-width:1180px;width:96vw;max-height:92vh;display:flex;flex-direction:column">
+    <div class="modal-header">
+      <div style="min-width:0">
+        <div class="modal-title">✨ Estoque mínimo sugerido</div>
+        <div id="emaSub" style="font-size:11px;color:var(--text-3);margin-top:2px">—</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" onclick="emaHistorico()">🕘 Histórico</button>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('emaConfig').classList.toggle('hidden')">⚙️ Parâmetros</button>
+        <button class="modal-close" onclick="emaFechar()">×</button>
+      </div>
+    </div>
+    <div id="emaConfig" class="hidden" style="padding:12px 20px;border-bottom:1px solid var(--border);background:var(--bg)">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+        <div><label class="form-label">Janela de consumo (dias)</label><input id="emaCfgJanela" type="number" min="30" max="365" class="form-input" style="width:120px"></div>
+        <div><label class="form-label">Segurança (dias de consumo)</label><input id="emaCfgSeguranca" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
+        <div><label class="form-label">Prazo padrão de compra (dias)</label><input id="emaCfgPrazo" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
+        <div><label class="form-label">Abastecimento das bases (dias)</label><input id="emaCfgBase" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
+        <button class="btn btn-primary btn-sm" onclick="emaConfigSalvar()">Salvar e recalcular</button>
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px">Valem para todos os armazéns desta filial. O prazo padrão é usado quando o item tem menos de 2 compras recebidas nos últimos 12 meses; nas bases, o prazo é o intervalo entre um abastecimento e outro pelo central.</div>
+    </div>
+    <div style="padding:10px 20px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)" id="emaFiltros"></div>
+    <div class="modal-body" style="overflow:auto;flex:1;padding:0" id="emaBody">
+      <div style="text-align:center;padding:32px"><div class="spinner"></div></div>
+    </div>
+    <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div id="emaSel" style="font-size:12px;color:var(--text-2)">—</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="emaFechar()">Fechar</button>
+        <button class="btn btn-primary" id="emaAplicarBtn" onclick="emaAplicar()">✅ Aplicar selecionados</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modalPrevisaoCompra">
   <div class="modal-box" style="max-width:800px;max-height:90vh;overflow-y:auto">
     <div class="modal-header">
@@ -18206,6 +18244,170 @@ async function catSalvar() {
 
   if (rc?.ok && rm?.ok) toast('Catálogo salvo com sucesso!', 'success');
   else toast('Erro ao salvar: ' + (rc?.erro||rm?.erro||'?'), 'error');
+}
+
+// ═══ Estoque mínimo automático: sugestão + aprovação (16/10/2026) ═══
+// Mínimo = consumo por dia × (prazo de reposição + dias de segurança). O servidor calcula
+// (/saldos/estoque-minimo/sugestao); aqui o usuário revisa, ajusta, trava e aprova.
+let _ema = { dados: null, filtro: 'mudancas', busca: '', sel: new Map(), historico: false };
+const EMA_SIT = {
+  aumenta:     { rot: '↑ aumenta',         cor: '#ea580c', bg: 'rgba(234,88,12,.12)' },
+  reduz:       { rot: '↓ reduz',           cor: '#2563eb', bg: 'rgba(37,99,235,.12)' },
+  sem_minimo:  { rot: 'sem mínimo hoje',   cor: '#64748b', bg: 'rgba(100,116,139,.14)' },
+  igual:       { rot: '= igual',           cor: '#16a34a', bg: 'rgba(22,163,74,.12)' },
+  travado:     { rot: '🔒 travado',        cor: '#7c3aed', bg: 'rgba(124,58,237,.12)' },
+  sem_consumo: { rot: 'sem consumo',       cor: '#94a3b8', bg: 'rgba(148,163,184,.14)' },
+};
+const EMA_FILTROS = [['mudancas', 'Com mudança', l => l.situacao === 'aumenta' || l.situacao === 'reduz'], ['sem_minimo', 'Sem mínimo hoje', l => l.situacao === 'sem_minimo'],
+  ['igual', 'Iguais', l => l.situacao === 'igual'], ['travado', 'Travados', l => l.situacao === 'travado'], ['sem_consumo', 'Sem consumo', l => l.situacao === 'sem_consumo'], ['todos', 'Todos', () => true]];
+const emaNum = v => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const emaData = iso => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}` : '—'; };
+
+async function emaAbrir() {
+  const armId = document.getElementById('catArmSelect').value;
+  if (!armId) return toast('Selecione um armazém primeiro', 'warning');
+  _ema.filtro = 'mudancas'; _ema.busca = ''; _ema.historico = false;
+  document.getElementById('modalEstMinAuto').classList.remove('hidden');
+  await emaCarregar();
+}
+function emaFechar() { document.getElementById('modalEstMinAuto').classList.add('hidden'); }
+
+async function emaCarregar() {
+  const armId = document.getElementById('catArmSelect').value;
+  document.getElementById('emaBody').innerHTML = '<div style="text-align:center;padding:32px"><div class="spinner"></div><div style="margin-top:8px;font-size:12px;color:var(--text-3)">Calculando pelo consumo real…</div></div>';
+  const r = await api(`/saldos/estoque-minimo/sugestao?armazem_id=${encodeURIComponent(armId)}`);
+  if (!r?.ok) { document.getElementById('emaBody').innerHTML = `<div style="padding:24px;color:var(--danger)">Não foi possível calcular: ${escHtml(r?.erro || 'erro')}</div>`; return; }
+  _ema.dados = r;
+  _ema.sel = new Map(r.itens.filter(i => i.marcado).map(i => [i.item_id, i.sugerido]));
+  const c = r.config;
+  document.getElementById('emaCfgJanela').value = c.janela;
+  document.getElementById('emaCfgSeguranca').value = c.seguranca;
+  document.getElementById('emaCfgPrazo').value = c.prazo_padrao;
+  document.getElementById('emaCfgBase').value = c.abastecimento_base;
+  document.getElementById('emaSub').innerHTML = `${escHtml(r.armazem.nome)}${r.armazem.principal ? ' · ⭐ principal (inclui o que foi enviado às bases)' : ' · base (prazo = abastecimento a cada ' + c.abastecimento_base + ' dias)'}<br>`
+    + `Conta: consumo por dia × (prazo + ${c.seguranca} dias de segurança) · saídas de ${emaData(r.periodo.de)} a ${emaData(r.periodo.ate)} (${c.janela} dias)`;
+  emaRender();
+}
+
+function emaLinhasFiltradas() {
+  const f = EMA_FILTROS.find(x => x[0] === _ema.filtro) || EMA_FILTROS[0];
+  const b = _ema.busca.toLowerCase();
+  return _ema.dados.itens.filter(l => f[2](l) && (!b || String(l.descricao).toLowerCase().includes(b) || String(l.codigo || '').toLowerCase().includes(b)));
+}
+
+function emaGrafico(semanas) {
+  const max = Math.max(1, ...semanas), w = 4, g = 1.5, h = 22;
+  const barras = semanas.map((v, i) => { const a = v ? Math.max(2, Math.round(v / max * h)) : 1; return `<rect x="${i * (w + g)}" y="${h - a}" width="${w}" height="${a}" rx="1" fill="${v ? '#4f46e5' : '#cbd5e1'}"/>`; }).join('');
+  return `<svg width="${semanas.length * (w + g)}" height="${h}" aria-hidden="true">${barras}</svg>`;
+}
+
+function emaRender() {
+  if (_ema.historico) return;
+  const d = _ema.dados;
+  const conta = Object.fromEntries(EMA_FILTROS.map(f => [f[0], d.itens.filter(f[2]).length]));
+  document.getElementById('emaFiltros').innerHTML = EMA_FILTROS.map(([id, rot]) =>
+    `<button class="btn btn-sm ${_ema.filtro === id ? 'btn-primary' : 'btn-ghost'}" onclick="_ema.filtro='${id}';emaRender()">${rot} <span style="opacity:.7">(${conta[id]})</span></button>`).join('')
+    + `<input class="search-box" type="text" placeholder="Buscar item…" style="margin-left:auto;width:200px" value="${escHtml(_ema.busca)}" oninput="_ema.busca=this.value;emaRenderTabela()">`;
+  emaRenderTabela();
+}
+
+function emaRenderTabela() {
+  const linhas = emaLinhasFiltradas();
+  const marcaveis = linhas.filter(l => l.sugerido != null && !l.travado);
+  const todosMarcados = marcaveis.length && marcaveis.every(l => _ema.sel.has(l.item_id));
+  const prazoTxt = l => l.fonte_prazo === 'compras' ? `${l.prazo} d <span style="color:var(--text-3)">· ${l.compras} compras</span>`
+    : l.fonte_prazo === 'abastecimento' ? `${l.prazo} d <span style="color:var(--text-3)">· abastec.</span>` : `${l.prazo} d <span style="color:var(--text-3)">· padrão</span>`;
+  const corpo = linhas.map(l => {
+    const sit = EMA_SIT[l.situacao] || EMA_SIT.igual;
+    const pode = l.sugerido != null && !l.travado;
+    const marcado = _ema.sel.has(l.item_id);
+    const valor = marcado ? _ema.sel.get(l.item_id) : l.sugerido;
+    const extra = [l.transferido ? `${emaNum(l.transferido)} enviado às bases` : '', l.aparado ? `${emaNum(l.aparado)} aparado (pico)` : ''].filter(Boolean).join(' · ');
+    return `<tr style="${l.situacao === 'sem_consumo' ? 'opacity:.6' : ''}">
+      <td style="width:28px">${pode ? `<input type="checkbox" ${marcado ? 'checked' : ''} onchange="emaMarcar('${escJs(l.item_id)}',this.checked)" style="width:16px;height:16px;cursor:pointer">` : ''}</td>
+      <td style="min-width:170px"><div style="font-weight:500;color:var(--text-1)">${escHtml(l.descricao)}</div><div style="font-size:11px;color:var(--text-3)">${escHtml(l.codigo || '')}</div></td>
+      <td style="text-align:right;white-space:nowrap">${emaNum(l.consumo)}${extra ? `<div style="font-size:10px;color:var(--text-3)">${extra}</div>` : ''}</td>
+      <td>${emaGrafico(l.semanas || [])}</td>
+      <td style="text-align:right">${emaNum(l.por_dia)}</td>
+      <td style="white-space:nowrap">${l.situacao === 'sem_consumo' ? '—' : prazoTxt(l)}</td>
+      <td style="text-align:right">${emaNum(l.saldo)}</td>
+      <td style="text-align:right;font-weight:600">${emaNum(l.minimo_atual)}</td>
+      <td style="text-align:right">${pode ? `<input type="number" min="0" value="${valor}" onchange="emaValor('${escJs(l.item_id)}',this.value)" style="width:76px;text-align:right;font-weight:700;border:1px solid var(--border);border-radius:6px;padding:4px 6px;background:var(--bg);color:var(--text-1)">` : (l.sugerido != null ? emaNum(l.sugerido) : '—')}</td>
+      <td><span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${sit.cor};background:${sit.bg}">${sit.rot}</span></td>
+      <td style="padding-right:14px"><button class="btn btn-ghost btn-sm" title="${l.travado ? 'Destravar: volta a receber sugestões' : 'Travar: o sistema nunca sugere mudança para este item'}" onclick="emaTravar('${escJs(l.item_id)}',${!l.travado})">${l.travado ? '🔓' : '🔒'}</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('emaBody').innerHTML = linhas.length ? `<table style="width:100%;font-size:12px"><thead><tr>
+      <th>${marcaveis.length ? `<input type="checkbox" ${todosMarcados ? 'checked' : ''} onchange="emaMarcarTodos(this.checked)" title="Marcar todos desta lista" style="width:16px;height:16px;cursor:pointer">` : ''}</th>
+      <th>Item</th><th style="text-align:right">Consumo</th><th>13 semanas</th><th style="text-align:right">Por dia</th><th>Prazo</th><th style="text-align:right">Saldo</th>
+      <th style="text-align:right">Mín. atual</th><th style="text-align:right">Sugerido</th><th></th><th></th></tr></thead><tbody>${corpo}</tbody></table>`
+    : '<div style="padding:32px;text-align:center;color:var(--text-3)">Nenhum item nesta lista.</div>';
+  const n = _ema.sel.size;
+  document.getElementById('emaSel').textContent = n ? `${n} item(ns) marcado(s) para atualizar` : 'Nenhum item marcado';
+  const btn = document.getElementById('emaAplicarBtn');
+  btn.disabled = !n; btn.textContent = n ? `✅ Aplicar ${n} mínimo(s)` : '✅ Aplicar selecionados';
+}
+
+function emaMarcar(id, on) {
+  const l = _ema.dados.itens.find(x => x.item_id === id);
+  if (on) _ema.sel.set(id, _ema.sel.get(id) ?? l.sugerido); else _ema.sel.delete(id);
+  emaRenderTabela();
+}
+function emaMarcarTodos(on) {
+  emaLinhasFiltradas().filter(l => l.sugerido != null && !l.travado).forEach(l => { if (on) _ema.sel.set(l.item_id, _ema.sel.get(l.item_id) ?? l.sugerido); else _ema.sel.delete(l.item_id); });
+  emaRenderTabela();
+}
+function emaValor(id, v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return toast('Valor inválido', 'warning');
+  _ema.sel.set(id, n);
+  emaRenderTabela();
+}
+
+async function emaAplicar() {
+  const armId = document.getElementById('catArmSelect').value;
+  const itens = [..._ema.sel].map(([item_id, v]) => ({ item_id, estoque_minimo: Number(v) }));
+  if (!itens.length) return;
+  const btn = document.getElementById('emaAplicarBtn');
+  btn.disabled = true; btn.textContent = '⏳ Aplicando…';
+  const r = await api('/saldos/estoque-minimo/aplicar', { method: 'POST', body: JSON.stringify({ armazem_id: armId, itens }) });
+  if (!r?.ok) { btn.disabled = false; return toast('Erro ao aplicar: ' + (r?.erro || '?'), 'error'); }
+  toast(`${r.aplicados} mínimo(s) atualizado(s)${r.pulados?.length ? ` · ${r.pulados.length} pulado(s)` : ''}`, 'success');
+  await Promise.all([emaCarregar(), catCarregarArmazem()]);
+}
+
+async function emaTravar(id, travado) {
+  const armId = document.getElementById('catArmSelect').value;
+  const r = await api('/saldos/estoque-minimo/travar', { method: 'POST', body: JSON.stringify({ armazem_id: armId, item_id: id, travado }) });
+  if (!r?.ok) return toast('Erro: ' + (r?.erro || '?'), 'error');
+  toast(travado ? '🔒 Item travado: não recebe mais sugestões' : '🔓 Item destravado', 'success');
+  await emaCarregar();
+}
+
+async function emaConfigSalvar() {
+  const cfg = { janela: +document.getElementById('emaCfgJanela').value, seguranca: +document.getElementById('emaCfgSeguranca').value,
+    prazo_padrao: +document.getElementById('emaCfgPrazo').value, abastecimento_base: +document.getElementById('emaCfgBase').value };
+  const r = await api('/saldos/estoque-minimo/config', { method: 'POST', body: JSON.stringify(cfg) });
+  if (!r?.ok) return toast('Erro ao salvar parâmetros: ' + (r?.erro || '?'), 'error');
+  toast('Parâmetros salvos — recalculando', 'success');
+  document.getElementById('emaConfig').classList.add('hidden');
+  await emaCarregar();
+}
+
+async function emaHistorico() {
+  if (_ema.historico) { _ema.historico = false; return emaRender(); }
+  const armId = document.getElementById('catArmSelect').value;
+  _ema.historico = true;
+  document.getElementById('emaFiltros').innerHTML = `<button class="btn btn-sm btn-ghost" onclick="_ema.historico=false;emaRender()">← Voltar às sugestões</button><span style="font-size:12px;color:var(--text-3)">Últimas mudanças de mínimo deste armazém</span>`;
+  document.getElementById('emaBody').innerHTML = '<div style="text-align:center;padding:32px"><div class="spinner"></div></div>';
+  const r = await api(`/saldos/estoque-minimo/historico?armazem_id=${encodeURIComponent(armId)}`);
+  const nomes = Object.fromEntries((_catItens || []).map(i => [i.id, i.descricao]));
+  const ORIGEM = { sugestao: 'Sugestão aprovada', sugestao_ajustada: 'Sugestão ajustada', manual: 'Edição manual', travou: '🔒 Travou', destravou: '🔓 Destravou' };
+  const lin = (r?.data || []).map(h => `<tr><td style="white-space:nowrap">${new Date(h.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
+    <td>${escHtml(nomes[h.item_id] || h.item_id)}</td><td style="text-align:right">${h.antes == null ? '—' : emaNum(h.antes)}</td><td style="text-align:right;font-weight:600">${h.depois == null ? '—' : emaNum(h.depois)}</td>
+    <td>${ORIGEM[h.origem] || escHtml(h.origem)}${h.base ? `<div style="font-size:10px;color:var(--text-3)">${emaNum(h.base.por_dia)}/dia × (${h.base.prazo} + ${h.base.seguranca} dias)</div>` : ''}</td><td>${escHtml(h.usuario || '')}</td></tr>`).join('');
+  document.getElementById('emaBody').innerHTML = lin ? `<table style="width:100%;font-size:12px"><thead><tr><th>Quando</th><th>Item</th><th style="text-align:right">Antes</th><th style="text-align:right">Depois</th><th>Origem</th><th>Quem</th></tr></thead><tbody>${lin}</tbody></table>`
+    : '<div style="padding:32px;text-align:center;color:var(--text-3)">Nenhuma mudança registrada ainda.</div>';
 }
 
 function aplicarPermissoesMenu() {
