@@ -6911,7 +6911,7 @@ function pbTabela(colunas, linhas, opts = {}) {
       const cls = [num ? 'num' : '', c.cls ? c.cls(l) : ''].join(' ');
       return `<td class="${cls}">${fmt(c, v)}</td>`;
     }).join('')}</tr>`).join('')}
-  </tbody></table></div>${linhas.length > lim ? `<div class="pb-vazio">Mostrando ${lim} de ${pbNum(linhas.length)} — o Excel traz tudo.</div>` : ''}`;
+  </tbody></table></div>${linhas.length > lim ? `<div class="pb-vazio">${opts.rodape ? opts.rodape(lim, linhas.length) : `Mostrando ${lim} de ${pbNum(linhas.length)} — o Excel traz tudo.`}</div>` : ''}`;
 }
 
 // ── Gaveta de detalhe: uma ou mais seções, cada uma com tabela e Excel ──
@@ -7530,12 +7530,38 @@ async function pbAbaPessoas(el) {
       <div class="pb-bloco"><div class="pb-secao">Usuários do sistema por filial</div>${barras(d.usuarios.por_filial, 'total', 'filial')}</div>
     </div>
     <div class="pb-grid2">
-      <div><div class="pb-secao">Quem mais movimenta</div>${pbTabela([{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'atendimentos', label: 'Atendimentos' },
-        { key: 'entradas', label: 'Entradas' }, { key: 'saidas', label: 'Saídas' }, { key: 'transferencias', label: 'Transf.' }, { key: 'total', label: 'Total' }], d.ranking_movimentacoes, { limite: 20, vazio: 'Nenhuma movimentação no período.' })}</div>
-      <div><div class="pb-secao">Quem mais acessa</div>${pbTabela([{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'acessos', label: 'Acessos' },
-        { key: 'ultimo_fmt', label: 'Último acesso' }], d.ranking_acessos.map(r => ({ ...r, ultimo_fmt: r.ultimo ? new Date(r.ultimo).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—' })),
-        { limite: 20, vazio: 'Nenhum acesso registrado no período. O registro de acessos começou a contar a partir da publicação do Painel Brasil.' })}</div>
+      <div>${pbPessoasTitulo('movimentacoes')}${pbTabela(PB_PESSOAS.movimentacoes.colunas, pbPessoasLinhas('movimentacoes'), { limite: 20, vazio: 'Nenhuma movimentação no período.', rodape: pbPessoasRodape('movimentacoes') })}</div>
+      <div>${pbPessoasTitulo('acessos')}${pbTabela(PB_PESSOAS.acessos.colunas, pbPessoasLinhas('acessos'),
+        { limite: 20, vazio: 'Nenhum acesso registrado no período. O registro de acessos começou a contar a partir da publicação do Painel Brasil.', rodape: pbPessoasRodape('acessos') })}</div>
     </div>`;
+}
+// "Quem mais movimenta" e "Quem mais acessa": a aba mostra 20; "ver todos" abre a gaveta e o Excel baixa a lista inteira (16/10/2026)
+const PB_PESSOAS = {
+  movimentacoes: { titulo: 'Quem mais movimenta', arquivo: 'Quem_mais_movimenta', colunas: [{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'atendimentos', label: 'Atendimentos' },
+    { key: 'entradas', label: 'Entradas' }, { key: 'saidas', label: 'Saídas' }, { key: 'transferencias', label: 'Transf.' }, { key: 'total', label: 'Total' }] },
+  acessos: { titulo: 'Quem mais acessa', arquivo: 'Quem_mais_acessa', colunas: [{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'acessos', label: 'Acessos' },
+    { key: 'ultimo_fmt', label: 'Último acesso' }] },
+};
+function pbPessoasLinhas(tipo) {
+  const d = PB.pessoas || {};
+  if (tipo === 'movimentacoes') return d.ranking_movimentacoes || [];
+  return (d.ranking_acessos || []).map(r => ({ ...r, ultimo_fmt: r.ultimo ? new Date(r.ultimo).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—' }));
+}
+function pbPessoasTitulo(tipo) {
+  const c = PB_PESSOAS[tipo], n = pbPessoasLinhas(tipo).length;
+  return `<div class="pb-secao" style="display:flex;align-items:center;gap:8px">${c.titulo}${n ? `<button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px;text-transform:none;letter-spacing:0" onclick="pbPessoasExcel('${tipo}')" title="Baixar a lista inteira em Excel">📊 Excel</button>` : ''}</div>`;
+}
+function pbPessoasRodape(tipo) {
+  return (lim, total) => `Mostrando ${lim} de ${pbNum(total)} · <a href="#" onclick="pbPessoasTodos('${tipo}');return false" style="color:var(--accent);font-weight:600">ver todos</a> · <a href="#" onclick="pbPessoasExcel('${tipo}');return false" style="color:var(--accent);font-weight:600">baixar Excel</a>`;
+}
+function pbPessoasExcel(tipo) {
+  const c = PB_PESSOAS[tipo], linhas = pbPessoasLinhas(tipo);
+  if (!linhas.length) return toast('Nada para exportar neste período', 'warn');
+  gcaExportarExcel(`Painel_Brasil_${c.arquivo}`, linhas, c.colunas.map(x => ({ key: x.key, label: x.label })));
+}
+function pbPessoasTodos(tipo) {
+  const c = PB_PESSOAS[tipo];
+  pbGaveta(c.titulo, pbTituloEscopo(), [{ titulo: c.titulo, colunas: c.colunas, linhas: pbPessoasLinhas(tipo) }]);
 }
 function pbUsuariosLista() {
   const d = PB.pessoas;
