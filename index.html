@@ -2082,7 +2082,7 @@ window.addEventListener('pageshow', function(e) {
               </div>
               <div>
                 <label class="form-label">Motivo *</label>
-                <select id="entMotivo" class="form-input">
+                <select id="entMotivo" class="form-input" onchange="entRenderCa()">
                   <option value="">Selecione o motivo...</option>
                   <option value="Compra/Aquisição">Compra / Aquisição</option>
                   <option value="Devolução de Colaborador">Devolução de Colaborador</option>
@@ -2093,6 +2093,7 @@ window.addEventListener('pageshow', function(e) {
                   <option value="Outro">Outro</option>
                 </select>
               </div>
+              <div id="entCaBox"></div>
               <div>
                 <label class="form-label">Observação (opcional)</label>
                 <textarea id="entObs" class="form-input" rows="2" placeholder="Ex: NF 12345, Fornecedor XYZ..." style="resize:vertical"></textarea>
@@ -2828,6 +2829,7 @@ window.addEventListener('pageshow', function(e) {
               <option value="sem_validade">CA sem validade</option>
               <option value="nao_encontrado">CA não achado no MTE</option>
               <option value="inativo">Com CA que não compramos mais</option>
+              <option value="dispensado">Não tem CA (ex.: bolsa da luva)</option>
             </select>
             <span id="caFoco" style="font-size:12px;color:var(--text-2)"></span>
             <span id="caContagem" style="margin-left:auto;font-size:11px;color:var(--text-3)"></span>
@@ -2844,7 +2846,7 @@ window.addEventListener('pageshow', function(e) {
             <thead><tr><th>Quando</th><th>Quem</th><th>CA</th><th>Item</th><th>O que mudou</th></tr></thead>
             <tbody id="caBodyHist"></tbody>
           </table></div>
-          <div style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5">Todos os tamanhos de um item recebem os mesmos CAs. CA vencido continua saindo na ficha de EPI até alguém marcar "Não compramos mais" (o estoque pode ter peças compradas quando o CA valia). As fichas já emitidas guardam o CA do dia da entrega.</div>
+          <div style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5">Todos os tamanhos de um item recebem os mesmos CAs. A ficha de EPI leva o CA da peça entregue: no recebimento informa-se o CA que chegou e, na entrega de item com mais de uma marca, escolhe-se a marca (já vem marcada a que entrou por último no armazém). CA vencido continua disponível até alguém marcar "Não compramos mais" (o estoque pode ter peças compradas quando o CA valia).</div>
         </div>
       </div>
 
@@ -8516,7 +8518,7 @@ async function verificarTokenAssinatura() {
             </tr></thead>
             <tbody>
               ${itens.map(it => `<tr>
-                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}</td>
+                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}${/^\d+$/.test(String(it.ca||'')) ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">CA ${escHtml(it.ca)}${it.marca ? ` · ${escHtml(it.marca)}` : ''}</div>` : ''}</td>
                 <td style="padding:8px 4px;font-size:12px;text-align:center;color:#e2e8f0;border-bottom:1px solid #1e293b;white-space:nowrap">${it.quantidade} ${it.unidade||'UN'}</td>
                 <td style="padding:8px 4px;font-size:11px;color:#94a3b8;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.motivo||'—')}</td>
               </tr>`).join('')}
@@ -10837,6 +10839,7 @@ function adicionarItensAoAtendimento(selecionados) {
   }
   fecharModalItens();
   renderItensAtendimento();
+  caPrepararItensAtend();
   // Carrega seriais disponíveis para itens que requerem ensaio
   ATEND.itens.forEach((it, idx) => {
     if (it.requerEnsaio) carregarSeriaisDisponiveis(it.itemId, idx);
@@ -10918,6 +10921,11 @@ function validarSerial(inputEl, itemIdx, serialIdx) {
 // ═══════════════════════════════════════════
 async function concluirAtendimento() {
   if (!ATEND.colab || !ATEND.itens.length) return;
+
+  // Item com mais de uma marca: a marca (CA) entregue é obrigatória — vai para a ficha de EPI
+  await caPrepararItensAtend();
+  const semMarca = ATEND.itens.find(it => (it.caOpcoes || []).length >= 2 && !it.caEscolhido);
+  if (semMarca) { toast(`Escolha a marca (CA) entregue de: ${escHtml(semMarca.descricao)}`, 'error', 5000); return; }
 
   // Valida seriais obrigatórios
   for (const it of ATEND.itens) {
@@ -12607,10 +12615,18 @@ function renderItemAtendimento(it, i) {
       </datalist>
     </div>`).join('')}` : '';
 
+  // Marca (CA) entregue: só aparece no item com 2 ou mais CAs ativos (Gestão de CA, 19/10/2026)
+  const caBlock = (it.caOpcoes || []).length >= 2 ? `
+    <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Marca (CA) entregue ${it.caEscolhido ? '' : '<span style="color:var(--red);text-transform:none;letter-spacing:0;font-weight:600">· escolha a marca</span>'}</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">${it.caOpcoes.map(c => `<button type="button" onclick="caEscolherAtend(${i},'${escJs(c.ca)}')"
+      style="font-size:11px;padding:4px 9px;border-radius:999px;cursor:pointer;border:1px solid ${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--border)'};background:${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--bg-card)'};color:${it.caEscolhido === c.ca ? '#fff' : 'var(--text-1)'};font-weight:${it.caEscolhido === c.ca ? 700 : 500}">
+      ${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}</button>`).join('')}</div>` : '';
+
   return `<tr>
     <td class="td-main">
       ${escHtml(it.descricao)}
       ${it.requerEnsaio ? '<span class="tag tag-accent" style="margin-left:6px;font-size:9px">NR10</span>' : ''}
+      ${caBlock}
       ${serialNovoBlock}
       ${serialRetornoBlock}
     </td>
@@ -13002,6 +13018,7 @@ function selecionarItemEnt(id) {
   const pos = [_entItemSel.corredor, _entItemSel.prateleira, _entItemSel.box].filter(Boolean).join(' / ') || '—';
   document.getElementById('entPreviewPos').textContent  = pos;
   atualizarTotalEntrada();
+  entRenderCa();
 }
 function atualizarTotalEntrada() {
   if (!_entItemSel) return;
@@ -13033,14 +13050,23 @@ async function registrarEntrada() {
   const btn = document.querySelector('[onclick="registrarEntrada()"]');
   if (btn) { btn.textContent = '⏳ Registrando...'; }
 
+  // Compra, doação e garantia: o CA que chegou (Gestão de CA)
+  let extrasCa = {};
+  if (caMotivoExige(motivo)) {
+    const conf = await caConferirRecebimento([{ item_id: itemId, ca: document.querySelector('#entCaBox .ca-entrada-input')?.value || '' }]);
+    if (!conf) { if (btn) { btn.disabled = false; btn.textContent = '✓ Registrar Entrada'; } return; }
+    extrasCa = conf.extras[itemId] || {};
+  }
+
   const res = await apiMovimentacao('/movimentacoes/entrada',
-    { item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs });
+    { item_id:itemId, armazem_id:armazem, data, quantidade:qtd, motivo, observacao:obs, ...extrasCa });
 
   // Reabilitar botão independente do resultado
   if (btn) { btn.disabled = false; btn.textContent = '✓ Registrar Entrada'; }
 
   if (res?.ok) {
     toast('Entrada registrada com sucesso!', 'success');
+    if (extrasCa.cadastrar_ca) _caOpcoesEm = 0;
     limparEntrada();
     carregarUltimasEntradas();
   } else {
@@ -13056,6 +13082,7 @@ function limparEntrada() {
   const dt = document.getElementById('entData'); if(dt) dt.value = hoje;
   document.getElementById('entPreviewVazio')?.classList.remove('hidden');
   document.getElementById('entPreviewDados')?.classList.add('hidden');
+  const caBox = document.getElementById('entCaBox'); if (caBox) caBox.innerHTML = '';
 }
 
 function limparSaida() {
@@ -18636,10 +18663,12 @@ const CA_SIT = {
   cancelado: ['Cancelado no MTE', '#991b1b', 'rgba(153,27,27,.14)'],
   sem_validade: ['Sem validade', '#64748b', 'rgba(100,116,139,.14)'],
   sem_ca: ['EPI sem CA', '#7c3aed', 'rgba(124,58,237,.12)'],
+  dispensado: ['Não tem CA', '#64748b', 'rgba(100,116,139,.10)'],
   inativo: ['Não compramos mais', '#64748b', 'rgba(100,116,139,.10)'],
 };
 const CA_ACOES = { INCLUIDO: 'Incluído', REATIVADO: 'Voltou a valer', INATIVADO: 'Não compramos mais', REMOVIDO: 'Tirado do item', EDITADO: 'Editado',
-  MIGRADO: 'Veio do cadastro do item', RENOVADO_MTE: 'Renovado (base do MTE)', SITUACAO_MTE: 'Base do MTE', MTE_NAO_ENCONTRADO: 'Base do MTE' };
+  MIGRADO: 'Veio do cadastro do item', RENOVADO_MTE: 'Renovado (base do MTE)', SITUACAO_MTE: 'Base do MTE', MTE_NAO_ENCONTRADO: 'Base do MTE',
+  DISPENSADO: 'Não tem CA', DISPENSA_DESFEITA: 'Voltou a precisar de CA', RECEBIDO_VENCIDO: 'Recebido com CA vencido' };
 const caDataBR = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—';
 const caPodeMexer = () => temPermissao('gerenciar_ca');
 const caSem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -18699,7 +18728,8 @@ function caRenderResumo() {
     + card(s.vencidos, 'EPIs com CA vencido ou cancelado', '#dc2626', 'vencido')
     + card(s.sem_ca, 'EPIs sem CA', '#7c3aed', 'sem_ca')
     + (s.sem_validade ? card(s.sem_validade, 'EPIs com CA sem validade', '#64748b', 'sem_validade') : '')
-    + (s.nao_encontrados ? card(s.nao_encontrados, 'CAs não achados no MTE', '#b45309', 'nao_encontrado') : '');
+    + (s.nao_encontrados ? card(s.nao_encontrados, 'CAs não achados no MTE', '#b45309', 'nao_encontrado') : '')
+    + (s.dispensados ? card(s.dispensados, 'EPIs que não têm CA', '#64748b', 'dispensado') : '');
 }
 function caFiltrarSituacao(f) {
   _ca.filtroSit = _ca.filtroSit === f ? '' : f;
@@ -18748,9 +18778,9 @@ function caRender() {
   document.getElementById('caFoco').innerHTML = _ca.foco ? `Só ${escHtml(foco?.nome || 'o item escolhido')} · <a href="#" onclick="_ca.foco=null;caRender();return false">ver todos</a>` : '';
   document.getElementById('caBody').innerHTML = lista.map(gr => `<tr>
     <td><div style="font-weight:600">${escHtml(gr.nome)}</div><div style="font-size:10px;color:var(--text-3)">${gr.itens.length > 1 ? `${gr.itens.length} tamanhos · ` : ''}${escHtml(gr.itens.map(i => i.codigo).filter(Boolean).slice(0, 3).join(', '))}${gr.itens.length > 3 ? '…' : ''}${gr.epi ? '' : ` · ${escHtml(gr.categoria || 'sem categoria')}`}</div></td>
-    <td><div style="display:flex;gap:6px;flex-wrap:wrap">${gr.cas.map(c => caChip(gr, c)).join('') || '<span style="font-size:11px;color:var(--text-3)">Nenhum CA cadastrado</span>'}</div></td>
+    <td><div style="display:flex;gap:6px;flex-wrap:wrap">${gr.cas.map(c => caChip(gr, c)).join('') || `<span style="font-size:11px;color:var(--text-3)">${gr.situacao === 'dispensado' ? 'Item que não tem CA — não pede CA no recebimento nem na entrega' : 'Nenhum CA cadastrado'}</span>`}</div></td>
     <td>${caSelo(gr.situacao)}</td>
-    <td style="text-align:right;white-space:nowrap">${caPodeMexer() ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caNovo('${escJs(gr.item_id)}')">＋ CA</button>` : ''}</td></tr>`).join('')
+    <td style="text-align:right;white-space:nowrap">${caPodeMexer() ? `${gr.situacao === 'sem_ca' ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" title="Item da categoria EPI que não tem CA (ex.: bolsa da luva isolante): sai do alerta e não pede CA" onclick="caDispensar('${escJs(gr.item_id)}',true)">Não tem CA</button> ` : ''}${gr.situacao === 'dispensado' ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caDispensar('${escJs(gr.item_id)}',false)">Precisa de CA</button>` : `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caNovo('${escJs(gr.item_id)}')">＋ CA</button>`}` : ''}</td></tr>`).join('')
     || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">${_ca.dados.grupos.length ? 'Nada com esses filtros.' : 'Nenhum EPI cadastrado nesta filial.'}</td></tr>`;
   document.getElementById('caContagem').textContent = `${lista.length} de ${_ca.dados.grupos.length} itens`;
 }
@@ -19041,6 +19071,171 @@ function caExcel() {
   gcaExportarExcel('Gestao_de_CA', linhas, [{ key: 'item', label: 'Item' }, { key: 'tamanhos', label: 'Tamanhos' }, { key: 'codigos', label: 'Códigos' },
     { key: 'situacao_item', label: 'Situação do item' }, { key: 'ca', label: 'CA' }, { key: 'marca', label: 'Marca' }, { key: 'fabricante', label: 'Fabricante' },
     { key: 'validade_br', label: 'Validade' }, { key: 'situacao_ca', label: 'Situação do CA' }, { key: 'mte_txt', label: 'Base do MTE' }]);
+}
+
+// ── CA na entrada e na entrega (19/10/2026, pedido da segurança: a ficha leva o CA da peça entregue) ──
+let _caOpcoes = null, _caOpcoesEm = 0;
+async function caOpcoesCarregar(forcar) {
+  if (!forcar && _caOpcoes && Date.now() - _caOpcoesEm < 60000) return _caOpcoes;
+  const r = await api('/ca/opcoes');
+  if (r?.ok) { _caOpcoes = r.itens || {}; _caOpcoesEm = Date.now(); }
+  return _caOpcoes || {};
+}
+const caMotivoExige = (motivo) => /^(recebimento sc|compra|doacao|garantia)/.test(String(motivo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase());
+
+// Atendimento: item com 2+ CAs ativos ganha a escolha, já marcada com a marca sugerida
+async function caPrepararItensAtend() {
+  const faltam = ATEND.itens.filter(it => !it.caPronto);
+  if (!faltam.length) return;
+  const ops = await caOpcoesCarregar();
+  faltam.forEach(it => {
+    const op = ops[it.itemId];
+    const ativos = (op?.cas || []).filter(c => c.ativo);
+    it.caPronto = true;
+    if (ativos.length >= 2) {
+      it.caOpcoes = ativos;
+      const sug = op.sugestao || {};
+      const s1 = [sug.armazens?.[it.armazemId], sug.filial, sug.entregue].find(c => c && ativos.some(a => a.ca === c));
+      it.caEscolhido = s1 || '';
+    } else {
+      it.caOpcoes = [];
+      it.caEscolhido = ativos.length === 1 ? ativos[0].ca : '';
+    }
+  });
+  renderItensAtendimento();
+}
+function caEscolherAtend(i, ca) { if (ATEND.itens[i]) { ATEND.itens[i].caEscolhido = ca; renderItensAtendimento(); } }
+
+// Recebimento/entrada: campo do CA que chegou. Item com CA cadastrado: escolhe a marca (ou digita
+// outro número); EPI ainda sem CA: campo opcional; "não tem CA" ou fora de EPI: nada.
+function caCampoEntrada(itemId) {
+  const op = (_caOpcoes || {})[itemId];
+  const it = (_itens || []).find(i => i.id === itemId);
+  if (op?.dispensado || it?.ca_dispensado) return '';
+  const cas = op?.cas || [];
+  if (!cas.length) {
+    if (String(it?.categoria || '').trim().toUpperCase() !== 'EPI') return '';
+    return `<div class="ca-entrada" style="margin-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <span style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">CA (se tiver)</span>
+      <input class="form-input ca-entrada-input" inputmode="numeric" maxlength="12" placeholder="Nº do CA" style="width:110px;font-size:11px;padding:4px 8px"></div>`;
+  }
+  const ativos = cas.filter(c => c.ativo);
+  const pre = ativos.length === 1 ? ativos[0].ca : '';
+  return `<div class="ca-entrada" style="margin-top:6px">
+    <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CA que chegou *</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+      ${cas.map(c => `<button type="button" class="ca-chip" data-ca="${escHtml(c.ca)}" onclick="caChipEntrada(this)" title="${escHtml(c.fabricante || '')}"
+        style="font-size:11px;padding:3px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}${c.ativo ? '' : ' (não compramos mais)'}</button>`).join('')}
+      <input class="form-input ca-entrada-input" inputmode="numeric" maxlength="12" value="${escHtml(pre)}" placeholder="Outro CA" oninput="caMarcarChips(this)" style="width:95px;font-size:11px;padding:4px 8px">
+    </div></div>`;
+}
+function caChipEntrada(btn) {
+  const inp = btn.closest('.ca-entrada')?.querySelector('.ca-entrada-input');
+  if (!inp) return;
+  inp.value = btn.dataset.ca;
+  caMarcarChips(inp);
+}
+function caMarcarChips(inp) {
+  const v = String(inp.value || '').replace(/\D/g, '').replace(/^0+/, '');
+  inp.closest('.ca-entrada')?.querySelectorAll('.ca-chip').forEach(b => {
+    const sel = b.dataset.ca === v;
+    b.style.background = sel ? 'var(--accent)' : 'var(--bg-card)';
+    b.style.color = sel ? '#fff' : 'var(--text-1)';
+    b.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
+    b.style.fontWeight = sel ? '700' : '500';
+  });
+}
+async function caPrepararRecebimento() {
+  await caOpcoesCarregar(true);
+  document.querySelectorAll('#recItensBody .rec-ca-box').forEach(box => { box.innerHTML = caCampoEntrada(box.dataset.itemId); });
+  document.querySelectorAll('#recItensBody .ca-entrada-input').forEach(caMarcarChips);
+}
+let _entCaSeq = 0;
+async function entRenderCa() {
+  const box = document.getElementById('entCaBox');
+  if (!box) return;
+  const seq = ++_entCaSeq;   // trocou item ou motivo enquanto carregava: só a última chamada desenha
+  if (!_entItemSel || !caMotivoExige(document.getElementById('entMotivo')?.value)) { box.innerHTML = ''; return; }
+  await caOpcoesCarregar();
+  if (seq !== _entCaSeq) return;
+  box.innerHTML = caCampoEntrada(_entItemSel.id);
+  box.querySelectorAll('.ca-entrada-input').forEach(caMarcarChips);
+}
+
+// Confere os CAs com o servidor antes de gravar. Devolve { extras: { item_id: campos da entrada } }
+// ou null quando falta algo ou a pessoa desistiu na confirmação.
+async function caConferirRecebimento(linhas) {
+  const r = await api('/ca/conferir-entrada', { method: 'POST', body: JSON.stringify({ itens: linhas }) });
+  if (!r?.ok) {
+    if (r && /Rota não encontrada/.test(r.erro || '')) return { extras: Object.fromEntries(linhas.map(l => [l.item_id, {}])) };   // servidor ainda sem a Gestão de CA
+    toast(r?.erro || 'Não foi possível conferir o CA', 'error'); return null;
+  }
+  for (const c of r.itens) {
+    if (c.status === 'falta') { toast(`Informe o CA que chegou de "${c.descricao}" (o item tem CA cadastrado)`, 'warn', 6000); return null; }
+    if (c.status === 'invalido') { toast(`Número do CA inválido em "${c.descricao}"`, 'warn', 6000); return null; }
+    if (c.status === 'item_nao_encontrado') { toast('Item não encontrado nesta filial', 'error'); return null; }
+  }
+  const problemas = r.itens.filter(c => c.status === 'novo' || c.status === 'inativo' || c.vencido);
+  let dec = {};
+  if (problemas.length) { dec = await caConfirmarEntrada(problemas); if (!dec) return null; }
+  if (problemas.some(c => c.status === 'novo' || c.status === 'inativo')) _caOpcoesEm = 0;
+  return { extras: Object.fromEntries(r.itens.map(c => [c.item_id, { ca: c.ca || '', cadastrar_ca: !!dec[c.item_id]?.cadastrar,
+    marca: dec[c.item_id]?.marca || '', confirmar_vencido: !!dec[c.item_id]?.vencido }])) };
+}
+function caConfirmarEntrada(problemas) {
+  return new Promise(resolve => {
+    document.getElementById('modalCaConfEntrada')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalCaConfEntrada'; ov.style.zIndex = '10000';
+    const fechar = (valor) => { ov.remove(); resolve(valor); };
+    ov.innerHTML = `
+      <div class="modal-box" style="max-width:580px;width:100%">
+        <div class="modal-header"><div class="modal-title">🛡️ Confira o CA antes de receber</div>
+          <button class="modal-close" data-acao="cancelar">×</button></div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:65vh;overflow-y:auto">
+          ${problemas.map((c, k) => `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)" data-item="${escHtml(c.item_id)}">
+            <div style="font-weight:600;font-size:13px">${escHtml(c.descricao)}</div>
+            ${c.status === 'novo' ? `<div style="font-size:12px;color:var(--text-2);margin-top:6px">O CA <strong>${escHtml(c.ca)}</strong> não está cadastrado neste item${c.cadastrados.length ? ` (cadastrados: ${c.cadastrados.map(x => `${escHtml(x.marca || '—')} ${escHtml(x.ca)}`).join(', ')})` : ''}.</div>
+              <div style="font-size:12px;margin-top:4px">${c.no_mte ? `Na base do MTE: <strong>${escHtml(c.fabricante || '—')}</strong>${c.equipamento ? ` · ${escHtml(c.equipamento)}` : ''}${c.validade ? ` · validade ${caDataBR(c.validade)}` : ''}` : '<span style="color:#b45309">⚠️ Número não encontrado na base do MTE — confira na nota/etiqueta.</span>'}</div>
+              <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><label class="form-label" style="margin:0">Marca</label>
+                <input class="form-input" data-marca maxlength="80" value="${escHtml(c.marca || '')}" style="width:200px;font-size:12px"></div>
+              <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;cursor:pointer"><input type="checkbox" data-cadastrar> Cadastrar como nova marca deste item (vale para todos os tamanhos)</label>` : ''}
+            ${c.status === 'inativo' ? `<div style="font-size:12px;color:var(--text-2);margin-top:6px">O CA <strong>${escHtml(c.ca)}</strong> estava marcado como "não compramos mais" — ele volta a valer.</div>` : ''}
+            ${c.vencido ? `<div style="font-size:12px;color:var(--red);margin-top:8px;font-weight:600">⛔ CA ${escHtml(c.ca)} ${c.situacao === 'cancelado' ? 'cancelado' : 'vencido'} na base do MTE${c.validade ? ` (validade ${caDataBR(c.validade)})` : ''}.</div>
+              <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:12px;cursor:pointer"><input type="checkbox" data-vencido> Recebo mesmo assim (fica registrado no histórico)</label>` : ''}
+          </div>`).join('')}
+          <div data-erro style="font-size:12px;color:var(--red);min-height:14px"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" data-acao="cancelar">Cancelar</button>
+          <button class="btn btn-primary" data-acao="ok">Confirmar e receber</button>
+        </div>
+      </div>`;
+    ov.addEventListener('click', (e) => {
+      const acao = e.target.closest('[data-acao]')?.dataset.acao;
+      if (acao === 'cancelar') return fechar(null);
+      if (acao !== 'ok') return;
+      const dec = {};
+      for (const c of problemas) {
+        const box = ov.querySelector(`[data-item="${CSS.escape(c.item_id)}"]`);
+        const d = { cadastrar: !!box.querySelector('[data-cadastrar]')?.checked, vencido: !!box.querySelector('[data-vencido]')?.checked,
+          marca: (box.querySelector('[data-marca]')?.value || '').trim() };
+        if (c.status === 'novo' && !d.cadastrar) { ov.querySelector('[data-erro]').textContent = `Marque "Cadastrar como nova marca" em ${c.descricao} — ou cancele e corrija o número.`; return; }
+        if (c.status === 'novo' && !d.marca) { ov.querySelector('[data-erro]').textContent = `Informe a marca do CA ${c.ca}.`; return; }
+        if (c.vencido && !d.vencido) { ov.querySelector('[data-erro]').textContent = `Confirme o recebimento com CA vencido/cancelado em ${c.descricao} — ou cancele.`; return; }
+        dec[c.item_id] = d;
+      }
+      fechar(dec);
+    });
+    document.body.appendChild(ov);
+  });
+}
+async function caDispensar(itemId, dispensado) {
+  const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/dispensa`, { method: 'POST', body: JSON.stringify({ dispensado }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro', 'error'); return; }
+  toast(dispensado ? 'Marcado como item que não tem CA' : 'O item volta a precisar de CA', 'success');
+  _caOpcoesEm = 0;
+  caCarregar();
 }
 
 function aplicarPermissoesMenu() {
@@ -20870,6 +21065,7 @@ function abrirRecebimentoSC() {
             </div>
           </div>
         </label>
+        <div class="rec-ca-box" data-item-id="${escHtml(it.itemId)}" style="margin-left:24px"></div>
       </td>
       <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">
         <input type="number" min="1" max="${pendente}" value="${pendente}" class="form-input rec-qtd"
@@ -20894,6 +21090,7 @@ function abrirRecebimentoSC() {
   document.getElementById('recSCTotal').textContent = '';
   document.getElementById('modalVerSC').classList.add('hidden');
   document.getElementById('modalRecSC').classList.remove('hidden');
+  caPrepararRecebimento();
 }
 
 function toggleRecItem(idx) {
@@ -21052,6 +21249,16 @@ async function confirmarRecebimentoSC() {
     }
   }
 
+  // CA que chegou (Gestão de CA, 19/10/2026): confere tudo antes de lançar qualquer entrada
+  const linhasCa = [];
+  for (let i = 0; i < checks.length; i++) {
+    if (!checks[i].checked) continue;
+    const linha = document.getElementById(`recRow_${checks[i].dataset.idx}`);
+    linhasCa.push({ item_id: qtdEls[i].dataset.itemId, ca: linha?.querySelector('.ca-entrada-input')?.value || '' });
+  }
+  const conferenciaCa = linhasCa.length ? await caConferirRecebimento(linhasCa) : { extras: {} };
+  if (!conferenciaCa) return;   // o finally abaixo devolve o botão
+
   for (let i = 0; i < checks.length; i++) {
     if (!checks[i].checked) continue;
     algumSelecionado = true;
@@ -21077,9 +21284,10 @@ async function confirmarRecebimentoSC() {
         quantidade: qtdRec,
         motivo: `Recebimento SC ${sc.numero_sc}${nf?` — NF ${nf}`:''}`,
         observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'}`,
+        ...(conferenciaCa.extras[itemId] || {}),
       })
     });
-    if (!res?.ok) { toast(`Erro ao lançar ${itemNome}`, 'error'); return; }
+    if (!res?.ok) { toast(res?.erro ? `${itemNome}: ${res.erro}` : `Erro ao lançar ${itemNome}`, 'error', 7000); return; }
 
     // Preço pago desta NF: vai para o financeiro e o servidor atualiza o cadastro se mudou.
     precosDestaOp.push({ item_id: itemId, quantidade: qtdRec, valor_unitario: valorUn });
