@@ -8518,7 +8518,7 @@ async function verificarTokenAssinatura() {
             </tr></thead>
             <tbody>
               ${itens.map(it => `<tr>
-                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}${/^\d+$/.test(String(it.ca||'')) ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">CA ${escHtml(it.ca)}${it.marca ? ` · ${escHtml(it.marca)}` : ''}</div>` : ''}</td>
+                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}${/^\d+( \/ \d+)*$/.test(String(it.ca||'')) ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">CA ${escHtml(it.ca)}${it.marca ? ` · ${escHtml(it.marca)}` : ''}</div>` : ''}</td>
                 <td style="padding:8px 4px;font-size:12px;text-align:center;color:#e2e8f0;border-bottom:1px solid #1e293b;white-space:nowrap">${it.quantidade} ${it.unidade||'UN'}</td>
                 <td style="padding:8px 4px;font-size:11px;color:#94a3b8;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.motivo||'—')}</td>
               </tr>`).join('')}
@@ -12620,7 +12620,7 @@ function renderItemAtendimento(it, i) {
     <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Marca (CA) entregue ${it.caEscolhido ? '' : '<span style="color:var(--red);text-transform:none;letter-spacing:0;font-weight:600">· escolha a marca</span>'}</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">${it.caOpcoes.map(c => `<button type="button" onclick="caEscolherAtend(${i},'${escJs(c.ca)}')"
       style="font-size:11px;padding:4px 9px;border-radius:999px;cursor:pointer;border:1px solid ${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--border)'};background:${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--bg-card)'};color:${it.caEscolhido === c.ca ? '#fff' : 'var(--text-1)'};font-weight:${it.caEscolhido === c.ca ? 700 : 500}">
-      ${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}</button>`).join('')}</div>` : '';
+      ${c.conjunto ? '🧩 ' : ''}${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}</button>`).join('')}</div>` : '';
 
   return `<tr>
     <td class="td-main">
@@ -18668,7 +18668,8 @@ const CA_SIT = {
 };
 const CA_ACOES = { INCLUIDO: 'Incluído', REATIVADO: 'Voltou a valer', INATIVADO: 'Não compramos mais', REMOVIDO: 'Tirado do item', EDITADO: 'Editado',
   MIGRADO: 'Veio do cadastro do item', RENOVADO_MTE: 'Renovado (base do MTE)', SITUACAO_MTE: 'Base do MTE', MTE_NAO_ENCONTRADO: 'Base do MTE',
-  DISPENSADO: 'Não tem CA', DISPENSA_DESFEITA: 'Voltou a precisar de CA', RECEBIDO_VENCIDO: 'Recebido com CA vencido' };
+  DISPENSADO: 'Não tem CA', DISPENSA_DESFEITA: 'Voltou a precisar de CA', RECEBIDO_VENCIDO: 'Recebido com CA vencido',
+  CONJUNTO: 'Juntado em conjunto', CONJUNTO_SEPARADO: 'Conjunto desfeito' };
 const caDataBR = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—';
 const caPodeMexer = () => temPermissao('gerenciar_ca');
 const caSem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -18772,13 +18773,69 @@ function caChip(gr, c) {
     <span style="font-size:12px;font-weight:700;color:var(--text-1);${c.ativo ? '' : 'text-decoration:line-through;'}">CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')}${aviso ? ' ⚠️' : ''}</span>
     <span style="font-size:10px;font-weight:600;color:${cor}">${escHtml(c.ativo ? caPrazo(c) : 'Não compramos mais')}</span></button>`;
 }
+// CAs do item: os do mesmo conjunto ficam numa caixa só ("🧩 Conjunto")
+function caCelulaCas(gr) {
+  const blocos = [], porConj = new Map();
+  gr.cas.forEach(c => {
+    if (!c.conjunto) return blocos.push({ cas: [c] });
+    if (!porConj.has(c.conjunto)) { const b = { conjunto: c.conjunto, cas: [] }; porConj.set(c.conjunto, b); blocos.push(b); }
+    porConj.get(c.conjunto).cas.push(c);
+  });
+  return blocos.map(b => !b.conjunto ? caChip(gr, b.cas[0]) : `<div style="display:inline-flex;flex-direction:column;gap:3px;padding:4px 6px;border:1px dashed var(--border);border-radius:12px">
+    <div style="font-size:10px;color:var(--text-3)">🧩 Conjunto · na ficha sai "${escHtml(b.cas.filter(c => c.ativo).map(c => c.ca).join(' / ') || b.cas.map(c => c.ca).join(' / '))}"${caPodeMexer() ? ` · <a href="#" style="color:var(--accent-text)" onclick="caSeparar('${escJs(gr.item_id)}','${escJs(b.cas[0].ca)}');return false">separar</a>` : ''}</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap">${b.cas.map(c => caChip(gr, c)).join('')}</div></div>`).join('');
+}
+function caAvisoConjunto(gr) {
+  if (!caPodeMexer()) return '';
+  const soltos = gr.cas.filter(c => c.ativo && !c.conjunto);
+  const aviso = (gr.parece_conjunto || []).map(lista => `<div style="margin-top:6px;font-size:11px;color:#b45309">🧩 CA ${lista.map(escHtml).join(' + ')} parecem um conjunto (mesmo fabricante, peças diferentes).
+    <button class="btn btn-ghost" style="padding:2px 8px;font-size:11px;margin-left:4px" onclick="caJuntar('${escJs(gr.item_id)}','${escJs(lista.join(','))}')">Juntar em conjunto</button></div>`).join('');
+  const manual = soltos.length >= 2 && !(gr.parece_conjunto || []).length
+    ? `<div style="margin-top:4px"><a href="#" style="font-size:11px" onclick="caJuntarEscolher('${escJs(gr.item_id)}');return false">🧩 Juntar CAs em conjunto</a></div>` : '';
+  return aviso + manual;
+}
+async function caJuntar(itemId, lista) {
+  const cas = String(lista).split(',').filter(Boolean);
+  const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/conjunto`, { method: 'POST', body: JSON.stringify({ cas }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao juntar', 'error'); return; }
+  document.getElementById('modalCaJuntar')?.remove();
+  toast(`Conjunto feito: na entrega saem juntos (${r.cas.join(' / ')})`, 'success');
+  _caOpcoesEm = 0;
+  caCarregar();
+}
+async function caSeparar(itemId, ca) {
+  if (!confirm('Desfazer o conjunto? Cada CA volta a ser uma opção separada na entrega.')) return;
+  const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/separar`, { method: 'POST', body: JSON.stringify({ ca }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao separar', 'error'); return; }
+  toast('Conjunto desfeito', 'success');
+  _caOpcoesEm = 0;
+  caCarregar();
+}
+function caJuntarEscolher(itemId) {
+  const gr = _ca.dados.grupos.find(x => x.itens.some(i => i.id === itemId));
+  const soltos = (gr?.cas || []).filter(c => c.ativo && !c.conjunto);
+  document.getElementById('modalCaJuntar')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalCaJuntar';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = `<div class="modal-box" style="max-width:480px;width:100%">
+    <div class="modal-header"><div class="modal-title">🧩 Juntar CAs em conjunto</div><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:12px;color:var(--text-2)">${escHtml(gr?.nome || '')}: marque os CAs das peças que vêm juntas (ex.: calça + jaqueta). Na entrega eles viram uma opção só e a ficha sai com todos.</div>
+      ${soltos.map(c => `<label style="display:flex;gap:8px;align-items:center;font-size:12px;cursor:pointer"><input type="checkbox" value="${escHtml(c.ca)}"> CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')} <span style="color:var(--text-3)">${escHtml(c.equipamento || '')}</span></label>`).join('')}
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+      <button class="btn btn-primary" onclick="caJuntar('${escJs(itemId)}', [...document.querySelectorAll('#modalCaJuntar input:checked')].map(i => i.value).join(','))">Juntar</button></div></div>`;
+  document.body.appendChild(ov);
+}
+
 function caRender() {
   const lista = caGruposFiltrados();
   const foco = _ca.foco && _ca.dados.grupos.find(gr => gr.itens.some(i => i.id === _ca.foco));
   document.getElementById('caFoco').innerHTML = _ca.foco ? `Só ${escHtml(foco?.nome || 'o item escolhido')} · <a href="#" onclick="_ca.foco=null;caRender();return false">ver todos</a>` : '';
   document.getElementById('caBody').innerHTML = lista.map(gr => `<tr>
     <td><div style="font-weight:600">${escHtml(gr.nome)}</div><div style="font-size:10px;color:var(--text-3)">${gr.itens.length > 1 ? `${gr.itens.length} tamanhos · ` : ''}${escHtml(gr.itens.map(i => i.codigo).filter(Boolean).slice(0, 3).join(', '))}${gr.itens.length > 3 ? '…' : ''}${gr.epi ? '' : ` · ${escHtml(gr.categoria || 'sem categoria')}`}</div></td>
-    <td><div style="display:flex;gap:6px;flex-wrap:wrap">${gr.cas.map(c => caChip(gr, c)).join('') || `<span style="font-size:11px;color:var(--text-3)">${gr.situacao === 'dispensado' ? 'Item que não tem CA — não pede CA no recebimento nem na entrega' : 'Nenhum CA cadastrado'}</span>`}</div></td>
+    <td><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-start">${caCelulaCas(gr) || `<span style="font-size:11px;color:var(--text-3)">${gr.situacao === 'dispensado' ? 'Item que não tem CA — não pede CA no recebimento nem na entrega' : 'Nenhum CA cadastrado'}</span>`}</div>${caAvisoConjunto(gr)}</td>
     <td>${caSelo(gr.situacao)}</td>
     <td style="text-align:right;white-space:nowrap">${caPodeMexer() ? `${gr.situacao === 'sem_ca' ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" title="Item da categoria EPI que não tem CA (ex.: bolsa da luva isolante): sai do alerta e não pede CA" onclick="caDispensar('${escJs(gr.item_id)}',true)">Não tem CA</button> ` : ''}${gr.situacao === 'dispensado' ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caDispensar('${escJs(gr.item_id)}',false)">Precisa de CA</button>` : `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caNovo('${escJs(gr.item_id)}')">＋ CA</button>`}` : ''}</td></tr>`).join('')
     || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">${_ca.dados.grupos.length ? 'Nada com esses filtros.' : 'Nenhum EPI cadastrado nesta filial.'}</td></tr>`;
@@ -18836,6 +18893,7 @@ function caAbrirCa(itemId, numero) {
       </div>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:68vh;overflow-y:auto">
         <div>${caSelo(c.ativo ? c.situacao : 'inativo', c.ativo ? caPrazo(c) : 'Não compramos mais')}</div>
+        ${c.conjunto ? `<div style="font-size:12px;color:var(--text-2)">🧩 Faz parte do conjunto CA ${escHtml(gr.cas.filter(x => x.conjunto === c.conjunto).map(x => x.ca).join(' + '))}: na entrega saem juntos, e "não compramos mais" vale para o conjunto inteiro.</div>` : ''}
         ${!c.ativo ? `<div style="font-size:12px;color:var(--text-2)">Marcado como "não compramos mais"${c.inativado_por ? ` por ${escHtml(c.inativado_por)}` : ''}${c.inativado_em ? ` em ${caDataBR(c.inativado_em)}` : ''}${c.motivo_inativacao ? ` — ${escHtml(c.motivo_inativacao)}` : ''}. Não sai nas entregas novas.</div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${campo('Fabricante', escHtml(c.fabricante || '—'))}${campo('CNPJ', escHtml(c.cnpj || '—'))}
@@ -19065,12 +19123,14 @@ function caExcel() {
     const base = { item: gr.nome, tamanhos: gr.itens.length, codigos: gr.itens.map(i => i.codigo).filter(Boolean).join(', '), situacao_item: CA_SIT[gr.situacao]?.[0] || gr.situacao };
     if (!gr.cas.length) linhas.push({ ...base });
     gr.cas.forEach(c => linhas.push({ ...base, ca: c.ca, marca: c.marca, fabricante: c.fabricante, validade_br: caDataBR(c.validade),
-      situacao_ca: c.ativo ? caPrazo(c) : 'Não compramos mais', mte_txt: caMteTexto(c) }));
+      situacao_ca: c.ativo ? caPrazo(c) : 'Não compramos mais', mte_txt: caMteTexto(c),
+      conjunto_txt: c.conjunto ? gr.cas.filter(x => x.conjunto === c.conjunto).map(x => x.ca).join(' + ') : '' }));
   });
   if (!linhas.length) return toast('Nada para exportar', 'warn');
   gcaExportarExcel('Gestao_de_CA', linhas, [{ key: 'item', label: 'Item' }, { key: 'tamanhos', label: 'Tamanhos' }, { key: 'codigos', label: 'Códigos' },
     { key: 'situacao_item', label: 'Situação do item' }, { key: 'ca', label: 'CA' }, { key: 'marca', label: 'Marca' }, { key: 'fabricante', label: 'Fabricante' },
-    { key: 'validade_br', label: 'Validade' }, { key: 'situacao_ca', label: 'Situação do CA' }, { key: 'mte_txt', label: 'Base do MTE' }]);
+    { key: 'validade_br', label: 'Validade' }, { key: 'situacao_ca', label: 'Situação do CA' }, { key: 'mte_txt', label: 'Base do MTE' },
+    { key: 'conjunto_txt', label: 'Conjunto' }]);
 }
 
 // ── CA na entrada e na entrega (19/10/2026, pedido da segurança: a ficha leva o CA da peça entregue) ──
@@ -19090,16 +19150,16 @@ async function caPrepararItensAtend() {
   const ops = await caOpcoesCarregar();
   faltam.forEach(it => {
     const op = ops[it.itemId];
-    const ativos = (op?.cas || []).filter(c => c.ativo);
+    const opcoes = op?.opcoes || [];   // conjunto (ex.: calça + jaqueta) é uma opção só: "36984 / 36985"
     it.caPronto = true;
-    if (ativos.length >= 2) {
-      it.caOpcoes = ativos;
+    if (opcoes.length >= 2) {
+      it.caOpcoes = opcoes;
       const sug = op.sugestao || {};
-      const s1 = [sug.armazens?.[it.armazemId], sug.filial, sug.entregue].find(c => c && ativos.some(a => a.ca === c));
+      const s1 = [sug.armazens?.[it.armazemId], sug.filial, sug.entregue].find(c => c && opcoes.some(a => a.ca === c));
       it.caEscolhido = s1 || '';
     } else {
       it.caOpcoes = [];
-      it.caEscolhido = ativos.length === 1 ? ativos[0].ca : '';
+      it.caEscolhido = opcoes.length === 1 ? opcoes[0].ca : '';
     }
   });
   renderItensAtendimento();
@@ -19119,14 +19179,16 @@ function caCampoEntrada(itemId) {
       <span style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">CA (se tiver)</span>
       <input class="form-input ca-entrada-input" inputmode="numeric" maxlength="12" placeholder="Nº do CA" style="width:110px;font-size:11px;padding:4px 8px"></div>`;
   }
-  const ativos = cas.filter(c => c.ativo);
-  const pre = ativos.length === 1 ? ativos[0].ca : '';
+  const opcoes = op?.opcoes || [];
+  const pre = opcoes.length === 1 ? opcoes[0].ca : '';
+  const botoes = [...opcoes.map(o => ({ ca: o.ca, rotulo: `${o.conjunto ? '🧩 ' : ''}${o.marca || '—'} · CA ${o.ca}` })),
+    ...cas.filter(c => !c.ativo).map(c => ({ ca: c.ca, rotulo: `${c.marca || '—'} · CA ${c.ca} (não compramos mais)` }))];
   return `<div class="ca-entrada" style="margin-top:6px">
     <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CA que chegou *</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-      ${cas.map(c => `<button type="button" class="ca-chip" data-ca="${escHtml(c.ca)}" onclick="caChipEntrada(this)" title="${escHtml(c.fabricante || '')}"
-        style="font-size:11px;padding:3px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}${c.ativo ? '' : ' (não compramos mais)'}</button>`).join('')}
-      <input class="form-input ca-entrada-input" inputmode="numeric" maxlength="12" value="${escHtml(pre)}" placeholder="Outro CA" oninput="caMarcarChips(this)" style="width:95px;font-size:11px;padding:4px 8px">
+      ${botoes.map(b => `<button type="button" class="ca-chip" data-ca="${escHtml(b.ca)}" onclick="caChipEntrada(this)"
+        style="font-size:11px;padding:3px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${escHtml(b.rotulo)}</button>`).join('')}
+      <input class="form-input ca-entrada-input" maxlength="40" value="${escHtml(pre)}" placeholder="Outro CA" oninput="caMarcarChips(this)" style="width:120px;font-size:11px;padding:4px 8px">
     </div></div>`;
 }
 function caChipEntrada(btn) {
@@ -19135,10 +19197,12 @@ function caChipEntrada(btn) {
   inp.value = btn.dataset.ca;
   caMarcarChips(inp);
 }
+// "36985 / 36984" e "36984 / 36985" são o mesmo conjunto
+const caChave = (txt) => (String(txt || '').match(/\d+/g) || []).map(n => n.replace(/^0+/, '')).filter(Boolean).sort((a, b) => a - b).join('/');
 function caMarcarChips(inp) {
-  const v = String(inp.value || '').replace(/\D/g, '').replace(/^0+/, '');
+  const v = caChave(inp.value);
   inp.closest('.ca-entrada')?.querySelectorAll('.ca-chip').forEach(b => {
-    const sel = b.dataset.ca === v;
+    const sel = !!v && caChave(b.dataset.ca) === v;
     b.style.background = sel ? 'var(--accent)' : 'var(--bg-card)';
     b.style.color = sel ? '#fff' : 'var(--text-1)';
     b.style.borderColor = sel ? 'var(--accent)' : 'var(--border)';
