@@ -1018,6 +1018,7 @@ window.addEventListener('pageshow', function(e) {
         </div>
         <div class="nav-group-items">
           <button class="nav-item" data-view="ficha-epi" data-perm="ficha_epi" onclick="showView('ficha-epi',this)"><span class="ni-icon">🔖</span> Ficha EPI</button>
+          <button class="nav-item" data-view="gestao-ca" data-perm="ver_ca|gerenciar_ca" onclick="showView('gestao-ca',this)"><span class="ni-icon">🛡️</span> Gestão de CA</button>
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon">📝</span> Laudos NR10</button>
           <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon">🚗</span> Laudos Viaturas</button>
           <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon">🗑️</span> Descarte</button>
@@ -1248,7 +1249,9 @@ window.addEventListener('pageshow', function(e) {
                 <div><label class="form-label">Durabilidade (dias)</label><input id="itemDurabilidade" class="form-input" type="number" min="1" placeholder="180"></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">CA</label><input id="itemCA" class="form-input" placeholder="Ex: 12345"></div>
+                <div><label class="form-label">CA <span style="font-weight:400;color:var(--text-3)">· pela Gestão de CA</span></label>
+                  <div style="display:flex;gap:4px"><input id="itemCA" class="form-input" readonly tabindex="-1" placeholder="Cadastre na Gestão de CA" title="O CA é mantido pela Gestão de CA (um por marca, com validade)" style="background:var(--bg-hover);cursor:default">
+                  <button type="button" class="btn btn-ghost" onclick="itemAbrirGestaoCa()" title="Abrir a Gestão de CA deste item" style="padding:0 10px">🛡️</button></div></div>
                 <div><label class="form-label">Posição (Corredor/Prat./Box)</label>
                   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
                     <input id="itemCorredor" class="form-input" placeholder="C1" style="font-size:11px">
@@ -2792,6 +2795,56 @@ window.addEventListener('pageshow', function(e) {
             </table></div>
             <div id="urRodape" style="padding:10px 16px;font-size:11px;color:var(--text-3)"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ── GESTÃO DE CA (19/10/2026) ── -->
+      <div class="view" id="view-gestao-ca">
+        <div class="card" style="overflow:visible">
+          <div class="card-header" style="flex-wrap:wrap;gap:10px">
+            <div><div class="card-title">🛡️ Gestão de CA</div><div class="card-sub">Os CAs de cada EPI, um por marca, com a validade. O cadastro do item e a ficha de EPI usam os CAs ativos.</div></div>
+            <div class="card-actions" style="flex-wrap:wrap">
+              <button class="btn btn-ghost" id="caBtnTeste" onclick="caEmailTeste()" title="Manda o e-mail de vencimento de CA para a lista de alertas dos laudos NR10">📧 E-mail de teste</button>
+              <button class="btn btn-ghost" id="caBtnMte" onclick="caAtualizarMte()">🔄 Atualizar base do MTE</button>
+              <button class="btn btn-ghost" onclick="caExcel()">📊 Excel</button>
+              <button class="btn btn-primary" id="caBtnNovo" onclick="caNovo()">＋ Adicionar CA</button>
+            </div>
+          </div>
+          <div id="caBase" style="padding:10px 16px;font-size:11px;line-height:1.5;color:var(--text-3);border-bottom:1px solid var(--border)"></div>
+          <div id="caResumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px 16px"></div>
+          <div style="display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--border)">
+            <button class="atend-tab active" data-ca-aba="itens" onclick="caAba('itens')">📦 Por item</button>
+            <button class="atend-tab" data-ca-aba="cas" onclick="caAba('cas')">🛡️ CAs cadastrados</button>
+            <button class="atend-tab" data-ca-aba="hist" onclick="caAba('hist')">🕘 Histórico</button>
+          </div>
+          <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="search-box" type="text" id="caBusca" placeholder="Buscar item, código, CA, marca ou fabricante…" oninput="caRenderAba()" style="width:300px;max-width:100%">
+            <select class="form-input" id="caFiltroSit" style="width:210px;font-size:11px" onchange="_ca.filtroSit=this.value;caRenderResumo();caRenderAba()">
+              <option value="">Todas as situações</option>
+              <option value="valido">Em dia</option>
+              <option value="vencendo">Vencendo em até 60 dias</option>
+              <option value="vencido">Vencido ou cancelado</option>
+              <option value="sem_ca">EPI sem CA</option>
+              <option value="sem_validade">CA sem validade</option>
+              <option value="nao_encontrado">CA não achado no MTE</option>
+              <option value="inativo">Com CA que não compramos mais</option>
+            </select>
+            <span id="caFoco" style="font-size:12px;color:var(--text-2)"></span>
+            <span id="caContagem" style="margin-left:auto;font-size:11px;color:var(--text-3)"></span>
+          </div>
+          <div id="caAbaItens" style="overflow-x:auto"><table>
+            <thead><tr><th style="min-width:200px">Item</th><th>CAs (clique para ver, renovar ou tirar)</th><th>Situação</th><th></th></tr></thead>
+            <tbody id="caBody"></tbody>
+          </table></div>
+          <div id="caAbaCas" style="overflow-x:auto;display:none"><table>
+            <thead><tr><th>CA</th><th>Marca</th><th>Fabricante</th><th>Equipamento</th><th>Validade</th><th>Situação</th><th>Base do MTE</th><th>Itens</th></tr></thead>
+            <tbody id="caBodyCas"></tbody>
+          </table></div>
+          <div id="caAbaHist" style="overflow-x:auto;display:none"><table>
+            <thead><tr><th>Quando</th><th>Quem</th><th>CA</th><th>Item</th><th>O que mudou</th></tr></thead>
+            <tbody id="caBodyHist"></tbody>
+          </table></div>
+          <div style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5">Todos os tamanhos de um item recebem os mesmos CAs. CA vencido continua saindo na ficha de EPI até alguém marcar "Não compramos mais" (o estoque pode ter peças compradas quando o CA valia). As fichas já emitidas guardam o CA do dia da entrega.</div>
         </div>
       </div>
 
@@ -7682,7 +7735,7 @@ const VIEW_TITLES = {
   financeiro:['Financeiro','/ Painel'], 'solicitacoes-compra':['Solicitações de Compra',''], protheus:['Protheus','/ Lançamentos'],
   'atendimento-enel':['ENEL','/ Atendimento'], 'devolucao-enel':['ENEL','/ Devolução'],
   medidores:['ENEL','/ Medidores'], 'estoque-enel':['ENEL','/ Estoque'],
-  'ficha-epi':['Ficha EPI',''], laudos:['Laudos','/ NR10'], viaturas:['Laudos','/ Viaturas'],
+  'ficha-epi':['Ficha EPI',''], 'gestao-ca':['Gestão de CA','/ Gestão'], laudos:['Laudos','/ NR10'], viaturas:['Laudos','/ Viaturas'],
   descarte:['Gestão','/ Descarte'], recuperados:['Gestão','/ Recuperados'],
   indicadores:['Indicadores','/ Relatórios'], colaboradores:['Colaboradores','/ Cadastro'],
   itens:['Itens','/ Cadastro'], armazens:['Armazéns','/ Cadastro'],
@@ -7840,6 +7893,7 @@ function onViewLoad(nome) {
   if (nome === 'consulta-colaboradores') carregarConsultaColabs();
   if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
   if (nome === 'consulta-ultima-retirada') urInit();
+  if (nome === 'gestao-ca')          { caInit(window._caFocoPendente || null); window._caFocoPendente = null; }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
     if (!_colaboradores.length) carregarColaboradoresAtendimento();
@@ -9816,6 +9870,7 @@ function abrirModalItem(id) {
         </div>
       </div>
       <div class="modal-footer">
+        ${temPermissao('ver_ca') || temPermissao('gerenciar_ca') ? `<button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove();itemAbrirGestaoCa('${escJs(item.id)}')">🛡️ CAs</button>` : ''}
         ${temPermissao('cadastrar_itens') ? `<button class="btn btn-ghost" onclick="abrirFichaTecnica('${escJs(item.id)}')">✏️ Ficha técnica</button>` : ''}
         ${temPermissao('consulta_itens') || temPermissao('cadastrar_itens') ? `<button class="btn btn-primary" onclick="emitirFichaTecnica('${escJs(item.id)}', this)">📄 Emitir ficha técnica</button>` : ''}
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
@@ -9881,7 +9936,11 @@ async function abrirFichaTecnica(id) {
         </div>` : ''}
         ${vazio ? '<div style="font-size:11px;color:var(--text-3)">Ficha ainda não preenchida: o CA e a descrição do cadastro já vieram como ponto de partida.</div>' : ''}
         ${res.herdada ? '<div style="font-size:11px;color:var(--text-3)">Esta ficha foi preenchida em outro tamanho do mesmo item e já vale para este.</div>' : ''}
-        ${FT_CAMPOS.map(([k, rot, dica, longo]) => `<div><label class="form-label" for="ft_${k}">${rot}</label>
+        ${(res.gestao_ca || []).length ? `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+          <div style="font-size:12px;font-weight:600;color:var(--text-1)">Marcas e CAs — vêm da Gestão de CA</div>
+          ${res.gestao_ca.map(c => `<div style="font-size:12px;color:var(--text-2);margin-top:4px">CA <strong>${escHtml(c.ca)}</strong> · ${escHtml(c.marca || '—')}${c.validade ? ` · validade ${escHtml(c.validade.split('-').reverse().join('/'))}` : ''}</div>`).join('')}
+          <div style="font-size:11px;color:var(--text-3);margin-top:6px">Para mudar, use a Gestão de CA (menu Gestão).</div></div>` : ''}
+        ${FT_CAMPOS.filter(([k]) => !((res.gestao_ca || []).length && (k === 'marcas' || k === 'cas'))).map(([k, rot, dica, longo]) => `<div><label class="form-label" for="ft_${k}">${rot}</label>
           ${longo ? `<textarea id="ft_${k}" class="form-input" rows="${k === 'outras' ? 4 : 2}" placeholder="${dica}" style="resize:vertical">${escHtml(valor(k))}</textarea>`
                   : `<input id="ft_${k}" class="form-input" value="${escHtml(valor(k))}">`}</div>`).join('')}
         <div>
@@ -9909,7 +9968,9 @@ async function abrirFichaTecnica(id) {
 async function ftSalvar(id, silencioso) {
   const corpo = {};
   FT_CAMPOS.forEach(([k, , , longo]) => {
-    const v = document.getElementById('ft_' + k)?.value || '';
+    const el = document.getElementById('ft_' + k);
+    if (!el) return;   // marcas/CAs da Gestão de CA não aparecem no formulário: ficam como estão
+    const v = el.value || '';
     corpo[k] = (k === 'marcas' || k === 'cas') ? v.split(/\r?\n/).map(x => x.trim()).filter(Boolean) : v;
   });
   const todos = document.getElementById('ftTodos');
@@ -17849,7 +17910,8 @@ const PERMISSOES_SCHEMA = {
     enel_cadastro:'Cadastrar material'
   }},
   gestao: { label:'Gestão', icon:'📊', itens:{
-    ficha_epi:'Ficha EPI', ver_laudos_viatura:'Laudos de Viaturas',
+    ficha_epi:'Ficha EPI', ver_ca:'Gestão de CA (ver)', gerenciar_ca:'Gestão de CA (cadastrar, renovar e tirar CA)',
+    ver_laudos_viatura:'Laudos de Viaturas',
     ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
     ver_indicadores:'Ver indicadores',
     painel_brasil:'Painel Brasil (todas as filiais da pessoa, lado a lado)'
@@ -18562,6 +18624,425 @@ function urExcel() {
      { key: 'proxima_br', label: 'Próxima troca' }, { key: 'situacao_txt', label: 'Situação' }, { key: 'outra', label: 'De outra filial' }]);
 }
 
+// ═══ Gestão de CA (19/10/2026) ═══
+// Os CAs de cada EPI (um por marca) com a validade e o que a base do Ministério do Trabalho diz.
+// O cadastro do item e a ficha de EPI usam os CAs ativos; CA vencido continua valendo até
+// alguém marcar "Não compramos mais" (decisão do usuário). Ver: ver_ca; mexer: gerenciar_ca.
+let _ca = { dados: null, aba: 'itens', filtroSit: '', foco: null, hist: null, novoItem: null };
+const CA_SIT = {
+  valido: ['Em dia', '#16a34a', 'rgba(22,163,74,.12)'],
+  vencendo: ['Vencendo', '#d97706', 'rgba(217,119,6,.14)'],
+  vencido: ['Vencido', '#dc2626', 'rgba(220,38,38,.12)'],
+  cancelado: ['Cancelado no MTE', '#991b1b', 'rgba(153,27,27,.14)'],
+  sem_validade: ['Sem validade', '#64748b', 'rgba(100,116,139,.14)'],
+  sem_ca: ['EPI sem CA', '#7c3aed', 'rgba(124,58,237,.12)'],
+  inativo: ['Não compramos mais', '#64748b', 'rgba(100,116,139,.10)'],
+};
+const CA_ACOES = { INCLUIDO: 'Incluído', REATIVADO: 'Voltou a valer', INATIVADO: 'Não compramos mais', REMOVIDO: 'Tirado do item', EDITADO: 'Editado',
+  MIGRADO: 'Veio do cadastro do item', RENOVADO_MTE: 'Renovado (base do MTE)', SITUACAO_MTE: 'Base do MTE', MTE_NAO_ENCONTRADO: 'Base do MTE' };
+const caDataBR = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—';
+const caPodeMexer = () => temPermissao('gerenciar_ca');
+const caSem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function caSelo(sit, txt) {
+  const [rot, cor, bg] = CA_SIT[sit] || CA_SIT.sem_validade;
+  return `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${cor};background:${bg}">${escHtml(txt || rot)}</span>`;
+}
+function caPrazo(c) {
+  if (c.situacao === 'cancelado') return 'Cancelado no MTE';
+  if (!c.validade) return 'Sem validade';
+  if (c.dias < -60) return `Vencido desde ${caDataBR(c.validade)}`;
+  if (c.dias < 0) return `Vencido há ${-c.dias} dia${c.dias === -1 ? '' : 's'}`;
+  if (c.dias === 0) return 'Vence hoje';
+  return c.situacao === 'vencendo' ? `Vence em ${c.dias} dia${c.dias === 1 ? '' : 's'}` : `Até ${caDataBR(c.validade)}`;
+}
+function caMteTexto(c) {
+  if (c.situacao_mte === 'NAO_ENCONTRADO') return '⚠️ Número não encontrado na base do MTE — confira o CA';
+  if (!c.situacao_mte) return 'Ainda não conferido na base do MTE';
+  const sit = { VALIDO: 'Válido', VENCIDO: 'Vencido', CANCELADO: 'Cancelado', SUSPENSO: 'Suspenso' }[c.situacao_mte] || c.situacao_mte;
+  return `${sit} no MTE${c.validade_mte ? ` · validade ${caDataBR(c.validade_mte)}` : ''}`;
+}
+
+async function caInit(foco) {
+  _ca.foco = foco || null;
+  ['caBtnNovo', 'caBtnMte', 'caBtnTeste'].forEach(id => { document.getElementById(id).style.display = caPodeMexer() ? '' : 'none'; });
+  await caCarregar();
+}
+async function caCarregar() {
+  const corpo = document.getElementById('caBody');
+  if (!_ca.dados) corpo.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">⏳ Carregando…</td></tr>';
+  const r = await api('/ca/painel');
+  if (!r?.ok) { corpo.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--red)">${escHtml(r?.erro || 'Erro ao carregar a Gestão de CA')}</td></tr>`; return; }
+  _ca.dados = r;
+  _ca.hist = null;
+  // O cadastro do item (itens.ca) acompanha os CAs ativos: atualiza a lista da tela
+  r.grupos.forEach(gr => { const resumo = [...new Set(gr.cas.filter(c => c.ativo).map(c => c.ca))].join(' / ');
+    gr.itens.forEach(i => { const it = (_itens || []).find(x => x.id === i.id); if (it) it.ca = resumo || null; }); });
+  caRenderBase(); caRenderResumo(); caRenderAba();
+}
+function caRenderBase() {
+  const b = _ca.dados.base_mte || {};
+  const quando = iso => iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '—';
+  let html = b.total
+    ? `🏛️ Base do Ministério do Trabalho: arquivo de <strong>${caDataBR(b.arquivo_em)}</strong> · ${Number(b.total).toLocaleString('pt-BR')} CAs · conferida em ${quando(b.verificado_em)}.
+       O governo não atualiza esse arquivo todo dia: um CA renovado depois dele só aparece no arquivo seguinte — corrija a validade à mão se precisar
+       (<a href="https://caepi.mte.gov.br/internet/ConsultaCAInternet.aspx" target="_blank" rel="noopener" style="color:var(--accent-text)">consulta no site do MTE</a>).`
+    : `🏛️ A base do Ministério do Trabalho ainda não foi baixada${caPodeMexer() ? ' — clique em "🔄 Atualizar base do MTE" (leva cerca de 1 minuto).' : '.'} Sem ela, marca e validade são digitadas à mão.`;
+  if (b.atualizando) html += ' <strong style="color:var(--accent-text)">⏳ Atualizando agora…</strong>';
+  if (b.erro) html += `<div style="color:var(--red);margin-top:4px">A última tentativa de atualizar a base falhou: ${escHtml(b.erro)}</div>`;
+  document.getElementById('caBase').innerHTML = html;
+}
+function caRenderResumo() {
+  const s = _ca.dados.resumo;
+  const card = (n, rot, cor, filtro) => `<div onclick="caFiltrarSituacao('${filtro}')" style="cursor:pointer;padding:12px 14px;border:1px solid ${_ca.filtroSit === filtro ? cor : 'var(--border)'};border-radius:12px;background:var(--bg-card)"><div style="font-size:22px;font-weight:700;color:${cor}">${n}</div><div style="font-size:11px;color:var(--text-3)">${rot}</div></div>`;
+  document.getElementById('caResumo').innerHTML = card(s.em_dia, 'EPIs com CA em dia', '#16a34a', 'valido')
+    + card(s.vencendo, `EPIs com CA vencendo em até ${_ca.dados.dias_aviso} dias`, '#d97706', 'vencendo')
+    + card(s.vencidos, 'EPIs com CA vencido ou cancelado', '#dc2626', 'vencido')
+    + card(s.sem_ca, 'EPIs sem CA', '#7c3aed', 'sem_ca')
+    + (s.sem_validade ? card(s.sem_validade, 'EPIs com CA sem validade', '#64748b', 'sem_validade') : '')
+    + (s.nao_encontrados ? card(s.nao_encontrados, 'CAs não achados no MTE', '#b45309', 'nao_encontrado') : '');
+}
+function caFiltrarSituacao(f) {
+  _ca.filtroSit = _ca.filtroSit === f ? '' : f;
+  document.getElementById('caFiltroSit').value = _ca.filtroSit;
+  if (_ca.aba !== 'itens') caAba('itens'); else { caRenderResumo(); caRender(); }
+}
+function caAba(aba) {
+  _ca.aba = aba;
+  document.querySelectorAll('[data-ca-aba]').forEach(b => b.classList.toggle('active', b.dataset.caAba === aba));
+  document.getElementById('caAbaItens').style.display = aba === 'itens' ? '' : 'none';
+  document.getElementById('caAbaCas').style.display = aba === 'cas' ? '' : 'none';
+  document.getElementById('caAbaHist').style.display = aba === 'hist' ? '' : 'none';
+  document.getElementById('caFiltroSit').style.display = aba === 'itens' ? '' : 'none';
+  caRenderResumo();
+  caRenderAba();
+}
+function caRenderAba() {
+  if (!_ca.dados) return;
+  if (_ca.aba === 'cas') return caRenderCas();
+  if (_ca.aba === 'hist') return caRenderHist();
+  caRender();
+}
+function caGruposFiltrados() {
+  const q = caSem(document.getElementById('caBusca').value), sit = _ca.filtroSit;
+  return _ca.dados.grupos.filter(gr => {
+    if (_ca.foco && !gr.itens.some(i => i.id === _ca.foco)) return false;
+    if (q && !caSem(`${gr.nome} ${gr.itens.map(i => `${i.codigo} ${i.descricao}`).join(' ')} ${gr.cas.map(c => `${c.ca} ${c.marca} ${c.fabricante}`).join(' ')}`).includes(q)) return false;
+    if (!sit) return true;
+    if (sit === 'vencido') return gr.situacao === 'vencido' || gr.situacao === 'cancelado';
+    if (sit === 'nao_encontrado') return gr.nao_encontrado;
+    if (sit === 'inativo') return gr.cas.some(c => !c.ativo);
+    return gr.situacao === sit;
+  });
+}
+function caChip(gr, c) {
+  const [, cor, bg] = CA_SIT[c.ativo ? c.situacao : 'inativo'];
+  const aviso = c.situacao_mte === 'NAO_ENCONTRADO';
+  return `<button type="button" onclick="caAbrirCa('${escJs(gr.item_id)}','${escJs(c.ca)}')" title="${escHtml((c.fabricante || '') + (aviso ? ' · número não encontrado na base do MTE' : ''))}"
+    style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;padding:5px 9px;border-radius:10px;border:1px solid ${cor};background:${bg};cursor:pointer;${c.ativo ? '' : 'opacity:.75;'}">
+    <span style="font-size:12px;font-weight:700;color:var(--text-1);${c.ativo ? '' : 'text-decoration:line-through;'}">CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')}${aviso ? ' ⚠️' : ''}</span>
+    <span style="font-size:10px;font-weight:600;color:${cor}">${escHtml(c.ativo ? caPrazo(c) : 'Não compramos mais')}</span></button>`;
+}
+function caRender() {
+  const lista = caGruposFiltrados();
+  const foco = _ca.foco && _ca.dados.grupos.find(gr => gr.itens.some(i => i.id === _ca.foco));
+  document.getElementById('caFoco').innerHTML = _ca.foco ? `Só ${escHtml(foco?.nome || 'o item escolhido')} · <a href="#" onclick="_ca.foco=null;caRender();return false">ver todos</a>` : '';
+  document.getElementById('caBody').innerHTML = lista.map(gr => `<tr>
+    <td><div style="font-weight:600">${escHtml(gr.nome)}</div><div style="font-size:10px;color:var(--text-3)">${gr.itens.length > 1 ? `${gr.itens.length} tamanhos · ` : ''}${escHtml(gr.itens.map(i => i.codigo).filter(Boolean).slice(0, 3).join(', '))}${gr.itens.length > 3 ? '…' : ''}${gr.epi ? '' : ` · ${escHtml(gr.categoria || 'sem categoria')}`}</div></td>
+    <td><div style="display:flex;gap:6px;flex-wrap:wrap">${gr.cas.map(c => caChip(gr, c)).join('') || '<span style="font-size:11px;color:var(--text-3)">Nenhum CA cadastrado</span>'}</div></td>
+    <td>${caSelo(gr.situacao)}</td>
+    <td style="text-align:right;white-space:nowrap">${caPodeMexer() ? `<button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="caNovo('${escJs(gr.item_id)}')">＋ CA</button>` : ''}</td></tr>`).join('')
+    || `<tr><td colspan="4" style="text-align:center;padding:24px;color:var(--text-3)">${_ca.dados.grupos.length ? 'Nada com esses filtros.' : 'Nenhum EPI cadastrado nesta filial.'}</td></tr>`;
+  document.getElementById('caContagem').textContent = `${lista.length} de ${_ca.dados.grupos.length} itens`;
+}
+function caRenderCas() {
+  const q = caSem(document.getElementById('caBusca').value);
+  const lista = _ca.dados.certificados.filter(c => !q || caSem(`${c.ca} ${c.marca} ${c.fabricante} ${c.equipamento} ${c.itens.join(' ')}`).includes(q));
+  document.getElementById('caBodyCas').innerHTML = lista.map(c => `<tr>
+    <td class="td-mono" style="font-weight:700">${escHtml(c.ca)}</td><td>${escHtml(c.marca || '—')}</td>
+    <td style="font-size:11px">${escHtml(c.fabricante || '—')}</td><td style="font-size:11px">${escHtml(c.equipamento || '—')}</td>
+    <td>${caDataBR(c.validade)}</td><td>${caSelo(c.situacao, caPrazo(c))}</td>
+    <td style="font-size:11px">${escHtml(caMteTexto(c))}</td>
+    <td style="font-size:11px">${c.itens.map(escHtml).join('<br>') || '<span style="color:var(--text-3)">nenhum item</span>'}</td></tr>`).join('')
+    || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-3)">Nenhum CA cadastrado.</td></tr>';
+  document.getElementById('caContagem').textContent = `${lista.length} CAs`;
+}
+async function caRenderHist() {
+  const corpo = document.getElementById('caBodyHist');
+  if (!_ca.hist) {
+    corpo.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-3)">⏳ Carregando…</td></tr>';
+    const r = await api('/ca/historico' + (_ca.foco ? `?item_id=${encodeURIComponent(_ca.foco)}` : ''));
+    if (!r?.ok) { corpo.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--red)">${escHtml(r?.erro || 'Erro')}</td></tr>`; return; }
+    _ca.hist = r.data;
+  }
+  const q = caSem(document.getElementById('caBusca').value);
+  const lista = _ca.hist.filter(h => !q || caSem(`${h.ca} ${h.item_descricao} ${h.usuario} ${h.detalhe}`).includes(q));
+  corpo.innerHTML = lista.map(h => `<tr>
+    <td style="white-space:nowrap;font-size:11px">${new Date(h.criado_em).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+    <td style="font-size:11px">${escHtml(h.usuario || '—')}</td><td class="td-mono">${escHtml(h.ca || '—')}</td>
+    <td style="font-size:11px">${escHtml(h.item_descricao || '—')}</td>
+    <td style="font-size:12px"><strong>${escHtml(CA_ACOES[h.acao] || h.acao)}</strong>${h.detalhe ? ` — ${escHtml(h.detalhe)}` : ''}</td></tr>`).join('')
+    || '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-3)">Nenhuma mudança registrada.</td></tr>';
+  document.getElementById('caContagem').textContent = `${lista.length} registros`;
+}
+
+// ── Detalhe de um CA do item: renovar, mudar a marca, "Não compramos mais", tirar ──
+function caAbrirCa(itemId, numero) {
+  const gr = _ca.dados.grupos.find(x => x.itens.some(i => i.id === itemId));
+  const c = gr?.cas.find(x => x.ca === numero);
+  if (!c) return;
+  const pode = caPodeMexer();
+  const outros = (_ca.dados.certificados.find(x => x.ca === numero)?.itens || []).filter(n => n !== gr.nome);
+  document.getElementById('modalCaDetalhe')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalCaDetalhe';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  const campo = (rot, html) => `<div><div style="font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px">${rot}</div><div style="font-size:13px;color:var(--text-1);margin-top:2px">${html}</div></div>`;
+  ov.innerHTML = `
+    <div class="modal-box" style="max-width:560px;width:100%">
+      <div class="modal-header">
+        <div style="min-width:0"><div class="modal-title">🛡️ CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')}</div>
+          <div style="font-size:11px;color:var(--text-3)">${escHtml(gr.nome)}${gr.itens.length > 1 ? ` · ${gr.itens.length} tamanhos` : ''}</div></div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:68vh;overflow-y:auto">
+        <div>${caSelo(c.ativo ? c.situacao : 'inativo', c.ativo ? caPrazo(c) : 'Não compramos mais')}</div>
+        ${!c.ativo ? `<div style="font-size:12px;color:var(--text-2)">Marcado como "não compramos mais"${c.inativado_por ? ` por ${escHtml(c.inativado_por)}` : ''}${c.inativado_em ? ` em ${caDataBR(c.inativado_em)}` : ''}${c.motivo_inativacao ? ` — ${escHtml(c.motivo_inativacao)}` : ''}. Não sai nas entregas novas.</div>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          ${campo('Fabricante', escHtml(c.fabricante || '—'))}${campo('CNPJ', escHtml(c.cnpj || '—'))}
+          ${campo('Equipamento', escHtml(c.equipamento || '—'))}${campo('Base do MTE', escHtml(caMteTexto(c)))}
+        </div>
+        ${pode ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="form-label" for="caDetMarca">Marca</label><input id="caDetMarca" class="form-input" value="${escHtml(c.marca || '')}" maxlength="80"></div>
+          <div><label class="form-label" for="caDetValidade">Validade</label><input id="caDetValidade" class="form-input" type="date" value="${escHtml(c.validade || '')}"></div>
+        </div>
+        <div><label class="form-label" for="caDetObs">Observação</label><input id="caDetObs" class="form-input" value="${escHtml(c.obs || '')}" maxlength="300" placeholder="Opcional"></div>
+        ${outros.length ? `<div style="font-size:11px;color:var(--text-3)">Marca, validade e observação são do CA: valem também para ${outros.map(escHtml).join(', ')}.</div>` : ''}`
+        : campo('Validade', caDataBR(c.validade)) + (c.obs ? campo('Observação', escHtml(c.obs)) : '')}
+        <div style="font-size:11px"><a href="https://caepi.mte.gov.br/internet/ConsultaCAInternet.aspx" target="_blank" rel="noopener">Conferir no site do MTE ↗</a> · <a href="#" onclick="caHistoricoDoCa('${escJs(c.ca)}');return false">Histórico deste CA</a></div>
+        <div id="caDetErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+      </div>
+      <div class="modal-footer" style="flex-wrap:wrap">
+        ${pode ? `<button class="btn btn-ghost" style="color:var(--red)" onclick="caTirar('${escJs(itemId)}','${escJs(c.ca)}')" title="Só quando foi cadastrado por engano">🗑️ Tirar do item</button>
+        ${c.ativo ? `<button class="btn btn-ghost" onclick="caMudarAtivo('${escJs(itemId)}','${escJs(c.ca)}',false)">⛔ Não compramos mais</button>`
+                  : `<button class="btn btn-ghost" onclick="caMudarAtivo('${escJs(itemId)}','${escJs(c.ca)}',true)">↩️ Voltar a valer</button>`}` : ''}
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+        ${pode ? `<button class="btn btn-primary" onclick="caSalvarCa('${escJs(c.ca)}')">💾 Salvar</button>` : ''}
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+}
+function caHistoricoDoCa(numero) {
+  document.getElementById('modalCaDetalhe')?.remove();
+  document.getElementById('caBusca').value = numero;
+  caAba('hist');
+}
+async function caSalvarCa(numero) {
+  const marca = document.getElementById('caDetMarca').value.trim();
+  if (!marca) { document.getElementById('caDetErro').textContent = 'Informe a marca'; return; }
+  const r = await api(`/ca/certificados/${encodeURIComponent(numero)}`, { method: 'PUT', body: JSON.stringify({
+    marca, validade: document.getElementById('caDetValidade').value || null, obs: document.getElementById('caDetObs').value }) });
+  if (!r?.ok) { document.getElementById('caDetErro').textContent = r?.erro || 'Erro ao salvar'; return; }
+  document.getElementById('modalCaDetalhe')?.remove();
+  toast(r.mudou ? `CA ${numero} atualizado!` : 'Nada mudou', r.mudou ? 'success' : 'info');
+  caCarregar();
+}
+async function caMudarAtivo(itemId, numero, ativo) {
+  let motivo = '';
+  if (!ativo) {
+    motivo = prompt(`CA ${numero} deixa de sair nas próximas entregas deste item (todos os tamanhos). As fichas já emitidas não mudam.\n\nMotivo (opcional):`, '');
+    if (motivo === null) return;
+  }
+  const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/${encodeURIComponent(numero)}/${ativo ? 'reativar' : 'inativar'}`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro', 'error'); return; }
+  document.getElementById('modalCaDetalhe')?.remove();
+  toast(ativo ? `CA ${numero} voltou a valer` : `CA ${numero}: não compramos mais`, 'success');
+  caCarregar();
+}
+async function caTirar(itemId, numero) {
+  if (!confirm(`Tirar o CA ${numero} deste item (todos os tamanhos)?\n\nUse só quando foi cadastrado por engano. Se a marca só deixou de ser comprada, use "Não compramos mais". As fichas de EPI já emitidas não mudam.`)) return;
+  const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/${encodeURIComponent(numero)}`, { method: 'DELETE', body: JSON.stringify({}) });
+  if (!r?.ok) { toast(r?.erro || 'Erro', 'error'); return; }
+  document.getElementById('modalCaDetalhe')?.remove();
+  toast(`CA ${numero} tirado do item`, 'success');
+  caCarregar();
+}
+
+// ── Adicionar CA: o número é conferido na base do MTE, que preenche fabricante e validade ──
+function caNovo(itemId) {
+  _ca.novoItem = itemId || null;
+  document.getElementById('modalCaNovo')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalCaNovo';
+  ov.innerHTML = `
+    <div class="modal-box" style="max-width:600px;width:100%">
+      <div class="modal-header">
+        <div class="modal-title">＋ Adicionar CA</div>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:10px;max-height:70vh;overflow-y:auto">
+        <div><label class="form-label">Item</label><div id="caNovoItem"></div></div>
+        <div><label class="form-label" for="caNovoNumero">Número do CA</label>
+          <div style="display:flex;gap:6px"><input id="caNovoNumero" class="form-input" inputmode="numeric" placeholder="Ex.: 31558" maxlength="12"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();caConsultarNumero()}" onchange="caConsultarNumero()">
+          <button type="button" class="btn btn-ghost" onclick="caConsultarNumero()">🔎 Consultar no MTE</button></div></div>
+        <div id="caNovoMte"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="form-label" for="caNovoMarca">Marca</label><input id="caNovoMarca" class="form-input" maxlength="80" placeholder="Ex.: VECTRA"></div>
+          <div><label class="form-label" for="caNovoValidade">Validade</label><input id="caNovoValidade" class="form-input" type="date"></div>
+        </div>
+        <div><label class="form-label" for="caNovoObs">Observação</label><input id="caNovoObs" class="form-input" maxlength="300" placeholder="Opcional"></div>
+        <details style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--text-2)">Não sabe o número? Procure na base do MTE pelo fabricante ou pelo equipamento</summary>
+          <div style="display:flex;gap:6px;margin-top:8px"><input id="caNovoBusca" class="form-input" placeholder="Ex.: mundo linha viva camisa" onkeydown="if(event.key==='Enter'){event.preventDefault();caBuscarMte()}">
+            <button type="button" class="btn btn-ghost" onclick="caBuscarMte()">Procurar</button></div>
+          <div id="caNovoBuscaRes" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto"></div>
+        </details>
+        <div id="caNovoErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+        <button class="btn btn-primary" onclick="caSalvarNovo()">💾 Salvar CA</button>
+      </div>
+    </div>`;
+  document.body.appendChild(ov);
+  caRenderNovoItem();
+  setTimeout(() => document.getElementById(itemId ? 'caNovoNumero' : 'caNovoItemBusca')?.focus(), 50);
+}
+function caRenderNovoItem() {
+  const el = document.getElementById('caNovoItem');
+  const gr = _ca.novoItem && _ca.dados?.grupos.find(x => x.itens.some(i => i.id === _ca.novoItem));
+  const it = _ca.novoItem && (_itens || []).find(i => i.id === _ca.novoItem);
+  if (_ca.novoItem) {
+    const nome = gr?.nome || it?.descricao || 'Item';
+    const n = gr?.itens.length || 1;
+    el.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+      <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13px">${escHtml(nome)}</div>
+      <div style="font-size:11px;color:var(--text-3)">${n > 1 ? `Vale para os ${n} tamanhos` : escHtml(it?.codigo || gr?.itens[0]?.codigo || '')}${gr?.cas.length ? ` · já tem ${gr.cas.map(c => 'CA ' + escHtml(c.ca)).join(', ')}` : ''}</div></div>
+      <button type="button" class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="_ca.novoItem=null;caRenderNovoItem()">Trocar</button></div>`;
+    return;
+  }
+  el.innerHTML = `<input id="caNovoItemBusca" class="form-input" placeholder="Digite o nome ou o código do item…" autocomplete="off"
+      oninput="caSugerirItem(this.value)" onblur="setTimeout(()=>document.getElementById('caNovoItemSug')?.classList.add('hidden'),200)">
+    <div id="caNovoItemSug" class="autocomplete-list hidden" style="z-index:3000"></div>`;
+}
+function caSugerirItem(q) {
+  const lista = document.getElementById('caNovoItemSug');
+  if (q.trim().length < 2) { lista.classList.add('hidden'); return; }
+  const b = caSem(q);
+  const achados = (_itens || []).filter(i => caSem(i.descricao).includes(b) || caSem(i.codigo).includes(b))
+    .sort((a, c) => (String(c.categoria).toUpperCase() === 'EPI') - (String(a.categoria).toUpperCase() === 'EPI')).slice(0, 15);
+  mostrarAutocompleteItens('caNovoItemSug', 'caNovoItemBusca', achados, 'caEscolherItem');
+}
+function caEscolherItem(id) { _ca.novoItem = id; caRenderNovoItem(); document.getElementById('caNovoNumero')?.focus(); }
+
+async function caConsultarNumero() {
+  if (!document.getElementById('caNovoNumero')) return;   // a janela já foi fechada (o campo perdeu o foco ao salvar)
+  const numero = document.getElementById('caNovoNumero').value.replace(/\D/g, '');
+  const caixa = document.getElementById('caNovoMte');
+  if (!numero) { caixa.innerHTML = ''; return; }
+  caixa.innerHTML = '<div style="font-size:12px;color:var(--text-3)">⏳ Consultando a base do MTE…</div>';
+  const r = await api(`/ca/mte/consulta?ca=${encodeURIComponent(numero)}`);
+  if (!document.getElementById('caNovoMarca')) return;
+  if (!r?.ok) { caixa.innerHTML = `<div style="font-size:12px;color:var(--red)">${escHtml(r?.erro || 'Erro na consulta')}</div>`; return; }
+  const marca = document.getElementById('caNovoMarca'), val = document.getElementById('caNovoValidade');
+  const cad = r.cadastrado;
+  if (cad) { if (!marca.value) marca.value = cad.marca || ''; if (!val.value && cad.validade) val.value = cad.validade; }
+  let html = '';
+  if (r.mte) {
+    const m = r.mte;
+    if (!marca.value) marca.value = r.marca_sugerida || '';
+    if (!val.value && m.validade) val.value = m.validade;
+    const sitMte = { VALIDO: 'Válido', VENCIDO: 'Vencido', CANCELADO: 'Cancelado', SUSPENSO: 'Suspenso' }[m.situacao] || m.situacao;
+    html = `<div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);font-size:12px;line-height:1.5">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong>CA ${escHtml(r.ca)}</strong> ${caSelo(r.situacao, `${sitMte} no MTE${m.validade ? ' · até ' + caDataBR(m.validade) : ''}`)}</div>
+      <div style="margin-top:4px"><strong>${escHtml(m.razao_social || '—')}</strong></div>
+      <div style="color:var(--text-2)">${escHtml(m.equipamento || '')}${m.referencia ? ` · Ref.: ${escHtml(m.referencia)}` : ''}</div>
+      ${m.descricao ? `<div style="color:var(--text-3);margin-top:4px;max-height:60px;overflow:hidden">${escHtml(String(m.descricao).slice(0, 300))}</div>` : ''}</div>`;
+    if (r.situacao === 'vencido' || r.situacao === 'cancelado') html += `<div style="font-size:12px;color:var(--red);margin-top:6px">⚠️ Este CA está ${r.situacao === 'cancelado' ? 'cancelado' : 'vencido'} na base do MTE. Confira se é o número certo antes de salvar.</div>`;
+  } else {
+    const b = r.base_mte || {};
+    html = b.total
+      ? `<div style="font-size:12px;color:#b45309">⚠️ Número não encontrado na base do MTE (arquivo de ${caDataBR(b.arquivo_em)}). Confira o número; se o CA for mais novo que o arquivo, digite a marca e a validade.</div>`
+      : `<div style="font-size:12px;color:var(--text-3)">A base do MTE ainda não foi baixada: digite a marca e a validade.</div>`;
+  }
+  if (cad) html += `<div style="font-size:12px;color:var(--text-2);margin-top:6px">Este CA já está cadastrado na filial (marca ${escHtml(cad.marca || '—')}). Ao salvar, ele passa a valer também para este item.</div>`;
+  caixa.innerHTML = html;
+}
+async function caBuscarMte() {
+  const q = document.getElementById('caNovoBusca').value.trim();
+  const caixa = document.getElementById('caNovoBuscaRes');
+  if (q.length < 3) { caixa.innerHTML = '<div style="font-size:11px;color:var(--text-3)">Digite pelo menos 3 letras.</div>'; return; }
+  caixa.innerHTML = '<div style="font-size:11px;color:var(--text-3)">⏳ Procurando…</div>';
+  const r = await api(`/ca/mte/busca?q=${encodeURIComponent(q)}`);
+  if (!document.getElementById('caNovoBuscaRes')) return;
+  if (!r?.ok) { caixa.innerHTML = `<div style="font-size:11px;color:var(--red)">${escHtml(r?.erro || 'Erro')}</div>`; return; }
+  caixa.innerHTML = r.data.map(m => `<button type="button" onclick="caUsarDaBusca('${escJs(m.ca)}')" style="text-align:left;padding:6px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg-card);cursor:pointer;font-size:11px;color:var(--text-1)">
+      <strong>CA ${escHtml(m.ca)}</strong> · ${escHtml(m.razao_social || '')} · válido até ${caDataBR(m.validade)}<div style="color:var(--text-3)">${escHtml(m.equipamento || '')}${m.referencia ? ` · Ref.: ${escHtml(m.referencia)}` : ''}</div></button>`).join('')
+    || '<div style="font-size:11px;color:var(--text-3)">Nenhum CA válido encontrado com essas palavras.</div>';
+}
+function caUsarDaBusca(numero) {
+  document.getElementById('caNovoNumero').value = numero;
+  document.getElementById('caNovoMarca').value = '';
+  document.getElementById('caNovoValidade').value = '';
+  caConsultarNumero();
+}
+async function caSalvarNovo() {
+  const erro = document.getElementById('caNovoErro');
+  const numero = document.getElementById('caNovoNumero').value.replace(/\D/g, '');
+  const marca = document.getElementById('caNovoMarca').value.trim();
+  if (!_ca.novoItem) { erro.textContent = 'Escolha o item'; return; }
+  if (!numero) { erro.textContent = 'Digite o número do CA'; return; }
+  if (!marca) { erro.textContent = 'Informe a marca'; return; }
+  const r = await api(`/ca/itens/${encodeURIComponent(_ca.novoItem)}`, { method: 'POST', body: JSON.stringify({
+    ca: numero, marca, validade: document.getElementById('caNovoValidade').value || null, obs: document.getElementById('caNovoObs').value }) });
+  if (!r?.ok) { erro.textContent = r?.erro || 'Erro ao salvar'; return; }
+  document.getElementById('modalCaNovo')?.remove();
+  toast(r.itens > 1 ? `CA ${r.ca} salvo nos ${r.itens} tamanhos!` : `CA ${r.ca} salvo!`, 'success');
+  caCarregar();
+}
+
+async function caAtualizarMte() {
+  const r = await api('/ca/mte/atualizar', { method: 'POST', body: JSON.stringify({}) });
+  if (!r?.ok) { toast(r?.erro || 'Erro', 'error'); return; }
+  toast(r.mensagem || 'Atualizando a base do MTE…', 'info');
+  _ca.dados.base_mte = { ...(_ca.dados.base_mte || {}), atualizando: true };
+  caRenderBase();
+  for (let i = 0; i < 24; i++) {
+    await new Promise(ok => setTimeout(ok, 10000));
+    if (!document.getElementById('view-gestao-ca')?.classList.contains('active')) return;
+    const e = await api('/ca/mte/estado');
+    if (e?.ok && !e.base_mte.atualizando) {
+      await caCarregar();
+      toast(e.base_mte.erro ? 'Não foi possível atualizar a base do MTE: ' + e.base_mte.erro : 'Base do MTE atualizada e CAs conferidos!', e.base_mte.erro ? 'error' : 'success');
+      return;
+    }
+  }
+}
+async function caEmailTeste() {
+  const r = await api('/laudos/testar-alerta', { method: 'POST', body: JSON.stringify({ modulo: 'ca' }) });
+  if (r?.ok) toast(`E-mail de teste enviado para ${(r.enviado_para || []).join(', ')}`, 'success');
+  else toast((r?.erro === 'Nenhum email configurado' ? 'Nenhum e-mail na lista de alertas dos laudos NR10 (Gestão → Laudos NR10). O e-mail de CA vai para essa mesma lista.' : (r?.erro || 'Erro ao enviar')), 'error');
+}
+function caExcel() {
+  if (!_ca.dados) return;
+  if (_ca.aba === 'cas') {
+    return gcaExportarExcel('CAs_cadastrados', _ca.dados.certificados.map(c => ({ ...c, validade_br: caDataBR(c.validade), situacao_txt: caPrazo(c), mte_txt: caMteTexto(c), itens_txt: c.itens.join(' | ') })),
+      [{ key: 'ca', label: 'CA' }, { key: 'marca', label: 'Marca' }, { key: 'fabricante', label: 'Fabricante' }, { key: 'equipamento', label: 'Equipamento' },
+       { key: 'validade_br', label: 'Validade' }, { key: 'situacao_txt', label: 'Situação' }, { key: 'mte_txt', label: 'Base do MTE' }, { key: 'itens_txt', label: 'Itens' }]);
+  }
+  const linhas = [];
+  caGruposFiltrados().forEach(gr => {
+    const base = { item: gr.nome, tamanhos: gr.itens.length, codigos: gr.itens.map(i => i.codigo).filter(Boolean).join(', '), situacao_item: CA_SIT[gr.situacao]?.[0] || gr.situacao };
+    if (!gr.cas.length) linhas.push({ ...base });
+    gr.cas.forEach(c => linhas.push({ ...base, ca: c.ca, marca: c.marca, fabricante: c.fabricante, validade_br: caDataBR(c.validade),
+      situacao_ca: c.ativo ? caPrazo(c) : 'Não compramos mais', mte_txt: caMteTexto(c) }));
+  });
+  if (!linhas.length) return toast('Nada para exportar', 'warn');
+  gcaExportarExcel('Gestao_de_CA', linhas, [{ key: 'item', label: 'Item' }, { key: 'tamanhos', label: 'Tamanhos' }, { key: 'codigos', label: 'Códigos' },
+    { key: 'situacao_item', label: 'Situação do item' }, { key: 'ca', label: 'CA' }, { key: 'marca', label: 'Marca' }, { key: 'fabricante', label: 'Fabricante' },
+    { key: 'validade_br', label: 'Validade' }, { key: 'situacao_ca', label: 'Situação do CA' }, { key: 'mte_txt', label: 'Base do MTE' }]);
+}
+
 function aplicarPermissoesMenu() {
   if (GCA.usuario?.role === 'admin') return; // admin vê tudo
 
@@ -18669,7 +19150,6 @@ async function salvarItem() {
     valor_un:        parseFloat(document.getElementById('itemValor').value) || 0,
     estoque_min:     parseInt(document.getElementById('itemEstMin').value) || 0,
     durabilidade_med:parseInt(document.getElementById('itemDurabilidade').value) || null,
-    ca:              document.getElementById('itemCA').value.trim(),
     corredor:        document.getElementById('itemCorredor').value.trim(),
     prateleira:      document.getElementById('itemPrateleira').value.trim(),
     box:             document.getElementById('itemBox').value.trim(),
@@ -18710,6 +19190,15 @@ function editarItem(id) {
   document.getElementById('itemEntregaPara').value    = String(item.entrega_para || 'pessoa').toLowerCase() === 'viatura' ? 'viatura' : 'pessoa';
   document.getElementById('itemFormTitulo').textContent = 'Editar Item';
   document.getElementById('itemFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
+}
+
+// O CA do item é mantido na Gestão de CA (19/10/2026): o botão 🛡️ abre a tela já no item
+function itemAbrirGestaoCa(id) {
+  id = id || document.getElementById('itemEditId').value;
+  if (!temPermissao('ver_ca') && !temPermissao('gerenciar_ca')) { toast('Para ver ou mudar o CA, peça ao administrador a permissão "Gestão de CA".', 'warn'); return; }
+  if (!id) { toast('Salve o item primeiro; depois cadastre o CA na Gestão de CA.', 'warn'); return; }
+  window._caFocoPendente = id;
+  showView('gestao-ca', document.querySelector('.nav-item[data-view="gestao-ca"]'));
 }
 
 async function excluirItem(id, nome) {
