@@ -80,13 +80,20 @@ input{font-family:var(--font-main);}
 .tela-final.ativo{display:flex;}
 .resumo-linha{display:flex;justify-content:space-between;gap:10px;width:100%;max-width:420px;padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;}
 </style>
+
+<style id="gcaIconesCss">
+/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
+svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+</style>
 </head>
 <body>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/> <path d="M15 18H9"/> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/> <circle cx="17" cy="18" r="2"/> <circle cx="7" cy="18" r="2"/></symbol></svg>
 
 <!-- LOGIN -->
 <div class="wrap" id="telaLogin">
   <div class="card">
-    <div class="titulo">🚚 Conferência da Viatura</div>
+    <div class="titulo"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Conferência da Viatura</div>
     <div class="sub" id="loginSub">Carregando...</div>
     <div class="placa-badge" id="loginPlaca">—</div>
     <div class="form-group">
@@ -118,13 +125,13 @@ input{font-family:var(--font-main);}
   <div class="lista" id="listaItens"></div>
   <div class="footer">
     <button class="btn btn-ghost" onclick="carregarItens()">↻ Atualizar</button>
-    <button class="btn btn-primary" onclick="finalizar()">✅ Finalizar conferência</button>
+    <button class="btn btn-primary" onclick="finalizar()"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Finalizar conferência</button>
   </div>
 </div>
 
 <!-- TELA FINAL -->
 <div class="tela-final" id="telaFinal">
-  <div style="font-size:48px;margin-bottom:12px" id="finalIcone">✅</div>
+  <div style="font-size:48px;margin-bottom:12px" id="finalIcone"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
   <div style="font-size:18px;font-weight:700;margin-bottom:8px" id="finalTitulo">Conferência finalizada!</div>
   <div style="font-size:13px;color:var(--text-2);margin-bottom:16px" id="finalResumo">—</div>
   <div id="finalDivergencias" style="width:100%;max-width:420px;margin-bottom:18px"></div>
@@ -273,7 +280,7 @@ function render() {
       ? `<div class="item-status">Previsto: ${i.esperado}${(i.seriais_esperados || []).length ? ` · ${i.seriais_esperados.length} serial(is)` : ''}</div>`
       : (i.status === 'OK'
         ? `<div class="item-status ok">✓ Conferido: ${i.contado}</div>`
-        : `<div class="item-status dif">⚠ Previsto ${i.esperado} · encontrado ${i.contado}</div>`);
+        : `<div class="item-status dif"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Previsto ${i.esperado} · encontrado ${i.contado}</div>`);
     return `<div class="item-card ${classe}">
       <div style="flex:1">
         <div class="item-nome">${escHtml(i.item_descricao || i.item_id)}</div>
@@ -376,7 +383,7 @@ async function finalizar() {
   document.getElementById('telaApp').classList.remove('ativo');
   document.getElementById('telaFinal').classList.add('ativo');
   const temDif = res.divergentes > 0;
-  document.getElementById('finalIcone').textContent = temDif ? '⚠️' : '✅';
+  document.getElementById('finalIcone').innerHTML = temDif ? '<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>';
   document.getElementById('finalTitulo').textContent = temDif ? 'Conferência com diferenças' : 'Tudo certo na viatura!';
   document.getElementById('finalResumo').textContent = temDif
     ? `${res.divergentes} de ${res.total} material(is) com diferença`

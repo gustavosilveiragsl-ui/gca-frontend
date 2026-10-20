@@ -121,14 +121,21 @@ input{font-family:var(--font-main);}
 .final-stat b{display:block;font-size:18px;}
 .final-stat span{font-size:10px;color:var(--text-3);}
 </style>
+
+<style id="gcaIconesCss">
+/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
+svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+</style>
 </head>
 <body>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/> <path d="M12 22V12"/> <polyline points="3.29 7 12 12 20.71 7"/> <path d="m7.5 4.27 9 5.15"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/> <path d="M8.5 16.429a5 5 0 0 1 7 0"/> <path d="M5 12.859a10 10 0 0 1 5.17-2.69"/> <path d="M19 12.859a10 10 0 0 0-2.007-1.523"/> <path d="M2 8.82a15 15 0 0 1 4.177-2.643"/> <path d="M22 8.82a15 15 0 0 0-11.288-3.764"/> <path d="m2 2 20 20"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol></svg>
 
 <!-- LOGIN -->
 <div class="wrap" id="telaLogin">
   <div class="card">
     <img class="logo" src="./logo-gca.png" alt="GCA">
-    <div class="titulo">⚡ Inventário <span class="nome-conc"></span></div>
+    <div class="titulo"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg> Inventário <span class="nome-conc"></span></div>
     <div class="sub" id="loginSub">Carregando...</div>
     <div class="form-group">
       <label class="form-label">Matrícula</label>
@@ -148,7 +155,7 @@ input{font-family:var(--font-main);}
   <div class="header">
     <div class="header-top">
       <div>
-        <div class="header-titulo">⚡ Estoque <span class="nome-conc"></span></div>
+        <div class="header-titulo"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg> Estoque <span class="nome-conc"></span></div>
         <div class="header-sub" id="appSub">—</div>
       </div>
       <div class="header-nome" id="appNome">—</div>
@@ -158,7 +165,7 @@ input{font-family:var(--font-main);}
     <div class="fila-status hidden" id="filaStatus"></div>
   </div>
   <div class="busca-box">
-    <input class="busca-input" id="buscaInput" placeholder="🔍 Buscar material ou código..." oninput="renderLista()">
+    <input class="busca-input" id="buscaInput" placeholder="Buscar material ou código..." oninput="renderLista()">
     <div class="chips" id="chipsFiltro">
       <button class="chip ativo" data-filtro="todos" onclick="mudarFiltro('todos')">Todos</button>
       <button class="chip" data-filtro="pendentes" onclick="mudarFiltro('pendentes')">Não contados</button>
@@ -169,13 +176,13 @@ input{font-family:var(--font-main);}
   <div class="lista" id="listaItens"></div>
   <div class="footer">
     <button class="btn btn-ghost" onclick="carregarItens()">↻ Atualizar</button>
-    <button class="btn btn-primary" onclick="tentarFinalizar()">✅ Finalizar</button>
+    <button class="btn btn-primary" onclick="tentarFinalizar()"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Finalizar</button>
   </div>
 </div>
 
 <!-- TELA FINAL -->
 <div class="tela-final" id="telaFinal">
-  <div style="font-size:48px;margin-bottom:12px">✅</div>
+  <div style="font-size:48px;margin-bottom:12px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
   <div style="font-size:18px;font-weight:700;margin-bottom:6px">Inventário finalizado!</div>
   <div style="font-size:13px;color:var(--text-2)" id="telaFinalResumo">—</div>
   <div class="final-stats hidden" id="telaFinalSeriais"></div>
@@ -214,7 +221,7 @@ input{font-family:var(--font-main);}
     <div class="retorno" id="bipRetorno">Pronto para ler.</div>
 
     <div class="linha-botoes">
-      <button class="btn btn-ghost" id="btnAbrirLote" onclick="abrirLote()">📦 Contar caixa fechada</button>
+      <button class="btn btn-ghost" id="btnAbrirLote" onclick="abrirLote()"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Contar caixa fechada</button>
       <button class="btn btn-perigo hidden" id="btnNenhum" onclick="marcarNenhum()">Nenhum encontrado</button>
     </div>
 
@@ -324,7 +331,7 @@ function mostrarApp(anoMes, nome) {
   document.getElementById('telaLogin').classList.add('hidden');
   document.getElementById('telaApp').classList.add('ativo');
   document.getElementById('appSub').textContent = `Inventário ${mesBR(anoMes)}`;
-  document.getElementById('appNome').textContent = '👤 ' + (nome || '');
+  document.getElementById('appNome').textContent = '' + (nome || '');
   carregarItens();
   restaurarFila();
   if (_pollTimer) clearInterval(_pollTimer);
@@ -500,7 +507,7 @@ function biparSerial() {
   _fila.push({ serial, itemId: _itemAtual.id, estado: 'pendente', tentativas: 0 });
   _recusas = _recusas.filter(r => r.serial !== serial);
   salvarFila();
-  retorno(`⏳ ${serial} bipado`, '');
+  retorno(`<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> ${serial} bipado`, '');
   agendarRender();
   const pendentes = _fila.filter(f => f.estado === 'pendente').length;
   agendarEnvio(pendentes >= 25 ? 0 : 800);
@@ -591,9 +598,9 @@ async function enviarFila() {
     if (_itemAtual && _itemAtual.id === itemId) {
       atualizarTotal(res.total_item);
       if (recusados) retorno(`✕ ${ultimaRecusa.serial}: ${ultimaRecusa.motivo}${recusados > 1 ? ` (+${recusados - 1} recusado(s))` : ''}`, 'erro');
-      else if (contados === 1 && avisos) retorno(`⚠️ ${ultimoContado.serial} contado — ${ultimoContado.aviso}`, 'aviso');
+      else if (contados === 1 && avisos) retorno(`<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${ultimoContado.serial} contado — ${ultimoContado.aviso}`, 'aviso');
       else if (contados === 1) retorno(`✓ ${ultimoContado.serial} contado`, 'ok');
-      else if (avisos) retorno(`✓ ${contados} contados (último ${ultimoContado.serial}) · ⚠️ ${avisos} com aviso`, 'aviso');
+      else if (avisos) retorno(`✓ ${contados} contados (último ${ultimoContado.serial}) · <svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${avisos} com aviso`, 'aviso');
       else if (contados) retorno(`✓ ${contados} contados (último ${ultimoContado.serial})`, 'ok');
     }
     if (recusados) vibrar([80, 60, 80]);
@@ -616,7 +623,7 @@ function atualizarIndicadorFila() {
   const recusasFora = _recusas.filter(r => !_itemAtual || r.itemId !== _itemAtual.id).length;
   const topo = document.getElementById('filaStatus');
   if (total) {
-    topo.textContent = _semConexao ? `📵 Sem conexão — ${total} serial(is) guardado(s), envio automático quando voltar` : `⏳ Enviando ${total} serial(is) bipado(s)...`;
+    topo.textContent = _semConexao ? `Sem conexão — ${total} serial(is) guardado(s), envio automático quando voltar` : `Enviando ${total} serial(is) bipado(s)...`;
     topo.className = 'fila-status';
   } else if (recusasFora) {
     topo.textContent = `✕ ${recusasFora} serial(is) recusado(s) — abra o material para ver`;
@@ -627,7 +634,7 @@ function atualizarIndicadorFila() {
   const doItem = _itemAtual ? _fila.filter(f => f.itemId === _itemAtual.id).length : 0;
   const box = document.getElementById('serFila');
   if (doItem) {
-    box.textContent = _semConexao ? `📵 Sem conexão — ${doItem} guardado(s) no aparelho, envio automático` : `⏳ ${doItem} na fila de envio`;
+    box.textContent = _semConexao ? `Sem conexão — ${doItem} guardado(s) no aparelho, envio automático` : `${doItem} na fila de envio`;
     box.className = 'fila-status';
   } else {
     box.className = 'fila-status hidden';
@@ -660,7 +667,7 @@ function renderSeriais() {
 
   const naFila = _fila.filter(f => f.itemId === itemId).slice().reverse().map(f => `<div class="serial-linha pendente">
       <div><div class="serial-num">${escHtml(f.serial)}</div>
-      <div class="serial-info">${f.estado === 'enviando' ? '⏳ enviando...' : _semConexao ? '📵 aguardando conexão' : '⏳ na fila'}</div></div>
+      <div class="serial-info">${f.estado === 'enviando' ? '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> enviando...' : _semConexao ? '<svg class=ic aria-hidden=true><use href=#i-wifi-off></use></svg> aguardando conexão' : '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> na fila'}</div></div>
     </div>`);
   const recusadas = _recusas.filter(r => r.itemId === itemId).map(r => `<div class="serial-linha recusado">
       <div><div class="serial-num">✕ ${escHtml(r.serial)}</div>
@@ -675,7 +682,7 @@ function renderSeriais() {
   const linhasLote = Object.entries(lotes).map(([loteId, lista]) => {
     const nums = lista.map(x => x.numero_serie).sort();
     return `<div class="serial-linha" style="border-color:rgba(139,92,246,.4)">
-      <div><div class="serial-num">📦 ${escHtml(nums[0])} … ${escHtml(nums[nums.length - 1])}</div>
+      <div><div class="serial-num"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${escHtml(nums[0])} … ${escHtml(nums[nums.length - 1])}</div>
       <div class="serial-info">Caixa com ${lista.length} serial(is) · ${escHtml(lista[0].nome_contador || '')} · ${hora(lista[0].contado_em)}</div></div>
       <button class="serial-x" onclick="desfazerLote('${escHtml(loteId)}', ${lista.length})">Desfazer caixa</button>
     </div>`;
@@ -683,7 +690,7 @@ function renderSeriais() {
   const linhasAvulsas = avulsos.map(x => `<div class="serial-linha">
       <div><div class="serial-num">${escHtml(x.numero_serie)}</div>
       <div class="serial-info">${escHtml(x.nome_contador || '')} · ${hora(x.contado_em)}</div>
-      ${x.aviso ? `<div class="serial-aviso">⚠️ ${escHtml(x.aviso)}</div>` : ''}</div>
+      ${x.aviso ? `<div class="serial-aviso"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(x.aviso)}</div>` : ''}</div>
       <button class="serial-x" title="Remover" onclick="removerSerial('${escHtml(x.id)}','${escHtml(x.numero_serie)}')">✕</button>
     </div>`);
 
@@ -777,7 +784,7 @@ async function confirmarLote() {
   const res = await api('/inventario-enel/contagem/lote/confirmar', { method: 'POST', body: JSON.stringify({ item_id: _itemAtual.id, inicial: _previa.inicial, final: _previa.final, excluir }) });
   btn.disabled = false;
   if (!res.ok) { alert(res.erro || 'Erro ao contar a caixa'); return; }
-  retorno(`📦 Caixa contada: ${res.inseridos} serial(is)${res.recusados.length ? ` · ${res.recusados.length} ficaram de fora` : ''}`, res.recusados.length || res.avisos ? 'aviso' : 'ok');
+  retorno(`<svg class=ic aria-hidden=true><use href=#i-package></use></svg> Caixa contada: ${res.inseridos} serial(is)${res.recusados.length ? ` · ${res.recusados.length} ficaram de fora` : ''}`, res.recusados.length || res.avisos ? 'aviso' : 'ok');
   fecharLote();
   atualizarTotal(res.total_item);
   carregarSeriais();

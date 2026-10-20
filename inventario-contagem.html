@@ -82,13 +82,20 @@ input{font-family:var(--font-main);}
 .tela-final{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;}
 .tela-final.ativo{display:flex;}
 </style>
+
+<style id="gcaIconesCss">
+/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
+svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+</style>
 </head>
 <body>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-clipboard-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/> <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/> <path d="M12 11h4"/> <path d="M12 16h4"/> <path d="M8 11h.01"/> <path d="M8 16h.01"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/> <circle cx="12" cy="10" r="3"/></symbol></svg>
 
 <!-- LOGIN -->
 <div class="wrap" id="telaLogin">
   <div class="card">
-    <div class="titulo">📋 Contagem de Inventário</div>
+    <div class="titulo"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Contagem de Inventário</div>
     <div class="sub" id="loginSub">Carregando...</div>
     <div class="form-group">
       <label class="form-label">Matrícula</label>
@@ -117,18 +124,18 @@ input{font-family:var(--font-main);}
     <div class="progresso-txt" id="progressoTxt">0 de 0 contados</div>
   </div>
   <div class="busca-box">
-    <input class="busca-input" id="buscaInput" placeholder="🔍 Buscar item ou código..." oninput="renderLista()">
+    <input class="busca-input" id="buscaInput" placeholder="Buscar item ou código..." oninput="renderLista()">
   </div>
   <div class="lista" id="listaItens"></div>
   <div class="footer">
     <button class="btn btn-ghost" onclick="carregarItens()">↻ Atualizar</button>
-    <button class="btn btn-primary" onclick="tentarFinalizar()">✅ Finalizar Inventário</button>
+    <button class="btn btn-primary" onclick="tentarFinalizar()"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Finalizar Inventário</button>
   </div>
 </div>
 
 <!-- TELA FINAL -->
 <div class="tela-final" id="telaFinal">
-  <div style="font-size:48px;margin-bottom:12px">✅</div>
+  <div style="font-size:48px;margin-bottom:12px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
   <div style="font-size:18px;font-weight:700;margin-bottom:8px">Inventário Finalizado!</div>
   <div style="font-size:13px;color:var(--text-2);margin-bottom:20px" id="telaFinalResumo">—</div>
   <div style="font-size:11px;color:var(--text-3)">Pode fechar esta página.</div>
@@ -186,7 +193,7 @@ async function iniciar() {
     document.getElementById('loginBtn').disabled = true;
     return;
   }
-  document.getElementById('loginSub').textContent = `${info.nome_armazem} — ${info.ano_mes}${info.recontagem ? ` · 🔁 Recontagem (${info.recontagem.rodada}ª contagem)` : ''}`;
+  document.getElementById('loginSub').textContent = `${info.nome_armazem} — ${info.ano_mes}${info.recontagem ? ` · Recontagem (${info.recontagem.rodada}ª contagem)` : ''}`;
 
   if (TOKEN_SESSAO) {
     // Já logado nesta sessão do navegador — pula direto pra contagem
@@ -219,7 +226,7 @@ function mostrarApp(nomeArmazem, anoMes, nome) {
   document.getElementById('telaApp').classList.add('ativo');
   document.getElementById('appTitulo').textContent = nomeArmazem;
   document.getElementById('appSub').textContent = anoMes;
-  document.getElementById('appNome').textContent = '👤 ' + nome;
+  document.getElementById('appNome').textContent = '' + nome;
   carregarItens();
   if (_pollTimer) clearInterval(_pollTimer);
   _pollTimer = setInterval(carregarItens, 6000); // "tempo real" simples via polling — várias
@@ -245,7 +252,7 @@ async function carregarItens() {
   _itens = res.itens;
   _recontagem = res.recontagem || null;
   // Na recontagem só aparecem os itens que voltaram para contar
-  if (_recontagem) document.getElementById('appSub').textContent = `🔁 Recontagem (${_recontagem.rodada}ª contagem) — conte só estes itens`;
+  if (_recontagem) document.getElementById('appSub').textContent = `Recontagem (${_recontagem.rodada}ª contagem) — conte só estes itens`;
   document.getElementById('progressoTxt').textContent = `${res.contados} de ${res.total} ${_recontagem ? 'recontados' : 'contados'}`;
   document.getElementById('progressoFill').style.width = res.total ? `${(res.contados / res.total) * 100}%` : '0%';
   renderLista();
@@ -266,7 +273,7 @@ function renderLista() {
       <div style="flex:1">
         <div class="item-nome">${escHtml(it.nome_item || '—')}</div>
         <div class="item-cod">${escHtml(it.codigo_item || '')} ${it.un_med ? '· ' + escHtml(it.un_med) : ''}</div>
-        ${posicao ? `<div class="item-cod">📍 ${escHtml(posicao)}</div>` : ''}
+        ${posicao ? `<div class="item-cod"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(posicao)}</div>` : ''}
         <div class="item-status ${contado ? 'contado' : ''}">${contado ? `✓ ${it.saldo_contado} — ${escHtml(it.nome_contador || '')}` : 'Não contado'}</div>
       </div>
       <button class="item-btn" onclick="abrirModalContar('${it.id}')">${contado ? 'Editar' : 'Contar'}</button>
@@ -284,7 +291,7 @@ function abrirModalContar(itemId) {
   const posicao = formatarPosicao(_itemAtual);
   document.getElementById('modalItemNome').textContent = _itemAtual.nome_item || '—';
   // Contagem às cegas: o saldo do sistema não aparece (o servidor nem manda)
-  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + (posicao ? ' · 📍 ' + posicao : '');
+  document.getElementById('modalItemCod').textContent = (_itemAtual.codigo_item || '') + (_itemAtual.un_med ? ' · ' + _itemAtual.un_med : '') + (posicao ? ' · ' + posicao : '');
   document.getElementById('qtdInput').value = _itemAtual.saldo_contado != null ? _itemAtual.saldo_contado : '';
   document.getElementById('modalContar').classList.remove('hidden');
   setTimeout(() => { const el = document.getElementById('qtdInput'); el.focus(); el.select(); }, 100);

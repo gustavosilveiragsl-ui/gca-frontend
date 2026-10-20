@@ -115,8 +115,15 @@ canvas{display:block;}
 .suc-title{font-size:32px;font-weight:800;color:#22c55e;margin-bottom:8px;}
 .suc-sub{font-size:16px;color:#475569;}
 </style>
+
+<style id="gcaIconesCss">
+/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
+svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+</style>
 </head>
 <body>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-signature" viewBox="0 0 24 24"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/> <path d="M3 21h18"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol></svg>
 
 <!-- ═══ SETUP (primeira vez) ═══ -->
 <div id="setup">
@@ -189,13 +196,13 @@ canvas{display:block;}
       <div class="canvas-area" id="canvasArea">
         <canvas id="sigCanvas"></canvas>
         <div class="canvas-hint" id="canvasHint">
-          <div class="canvas-hint-icon">✍️</div>
+          <div class="canvas-hint-icon"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg></div>
           Assine aqui com o dedo
         </div>
       </div>
       <div class="ass-actions">
         <button class="btn-limpar" onclick="limparAssinatura()">Limpar</button>
-        <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarAssinatura()" disabled>✅ Confirmar Recebimento</button>
+        <button class="btn-confirmar" id="btnConfirmar" onclick="confirmarAssinatura()" disabled><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento</button>
       </div>
     </div>
   </div>
@@ -203,7 +210,7 @@ canvas{display:block;}
 
 <!-- ═══ SUCESSO ═══ -->
 <div id="sucesso">
-  <div class="suc-icon">✅</div>
+  <div class="suc-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
   <div class="suc-title">Assinatura confirmada!</div>
   <div class="suc-sub" id="sucNome"></div>
 </div>
@@ -230,7 +237,7 @@ async function carregarFiliais() {
       NOMES[f.id] = f.nome;
       const opt = document.createElement('option');
       opt.value = f.id;
-      opt.textContent = '📍 ' + f.nome;
+      opt.textContent = '' + f.nome;
       sel.appendChild(opt);
     });
   } catch(e) {
@@ -238,8 +245,8 @@ async function carregarFiliais() {
     NOMES = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
     const sel = document.getElementById('setupUnidade');
     sel.innerHTML = `<option value="">Selecione a filial...</option>
-      <option value="marica">📍 Maricá</option>
-      <option value="rio_das_ostras">📍 Rio das Ostras</option>`;
+      <option value="marica">Maricá</option>
+      <option value="rio_das_ostras">Rio das Ostras</option>`;
   }
 }
 let _unidade   = '';
@@ -334,7 +341,7 @@ function atualizarPendentes(lista) {
   // Renderiza cards
   wrap.innerHTML = lista.map(a => `
     <div class="colab-card" onclick="abrirAssinatura('${a.id}')">
-      <div class="colab-card-icon">👤</div>
+      <div class="colab-card-icon"><svg class=ic aria-hidden=true><use href=#i-user></use></svg></div>
       <div class="colab-card-name">${escHtml(a.nome_colaborador)}</div>
       <div class="colab-card-sub">${contarItens(a.itens_json)} item(s)</div>
       <span class="colab-card-badge">Toque para assinar</span>
@@ -445,7 +452,7 @@ function limparAssinatura() {
 async function confirmarAssinatura() {
   if (!_atual || !_desenhou) return;
   const btn = document.getElementById('btnConfirmar');
-  btn.disabled = true; btn.textContent = '⏳ Enviando...';
+  btn.disabled = true; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Enviando...';
 
   const canvas   = document.getElementById('sigCanvas');
   const assinSvg = canvas.toDataURL('image/png');
@@ -465,11 +472,11 @@ async function confirmarAssinatura() {
       mostrarSucesso(nome);
     } else {
       alert('Erro ao confirmar: ' + (data.erro || 'Tente novamente'));
-      btn.disabled = false; btn.textContent = '✅ Confirmar Recebimento';
+      btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
     }
   } catch {
     alert('Erro de conexão. Tente novamente.');
-    btn.disabled = false; btn.textContent = '✅ Confirmar Recebimento';
+    btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
   }
 }
 

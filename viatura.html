@@ -57,8 +57,15 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#0a0a0f;color:#f1
 
 .footer{text-align:center;margin-top:32px;font-size:11px;color:#334155;}
 </style>
+
+<style id="gcaIconesCss">
+/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
+svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+</style>
 </head>
 <body>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/> <circle cx="7" cy="17" r="2"/> <path d="M9 17h6"/> <circle cx="17" cy="17" r="2"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m15 9-6 6"/> <path d="m9 9 6 6"/></symbol><symbol id="i-clipboard-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/> <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/> <path d="M12 11h4"/> <path d="M12 16h4"/> <path d="M8 11h.01"/> <path d="M8 16h.01"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/> <path d="M14 2v5a1 1 0 0 0 1 1h5"/> <path d="M10 9H8"/> <path d="M16 13H8"/> <path d="M16 17H8"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/> <path d="m9 12 2 2 4-4"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/> <path d="M8.5 16.429a5 5 0 0 1 7 0"/> <path d="M5 12.859a10 10 0 0 1 5.17-2.69"/> <path d="M19 12.859a10 10 0 0 0-2.007-1.523"/> <path d="M2 8.82a15 15 0 0 1 4.177-2.643"/> <path d="M22 8.82a15 15 0 0 0-11.288-3.764"/> <path d="m2 2 20 20"/></symbol></svg>
 
 <div class="topbar">
   <img src="./logo-gca.png" alt="GCA">
@@ -103,7 +110,7 @@ async function carregar() {
   const el = document.getElementById('content');
 
   if (!placa) {
-    el.innerHTML = `<div class="erro"><div class="erro-icon">🚗</div><div>Placa não informada.</div></div>`;
+    el.innerHTML = `<div class="erro"><div class="erro-icon"><svg class=ic aria-hidden=true><use href=#i-car></use></svg></div><div>Placa não informada.</div></div>`;
     return;
   }
 
@@ -117,12 +124,12 @@ async function carregar() {
     // Sem isso, uma falha de rede deixava a página travada pra sempre na tela de
     // "Carregando..." (promise rejeitada sem tratamento nenhum), sem nenhum aviso.
     console.error('[viatura/carregar]', err);
-    el.innerHTML = `<div class="erro"><div class="erro-icon">📡</div><div>Erro de conexão. Verifique sua internet e recarregue a página.</div></div>`;
+    el.innerHTML = `<div class="erro"><div class="erro-icon"><svg class=ic aria-hidden=true><use href=#i-wifi-off></use></svg></div><div>Erro de conexão. Verifique sua internet e recarregue a página.</div></div>`;
     return;
   }
 
   if (!data?.ok) {
-    el.innerHTML = `<div class="erro"><div class="erro-icon">❌</div><div>Erro ao carregar dados da viatura.</div></div>`;
+    el.innerHTML = `<div class="erro"><div class="erro-icon"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg></div><div>Erro ao carregar dados da viatura.</div></div>`;
     return;
   }
 
@@ -134,7 +141,7 @@ async function carregar() {
   const temVencido = laudos.some(l => l.status === 'VENCIDO');
   const temAlerta  = laudos.some(l => l.status === 'ALERTA');
   const stClass = temVencido ? 'st-vencido' : temAlerta ? 'st-alerta' : 'st-ok';
-  const stIcon  = temVencido ? '❌' : temAlerta ? '⚠️' : '✅';
+  const stIcon  = temVencido ? '<svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg>' : temAlerta ? '<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>';
   const stTxt   = temVencido ? 'Laudo(s) Vencido(s)' : temAlerta ? 'Laudos próximos do vencimento' : 'Todos os laudos em dia';
 
   // Laudos HTML
@@ -147,7 +154,7 @@ async function carregar() {
         <div class="laudo-venc">Vence: ${new Date(l.data_vencimento+'T12:00:00').toLocaleDateString('pt-BR')}</div>
       </div>
       <div class="laudo-dias ${diasCls}">${diasTxt}</div>
-      ${l.link_pdf ? `<a href="${escHtml(safeUrl(l.link_pdf))}" target="_blank" style="font-size:20px;text-decoration:none">📄</a>` : ''}
+      ${l.link_pdf ? `<a href="${escHtml(safeUrl(l.link_pdf))}" target="_blank" style="font-size:20px;text-decoration:none"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg></a>` : ''}
     </div>`;
   }).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Nenhum laudo cadastrado</div>';
 
@@ -158,7 +165,7 @@ async function carregar() {
         <div class="equip-label">${escHtml(eq.label || eq.tipo)}</div>
         ${eq.tem && eq.data_entrega ? `<div class="equip-data">Entregue em: ${new Date(eq.data_entrega+'T12:00:00').toLocaleDateString('pt-BR')}</div>` : ''}
       </div>
-      <span class="equip-status ${eq.tem ? 'equip-tem' : 'equip-nao'}">${eq.tem ? '✅ Tem' : '❌ Não tem'}</span>
+      <span class="equip-status ${eq.tem ? 'equip-tem' : 'equip-nao'}">${eq.tem ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Tem' : '<svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Não tem'}</span>
     </div>`).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Sem equipamentos cadastrados</div>';
 
   el.innerHTML = `
@@ -176,12 +183,12 @@ async function carregar() {
     </div>
 
     <div class="card">
-      <div class="card-title">📋 Laudos</div>
+      <div class="card-title"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Laudos</div>
       ${laudosHtml}
     </div>
 
     <div class="card">
-      <div class="card-title">🛡️ Equipamentos</div>
+      <div class="card-title"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg> Equipamentos</div>
       ${equipsHtml}
     </div>
 
