@@ -737,6 +737,10 @@ function gcaComIcones(html) {
   const extra = (css ? css.outerHTML : '') + sprite.outerHTML;
   return /<body[^>]*>/i.test(html) ? html.replace(/<body[^>]*>/i, m => m + extra) : extra + html;
 }
+// Texto sem o desenho dos ícones (21/10/2026): planilha e texto puro mostrariam o código do <svg>
+function gcaSemIcone(v) {
+  return typeof v === 'string' && v.indexOf('<svg') >= 0 ? v.replace(/<svg\b[^>]*>[\s\S]*?<\/svg>\s?/g, '').trim() : v;
+}
 
 // Remove todos os Service Workers registrados (causavam cache stale)
 if ('serviceWorker' in navigator) {
@@ -7319,7 +7323,7 @@ function pbItensExcel() {
 // ── LOGÍSTICA ── mapa do Brasil com as cargas de entrega e as transferências entre filiais em andamento
 const PBL = { entregues: false, marcadores: [] };
 const PB_TRANSF_STATUS = { AGUARDANDO_ACEITE: 'Aguardando aceite', ACEITA: 'Aceita · preparando o envio', NF_ANEXADA: 'NF anexada · a caminho' };
-const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: '<svg class=ic aria-hidden=true><use href=#i-package></use></svg> Aguardando coleta', EM_TRANSITO: '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em trânsito', ENTREGUE: '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue' })[st] || PB_TRANSF_STATUS[st] || st;
+const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: '<svg class=ic aria-hidden=true><use href=#i-package></use></svg> Aguardando coleta', EM_TRANSITO: '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em trânsito', ENTREGUE: '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue' })[st] || escHtml(PB_TRANSF_STATUS[st] || st);   // devolve HTML (ícone); não passar por escHtml
 function pbLogLimparMapa() {
   if (PB.logAnim) { clearInterval(PB.logAnim); PB.logAnim = null; }
   if (PB.logMap) { try { PB.logMap.remove(); } catch {} PB.logMap = null; }
@@ -7387,7 +7391,7 @@ async function pbAbaLogistica(el) {
           <th>Tipo</th><th>Filial</th><th>De</th><th>Para</th><th>Situação</th><th>Transportador / meio</th><th>Desde</th><th class="num">Dias</th><th class="num">Conteúdo</th></tr></thead><tbody>
           ${linhas.map((l, i) => `<tr ${l.mapa ? `style="cursor:pointer" title="Ver no mapa" onclick="pbLogFoco(${i})"` : ''}>
             <td>${escHtml(l.tipo)}</td><td>${escHtml(l.filial)}</td><td style="white-space:normal;min-width:120px">${escHtml(l.de)}</td><td style="white-space:normal;min-width:140px">${escHtml(l.para)}${l.mapa ? '' : ' <span style="font-size:10px;color:var(--text-3)">(sem mapa)</span>'}</td>
-            <td>${escHtml(pbLogStatus(l.status))}</td><td>${escHtml(l.quem)}</td><td>${l.desde ? formatarData(String(l.desde).slice(0, 10)) : '—'}</td>
+            <td>${pbLogStatus(l.status)}</td><td>${escHtml(l.quem)}</td><td>${l.desde ? formatarData(String(l.desde).slice(0, 10)) : '—'}</td>
             <td class="num ${l.dias > 3 ? 'pb-sit-abaixo' : ''}">${l.dias == null ? '—' : pbNum(l.dias)}</td><td class="num">${escHtml(l.qtd)}</td></tr>`).join('')}
         </tbody></table></div>`}
       </div>
@@ -7428,7 +7432,7 @@ async function pbLogDesenharMapa(cargas, transf) {
     }
     const atends = c.atendimentos.slice(0, 8).map(a => `<div class="lp-atend"><span class="lp-atend-nome">${escHtml(a.nome || '—')}</span>${a.assinado ? ' <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>' : ''}</div>`).join('');
     const mk = L.marker([c.para.lat, c.para.lng], { icon: pino(cor) }).addTo(mapa).bindPopup(`<div class="log-popup">
-      <div class="lp-head"><div class="lp-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(c.destino)}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${escHtml(pbLogStatus(c.status))}</span></div>
+      <div class="lp-head"><div class="lp-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(c.destino)}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${pbLogStatus(c.status)}</span></div>
       <div class="lp-rota-mini"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> ${escHtml(c.filial)}${c.origem ? ` · <svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> ${escHtml(c.origem)} <span class="lp-seta">→</span> ${escHtml(c.destino)}` : ''}</div>
       <div class="lp-transp"><svg class=ic aria-hidden=true><use href=#i-user></use></svg> ${escHtml(c.transportador || 'sem transportador')}${c.status !== 'ENTREGUE' && c.dias != null ? ` · há ${c.dias} dia(s)` : ''}</div>
       <div class="lp-atend-head">${c.atendimentos.length} atendimento(s)</div><div class="lp-atendimentos">${atends}${c.atendimentos.length > 8 ? `<div class="lp-atend">+${c.atendimentos.length - 8}</div>` : ''}</div>
@@ -7468,7 +7472,7 @@ function pbLogFoco(i) {
   mk.openPopup();
 }
 function pbLogExcel() {
-  const ls = (PBL.linhas || []).map(l => ({ ...l, status: pbLogStatus(l.status), desde: l.desde ? formatarData(String(l.desde).slice(0, 10)) : '' }));
+  const ls = (PBL.linhas || []).map(l => ({ ...l, status: gcaSemIcone(pbLogStatus(l.status)).replace(/&amp;/g, '&'), desde: l.desde ? formatarData(String(l.desde).slice(0, 10)) : '' }));
   gcaExportarExcel('Painel_Brasil_Logistica', ls, [{ key: 'tipo', label: 'Tipo' }, { key: 'filial', label: 'Filial' }, { key: 'de', label: 'De' }, { key: 'para', label: 'Para' },
     { key: 'status', label: 'Situação' }, { key: 'quem', label: 'Transportador / meio' }, { key: 'desde', label: 'Desde' }, { key: 'dias', label: 'Dias' }, { key: 'qtd', label: 'Conteúdo' }]);
 }
@@ -12342,9 +12346,11 @@ function renderSolicitacoes() {
 
     let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
     const qtd = itens.length || s.qtd_itens || 0;
+    // Viatura: o ícone vai à parte, fora do escHtml (21/10/2026: o código do ícone aparecia no nome)
     const nome = s.destinatario_tipo === 'VIATURA'
-      ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Viatura ${s.placa || ''}${s.retirado_por_nome ? ` · retira: ${s.retirado_por_nome}` : ''}`
+      ? `Viatura ${s.placa || ''}${s.retirado_por_nome ? ` · retira: ${s.retirado_por_nome}` : ''}`
       : (s.colaborador_nome || s.colaboradorNome || '—');
+    const nomeIcone = s.destinatario_tipo === 'VIATURA' ? '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> ' : '';
     const sol  = s.solicitante_nome || s.solicitanteNome || '—';
 
     // Tags de alerta
@@ -12366,7 +12372,7 @@ function renderSolicitacoes() {
       : 'border-left:4px solid transparent';
     return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${escJs(s.id)}')">
       <td>
-        <div class="td-main">${escHtml(nome)}</div>
+        <div class="td-main">${nomeIcone}${escHtml(nome)}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${escHtml(s.id)}</div>
         ${s.base_colaborador ? `<div style="font-size:10px;color:var(--text-2);margin-top:2px" title="Base do colaborador que vai receber"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(s.base_colaborador)}${
           s.base_solicitante && s.base_origem === 'solicitante' && s.base_colaborador !== s.base_solicitante
@@ -12435,9 +12441,11 @@ async function abrirModalSolicitacao(id) {
 
   let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
   let historico = []; try { historico = JSON.parse(s.historico_status || '[]'); } catch {}
+  // Viatura: o ícone vai à parte (o subtítulo é texto puro; 21/10/2026)
   const nome = s.destinatario_tipo === 'VIATURA'
-    ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Viatura ${s.placa || ''}${s.retirado_por_nome ? ` · retira: ${s.retirado_por_nome}` : ''}`
+    ? `Viatura ${s.placa || ''}${s.retirado_por_nome ? ` · retira: ${s.retirado_por_nome}` : ''}`
     : (s.colaborador_nome || '—');
+  const nomeIcone = s.destinatario_tipo === 'VIATURA' ? '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> ' : '';
   const sol  = s.solicitante_nome || '—';
   const obs  = s.obs_geral || s.observacao || '';
 
@@ -12475,7 +12483,7 @@ async function abrirModalSolicitacao(id) {
           </div>
           <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
             <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">COLABORADOR</div>
-            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nome}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-1)">${nomeIcone}${escHtml(nome)}</div>
           </div>
           <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
             <div style="font-size:10px;color:var(--text-3);margin-bottom:4px">ARMAZÉM</div>
@@ -18701,11 +18709,13 @@ function caPrazo(c) {
   return c.situacao === 'vencendo' ? `Vence em ${c.dias} dia${c.dias === 1 ? '' : 's'}` : `Até ${caDataBR(c.validade)}`;
 }
 function caMteTexto(c) {
-  if (c.situacao_mte === 'NAO_ENCONTRADO') return '<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Número não encontrado na base do MTE — confira o CA';
+  if (c.situacao_mte === 'NAO_ENCONTRADO') return 'Número não encontrado na base do MTE — confira o CA';
   if (!c.situacao_mte) return 'Ainda não conferido na base do MTE';
   const sit = { VALIDO: 'Válido', VENCIDO: 'Vencido', CANCELADO: 'Cancelado', SUSPENSO: 'Suspenso' }[c.situacao_mte] || c.situacao_mte;
   return `${sit} no MTE${c.validade_mte ? ` · validade ${caDataBR(c.validade_mte)}` : ''}`;
 }
+// Para a tela (HTML): o mesmo texto, com o ícone de alerta quando o número não está no MTE
+const caMteHtml = (c) => (c.situacao_mte === 'NAO_ENCONTRADO' ? '<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ' : '') + escHtml(caMteTexto(c));
 
 async function caInit(foco) {
   _ca.foco = foco || null;
@@ -18863,7 +18873,7 @@ function caRenderCas() {
     <td class="td-mono" style="font-weight:700">${escHtml(c.ca)}</td><td>${escHtml(c.marca || '—')}</td>
     <td style="font-size:11px">${escHtml(c.fabricante || '—')}</td><td style="font-size:11px">${escHtml(c.equipamento || '—')}</td>
     <td>${caDataBR(c.validade)}</td><td>${caSelo(c.situacao, caPrazo(c))}</td>
-    <td style="font-size:11px">${escHtml(caMteTexto(c))}</td>
+    <td style="font-size:11px">${caMteHtml(c)}</td>
     <td style="font-size:11px">${c.itens.map(escHtml).join('<br>') || '<span style="color:var(--text-3)">nenhum item</span>'}</td></tr>`).join('')
     || '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text-3)">Nenhum CA cadastrado.</td></tr>';
   document.getElementById('caContagem').textContent = `${lista.length} CAs`;
@@ -18912,7 +18922,7 @@ function caAbrirCa(itemId, numero) {
         ${!c.ativo ? `<div style="font-size:12px;color:var(--text-2)">Marcado como "não compramos mais"${c.inativado_por ? ` por ${escHtml(c.inativado_por)}` : ''}${c.inativado_em ? ` em ${caDataBR(c.inativado_em)}` : ''}${c.motivo_inativacao ? ` — ${escHtml(c.motivo_inativacao)}` : ''}. Não sai nas entregas novas.</div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${campo('Fabricante', escHtml(c.fabricante || '—'))}${campo('CNPJ', escHtml(c.cnpj || '—'))}
-          ${campo('Equipamento', escHtml(c.equipamento || '—'))}${campo('Base do MTE', escHtml(caMteTexto(c)))}
+          ${campo('Equipamento', escHtml(c.equipamento || '—'))}${campo('Base do MTE', caMteHtml(c))}
         </div>
         ${pode ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div><label class="form-label" for="caDetMarca">Marca</label><input id="caDetMarca" class="form-input" value="${escHtml(c.marca || '')}" maxlength="80"></div>
@@ -26554,10 +26564,20 @@ function cseLimpar() {
 // EXPORTS EXCEL — SheetJS
 // ═══════════════════════════════════════════════════════════════
 function gcaCarregarSheetJS(cb) {
-  if (window.XLSX) { cb(); return; }
+  // Toda planilha passa por aqui: as células saem sem o desenho dos ícones da tela (21/10/2026)
+  const pronto = () => {
+    if (!XLSX.utils._gcaSemIcone) {
+      const aoa = XLSX.utils.aoa_to_sheet, json = XLSX.utils.json_to_sheet;
+      XLSX.utils.aoa_to_sheet = (linhas, op) => aoa((linhas || []).map(l => Array.isArray(l) ? l.map(gcaSemIcone) : l), op);
+      XLSX.utils.json_to_sheet = (linhas, op) => json((linhas || []).map(o => o && typeof o === 'object' ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, gcaSemIcone(v)])) : o), op);
+      XLSX.utils._gcaSemIcone = true;
+    }
+    return cb();
+  };
+  if (window.XLSX) { pronto(); return; }
   const s = document.createElement('script');
   s.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js';
-  s.onload = cb;
+  s.onload = pronto;
   document.head.appendChild(s);
 }
 
@@ -27222,7 +27242,7 @@ function bmExcelRevisao() {
   gcaExportarExcel('Revisao_medidores', lista.map(r => ({
     serial: r.numero_serie, medidor: r.material || '', equipe: r.equipe || '', equipe_atual: r.equipe_atual || '',
     liberado_em: formatarData(String(r.data_liberacao || '').slice(0, 10)), liberado_por: r.liberado_por || '', motivo: r.justificativa || '',
-    dias: r.dias_na_equipe ?? '', situacao: (BM_SITUACAO[r.situacao] || [r.situacao])[0].replace(/^\S+\s/, ''),
+    dias: r.dias_na_equipe ?? '', situacao: gcaSemIcone((BM_SITUACAO[r.situacao] || [r.situacao])[0]).replace(/^[↩✖]\s*/, ''),
     ordem: r.os_instalacao || '', instalado_em: r.data_instalacao ? formatarData(String(r.data_instalacao).slice(0, 10)) : '',
     revisado_por: r.revisado_por || '', revisado_em: r.revisado_em ? formatarDataHora(r.revisado_em) : '', obs: r.obs_revisao || '',
   })), [
