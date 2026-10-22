@@ -737,9 +737,16 @@ function gcaComIcones(html) {
   const extra = (css ? css.outerHTML : '') + sprite.outerHTML;
   return /<body[^>]*>/i.test(html) ? html.replace(/<body[^>]*>/i, m => m + extra) : extra + html;
 }
+// Situação com cor (22/10/2026): bolinha cheia na cor, símbolo branco dentro e o texto no tom
+// da mesma cor. matiz: ambar, azul, teal, laranja, ceu, violeta, verde, vermelho, indigo, rosa, cinza
+function gcaSit(texto, matiz, icone) {
+  const t = String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return `<span class="sit h-${matiz}"><span class="sit-bola"><svg class=ic aria-hidden=true><use href=#i-${icone}></use></svg></span>${t}</span>`;
+}
 // Texto sem o desenho dos ícones (21/10/2026): planilha e texto puro mostrariam o código do <svg>
 function gcaSemIcone(v) {
-  return typeof v === 'string' && v.indexOf('<svg') >= 0 ? v.replace(/<svg\b[^>]*>[\s\S]*?<\/svg>\s?/g, '').trim() : v;
+  if (typeof v !== 'string' || (v.indexOf('<svg') < 0 && v.indexOf('class="sit') < 0)) return v;
+  return v.replace(/<svg\b[^>]*>[\s\S]*?<\/svg>\s?/g, '').replace(/<\/?span\b[^>]*>/g, '').trim();
 }
 
 // Remove todos os Service Workers registrados (causavam cache stale)
@@ -762,10 +769,108 @@ window.addEventListener('pageshow', function(e) {
 /* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
 svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
 .ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+/* Visual com cor (22/10/2026, aprovado): cada situação e cada área tem sua cor (--c = cheia, --t = tom do texto) */
+.h-ambar{--c:#f59e0b;--t:#fcd34d}.h-azul{--c:#3b82f6;--t:#93c5fd}.h-teal{--c:#14b8a6;--t:#5eead4}.h-laranja{--c:#f97316;--t:#fdba74}.h-ceu{--c:#0ea5e9;--t:#7dd3fc}.h-violeta{--c:#8b5cf6;--t:#c4b5fd}.h-verde{--c:#22c55e;--t:#86efac}.h-vermelho{--c:#ef4444;--t:#fca5a5}.h-indigo{--c:#6366f1;--t:#a5b4fc}.h-rosa{--c:#ec4899;--t:#f9a8d4}.h-cinza{--c:#94a3b8;--t:#cbd5e1}
+[data-theme="light"] .h-ambar{--t:#b45309}[data-theme="light"] .h-azul{--t:#1d4ed8}[data-theme="light"] .h-teal{--t:#0f766e}[data-theme="light"] .h-laranja{--t:#c2410c}[data-theme="light"] .h-ceu{--t:#0369a1}[data-theme="light"] .h-violeta{--t:#6d28d9}[data-theme="light"] .h-verde{--t:#15803d}[data-theme="light"] .h-vermelho{--t:#b91c1c}[data-theme="light"] .h-indigo{--t:#4338ca}[data-theme="light"] .h-rosa{--t:#be185d}[data-theme="light"] .h-cinza{--t:#475569}
+.sit{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--t);font-weight:600;font-size:11px;line-height:1.5;vertical-align:middle}
+.sit-bola{width:17px;height:17px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;flex-shrink:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 28%,transparent)}
+.sit-bola svg[class^="ic"]{width:10px;height:10px;stroke-width:2.8;vertical-align:0}
+.tile{display:inline-grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--c,#6366f1) 17%,transparent);color:var(--c,#6366f1)}
+[data-theme="light"] .tile{color:var(--t,#4338ca);background:color-mix(in srgb,var(--c,#6366f1) 13%,transparent)}
+.tile svg[class^="ic"]{fill:currentColor;fill-opacity:.16}
+.quick-card{color:var(--text-1)}.qc-icon.tile{width:40px;height:40px;border-radius:11px;font-size:20px}.kpi-icon.tile{width:32px;height:32px;border-radius:9px;font-size:17px}
+.nav-group .ni-icon{color:var(--c)}[data-theme="light"] .nav-group .ni-icon{color:var(--t)}.nav-item.active .ni-icon{opacity:1}
+.card-title>svg[class^="ic"]{color:var(--c,var(--accent-text))}[data-theme="light"] .card-title>svg[class^="ic"]{color:var(--t,var(--accent))}
+.modal-title>svg[class^="ic"]{color:var(--accent-text)}
+[data-theme="light"]{--yellow:#b45309;--green:#15803d;--blue:#0369a1;--red:#b91c1c;--accent-text:#4f46e5}
 </style>
 </head>
 <body>
-<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-_ponto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol><symbol id="i-_quadrado" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" stroke="none"/></symbol><symbol id="i-alarm-clock" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/> <path d="M12 9v4l2 2"/> <path d="M5 3 2 6"/> <path d="m22 6-3-3"/> <path d="M6.38 18.7 4 21"/> <path d="M17.64 18.67 20 21"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/> <path d="M10 12h4"/></symbol><symbol id="i-arrow-left-right" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/> <path d="M4 7h16"/> <path d="m16 21 4-4-4-4"/> <path d="M20 17H4"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/> <path d="m12 5 7 7-7 7"/></symbol><symbol id="i-badge-plus" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/> <line x1="12" x2="12" y1="8" y2="16"/> <line x1="8" x2="16" y1="12" y2="12"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M4.929 4.929 19.07 19.071"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/> <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol><symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/> <rect width="16" height="12" x="4" y="8" rx="2"/> <path d="M2 14h2"/> <path d="M20 14h2"/> <path d="M15 13v2"/> <path d="M9 13v2"/></symbol><symbol id="i-briefcase-business" viewBox="0 0 24 24"><path d="M12 12h.01"/> <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/> <path d="M22 13a18.15 18.15 0 0 1-20 0"/> <rect width="20" height="14" x="2" y="6" rx="2"/></symbol><symbol id="i-building-2" viewBox="0 0 24 24"><path d="M10 12h4"/> <path d="M10 8h4"/> <path d="M14 21v-3a2 2 0 0 0-4 0v3"/> <path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/> <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol><symbol id="i-bus" viewBox="0 0 24 24"><path d="M8 6v6"/> <path d="M15 6v6"/> <path d="M2 12h19.6"/> <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/> <circle cx="7" cy="18" r="2"/> <path d="M9 18h5"/> <circle cx="16" cy="18" r="2"/></symbol><symbol id="i-cable" viewBox="0 0 24 24"><path d="M17 19a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1z"/> <path d="M17 21v-2"/> <path d="M19 14V6.5a1 1 0 0 0-7 0v11a1 1 0 0 1-7 0V10"/> <path d="M21 21v-2"/> <path d="M3 5V3"/> <path d="M4 10a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2z"/> <path d="M7 5V3"/></symbol><symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/> <line x1="8" x2="16" y1="6" y2="6"/> <line x1="16" x2="16" y1="14" y2="18"/> <path d="M16 10h.01"/> <path d="M12 10h.01"/> <path d="M8 10h.01"/> <path d="M12 14h.01"/> <path d="M8 14h.01"/> <path d="M12 18h.01"/> <path d="M8 18h.01"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/></symbol><symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/> <path d="M8 13h.01"/> <path d="M12 13h.01"/> <path d="M16 13h.01"/> <path d="M8 17h.01"/> <path d="M12 17h.01"/> <path d="M16 17h.01"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/> <circle cx="12" cy="13" r="3"/></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/> <circle cx="7" cy="17" r="2"/> <path d="M9 17h6"/> <circle cx="17" cy="17" r="2"/></symbol><symbol id="i-car-front" viewBox="0 0 24 24"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8"/> <path d="M7 14h.01"/> <path d="M17 14h.01"/> <rect width="18" height="8" x="3" y="10" rx="2"/> <path d="M5 18v2"/> <path d="M19 18v2"/></symbol><symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/> <path d="M18 17V9"/> <path d="M13 17V5"/> <path d="M8 17v-3"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-circle-dollar-sign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/> <path d="M12 18V6"/></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m15 9-6 6"/> <path d="m9 9 6 6"/></symbol><symbol id="i-clipboard-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/> <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/> <path d="M12 11h4"/> <path d="M12 16h4"/> <path d="M8 11h.01"/> <path d="M8 16h.01"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 6v6l4 2"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/> <path d="m7 10 5 5 5-5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/> <circle cx="12" cy="12" r="3"/></symbol><symbol id="i-file-pen-line" viewBox="0 0 24 24"><path d="M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"/> <path d="M14.487 7.858A1 1 0 0 1 14 7V2"/> <path d="M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"/> <path d="M8 18h1"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/> <path d="M14 2v5a1 1 0 0 0 1 1h5"/> <path d="M10 9H8"/> <path d="M16 13H8"/> <path d="M16 17H8"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol><symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></symbol><symbol id="i-folder-kanban" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/> <path d="M8 10v4"/> <path d="M12 10v2"/> <path d="M16 10v6"/></symbol><symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/> <path d="M2 12h20"/></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3"/> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/> <path d="m21 3 1 11h-2"/> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/> <path d="M3 4h8"/></symbol><symbol id="i-hard-hat" viewBox="0 0 24 24"><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/> <path d="M14 6a6 6 0 0 1 6 6v3"/> <path d="M4 15v-3a6 6 0 0 1 6-6"/> <rect x="2" y="15" width="20" height="4" rx="1"/></symbol><symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" x2="20" y1="9" y2="9"/> <line x1="4" x2="20" y1="15" y2="15"/> <line x1="10" x2="8" y1="3" y2="21"/> <line x1="16" x2="14" y1="3" y2="21"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/> <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 16v-4"/> <path d="M12 8h.01"/></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7"/> <path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/> <path d="M14 18v-7"/> <path d="M18 18v-7"/> <path d="M3 22h18"/> <path d="M6 18v-7"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="m16 6 4 14"/> <path d="M12 6v14"/> <path d="M8 8v12"/> <path d="M4 4v16"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1"/> <rect x="3" y="10" width="18" height="12" rx="2"/> <path d="M7 10V7a5 5 0 0 1 10 0v3"/></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/> <rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-mailbox" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z"/> <polyline points="15,9 18,9 18,11"/> <path d="M6.5 5C9 5 11 7 11 9.5V17a2 2 0 0 1-2 2"/> <line x1="6" x2="7" y1="10" y2="10"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/> <path d="M15 5.764v15"/> <path d="M9 3.236v15"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/> <circle cx="12" cy="10" r="3"/></symbol><symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/> <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/> <path d="M8 6v8"/></symbol><symbol id="i-message-square" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol><symbol id="i-microscope" viewBox="0 0 24 24"><path d="M6 18h8"/> <path d="M3 22h18"/> <path d="M14 22a7 7 0 1 0 0-14h-1"/> <path d="M9 14h2"/> <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/> <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol><symbol id="i-octagon-x" viewBox="0 0 24 24"><path d="m15 9-6 6"/> <path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/> <path d="m9 9 6 6"/></symbol><symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/> <path d="M12 22V12"/> <polyline points="3.29 7 12 12 20.71 7"/> <path d="m7.5 4.27 9 5.15"/></symbol><symbol id="i-package-minus" viewBox="0 0 24 24"><path d="M12 22V12"/> <path d="M16 17h6"/> <path d="M21 13V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955"/> <path d="M3.29 7 12 12l8.71-5"/> <path d="m7.5 4.27 8.997 5.148"/></symbol><symbol id="i-package-plus" viewBox="0 0 24 24"><path d="M12 22V12"/> <path d="M16 17h6"/> <path d="M19 14v6"/> <path d="M21 10.535V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955"/> <path d="M3.29 7 12 12l8.71-5"/> <path d="m7.5 4.27 8.997 5.148"/></symbol><symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79"/> <path d="M4 3h.01"/> <path d="M22 8h.01"/> <path d="M15 2h.01"/> <path d="M22 20h.01"/> <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/> <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/> <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/> <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/> <path d="m15 5 4 4"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/> <path d="M15 8V2"/> <path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/> <path d="M9 8V2"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/> <path d="M12 5v14"/></symbol><symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/> <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/> <rect x="6" y="14" width="12" height="8" rx="1"/></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></symbol><symbol id="i-qr-code" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/> <rect width="5" height="5" x="16" y="3" rx="1"/> <rect width="5" height="5" x="3" y="16" rx="1"/> <path d="M21 16h-3a2 2 0 0 0-2 2v3"/> <path d="M21 21v.01"/> <path d="M12 7v3a2 2 0 0 1-2 2H7"/> <path d="M3 12h.01"/> <path d="M12 3h.01"/> <path d="M12 16v.01"/> <path d="M16 12h1"/> <path d="M21 12v.01"/> <path d="M12 21v-1"/></symbol><symbol id="i-receipt-text" viewBox="0 0 24 24"><path d="M13 16H8"/> <path d="M14 8H8"/> <path d="M16 12H8"/> <path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/></symbol><symbol id="i-recycle" viewBox="0 0 24 24"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/> <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/> <path d="m14 16-3 3 3 3"/> <path d="M8.293 13.596 7.196 9.5 3.1 10.598"/> <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/> <path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/> <path d="M3 11v-1a4 4 0 0 1 4-4h14"/> <path d="m7 22-4-4 4-4"/> <path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/> <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/> <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/> <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/> <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/> <path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol><symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/> <path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/> <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/> <path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/> <path d="M7 21h10"/></symbol><symbol id="i-scan-barcode" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/> <path d="M17 3h2a2 2 0 0 1 2 2v2"/> <path d="M21 17v2a2 2 0 0 1-2 2h-2"/> <path d="M7 21H5a2 2 0 0 1-2-2v-2"/> <path d="M8 7v10"/> <path d="M12 7v10"/> <path d="M17 7v10"/></symbol><symbol id="i-scroll-text" viewBox="0 0 24 24"><path d="M15 12h-5"/> <path d="M15 8h-5"/> <path d="M19 17V5a2 2 0 0 0-2-2H4"/> <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/> <circle cx="11" cy="11" r="8"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/> <path d="m21.854 2.147-10.94 10.939"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/> <circle cx="12" cy="12" r="3"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/> <path d="m9 12 2 2 4-4"/></symbol><symbol id="i-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></symbol><symbol id="i-shopping-cart" viewBox="0 0 24 24"><path d="m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18"/> <path d="M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25"/> <circle cx="18" cy="20" r="2"/> <circle cx="8" cy="20" r="2"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/> <path d="m18 2 4 4-4 4"/> <path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/> <path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/> <path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol><symbol id="i-signature" viewBox="0 0 24 24"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/> <path d="M3 21h18"/></symbol><symbol id="i-siren" viewBox="0 0 24 24"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/> <path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/> <path d="M21 12h1"/> <path d="M18.5 4.5 18 5"/> <path d="M2 12h1"/> <path d="M12 2v1"/> <path d="m4.929 4.929.707.707"/> <path d="M12 12v6"/></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/> <path d="M20 2v4"/> <path d="M22 4h-4"/> <circle cx="4" cy="20" r="2"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/> <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/> <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/> <path d="M12 2v2"/> <path d="M12 20v2"/> <path d="m4.93 4.93 1.41 1.41"/> <path d="m17.66 17.66 1.41 1.41"/> <path d="M2 12h2"/> <path d="M20 12h2"/> <path d="m6.34 17.66-1.41 1.41"/> <path d="m19.07 4.93-1.41 1.41"/></symbol><symbol id="i-tablet-smartphone" viewBox="0 0 24 24"><rect width="10" height="14" x="3" y="8" rx="2"/> <path d="M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4"/> <path d="M8 18h.01"/></symbol><symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/> <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <circle cx="12" cy="12" r="6"/> <circle cx="12" cy="12" r="2"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6"/> <path d="M14 11v6"/> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/> <path d="M3 6h18"/> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-tree-palm" viewBox="0 0 24 24"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/> <path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/> <path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35"/> <path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/> <path d="m22 7-8.5 8.5-5-5L2 17"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/> <path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/> <path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/> <path d="M4 22h16"/> <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/> <path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/> <path d="M15 18H9"/> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/> <circle cx="17" cy="18" r="2"/> <circle cx="7" cy="18" r="2"/></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/> <path d="m17 8-5-5-5 5"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <path d="M16 3.128a4 4 0 0 1 0 7.744"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <circle cx="9" cy="7" r="4"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol><symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"/> <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z"/> <path d="M6 13h12"/> <path d="M6 17h12"/></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol></svg>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-_ponto" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol><symbol id="i-_quadrado" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="3" fill="currentColor" stroke="none"/></symbol><symbol id="i-alarm-clock" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/> <path d="M12 9v4l2 2"/> <path d="M5 3 2 6"/> <path d="m22 6-3-3"/> <path d="M6.38 18.7 4 21"/> <path d="M17.64 18.67 20 21"/></symbol><symbol id="i-archive" viewBox="0 0 24 24"><rect width="20" height="5" x="2" y="3" rx="1"/> <path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/> <path d="M10 12h4"/></symbol><symbol id="i-arrow-left-right" viewBox="0 0 24 24"><path d="M8 3 4 7l4 4"/> <path d="M4 7h16"/> <path d="m16 21 4-4-4-4"/> <path d="M20 17H4"/></symbol><symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/> <path d="m12 5 7 7-7 7"/></symbol><symbol id="i-badge-plus" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/> <line x1="12" x2="12" y1="8" y2="16"/> <line x1="8" x2="16" y1="12" y2="12"/></symbol><symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M4.929 4.929 19.07 19.071"/></symbol><symbol id="i-bell" viewBox="0 0 24 24"><path d="M10.268 21a2 2 0 0 0 3.464 0"/> <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></symbol><symbol id="i-bookmark" viewBox="0 0 24 24"><path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z"/></symbol><symbol id="i-bot" viewBox="0 0 24 24"><path d="M12 8V4H8"/> <rect width="16" height="12" x="4" y="8" rx="2"/> <path d="M2 14h2"/> <path d="M20 14h2"/> <path d="M15 13v2"/> <path d="M9 13v2"/></symbol><symbol id="i-briefcase-business" viewBox="0 0 24 24"><path d="M12 12h.01"/> <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/> <path d="M22 13a18.15 18.15 0 0 1-20 0"/> <rect width="20" height="14" x="2" y="6" rx="2"/></symbol><symbol id="i-building-2" viewBox="0 0 24 24"><path d="M10 12h4"/> <path d="M10 8h4"/> <path d="M14 21v-3a2 2 0 0 0-4 0v3"/> <path d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"/> <path d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"/></symbol><symbol id="i-bus" viewBox="0 0 24 24"><path d="M8 6v6"/> <path d="M15 6v6"/> <path d="M2 12h19.6"/> <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/> <circle cx="7" cy="18" r="2"/> <path d="M9 18h5"/> <circle cx="16" cy="18" r="2"/></symbol><symbol id="i-cable" viewBox="0 0 24 24"><path d="M17 19a1 1 0 0 1-1-1v-2a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2a1 1 0 0 1-1 1z"/> <path d="M17 21v-2"/> <path d="M19 14V6.5a1 1 0 0 0-7 0v11a1 1 0 0 1-7 0V10"/> <path d="M21 21v-2"/> <path d="M3 5V3"/> <path d="M4 10a2 2 0 0 1-2-2V6a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2a2 2 0 0 1-2 2z"/> <path d="M7 5V3"/></symbol><symbol id="i-calculator" viewBox="0 0 24 24"><rect width="16" height="20" x="4" y="2" rx="2"/> <line x1="8" x2="16" y1="6" y2="6"/> <line x1="16" x2="16" y1="14" y2="18"/> <path d="M16 10h.01"/> <path d="M12 10h.01"/> <path d="M8 10h.01"/> <path d="M12 14h.01"/> <path d="M8 14h.01"/> <path d="M12 18h.01"/> <path d="M8 18h.01"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24"><path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/></symbol><symbol id="i-calendar-days" viewBox="0 0 24 24"><path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/> <path d="M8 13h.01"/> <path d="M12 13h.01"/> <path d="M16 13h.01"/> <path d="M8 17h.01"/> <path d="M12 17h.01"/> <path d="M16 17h.01"/></symbol><symbol id="i-camera" viewBox="0 0 24 24"><path d="M13.997 4a2 2 0 0 1 1.76 1.05l.486.9A2 2 0 0 0 18.003 7H20a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1.997a2 2 0 0 0 1.759-1.048l.489-.904A2 2 0 0 1 10.004 4z"/> <circle cx="12" cy="13" r="3"/></symbol><symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/> <circle cx="7" cy="17" r="2"/> <path d="M9 17h6"/> <circle cx="17" cy="17" r="2"/></symbol><symbol id="i-car-front" viewBox="0 0 24 24"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8"/> <path d="M7 14h.01"/> <path d="M17 14h.01"/> <rect width="18" height="8" x="3" y="10" rx="2"/> <path d="M5 18v2"/> <path d="M19 18v2"/></symbol><symbol id="i-chart-column" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16"/> <path d="M18 17V9"/> <path d="M13 17V5"/> <path d="M8 17v-3"/></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-circle-dollar-sign" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/> <path d="M12 18V6"/></symbol><symbol id="i-circle-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m15 9-6 6"/> <path d="m9 9 6 6"/></symbol><symbol id="i-clipboard-list" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/> <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/> <path d="M12 11h4"/> <path d="M12 16h4"/> <path d="M8 11h.01"/> <path d="M8 16h.01"/></symbol><symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 6v6l4 2"/></symbol><symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"/></symbol><symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/> <path d="m7 10 5 5 5-5"/></symbol><symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/> <circle cx="12" cy="12" r="3"/></symbol><symbol id="i-file-pen-line" viewBox="0 0 24 24"><path d="M14.364 13.634a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506l4.013-4.009a1 1 0 0 0-3.004-3.004z"/> <path d="M14.487 7.858A1 1 0 0 1 14 7V2"/> <path d="M20 19.645V20a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l2.516 2.516"/> <path d="M8 18h1"/></symbol><symbol id="i-file-text" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/> <path d="M14 2v5a1 1 0 0 0 1 1h5"/> <path d="M10 9H8"/> <path d="M16 13H8"/> <path d="M16 17H8"/></symbol><symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/></symbol><symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4"/></symbol><symbol id="i-folder-kanban" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/> <path d="M8 10v4"/> <path d="M12 10v2"/> <path d="M16 10v6"/></symbol><symbol id="i-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/> <path d="M2 12h20"/></symbol><symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/> <path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/> <path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/> <path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></symbol><symbol id="i-handshake" viewBox="0 0 24 24"><path d="m11 17 2 2a1 1 0 1 0 3-3"/> <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/> <path d="m21 3 1 11h-2"/> <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/> <path d="M3 4h8"/></symbol><symbol id="i-hard-hat" viewBox="0 0 24 24"><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/> <path d="M14 6a6 6 0 0 1 6 6v3"/> <path d="M4 15v-3a6 6 0 0 1 6-6"/> <rect x="2" y="15" width="20" height="4" rx="1"/></symbol><symbol id="i-hash" viewBox="0 0 24 24"><line x1="4" x2="20" y1="9" y2="9"/> <line x1="4" x2="20" y1="15" y2="15"/> <line x1="10" x2="8" y1="3" y2="21"/> <line x1="16" x2="14" y1="3" y2="21"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-inbox" viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/> <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></symbol><symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="M12 16v-4"/> <path d="M12 8h.01"/></symbol><symbol id="i-key-round" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-landmark" viewBox="0 0 24 24"><path d="M10 18v-7"/> <path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z"/> <path d="M14 18v-7"/> <path d="M18 18v-7"/> <path d="M3 22h18"/> <path d="M6 18v-7"/></symbol><symbol id="i-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/> <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/> <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol><symbol id="i-library" viewBox="0 0 24 24"><path d="m16 6 4 14"/> <path d="M12 6v14"/> <path d="M8 8v12"/> <path d="M4 4v16"/></symbol><symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/> <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol><symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol><symbol id="i-lock-keyhole" viewBox="0 0 24 24"><circle cx="12" cy="16" r="1"/> <rect x="3" y="10" width="18" height="12" rx="2"/> <path d="M7 10V7a5 5 0 0 1 10 0v3"/></symbol><symbol id="i-lock-open" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/> <path d="M7 11V7a5 5 0 0 1 9.9-1"/></symbol><symbol id="i-mail" viewBox="0 0 24 24"><path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/> <rect x="2" y="4" width="20" height="16" rx="2"/></symbol><symbol id="i-mailbox" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z"/> <polyline points="15,9 18,9 18,11"/> <path d="M6.5 5C9 5 11 7 11 9.5V17a2 2 0 0 1-2 2"/> <line x1="6" x2="7" y1="10" y2="10"/></symbol><symbol id="i-map" viewBox="0 0 24 24"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/> <path d="M15 5.764v15"/> <path d="M9 3.236v15"/></symbol><symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/> <circle cx="12" cy="10" r="3"/></symbol><symbol id="i-megaphone" viewBox="0 0 24 24"><path d="M11 6a13 13 0 0 0 8.4-2.8A1 1 0 0 1 21 4v12a1 1 0 0 1-1.6.8A13 13 0 0 0 11 14H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"/> <path d="M6 14a12 12 0 0 0 2.4 7.2 2 2 0 0 0 3.2-2.4A8 8 0 0 1 10 14"/> <path d="M8 6v8"/></symbol><symbol id="i-message-square" viewBox="0 0 24 24"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></symbol><symbol id="i-microscope" viewBox="0 0 24 24"><path d="M6 18h8"/> <path d="M3 22h18"/> <path d="M14 22a7 7 0 1 0 0-14h-1"/> <path d="M9 14h2"/> <path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z"/> <path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3"/></symbol><symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></symbol><symbol id="i-octagon-x" viewBox="0 0 24 24"><path d="m15 9-6 6"/> <path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"/> <path d="m9 9 6 6"/></symbol><symbol id="i-package" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/> <path d="M12 22V12"/> <polyline points="3.29 7 12 12 20.71 7"/> <path d="m7.5 4.27 9 5.15"/></symbol><symbol id="i-package-minus" viewBox="0 0 24 24"><path d="M12 22V12"/> <path d="M16 17h6"/> <path d="M21 13V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955"/> <path d="M3.29 7 12 12l8.71-5"/> <path d="m7.5 4.27 8.997 5.148"/></symbol><symbol id="i-package-plus" viewBox="0 0 24 24"><path d="M12 22V12"/> <path d="M16 17h6"/> <path d="M19 14v6"/> <path d="M21 10.535V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.675-.955"/> <path d="M3.29 7 12 12l8.71-5"/> <path d="m7.5 4.27 8.997 5.148"/></symbol><symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol><symbol id="i-party-popper" viewBox="0 0 24 24"><path d="M5.8 11.3 2 22l10.7-3.79"/> <path d="M4 3h.01"/> <path d="M22 8h.01"/> <path d="M15 2h.01"/> <path d="M22 20h.01"/> <path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/> <path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/> <path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/> <path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z"/></symbol><symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/> <path d="m15 5 4 4"/></symbol><symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/> <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol><symbol id="i-plug" viewBox="0 0 24 24"><path d="M12 22v-5"/> <path d="M15 8V2"/> <path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/> <path d="M9 8V2"/></symbol><symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14"/> <path d="M12 5v14"/></symbol><symbol id="i-printer" viewBox="0 0 24 24"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/> <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/> <rect x="6" y="14" width="12" height="8" rx="1"/></symbol><symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></symbol><symbol id="i-qr-code" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/> <rect width="5" height="5" x="16" y="3" rx="1"/> <rect width="5" height="5" x="3" y="16" rx="1"/> <path d="M21 16h-3a2 2 0 0 0-2 2v3"/> <path d="M21 21v.01"/> <path d="M12 7v3a2 2 0 0 1-2 2H7"/> <path d="M3 12h.01"/> <path d="M12 3h.01"/> <path d="M12 16v.01"/> <path d="M16 12h1"/> <path d="M21 12v.01"/> <path d="M12 21v-1"/></symbol><symbol id="i-receipt-text" viewBox="0 0 24 24"><path d="M13 16H8"/> <path d="M14 8H8"/> <path d="M16 12H8"/> <path d="M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z"/></symbol><symbol id="i-recycle" viewBox="0 0 24 24"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/> <path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/> <path d="m14 16-3 3 3 3"/> <path d="M8.293 13.596 7.196 9.5 3.1 10.598"/> <path d="m9.344 5.811 1.093-1.892A1.83 1.83 0 0 1 11.985 3a1.784 1.784 0 0 1 1.546.888l3.943 6.843"/> <path d="m13.378 9.633 4.096 1.098 1.097-4.096"/></symbol><symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/> <path d="M3 11v-1a4 4 0 0 1 4-4h14"/> <path d="m7 22-4-4 4-4"/> <path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/> <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/> <path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/> <path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></symbol><symbol id="i-save" viewBox="0 0 24 24"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/> <path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/> <path d="M7 3v4a1 1 0 0 0 1 1h7"/></symbol><symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/> <path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/> <path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/> <path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/> <path d="M7 21h10"/></symbol><symbol id="i-scan-barcode" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/> <path d="M17 3h2a2 2 0 0 1 2 2v2"/> <path d="M21 17v2a2 2 0 0 1-2 2h-2"/> <path d="M7 21H5a2 2 0 0 1-2-2v-2"/> <path d="M8 7v10"/> <path d="M12 7v10"/> <path d="M17 7v10"/></symbol><symbol id="i-scroll-text" viewBox="0 0 24 24"><path d="M15 12h-5"/> <path d="M15 8h-5"/> <path d="M19 17V5a2 2 0 0 0-2-2H4"/> <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/></symbol><symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/> <circle cx="11" cy="11" r="8"/></symbol><symbol id="i-send" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/> <path d="m21.854 2.147-10.94 10.939"/></symbol><symbol id="i-settings" viewBox="0 0 24 24"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/> <circle cx="12" cy="12" r="3"/></symbol><symbol id="i-shield-check" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/> <path d="m9 12 2 2 4-4"/></symbol><symbol id="i-shirt" viewBox="0 0 24 24"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/></symbol><symbol id="i-shopping-cart" viewBox="0 0 24 24"><path d="m2.05 2.05 1.099-.028a1 1 0 0 1 1.008.815l2.69 14.347A1 1 0 0 0 7.83 18H18"/> <path d="M4.563 5h16.435a1 1 0 0 1 .981 1.204l-1.026 6.226A2 2 0 0 1 18.962 14H6.25"/> <circle cx="18" cy="20" r="2"/> <circle cx="8" cy="20" r="2"/></symbol><symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4"/> <path d="m18 2 4 4-4 4"/> <path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/> <path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/> <path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol><symbol id="i-signature" viewBox="0 0 24 24"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/> <path d="M3 21h18"/></symbol><symbol id="i-siren" viewBox="0 0 24 24"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/> <path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z"/> <path d="M21 12h1"/> <path d="M18.5 4.5 18 5"/> <path d="M2 12h1"/> <path d="M12 2v1"/> <path d="m4.929 4.929.707.707"/> <path d="M12 12v6"/></symbol><symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/> <path d="M20 2v4"/> <path d="M22 4h-4"/> <circle cx="4" cy="20" r="2"/></symbol><symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol><symbol id="i-store" viewBox="0 0 24 24"><path d="M15 21v-5a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v5"/> <path d="M17.774 10.31a1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.451 0 1.12 1.12 0 0 0-1.548 0 2.5 2.5 0 0 1-3.452 0 1.12 1.12 0 0 0-1.549 0 2.5 2.5 0 0 1-3.77-3.248l2.889-4.184A2 2 0 0 1 7 2h10a2 2 0 0 1 1.653.873l2.895 4.192a2.5 2.5 0 0 1-3.774 3.244"/> <path d="M4 10.95V19a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8.05"/></symbol><symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/> <path d="M12 2v2"/> <path d="M12 20v2"/> <path d="m4.93 4.93 1.41 1.41"/> <path d="m17.66 17.66 1.41 1.41"/> <path d="M2 12h2"/> <path d="M20 12h2"/> <path d="m6.34 17.66-1.41 1.41"/> <path d="m19.07 4.93-1.41 1.41"/></symbol><symbol id="i-tablet-smartphone" viewBox="0 0 24 24"><rect width="10" height="14" x="3" y="8" rx="2"/> <path d="M5 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2h-2.4"/> <path d="M8 18h.01"/></symbol><symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/> <circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></symbol><symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <circle cx="12" cy="12" r="6"/> <circle cx="12" cy="12" r="2"/></symbol><symbol id="i-timer" viewBox="0 0 24 24"><line x1="10" x2="14" y1="2" y2="2"/> <line x1="12" x2="15" y1="14" y2="11"/> <circle cx="12" cy="14" r="8"/></symbol><symbol id="i-trash-2" viewBox="0 0 24 24"><path d="M10 11v6"/> <path d="M14 11v6"/> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/> <path d="M3 6h18"/> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol><symbol id="i-tree-palm" viewBox="0 0 24 24"><path d="M13 8c0-2.76-2.46-5-5.5-5S2 5.24 2 8h2l1-1 1 1h4"/> <path d="M13 7.14A5.82 5.82 0 0 1 16.5 6c3.04 0 5.5 2.24 5.5 5h-3l-1-1-1 1h-3"/> <path d="M5.89 9.71c-2.15 2.15-2.3 5.47-.35 7.43l4.24-4.25.7-.7.71-.71 2.12-2.12c-1.95-1.96-5.27-1.8-7.42.35"/> <path d="M11 15.5c.5 2.5-.17 4.5-1 6.5h4c2-5.5-.5-12-1-14"/></symbol><symbol id="i-trending-up" viewBox="0 0 24 24"><path d="M16 7h6v6"/> <path d="m22 7-8.5 8.5-5-5L2 17"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24"><path d="M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2"/> <path d="M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2"/> <path d="M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3"/> <path d="M4 22h16"/> <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/> <path d="M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/> <path d="M15 18H9"/> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/> <circle cx="17" cy="18" r="2"/> <circle cx="7" cy="18" r="2"/></symbol><symbol id="i-undo-2" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/></symbol><symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"/> <path d="m17 8-5-5-5 5"/> <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol><symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/> <path d="M16 3.128a4 4 0 0 1 0 7.744"/> <path d="M22 21v-2a4 4 0 0 0-3-3.87"/> <circle cx="9" cy="7" r="4"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol><symbol id="i-warehouse" viewBox="0 0 24 24"><path d="M18 21V10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1v11"/> <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8a2 2 0 0 1 1.132-1.803l7.95-3.974a2 2 0 0 1 1.837 0l7.948 3.974A2 2 0 0 1 22 8z"/> <path d="M6 13h12"/> <path d="M6 17h12"/></symbol><symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"/></symbol><symbol id="i-zap" viewBox="0 0 24 24"><path d="M15.914 4a1.5 1.5 0 00-2.474-1.561l-9 9A1.5 1.5 0 005.5 14h4.002a.5.5 0 01.471.666L8.086 20a1.5 1.5 0 002.475 1.56l9-9A1.5 1.5 0 0018.5 10h-3.997a.5.5 0 01-.472-.667z"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" />
+  <path d="m6 6 12 12" /></symbol><symbol id="i-id-card" viewBox="0 0 24 24"><path d="M13 19a4 4 0 00-8 0" />
+  <path d="M16 10h2" />
+  <path d="M16 14h2" />
+  <circle cx="9" cy="12" r="3" />
+  <rect x="2" y="5" width="20" height="14" rx="2" /></symbol><symbol id="i-chart-column-increasing" viewBox="0 0 24 24"><path d="M13 17V9" />
+  <path d="M18 17V5" />
+  <path d="M3 3v16a2 2 0 0 0 2 2h16" />
+  <path d="M8 17v-3" /></symbol><symbol id="i-user-cog" viewBox="0 0 24 24"><path d="M10 15H6a4 4 0 0 0-4 4v2" />
+  <path d="m14.305 16.53.923-.382" />
+  <path d="m15.228 13.852-.923-.383" />
+  <path d="m16.852 12.228-.383-.923" />
+  <path d="m16.852 17.772-.383.924" />
+  <path d="m19.148 12.228.383-.923" />
+  <path d="m19.53 18.696-.382-.924" />
+  <path d="m20.772 13.852.924-.383" />
+  <path d="m20.772 16.148.924.383" />
+  <circle cx="18" cy="15" r="3" />
+  <circle cx="9" cy="7" r="4" /></symbol><symbol id="i-notebook-tabs" viewBox="0 0 24 24"><path d="M2 6h4" />
+  <path d="M2 10h4" />
+  <path d="M2 14h4" />
+  <path d="M2 18h4" />
+  <rect width="16" height="20" x="4" y="2" rx="2" />
+  <path d="M15 2v20" />
+  <path d="M15 7h5" />
+  <path d="M15 12h5" />
+  <path d="M15 17h5" /></symbol><symbol id="i-package-check" viewBox="0 0 24 24"><path d="M12 22V12" />
+  <path d="m16 17 2 2 4-4" />
+  <path d="M21 11.127V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l1.32-.753" />
+  <path d="M3.29 7 12 12l8.71-5" />
+  <path d="m7.5 4.27 8.997 5.148" /></symbol><symbol id="i-list-checks" viewBox="0 0 24 24"><path d="M13 5h8" />
+  <path d="M13 12h8" />
+  <path d="M13 19h8" />
+  <path d="m3 17 2 2 4-4" />
+  <path d="m3 7 2 2 4-4" /></symbol><symbol id="i-map-pin-check" viewBox="0 0 24 24"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728" />
+  <circle cx="12" cy="10" r="3" />
+  <path d="m16 18 2 2 4-4" /></symbol><symbol id="i-arrow-right-left" viewBox="0 0 24 24"><path d="m16 3 4 4-4 4" />
+  <path d="M20 7H4" />
+  <path d="m8 21-4-4 4-4" />
+  <path d="M4 17h16" /></symbol><symbol id="i-hand-helping" viewBox="0 0 24 24"><path d="M11 12h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 14" />
+  <path d="m7 18 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9" />
+  <path d="m2 13 6 6" /></symbol><symbol id="i-clipboard-check" viewBox="0 0 24 24"><rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+  <path d="m9 14 2 2 4-4" /></symbol><symbol id="i-clock-3" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" />
+  <path d="M12 6v6h4" /></symbol><symbol id="i-arrow-down-up" viewBox="0 0 24 24"><path d="m3 16 4 4 4-4" />
+  <path d="M7 20V4" />
+  <path d="m21 8-4-4-4 4" />
+  <path d="M17 4v16" /></symbol><symbol id="i-chart-pie" viewBox="0 0 24 24"><path d="M21 12c.552 0 1.005-.449.95-.998a10 10 0 0 0-8.953-8.951c-.55-.055-.998.398-.998.95v8a1 1 0 0 0 1 1z" />
+  <path d="M21.21 15.89A10 10 0 1 1 8 2.83" /></symbol><symbol id="i-pen-line" viewBox="0 0 24 24"><path d="M13 21h8" />
+  <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /></symbol><symbol id="i-link-2-off" viewBox="0 0 24 24"><path d="M9 17H7A5 5 0 0 1 7 7" />
+  <path d="M15 7h2a5 5 0 0 1 4 8" />
+  <line x1="8" x2="12" y1="12" y2="12" />
+  <line x1="2" x2="22" y1="2" y2="22" /></symbol><symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3" />
+  <path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15" />
+  <circle cx="18" cy="5" r="3" /></symbol><symbol id="i-thumbs-up" viewBox="0 0 24 24"><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+  <path d="M7 10v12" /></symbol><symbol id="i-trending-down" viewBox="0 0 24 24"><path d="M16 17h6v-6" />
+  <path d="m22 17-8.5-8.5-5 5L2 7" /></symbol><symbol id="i-package-x" viewBox="0 0 24 24"><path d="M12 22V12" />
+  <path d="m16.5 14.5 5 5" />
+  <path d="m16.5 19.5 5-5" />
+  <path d="M21 10.5V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.729l7 4a2 2 0 0 0 2 .001l.13-.074" />
+  <path d="M3.29 7 12 12l8.71-5" />
+  <path d="m7.5 4.27 8.997 5.148" /></symbol><symbol id="i-file-question-mark" viewBox="0 0 24 24"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" />
+  <path d="M12 17h.01" />
+  <path d="M9.1 9a3 3 0 0 1 5.82 1c0 2-3 3-3 3" /></symbol><symbol id="i-calendar-x" viewBox="0 0 24 24"><path d="M8 2v3" />
+  <path d="M16 2v3" />
+  <rect x="3" y="3" width="18" height="18" rx="2" />
+  <path d="M3 9h18" />
+  <path d="m14 13-4 4" />
+  <path d="m10 13 4 4" /></symbol><symbol id="i-shield-alert" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+  <path d="M12 8v4" />
+  <path d="M12 16h.01" /></symbol><symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol><symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14" />
+  <path d="m19 12-7 7-7-7" /></symbol><symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7" />
+  <path d="M12 19V5" /></symbol><symbol id="i-circle-dashed" viewBox="0 0 24 24"><path d="M10.1 2.182a10 10 0 0 1 3.8 0" />
+  <path d="M13.9 21.818a10 10 0 0 1-3.8 0" />
+  <path d="M17.609 3.721a10 10 0 0 1 2.69 2.7" />
+  <path d="M2.182 13.9a10 10 0 0 1 0-3.8" />
+  <path d="M20.279 17.609a10 10 0 0 1-2.7 2.69" />
+  <path d="M21.818 10.1a10 10 0 0 1 0 3.8" />
+  <path d="M3.721 6.391a10 10 0 0 1 2.7-2.69" />
+  <path d="M6.391 20.279a10 10 0 0 1-2.69-2.7" /></symbol><symbol id="i-user-x" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+  <circle cx="9" cy="7" r="4" />
+  <line x1="17" x2="22" y1="8" y2="13" />
+  <line x1="22" x2="17" y1="8" y2="13" /></symbol><symbol id="i-user-round-check" viewBox="0 0 24 24"><path d="M2 21a8 8 0 0 1 13.292-6" />
+  <circle cx="10" cy="8" r="5" />
+  <path d="m16 19 2 2 4-4" /></symbol></svg>
 
 <!-- LOADING -->
 <div id="loadingScreen">
@@ -924,13 +1029,13 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- Atendimento colapsável -->
-      <div class="nav-group">
+      <div class="nav-group h-indigo">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Atendimento</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="atendimento" data-perm="iniciar_atendimento" onclick="showView('atendimento',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-handshake></use></svg></span> Atendimento</button>
+          <button class="nav-item" data-view="atendimento" data-perm="iniciar_atendimento" onclick="showView('atendimento',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-hand-helping></use></svg></span> Atendimento</button>
           <button class="nav-item so-viatura" style="display:none" data-view="carga-viatura" data-perm="entregar_viatura" onclick="showView('carga-viatura',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></span> Atendimento Viatura</button>
           <button class="nav-item" data-view="assinaturas" data-perm="ver_assinaturas" onclick="showView('assinaturas',this)">
             <span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg></span> Assinaturas
@@ -944,7 +1049,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- Logística -->
-      <div class="nav-group">
+      <div class="nav-group h-laranja">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Logística</span>
           <span class="nav-group-arrow">›</span>
@@ -955,23 +1060,23 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- Estoque -->
-      <div class="nav-group">
+      <div class="nav-group h-verde">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Estoque</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="entrada" data-perm="entrada_material" onclick="showView('entrada',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg></span> Entrada</button>
-          <button class="nav-item" data-view="saida" data-perm="saida_material" onclick="showView('saida',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-send></use></svg></span> Saída</button>
-          <button class="nav-item" data-view="transferencia" data-perm="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg></span> Transferência</button>
+          <button class="nav-item" data-view="entrada" data-perm="entrada_material" onclick="showView('entrada',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg></span> Entrada</button>
+          <button class="nav-item" data-view="saida" data-perm="saida_material" onclick="showView('saida',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg></span> Saída</button>
+          <button class="nav-item" data-view="transferencia" data-perm="transferencia" onclick="showView('transferencia',this)"><span class="ni-icon h-ambar"><svg class=ic aria-hidden=true><use href=#i-arrow-right-left></use></svg></span> Transferência</button>
           <button class="nav-item" data-view="estoque" data-perm="ver_estoque" onclick="showView('estoque',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span> Consulta de Estoque</button>
-          <button class="nav-item" data-view="inventario" data-perm="inventario_ver_historico" onclick="showView('inventario',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span> Inventário</button>
-          <button class="nav-item" data-view="movimentacoes" data-perm="ver_movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg></span> Movimentações</button>
+          <button class="nav-item" data-view="inventario" data-perm="inventario_ver_historico" onclick="showView('inventario',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-check></use></svg></span> Inventário</button>
+          <button class="nav-item" data-view="movimentacoes" data-perm="ver_movimentacoes" onclick="showView('movimentacoes',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-arrow-down-up></use></svg></span> Movimentações</button>
         </div>
       </div>
 
       <!-- Consulta -->
-      <div class="nav-group">
+      <div class="nav-group h-azul">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Consulta</span>
           <span class="nav-group-arrow">›</span>
@@ -981,18 +1086,18 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></span> Consulta de Colaboradores</button>
           <button class="nav-item" data-view="consulta-ultima-retirada" data-perm="consulta_colaboradores" onclick="showView('consulta-ultima-retirada',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-calendar></use></svg></span> Última Retirada por Item</button>
           <button class="nav-item so-viatura" style="display:none" data-view="consulta-viaturas" data-perm="consulta_viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-car-front></use></svg></span> Consulta de Viaturas</button>
-          <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span> Consulta de Dotação</button>
+          <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-list-checks></use></svg></span> Consulta de Dotação</button>
         </div>
       </div>
 
       <!-- Financeiro -->
-      <div class="nav-group">
+      <div class="nav-group h-teal">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Financeiro</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="financeiro" data-perm="painel_financeiro" onclick="showView('financeiro',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg></span> Painel Financeiro</button>
+          <button class="nav-item" data-view="financeiro" data-perm="painel_financeiro" onclick="showView('financeiro',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-chart-pie></use></svg></span> Painel Financeiro</button>
           <button class="nav-item" data-view="descontos" data-perm="descontos" onclick="showView('descontos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg></span> Descontos</button>
           <button class="nav-item" data-view="solicitacoes-compra" data-perm="previsao_compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-shopping-cart></use></svg></span> Solicitações de Compra</button>
           <button class="nav-item" data-view="protheus" data-perm="protheus" onclick="showView('protheus',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-folder-kanban></use></svg></span> Lançamentos Protheus</button>
@@ -1000,7 +1105,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ENEL -->
-      <div class="nav-group">
+      <div class="nav-group h-ceu">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Materiais Cliente</span>
           <span class="nav-group-arrow">›</span>
@@ -1023,32 +1128,32 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <div style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="enel_controle_materiais|ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg></span> Controle De Materiais</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-search></use></svg></span> Consulta Estoque</button>
-          <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span> <span>Inventário <span class="nome-conc">Concessionária</span></span></button>
+          <button class="nav-item" data-view="enel-inventario" data-perm="inventario_ver_historico" onclick="showView('enel-inventario',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-check></use></svg></span> <span>Inventário <span class="nome-conc">Concessionária</span></span></button>
           <button class="nav-item" data-view="enel-consulta-saidas" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-send></use></svg></span> Consulta Saídas</button>
           <button class="nav-item" data-view="enel-cadastro" data-perm="enel_cadastro|ver_enel" onclick="showView('enel-cadastro',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-settings></use></svg></span> Cadastrar Material</button>
         </div>
       </div>
 
       <!-- Gestão -->
-      <div class="nav-group">
+      <div class="nav-group h-violeta">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Gestão</span>
           <span class="nav-group-arrow">›</span>
         </div>
         <div class="nav-group-items">
-          <button class="nav-item" data-view="ficha-epi" data-perm="ficha_epi" onclick="showView('ficha-epi',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-bookmark></use></svg></span> Ficha EPI</button>
+          <button class="nav-item" data-view="ficha-epi" data-perm="ficha_epi" onclick="showView('ficha-epi',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-id-card></use></svg></span> Ficha EPI</button>
           <button class="nav-item" data-view="gestao-ca" data-perm="ver_ca|gerenciar_ca" onclick="showView('gestao-ca',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg></span> Gestão de CA</button>
           <button class="nav-item" data-view="laudos" data-perm="ver_laudos" onclick="showView('laudos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-file-pen-line></use></svg></span> Laudos NR10</button>
           <button class="nav-item" data-view="viaturas" data-perm="ver_laudos_viatura" onclick="showView('viaturas',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-car></use></svg></span> Laudos Viaturas</button>
           <button class="nav-item" data-view="descarte" data-perm="ver_descarte" onclick="showView('descarte',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></span> Descarte</button>
           <button class="nav-item" data-view="residuos-armazem" data-perm="ver_descarte" onclick="showView('residuos-armazem',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span> Resíduos por Base</button>
           <button class="nav-item" data-view="recuperados" data-perm="ver_recuperados" onclick="showView('recuperados',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg></span> Recuperados</button>
-          <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-trending-up></use></svg></span> Indicadores</button>
+          <button class="nav-item" data-view="indicadores" data-perm="ver_indicadores" onclick="showView('indicadores',this)"><span class="ni-icon h-rosa"><svg class=ic aria-hidden=true><use href=#i-chart-column-increasing></use></svg></span> Indicadores</button>
         </div>
       </div>
 
       <!-- Cadastros -->
-      <div class="nav-group">
+      <div class="nav-group h-ambar">
         <div class="nav-group-header" onclick="toggleNavGroup(this)">
           <span class="nav-group-label">Cadastros</span>
           <span class="nav-group-arrow">›</span>
@@ -1057,12 +1162,12 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <button class="nav-item" data-view="colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></span> Colaboradores</button>
           <button class="nav-item" data-view="itens" data-perm="cadastrar_itens" onclick="showView('itens',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span> Itens</button>
           <button class="nav-item" data-view="armazens" data-perm="cadastrar_armazens" onclick="showView('armazens',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg></span> Armazéns</button>
-          <button class="nav-item" data-view="catalogo-armazem" data-perm="catalogo_armazem" onclick="showView('catalogo-armazem',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span> Catálogo por Armazém</button>
-          <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-bus></use></svg></span> Equipes</button>
-          <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-folder-kanban></use></svg></span> Dotação por Função</button>
-          <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-lock-keyhole></use></svg></span> Usuários</button>
+          <button class="nav-item" data-view="catalogo-armazem" data-perm="catalogo_armazem" onclick="showView('catalogo-armazem',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-notebook-tabs></use></svg></span> Catálogo por Armazém</button>
+          <button class="nav-item" data-view="equipes" data-perm="cadastrar_equipes" onclick="showView('equipes',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-hard-hat></use></svg></span> Equipes</button>
+          <button class="nav-item" data-view="dotacao" data-perm="cadastrar_dotacao" onclick="showView('dotacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-list-checks></use></svg></span> Dotação por Função</button>
+          <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-user-cog></use></svg></span> Usuários</button>
           <button class="nav-item" data-view="links-externos" data-perm="ver_links_externos" onclick="showView('links-externos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-link></use></svg></span> Links Externos</button>
-          <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('logins-solicitacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span> Usuários de Solicitação</button>
+          <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('logins-solicitacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-key-round></use></svg></span> Usuários de Solicitação</button>
 
           <!-- Administração — somente admin -->
           <div id="navAdminGrp" style="display:none">
@@ -1111,34 +1216,34 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       <div class="view active" id="view-home">
         <div class="kpi-grid">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Colaboradores</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Colaboradores</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></div></div>
             <div class="kpi-value" id="kpiColaboradores">—</div>
             <div class="kpi-delta" id="kpiColaboradoresDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Atendimentos hoje</span><div class="kpi-icon">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Atendimentos hoje</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-check></use></svg></div></div>
             <div class="kpi-value" id="kpiAtendimentos">—</div>
             <div class="kpi-delta up" id="kpiAtendimentosDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Itens no estoque</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Itens no estoque</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div></div>
             <div class="kpi-value" id="kpiItens">—</div>
             <div class="kpi-delta warn" id="kpiItensDelta">carregando...</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Solicitações abertas</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Solicitações abertas</span><div class="kpi-icon tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></div></div>
             <div class="kpi-value" id="kpiSolicitacoes">—</div>
             <div class="kpi-delta down" id="kpiSolicitacoesDelta">carregando...</div>
           </div>
         </div>
         <div class="quick-grid">
-          <button class="quick-card" data-perm="iniciar_atendimento" onclick="showView('atendimento')"><div class="qc-icon"><svg class=ic aria-hidden=true><use href=#i-handshake></use></svg></div><div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div></button>
-          <button class="quick-card" data-perm="entrada_material" onclick="showView('entrada')"><div class="qc-icon"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg></div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
-          <button class="quick-card" data-perm="transferencia" onclick="showView('transferencia')"><div class="qc-icon"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg></div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
-          <button class="quick-card" data-perm="ver_indicadores" onclick="showView('indicadores')"><div class="qc-icon"><svg class=ic aria-hidden=true><use href=#i-trending-up></use></svg></div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
+          <button class="quick-card" data-perm="iniciar_atendimento" onclick="showView('atendimento')"><div class="qc-icon tile h-indigo"><svg class=ic aria-hidden=true><use href=#i-hand-helping></use></svg></div><div><div class="qc-label">Novo Atendimento</div><div class="qc-sub">Registrar entrega de EPI</div></div></button>
+          <button class="quick-card" data-perm="entrada_material" onclick="showView('entrada')"><div class="qc-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg></div><div><div class="qc-label">Entrada de Material</div><div class="qc-sub">Registrar recebimento</div></div></button>
+          <button class="quick-card" data-perm="transferencia" onclick="showView('transferencia')"><div class="qc-icon tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-arrow-right-left></use></svg></div><div><div class="qc-label">Transferência</div><div class="qc-sub">Entre armazéns</div></div></button>
+          <button class="quick-card" data-perm="ver_indicadores" onclick="showView('indicadores')"><div class="qc-icon tile h-rosa"><svg class=ic aria-hidden=true><use href=#i-chart-column-increasing></use></svg></div><div><div class="qc-label">Indicadores</div><div class="qc-sub">Relatórios e gráficos</div></div></button>
         </div>
         <div id="dashInventarioAlerta" class="hidden" style="margin-bottom:16px;border:1px solid #f59e0b;background:rgba(245,158,11,.08);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:22px"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></div>
+          <div class="tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-clipboard-check></use></svg></div>
           <div style="flex:1;min-width:200px">
             <div style="font-size:13px;font-weight:700;color:var(--text-1)">Inventário mensal pendente</div>
             <div style="font-size:12px;color:var(--text-2)" id="dashInventarioTexto">—</div>
@@ -1146,7 +1251,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <button class="btn btn-primary" style="font-size:11px" onclick="showView('inventario')">Ver Inventário</button>
         </div>
         <div id="dashInventarioEnelAlerta" class="hidden" style="margin-bottom:16px;border:1px solid #8b5cf6;background:rgba(139,92,246,.08);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div style="font-size:22px"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg></div>
+          <div class="tile h-violeta"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg></div>
           <div style="flex:1;min-width:200px">
             <div style="font-size:13px;font-weight:700;color:#a78bfa">Inventário <span class="nome-conc">Concessionária</span> pendente</div>
             <div style="font-size:12px;color:var(--text-2)" id="dashInventarioEnelTexto">—</div>
@@ -1170,7 +1275,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
       <!-- COLABORADORES -->
       <!-- ── COLABORADORES ── -->
-      <div class="view" id="view-colaboradores">
+      <div class="view h-ambar" id="view-colaboradores">
         <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
@@ -1236,7 +1341,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── ITENS ── -->
-      <div class="view" id="view-itens">
+      <div class="view h-ambar" id="view-itens">
         <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
@@ -1318,7 +1423,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 <!-- ═══════════════════════════════════════════
      VIEW — ATENDIMENTO COLABORADOR
 ═══════════════════════════════════════════ -->
-<div class="view" id="view-atendimento">
+<div class="view h-indigo" id="view-atendimento">
 
   <!-- TABS -->
   <div class="atend-tabs">
@@ -1898,22 +2003,22 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 </div>
 
       <!-- ── ASSINATURAS ── -->
-      <div class="view" id="view-assinaturas">
+      <div class="view h-indigo" id="view-assinaturas">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg></div></div>
             <div class="kpi-value" id="assKpiPendentes">—</div>
             <div class="kpi-delta warn">aguardando assinatura</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Pendentes há mais de 10 dias</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-alarm-clock></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes há mais de 10 dias</span><div class="kpi-icon tile h-vermelho"><svg class=ic aria-hidden=true><use href=#i-alarm-clock></use></svg></div></div>
             <div class="kpi-value" id="assKpiExpirados">—</div>
             <div class="kpi-delta down">cobrar a assinatura</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Assinados hoje</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-check></use></svg></div></div>
             <div class="kpi-value" id="assKpiAssinados">—</div>
             <div class="kpi-delta up">confirmados</div>
           </div>
@@ -1975,27 +2080,27 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
       </div>
       <!-- ── SOLICITAÇÕES ── -->
-      <div class="view" id="view-solicitacoes">
+      <div class="view h-indigo" id="view-solicitacoes">
 
         <!-- KPIs clicáveis -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','PENDENTE')">
-            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Pendentes</span><div class="kpi-icon tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg></div></div>
             <div class="kpi-value" id="solKpiPendente">—</div>
             <div class="kpi-delta warn">aguardando atendimento</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','VISUALIZADO')">
-            <div class="kpi-top"><span class="kpi-label">Visualizados</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-eye></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Visualizados</span><div class="kpi-icon tile h-azul"><svg class=ic aria-hidden=true><use href=#i-eye></use></svg></div></div>
             <div class="kpi-value" id="solKpiVisualizado">—</div>
             <div class="kpi-delta" style="color:var(--blue)">em análise</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('status','ATENDIDO')">
-            <div class="kpi-top"><span class="kpi-label">Atendidos</span><div class="kpi-icon">✓</div></div>
+            <div class="kpi-top"><span class="kpi-label">Atendidos</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-check></use></svg></div></div>
             <div class="kpi-value" id="solKpiAtendido">—</div>
             <div class="kpi-delta up">concluídos</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="filtrarSolicitacoes('prioridade','Urgente')">
-            <div class="kpi-top"><span class="kpi-label">Urgentes</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Urgentes</span><div class="kpi-icon tile h-vermelho"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg></div></div>
             <div class="kpi-value" id="solKpiUrgente">—</div>
             <div class="kpi-delta down">alta prioridade</div>
           </div>
@@ -2071,7 +2176,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
       </div>
       <!-- ── ENTRADA ── -->
-      <div class="view" id="view-entrada">
+      <div class="view h-verde" id="view-entrada">
         <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
@@ -2164,7 +2269,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── SAÍDA ── -->
-      <div class="view" id="view-saida">
+      <div class="view h-verde" id="view-saida">
         <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
@@ -2265,7 +2370,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── TRANSFERÊNCIA ── -->
-      <div class="view" id="view-transferencia">
+      <div class="view h-ambar" id="view-transferencia">
         <div class="view-toggle-log" style="margin-bottom:16px;display:inline-flex">
           <button class="active" id="trfTabArm" onclick="trfMudarAba('armazens')"><svg class=ic aria-hidden=true><use href=#i-store></use></svg> Entre armazéns</button>
           <button id="trfTabFil" onclick="trfMudarAba('filiais')"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> Entre filiais <span id="trfBadgeFil" class="hidden" style="background:var(--red);color:#fff;border-radius:999px;padding:0 6px;font-size:10px;margin-left:4px">0</span></button>
@@ -2444,7 +2549,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── CONSULTA DE ESTOQUE ── -->
-      <div class="view" id="view-estoque">
+      <div class="view h-verde" id="view-estoque">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px;gap:8px">
@@ -2524,7 +2629,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── MOVIMENTAÇÕES ── -->
-      <div class="view" id="view-movimentacoes">
+      <div class="view h-verde" id="view-movimentacoes">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
@@ -2591,7 +2696,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── DESCONTOS ── -->
-      <div class="view" id="view-descontos">
+      <div class="view h-teal" id="view-descontos">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
@@ -2733,7 +2838,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── CONSULTA DE ITENS ── -->
-      <div class="view" id="view-consulta-itens">
+      <div class="view h-azul" id="view-consulta-itens">
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Itens</div><div class="card-sub" id="subConsultaItens">—</div></div>
@@ -2755,7 +2860,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── CONSULTA DE COLABORADORES ── -->
-      <div class="view" id="view-consulta-colaboradores">
+      <div class="view h-azul" id="view-consulta-colaboradores">
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Colaboradores</div><div class="card-sub" id="subConsultaColabs">—</div></div>
@@ -2780,7 +2885,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── ÚLTIMA RETIRADA POR ITEM (16/10/2026) ── -->
-      <div class="view" id="view-consulta-ultima-retirada">
+      <div class="view h-azul" id="view-consulta-ultima-retirada">
         <div class="card" style="overflow:visible">
           <div class="card-header">
             <div><div class="card-title">Última Retirada por Item</div><div class="card-sub">Todos os colaboradores ativos da filial e quando cada um retirou o item pela última vez — inclusive quem nunca retirou</div></div>
@@ -2819,7 +2924,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── GESTÃO DE CA (19/10/2026) ── -->
-      <div class="view" id="view-gestao-ca">
+      <div class="view h-violeta" id="view-gestao-ca">
         <div class="card" style="overflow:visible">
           <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg> Gestão de CA</div><div class="card-sub">Os CAs de cada EPI, um por marca, com a validade. O cadastro do item mostra os CAs que compramos; a ficha de EPI leva o CA da peça entregue.</div></div>
@@ -2871,7 +2976,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── CONSULTA DE DOTAÇÃO ── -->
-      <div class="view" id="view-consulta-dotacao">
+      <div class="view h-azul" id="view-consulta-dotacao">
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Dotação por Função</div><div class="card-sub">O que cada função deve receber</div></div>
@@ -2888,7 +2993,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── SOLICITAÇÕES DE COMPRA ── -->
-      <div class="view" id="view-solicitacoes-compra">
+      <div class="view h-teal" id="view-solicitacoes-compra">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
@@ -2954,7 +3059,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── PROTHEUS ── -->
-      <div class="view" id="view-protheus">
+      <div class="view h-teal" id="view-protheus">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
@@ -3013,7 +3118,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       <!-- ══════════════════════════════════════════════ -->
 
       <!-- CADASTRAR MATERIAL -->
-      <div class="view" id="view-enel-cadastro">
+      <div class="view h-ceu" id="view-enel-cadastro">
         <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header">
@@ -3080,25 +3185,25 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ENTRADA ESTOQUE -->
-      <div class="view" id="view-enel-inventario">
+      <div class="view h-ceu" id="view-enel-inventario">
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Entregues</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Entregues</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
             <div class="kpi-value" id="ivenKpiEntregues">—</div>
             <div class="kpi-delta up">meses concluídos</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Mês atual</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-calendar></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Mês atual</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-calendar></use></svg></div></div>
             <div class="kpi-value" id="ivenKpiMes" style="font-size:18px">—</div>
             <div class="kpi-delta" style="color:#a78bfa">prazo até o dia 10</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Atrasados</span><div class="kpi-icon"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Atrasados</span><div class="kpi-icon tile h-vermelho"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg></div></div>
             <div class="kpi-value" id="ivenKpiAtrasados">—</div>
             <div class="kpi-delta warn">fora do prazo</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Acurácia média</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-target></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Acurácia média</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-target></use></svg></div></div>
             <div class="kpi-value" id="ivenKpiAcuracia">—</div>
             <div class="kpi-delta">dos meses concluídos</div>
           </div>
@@ -3164,7 +3269,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
 
-      <div class="view" id="view-enel-entrada">
+      <div class="view h-ceu" id="view-enel-entrada">
         <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header">
@@ -3225,7 +3330,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- SAÍDA ESTOQUE -->
-      <div class="view" id="view-enel-saida">
+      <div class="view h-ceu" id="view-enel-saida">
         <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header">
@@ -3282,7 +3387,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONSULTA ESTOQUE ENEL -->
-      <div class="view" id="view-enel-estoque">
+      <div class="view h-ceu" id="view-enel-estoque">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px;gap:8px">
@@ -3339,7 +3444,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONSULTA BAIXAS -->
-      <div class="view" id="view-enel-baixas">
+      <div class="view h-ceu" id="view-enel-baixas">
         <div style="margin-bottom:16px">
           <div class="page-title">Baixas por TdC</div>
           <div class="page-sub">Consulte o consumo de materiais por equipe e período, detalhado por TdC</div>
@@ -3394,7 +3499,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONSULTA DE TdC — tudo o que foi usado em cada TdC -->
-      <div class="view" id="view-enel-tdc">
+      <div class="view h-ceu" id="view-enel-tdc">
         <div style="margin-bottom:16px">
           <div class="page-title">Consulta de TdC</div>
           <div class="page-sub">Tudo o que foi usado em cada TdC: materiais baixados, medidores instalados e o que a baixa automática não conseguiu lançar</div>
@@ -3439,7 +3544,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- BAIXA MANUAL — serviços fora do eOrder e revisão de medidores (liberados no bloqueio) -->
-      <div class="view" id="view-enel-baixa-manual">
+      <div class="view h-ceu" id="view-enel-baixa-manual">
         <div style="margin-bottom:16px">
           <div class="page-title">Baixa Manual</div>
           <div class="page-sub">Serviços que não vieram do eOrder: registra o serviço e consome o material e o medidor da equipe · revisão dos medidores liberados no bloqueio</div>
@@ -3583,7 +3688,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONSULTA SAÍDAS DO ESTOQUE -->
-      <div class="view" id="view-enel-consulta-saidas">
+      <div class="view h-ceu" id="view-enel-consulta-saidas">
         <div style="margin-bottom:16px">
           <div class="page-title">Consulta Saídas do Estoque</div>
           <div class="page-sub">Materiais que saíram do estoque para equipes no período — para relatório semanal</div>
@@ -3633,7 +3738,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- SOLICITAÇÕES MATERIAIS ENEL (do portal das equipes) -->
-      <div class="view" id="view-enel-sol-materiais">
+      <div class="view h-ceu" id="view-enel-sol-materiais">
         <div style="margin-bottom:16px">
           <div class="page-title"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Solicitações de Materiais <span class="nome-conc">Concessionária</span></div>
           <div class="page-sub">Pedidos feitos pelas equipes via Portal da Equipe</div>
@@ -3671,7 +3776,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- GESTÃO DE FILIAIS (admin) -->
-      <div class="view" id="view-filiais">
+      <div class="view h-ambar" id="view-filiais">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
           <div>
             <div class="page-title"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> Gestão de Filiais</div>
@@ -3698,7 +3803,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ATENDIMENTO MATERIAL ENEL -->
-      <div class="view" id="view-enel-atendimento">
+      <div class="view h-ceu" id="view-enel-atendimento">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:18px">
           <div>
             <div class="page-title"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg> Atendimento <span class="nome-conc">Concessionária</span></div>
@@ -3931,7 +4036,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
       <!-- DEVOLUÇÃO ENEL -->
       <!-- TRANSFERÊNCIA DE SERIAIS -->
-      <div class="view" id="view-enel-transferencia">
+      <div class="view h-ceu" id="view-enel-transferencia">
         <div class="page-title" style="margin-bottom:4px">Transferência de Seriais</div>
         <div class="page-sub" style="margin-bottom:20px">Transfira seriais de um tipo de material para outro</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-bottom:16px">
@@ -3980,7 +4085,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONTROLE DE MEDIDORES -->
-      <div class="view" id="view-enel-medidores">
+      <div class="view h-ceu" id="view-enel-medidores">
         <div style="margin-bottom:20px">
           <div class="page-title">Controle de Medidores</div>
           <div class="page-sub">Gerencie seriais, status e localização dos medidores</div>
@@ -3988,28 +4093,28 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         <!-- Botões principais -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
           <button onclick="cmAbrirAba('estoque')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
-            <div style="font-size:24px;margin-bottom:8px"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div>
+            <div class="tile h-ceu" style="width:40px;height:40px;font-size:20px;margin-bottom:10px"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div>
             <div style="font-size:13px;font-weight:700;color:var(--accent-text);margin-bottom:3px">Medidores em Estoque</div>
             <div style="font-size:11px;color:var(--text-3)">Modelos disponíveis e seus seriais</div>
           </button>
           <button onclick="cmAbrirAba('campo')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--yellow)'" onmouseout="this.style.borderColor='var(--border)'">
-            <div style="font-size:24px;margin-bottom:8px"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div>
+            <div class="tile h-laranja" style="width:40px;height:40px;font-size:20px;margin-bottom:10px"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div>
             <div style="font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:3px">Medidores em Campo</div>
             <div style="font-size:11px;color:var(--text-3)">Por equipe com prazos e status</div>
           </button>
           <button onclick="cmAbrirDevolucao()" data-perm-btn="ver_enel|atendimento_enel" style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px;cursor:pointer;text-align:left;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
-            <div style="font-size:24px;margin-bottom:8px"><svg class=ic aria-hidden=true><use href=#i-undo-2></use></svg></div>
+            <div class="tile h-verde" style="width:40px;height:40px;font-size:20px;margin-bottom:10px"><svg class=ic aria-hidden=true><use href=#i-undo-2></use></svg></div>
             <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:3px">Devolução</div>
             <div style="font-size:11px;color:var(--text-3)">Retornar seriais ao estoque</div>
           </button>
         </div>
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
           <button onclick="cmAbrirAba('instalados')" style="flex:1;min-width:200px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px 18px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
-            <span style="font-size:20px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></span>
+            <span class="tile h-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></span>
             <div><div style="font-size:12px;font-weight:700;color:var(--green)">Medidores Instalados</div><div style="font-size:11px;color:var(--text-3)">Histórico de instalações</div></div>
           </button>
           <div style="flex:2;min-width:280px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:13px 18px;display:flex;align-items:center;gap:10px">
-            <span style="font-size:20px"><svg class=ic aria-hidden=true><use href=#i-search></use></svg></span>
+            <span class="tile h-ceu"><svg class=ic aria-hidden=true><use href=#i-search></use></svg></span>
             <div style="flex:1">
               <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px">Buscar por Serial</div>
               <div style="display:flex;gap:8px">
@@ -4107,7 +4212,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── SUCATA ── -->
-      <div class="view" id="view-enel-sucata">
+      <div class="view h-ceu" id="view-enel-sucata">
         <!-- LISTA DE PALETES -->
         <div id="sucata-lista">
           <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -4173,7 +4278,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── BAIXA AUTOMÁTICA ENEL ── -->
-      <div class="view" id="view-enel-baixa-auto">
+      <div class="view h-ceu" id="view-enel-baixa-auto">
         <div style="margin-bottom:16px">
           <div class="page-title">Baixa Automática <span class="nome-conc">Concessionária</span></div>
           <div class="page-sub">Importe o relatório EORDE e o sistema dá baixa automaticamente nos materiais e medidores</div>
@@ -4419,7 +4524,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ATENDIMENTO VIATURA — mesmo desenho do atendimento de EPI -->
-      <div class="view" id="view-carga-viatura">
+      <div class="view h-indigo" id="view-carga-viatura">
         <div class="atend-tabs">
           <button class="atend-tab active" onclick="cvAba('iniciar', this)">Iniciar Atendimento</button>
           <button class="atend-tab" onclick="cvAba('mobilizar', this)">Mobilizar Viatura</button>
@@ -4666,7 +4771,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONSULTA DE VIATURAS -->
-      <div class="view" id="view-consulta-viaturas">
+      <div class="view h-azul" id="view-consulta-viaturas">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
           <div>
             <div class="page-title"><svg class=ic aria-hidden=true><use href=#i-car-front></use></svg> Consulta de Viaturas</div>
@@ -4689,7 +4794,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- CONTROLE DE MATERIAIS POR EQUIPE -->
-      <div class="view" id="view-enel-controle">
+      <div class="view h-ceu" id="view-enel-controle">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
           <div>
             <div class="page-title">Controle de Materiais por Equipe</div>
@@ -4712,7 +4817,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         <div id="sumControleEquipe" style="margin-top:12px;padding:10px 12px;background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-3)"></div>
       </div>
       <!-- ── FICHA EPI ── -->
-      <div class="view" id="view-ficha-epi">
+      <div class="view h-violeta" id="view-ficha-epi">
 
         <!-- Header -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -4747,7 +4852,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── LAUDOS NR10 ── -->
-      <div class="view" id="view-laudos">
+      <div class="view h-violeta" id="view-laudos">
 
         <!-- Header -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -4877,7 +4982,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── LAUDOS VIATURAS ── -->
-      <div class="view" id="view-viaturas">
+      <div class="view h-violeta" id="view-viaturas">
 
         <!-- Header -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
@@ -4942,7 +5047,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── DESCARTE ── -->
-            <div class="view" id="view-residuos-armazem">
+            <div class="view h-violeta" id="view-residuos-armazem">
         <div class="view-header">
           <div class="view-title"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Resíduos por Base</div>
           <div class="view-sub">Materiais descartados/trocados acumulados por base do colaborador solicitante</div>
@@ -4960,7 +5065,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         <div id="raTabela"></div>
       </div>
 
-<div class="view" id="view-descarte">
+<div class="view h-violeta" id="view-descarte">
 
         <!-- KPIs -->
         <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
@@ -5031,7 +5136,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── RECUPERADOS ── -->
-      <div class="view" id="view-recuperados">
+      <div class="view h-violeta" id="view-recuperados">
         <!-- Abas -->
         <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:16px">
           <button id="recupTabAguardando" onclick="recupAba('aguardando')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--accent-text);border-bottom:2px solid var(--accent);cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Aguardando Laudo</button>
@@ -5089,7 +5194,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- INDICADORES -->
-      <div class="view" id="view-financeiro">
+      <div class="view h-teal" id="view-financeiro">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
           <div>
             <div class="page-title" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Financeiro</div>
@@ -5193,7 +5298,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
 
-      <div class="view" id="view-indicadores">
+      <div class="view h-rosa" id="view-indicadores">
         <!-- Filtros -->
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:18px">
           <div>
@@ -5243,7 +5348,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
       </div>
       <!-- ── ARMAZÉNS ── -->
-      <div class="view" id="view-catalogo-armazem">
+      <div class="view h-ambar" id="view-catalogo-armazem">
         <div class="view-header">
           <div class="view-title"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Catálogo por Armazém</div>
           <div class="view-sub">Defina quais itens cada armazém trabalha e o estoque mínimo de cada um</div>
@@ -5279,7 +5384,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
 
-      <div class="view" id="view-armazens">
+      <div class="view h-ambar" id="view-armazens">
         <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Armazém</div><div class="card-sub">Cadastre os locais de armazenamento</div></div></div>
@@ -5313,7 +5418,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── EQUIPES ── -->
-      <div class="view" id="view-equipes">
+      <div class="view h-ambar" id="view-equipes">
         <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Equipe</div><div class="card-sub">Cadastre as equipes de campo</div></div></div>
@@ -5343,7 +5448,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── DOTAÇÃO ── -->
-      <div class="view" id="view-dotacao">
+      <div class="view h-ambar" id="view-dotacao">
         <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Dotação</div><div class="card-sub">Define o EPI obrigatório por função</div></div></div>
@@ -5386,7 +5491,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         </div>
       </div>
       <!-- ── USUÁRIOS DE SOLICITAÇÃO ── -->
-      <div class="view" id="view-logins-solicitacao">
+      <div class="view h-ambar" id="view-logins-solicitacao">
         <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
           <!-- FORMULÁRIO -->
           <div class="card">
@@ -5447,26 +5552,26 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── INVENTÁRIO ROTATIVO MENSAL ── -->
-      <div class="view" id="view-inventario">
+      <div class="view h-verde" id="view-inventario">
 
         <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Entregues</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Entregues</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
             <div class="kpi-value" id="invKpiEntregues">—</div>
             <div class="kpi-delta up">inventários concluídos</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Em andamento</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Em andamento</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg></div></div>
             <div class="kpi-value" id="invKpiAndamento">—</div>
             <div class="kpi-delta" style="color:var(--blue)">aguardando contagem</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Atrasados</span><div class="kpi-icon"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Atrasados</span><div class="kpi-icon tile h-vermelho"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg></div></div>
             <div class="kpi-value" id="invKpiAtrasados">—</div>
             <div class="kpi-delta warn">fora do prazo</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Acurácia média</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-target></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Acurácia média</span><div class="kpi-icon tile"><svg class=ic aria-hidden=true><use href=#i-target></use></svg></div></div>
             <div class="kpi-value" id="invKpiAcuracia">—</div>
             <div class="kpi-delta">dos ciclos concluídos</div>
           </div>
@@ -5593,34 +5698,34 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── LOGÍSTICA ── -->
-      <div class="view" id="view-logistica">
+      <div class="view h-laranja" id="view-logistica">
         <div class="view-header" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap">
           <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalDestinos()"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Destinos de Entrega</button>
         </div>
 
         <div class="kpi-grid log-kpi-grid" style="grid-template-columns:repeat(5,1fr)">
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Aguardando coleta</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Aguardando coleta</span><div class="kpi-icon tile h-ambar"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div></div>
             <div class="kpi-value" id="logKpiAguardando">—</div>
             <div class="kpi-delta warn">precisam de transportador</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Em trânsito</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Em trânsito</span><div class="kpi-icon tile h-ceu"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div></div>
             <div class="kpi-value" id="logKpiTransito">—</div>
             <div class="kpi-delta" style="color:var(--blue)">a caminho do destino</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Entregues hoje</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Entregues hoje</span><div class="kpi-icon tile h-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div></div>
             <div class="kpi-value" id="logKpiEntreguesHoje">—</div>
             <div class="kpi-delta up">confirmadas hoje</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-top"><span class="kpi-label">Viagens ativas</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-compass></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Viagens ativas</span><div class="kpi-icon tile h-ceu"><svg class=ic aria-hidden=true><use href=#i-compass></use></svg></div></div>
             <div class="kpi-value" id="logKpiViagensAtivas">—</div>
             <div class="kpi-delta">em andamento</div>
           </div>
           <div class="kpi-card" style="cursor:pointer" onclick="logAbrirRecebidosSemViagem()" title="Marcados com logística, mas o colaborador assinou sem o material passar por uma viagem">
-            <div class="kpi-top"><span class="kpi-label">Recebidos sem viagem</span><div class="kpi-icon"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg></div></div>
+            <div class="kpi-top"><span class="kpi-label">Recebidos sem viagem</span><div class="kpi-icon tile h-ceu"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg></div></div>
             <div class="kpi-value" id="logKpiSemViagem">—</div>
             <div class="kpi-delta warn">no mês · ver lista</div>
           </div>
@@ -5685,14 +5790,14 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── USUÁRIOS ── -->
-      <div class="view" id="view-links-externos">
+      <div class="view h-ambar" id="view-links-externos">
         <div class="view-header"><div class="view-title"><svg class=ic aria-hidden=true><use href=#i-link></use></svg> Links Externos</div><div class="view-sub">Links para portais e dispositivos externos — clique para copiar</div></div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:8px" id="linksExternosGrid">
           <!-- gerado dinamicamente -->
         </div>
       </div>
 
-      <div class="view" id="view-usuarios">
+      <div class="view h-ambar" id="view-usuarios">
         <div style="display:grid;grid-template-columns:minmax(320px,400px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Usuário</div><div class="card-sub">Gerencie o acesso ao sistema</div></div></div>
@@ -7324,7 +7429,8 @@ function pbItensExcel() {
 // ── LOGÍSTICA ── mapa do Brasil com as cargas de entrega e as transferências entre filiais em andamento
 const PBL = { entregues: false, marcadores: [] };
 const PB_TRANSF_STATUS = { AGUARDANDO_ACEITE: 'Aguardando aceite', ACEITA: 'Aceita · preparando o envio', NF_ANEXADA: 'NF anexada · a caminho' };
-const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: '<svg class=ic aria-hidden=true><use href=#i-package></use></svg> Aguardando coleta', EM_TRANSITO: '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em trânsito', ENTREGUE: '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue' })[st] || escHtml(PB_TRANSF_STATUS[st] || st);   // devolve HTML (ícone); não passar por escHtml
+const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: gcaSit('Aguardando coleta', 'laranja', 'package'), EM_TRANSITO: gcaSit('Em trânsito', 'ceu', 'truck'),
+  ENTREGUE: gcaSit('Entregue', 'verde', 'check') })[st] || escHtml(PB_TRANSF_STATUS[st] || st);   // devolve HTML; não passar por escHtml
 function pbLogLimparMapa() {
   if (PB.logAnim) { clearInterval(PB.logAnim); PB.logAnim = null; }
   if (PB.logMap) { try { PB.logMap.remove(); } catch {} PB.logMap = null; }
@@ -7484,7 +7590,9 @@ const PB_INV_SIT = {
   no_prazo: ['No prazo', '#22c55e'], fora_prazo: ['Fora do prazo', '#fbbf24'], nao_entregue: ['Não entregue', '#f87171'],
   em_andamento: ['Em andamento', 'var(--accent-text)'], nao_iniciado: ['Não iniciado', 'var(--text-3)'], sem_prazo: ['Entregue (avulso)', '#22c55e'], sem_data: ['Entregue (sem data)', 'var(--text-2)'],
 };
-const pbInvSit = (k) => { const [t, c] = PB_INV_SIT[k] || [k, 'var(--text-3)']; return `<span style="display:inline-block;padding:2px 8px;border-radius:999px;font-size:10px;font-weight:700;color:${c};border:1px solid ${c};white-space:nowrap">${escHtml(t)}</span>`; };
+const PB_INV_COR = { no_prazo: ['verde', 'check'], fora_prazo: ['ambar', 'clock-3'], nao_entregue: ['vermelho', 'x'], em_andamento: ['azul', 'timer'],
+  nao_iniciado: ['cinza', 'circle-dashed'], sem_prazo: ['verde', 'check'], sem_data: ['cinza', 'check'] };
+const pbInvSit = (k) => { const [t] = PB_INV_SIT[k] || [k]; const [m, i] = PB_INV_COR[k] || ['cinza', 'circle-dashed']; return gcaSit(t, m, i); };
 const pbDataHora = (v) => v ? new Date(v).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' }) : '—';
 const pbMesTxt = (m) => { const [a, mm] = String(m).split('-'); return `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(mm) - 1] || mm}/${a}`; };
 
@@ -9693,8 +9801,10 @@ function filtrarDashAtendimentos(q) {
 }
 
 function statusTag(s) {
-  const m = { ASSINADO:'<span class="tag tag-green">Assinado</span>', PENDENTE:'<span class="tag tag-yellow">Pendente</span>', EXPIRADO:'<span class="tag tag-gray">Expirado</span>', EM_ANDAMENTO:'<span class="tag tag-accent">Em andamento</span>' };
-  return m[s]||`<span class="tag tag-gray">${s||'—'}</span>`;
+  // Cores e símbolos próprios por situação (22/10/2026)
+  const m = { ASSINADO: ['Assinado', 'verde', 'check'], PENDENTE: ['Pendente', 'ambar', 'pen-line'], EXPIRADO: ['Expirado', 'cinza', 'clock-3'],
+    EM_ANDAMENTO: ['Em andamento', 'azul', 'timer'], CANCELADO: ['Cancelado', 'vermelho', 'x'] };
+  return m[s] ? gcaSit(...m[s]) : `<span class="tag tag-gray">${escHtml(s || '—')}</span>`;
 }
 
 // ── COLABORADORES ──
@@ -11718,13 +11828,10 @@ function renderAssinaturas(lista) {
   const pagina   = lista.slice(inicio, fim);
 
   tbody.innerHTML = pagina.map(a => {
-    const tag = a.statusCalc === 'ASSINADO'
-      ? '<span style="color:var(--green);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Assinado</span>'
-      : a.statusCalc === 'EXPIRADO'
-        ? '<span style="color:var(--text-3);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-alarm-clock></use></svg> Expirado</span>'
-        : !a.token
-          ? '<span style="color:var(--red);font-weight:600;font-size:11px" title="O atendimento foi salvo, mas o link de assinatura não foi gerado"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Sem link</span>'
-          : '<span style="color:var(--yellow);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Pendente</span>';
+    const tag = a.statusCalc === 'ASSINADO' ? gcaSit('Assinado', 'verde', 'check')
+      : a.statusCalc === 'EXPIRADO' ? gcaSit('Expirado', 'cinza', 'clock-3')
+      : !a.token ? `<span title="O atendimento foi salvo, mas o link de assinatura não foi gerado">${gcaSit('Sem link', 'vermelho', 'link-2-off')}</span>`
+      : gcaSit('Pendente', 'ambar', 'pen-line');
 
     const expiraEm = a.statusCalc === 'PENDENTE' && a.diasPendente != null
       ? (a.diasPendente === 0 ? 'hoje' : `${a.diasPendente} dia${a.diasPendente === 1 ? '' : 's'}`) : '—';
@@ -12342,8 +12449,8 @@ function renderSolicitacoes() {
   tbody.innerHTML = pagina.map(s => {
     const statusTag = solStatusTag(s.status);
     const priorTag  = s.prioridade === 'Urgente'
-      ? '<span style="color:#ef4444;font-weight:700;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgente</span>'
-      : '<span style="color:#64748b;font-weight:500;font-size:11px"><svg class=ic-azul aria-hidden=true><use href=#i-_ponto></use></svg> Normal</span>';
+      ? gcaSit('Urgente', 'vermelho', 'siren')
+      : '<span style="color:var(--text-3);font-weight:500;font-size:11px">Normal</span>';
 
     let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
     const qtd = itens.length || s.qtd_itens || 0;
@@ -12414,17 +12521,19 @@ function renderSolicitacoes() {
 }
 
 function solStatusTag(status) {
+  // Cada situação com a sua cor (22/10/2026: antes "Pendente" e "Aguard. transporte" eram iguais)
   const map = {
-    'PENDENTE':              '<span style="color:var(--yellow);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Pendente</span>',
-    'VISUALIZADO':           '<span style="color:var(--blue);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-eye></use></svg> Visualizado</span>',
-    'ATENDIDO':              '<span style="color:var(--accent-text);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Atendido</span>',
-    'AGUARDANDO TRANSPORTE': '<span style="color:var(--yellow);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Aguard. Transporte</span>',
-    'EM TRANSITO':           '<span style="color:var(--blue);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em Trânsito</span>',
-    'NA BASE DESTINO':       '<span style="color:var(--accent-text);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Na base destino</span>',
-    'FINALIZADO':            '<span style="color:var(--green);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-flag></use></svg> Finalizado</span>',
-    'CANCELADO':             '<span style="color:var(--text-3);font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Cancelado</span>',
+    'PENDENTE': ['Pendente', 'ambar', 'clock-3'],
+    'VISUALIZADO': ['Visualizado', 'azul', 'eye'],
+    'ATENDIDO': ['Atendido', 'teal', 'package-check'],
+    'AGUARDANDO TRANSPORTE': ['Aguard. transporte', 'laranja', 'package'],
+    'EM TRANSITO': ['Em trânsito', 'ceu', 'truck'],
+    'NA BASE DESTINO': ['Na base destino', 'violeta', 'map-pin-check'],
+    'FINALIZADO': ['Finalizado', 'verde', 'check'],
+    'CANCELADO': ['Cancelado', 'vermelho', 'x'],
   };
-  return map[status] || `<span style="color:var(--text-3);font-size:11px">${status||'—'}</span>`;
+  const m = map[status];
+  return m ? gcaSit(m[0], m[1], m[2]) : `<span style="color:var(--text-3);font-size:11px">${escHtml(status || '—')}</span>`;
 }
 
 // ── Modal detalhe ──
@@ -12462,14 +12571,14 @@ async function abrirModalSolicitacao(id) {
 
   // Labels amigáveis por status para o histórico
   const _statusLabel = {
-    'PENDENTE':              '<svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Solicitação aberta',
-    'VISUALIZADO':           '<svg class=ic aria-hidden=true><use href=#i-eye></use></svg> Visualizado pelo almoxarifado',
-    'ATENDIDO':              '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Atendido',
-    'AGUARDANDO TRANSPORTE': '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Aguardando transporte',
-    'EM TRANSITO':           '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em trânsito',
-    'NA BASE DESTINO':       '<svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Na base destino — aguardando entrega ao colaborador',
-    'FINALIZADO':            '<svg class=ic aria-hidden=true><use href=#i-flag></use></svg> Finalizado',
-    'CANCELADO':             '<svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Cancelado',
+    'PENDENTE':              gcaSit('Solicitação aberta', 'ambar', 'clock-3'),
+    'VISUALIZADO':           gcaSit('Visualizado pelo almoxarifado', 'azul', 'eye'),
+    'ATENDIDO':              gcaSit('Atendido', 'teal', 'package-check'),
+    'AGUARDANDO TRANSPORTE': gcaSit('Aguardando transporte', 'laranja', 'package'),
+    'EM TRANSITO':           gcaSit('Em trânsito', 'ceu', 'truck'),
+    'NA BASE DESTINO':       gcaSit('Na base destino — aguardando entrega ao colaborador', 'violeta', 'map-pin-check'),
+    'FINALIZADO':            gcaSit('Finalizado', 'verde', 'check'),
+    'CANCELADO':             gcaSit('Cancelado', 'vermelho', 'x'),
   };
 
   document.getElementById('solModalBody').innerHTML = `
@@ -13864,19 +13973,20 @@ async function tflCriar() {
   tflAbrirDetalhe(res.id);
 }
 
+// [matiz, rótulo, símbolo] — situação com a bolinha colorida (22/10/2026)
 const TFL_STATUS = {
-  AGUARDANDO_ACEITE: ['#f59e0b', '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Aguardando aceite'],
-  RECUSADA:          ['#ef4444', '✖ Recusada'],
-  ACEITA:            ['#3b82f6', '✔ Aceita — aguardando NF'],
-  NF_ANEXADA:        ['#6366f1', '<svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> NF anexada — aguardando recebimento'],
-  RECEBIDA:          ['#22c55e', '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Recebida'],
-  CANCELADA:         ['#64748b', '<svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Cancelada'],
+  AGUARDANDO_ACEITE: ['ambar', 'Aguardando aceite', 'clock-3'],
+  RECUSADA:          ['vermelho', 'Recusada', 'x'],
+  ACEITA:            ['azul', 'Aceita — aguardando NF', 'thumbs-up'],
+  NF_ANEXADA:        ['ceu', 'NF anexada — aguardando recebimento', 'truck'],
+  RECEBIDA:          ['verde', 'Recebida', 'check'],
+  CANCELADA:         ['cinza', 'Cancelada', 'ban'],
 };
 const TFL_MEIO = { PROPRIO: 'Meio próprio', TRANSPORTADORA: 'Transportadora', CORREIOS: 'Correios' };
 
 function tflBadge(status) {
-  const [cor, rotulo] = TFL_STATUS[status] || ['#64748b', status];
-  return `<span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:2px 8px;white-space:nowrap">${rotulo}</span>`;
+  const [matiz, rotulo, icone] = TFL_STATUS[status] || ['cinza', status || '—', 'clipboard-list'];
+  return gcaSit(rotulo, matiz, icone);
 }
 
 async function tflCarregarLista() {
@@ -14611,10 +14721,10 @@ function renderEstoque(manterPagina) {
   tbody.innerHTML = pagina.map(s => {
     const min    = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
     const status = getStatus(s);
-    const statusTag = status === 'critico' ? '<span style="color:#ef4444;font-size:11px;font-weight:700"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg> Crítico</span>'
-                    : status === 'baixo'   ? '<span style="color:#f59e0b;font-size:11px;font-weight:700"><svg class=ic-amarelo aria-hidden=true><use href=#i-_ponto></use></svg> Baixo</span>'
-                    : status === 'zerado'  ? '<span style="color:var(--text-3);font-size:11px;font-weight:700"><svg class=ic-cinza aria-hidden=true><use href=#i-_quadrado></use></svg> Zerado</span>'
-                    :                        '<span style="color:#22c55e;font-size:11px;font-weight:700"><svg class=ic-verde aria-hidden=true><use href=#i-_ponto></use></svg> OK</span>';
+    const statusTag = status === 'critico' ? gcaSit('Crítico', 'vermelho', 'triangle-alert')
+                    : status === 'baixo'   ? gcaSit('Baixo', 'ambar', 'trending-down')
+                    : status === 'zerado'  ? gcaSit('Zerado', 'cinza', 'package-x')
+                    :                        gcaSit('OK', 'verde', 'check');
     const item     = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn  = Number(item?.valor_un || 0);
     const valorTot = (s.saldo * valorUn).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
@@ -16511,7 +16621,7 @@ async function ivenReclassificar(itemId, desfazer) {
   carregarInventarioEnel();
 }
 
-const IVEN_SITUACAO = { CONFERIDO: ['Conferido', 'var(--green)'], FALTANDO: ['Faltando', '#ef4444'], SOBRANDO: ['Sobrando', '#f59e0b'] };
+const IVEN_SITUACAO = { CONFERIDO: ['Conferido', 'var(--green)', 'verde', 'check'], FALTANDO: ['Faltando', '#ef4444', 'vermelho', 'x'], SOBRANDO: ['Sobrando', '#f59e0b', 'ambar', 'triangle-alert'] };
 
 async function ivenVerSeriais(situacao, itemId, nomeItem) {
   if (!_ivenDet) return;
@@ -16528,11 +16638,11 @@ async function ivenVerSeriais(situacao, itemId, nomeItem) {
   document.getElementById('ivenDetSeriaisTitulo').textContent =
     `${situacao ? IVEN_SITUACAO[situacao][0] : 'Seriais'}${nomeItem ? ' · ' + nomeItem : ''} (${lista.length})`;
   body.innerHTML = lista.length ? lista.map(sr => {
-    const [txt, cor] = IVEN_SITUACAO[sr.situacao] || ['Em contagem', 'var(--text-3)'];
+    const [txt, cor, matiz, icone] = IVEN_SITUACAO[sr.situacao] || ['Em contagem', 'var(--text-3)', 'cinza', 'timer'];
     return `<tr>
       <td style="font-size:11px">${escHtml(sr.descricao || '—')}</td>
       <td style="font-family:var(--font-mono);font-weight:700">${escHtml(sr.numero_serie)}${sr.modo === 'LOTE' ? ' <span style="font-size:9px;color:#a78bfa"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span>' : ''}</td>
-      <td style="color:${cor};font-weight:600;font-size:11px">${txt}</td>
+      <td>${gcaSit(txt, matiz, icone)}</td>
       <td style="font-size:11px;color:var(--text-2)">${escHtml(sr.situacao_detalhe || '—')}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(sr.nome_contador || '—')}</td>
     </tr>`;
@@ -17059,14 +17169,14 @@ function renderLogViagens() {
   }
 
   const viagemBadge = (v) => v.status === 'CONCLUIDA'
-    ? `<span class="log-badge log-badge-verde"><svg class=ic aria-hidden=true><use href=#i-flag></use></svg> Concluída${v.concluida_em ? ' em ' + new Date(v.concluida_em).toLocaleDateString('pt-BR') : ''}</span>`
-    : `<span class="log-badge log-badge-azul"><svg class=ic aria-hidden=true><use href=#i-compass></use></svg> Em andamento</span>`;
+    ? gcaSit(`Concluída${v.concluida_em ? ' em ' + new Date(v.concluida_em).toLocaleDateString('pt-BR') : ''}`, 'verde', 'check')
+    : gcaSit('Em andamento', 'ceu', 'route');
 
   const grupoBadge = (g) => {
-    if (g.status === 'ENTREGUE') return `<span class="log-badge log-badge-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue</span>`;
-    if (g.status === 'CANCELADO') return `<span class="log-badge" style="color:var(--text-3);border:1px solid var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Cancelado</span>`;
-    if (g.status === 'EM_TRANSITO') return `<span class="log-badge log-badge-azul"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Em trânsito</span>`;
-    return `<span class="log-badge log-badge-amarelo"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Aguardando coleta</span>`;
+    if (g.status === 'ENTREGUE') return gcaSit('Entregue', 'verde', 'check');
+    if (g.status === 'CANCELADO') return gcaSit('Cancelado', 'vermelho', 'x');
+    if (g.status === 'EM_TRANSITO') return gcaSit('Em trânsito', 'ceu', 'truck');
+    return gcaSit('Aguardando coleta', 'laranja', 'package');
   };
 
   const acoesGrupo = (g) => {
@@ -18596,8 +18706,8 @@ async function emaHistorico() {
 // Para cada colaborador ativo: última retirada de qualquer um dos itens escolhidos, há quantos dias,
 // retiradas em 12 meses e, se o item tiver durabilidade, a próxima troca e se está vencida.
 let _ur = { escolhidos: [], dados: null };
-const UR_SIT = { nunca: ['Nunca retirou', '#dc2626', 'rgba(220,38,38,.12)'], vencida: ['Troca vencida', '#ea580c', 'rgba(234,88,12,.12)'],
-  em_dia: ['Em dia', '#16a34a', 'rgba(22,163,74,.12)'], sem_prazo: ['Retirou', '#2563eb', 'rgba(37,99,235,.12)'] };
+const UR_SIT = { nunca: ['Nunca retirou', '#dc2626', 'rgba(220,38,38,.12)', 'vermelho', 'user-x'], vencida: ['Troca vencida', '#ea580c', 'rgba(234,88,12,.12)', 'laranja', 'clock-3'],
+  em_dia: ['Em dia', '#16a34a', 'rgba(22,163,74,.12)', 'verde', 'check'], sem_prazo: ['Retirou', '#2563eb', 'rgba(37,99,235,.12)', 'azul', 'user-round-check'] };
 const urDataBR = iso => iso ? iso.split('-').reverse().join('/') : '—';
 async function urInit() {
   if (!(_itens || []).length) { const r = await api('/itens?limit=2000'); if (r?.data) _itens = r.data; }
@@ -18656,12 +18766,12 @@ function urFiltradas() {
 function urRender() {
   const linhas = urFiltradas(), varios = (_ur.dados?.itens || []).length > 1;
   document.getElementById('urBody').innerHTML = linhas.map(l => {
-    const [rot, cor, bg] = UR_SIT[l.situacao];
+    const [rot, , , matiz, icone] = UR_SIT[l.situacao];
     return `<tr><td>${escHtml(l.nome)}${l.de_outra_filial ? ' <span style="font-size:10px;color:var(--text-3)">(de outra filial)</span>' : ''}</td><td>${escHtml(l.matricula)}</td><td>${escHtml(l.funcao)}</td><td>${escHtml(l.setor)}</td>
       <td>${urDataBR(l.ultima)}${varios && l.item_ultima ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(l.item_ultima)}</div>` : ''}</td>
       <td style="text-align:right">${l.qtd_ultima ?? '—'}</td><td style="text-align:right">${l.dias == null ? '—' : l.dias + ' dia' + (l.dias === 1 ? '' : 's')}</td>
       <td style="text-align:right">${l.retiradas_12m}</td><td>${urDataBR(l.proxima_troca)}</td>
-      <td><span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${cor};background:${bg}">${rot}</span></td></tr>`;
+      <td>${gcaSit(rot, matiz, icone)}</td></tr>`;
   }).join('') || '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-3)">Ninguém com esses filtros.</td></tr>';
 }
 function urExcel() {
@@ -18700,9 +18810,13 @@ const CA_ACOES = { INCLUIDO: 'Incluído', REATIVADO: 'Voltou a valer', INATIVADO
 const caDataBR = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—';
 const caPodeMexer = () => temPermissao('gerenciar_ca');
 const caSem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+// Situação do CA com a bolinha colorida (22/10/2026)
+const CA_SIT_COR = { valido: ['verde', 'check'], vencendo: ['ambar', 'clock-3'], vencido: ['vermelho', 'x'], cancelado: ['vermelho', 'ban'],
+  sem_validade: ['cinza', 'calendar-x'], sem_ca: ['violeta', 'shield-alert'], dispensado: ['cinza', 'minus'], inativo: ['cinza', 'archive'], nao_compra: ['cinza', 'archive'] };
 function caSelo(sit, txt) {
-  const [rot, cor, bg] = CA_SIT[sit] || CA_SIT.sem_validade;
-  return `<span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${cor};background:${bg}">${escHtml(txt || rot)}</span>`;
+  const [rot] = CA_SIT[sit] || CA_SIT.sem_validade;
+  const [matiz, icone] = CA_SIT_COR[sit] || CA_SIT_COR.sem_validade;
+  return gcaSit(txt || rot, matiz, icone);
 }
 function caPrazo(c) {
   if (c.situacao === 'cancelado') return 'Cancelado no MTE';
@@ -22288,11 +22402,11 @@ function laudosRender_() {
             </tr>`;
           }
 
-          const stBadge = x.status==='AGUARDANDO_LAUDO'?'<span style="color:#6366f1;font-size:10px;font-weight:700"><svg class=ic aria-hidden=true><use href=#i-microscope></use></svg> Aguardando laudo</span>'
-            :x.status==='OK'?'<span style="color:#22c55e;font-size:10px;font-weight:700"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> OK</span>'
-            :x.status==='VENCIDO'?'<span style="color:#ef4444;font-size:10px;font-weight:700"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Vencido</span>'
-            :x.status==='ALERTA_30'?'<span style="color:#f59e0b;font-size:10px;font-weight:700"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Alerta</span>'
-            :'<span style="color:var(--text-3);font-size:10px"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Sem laudo</span>';
+          const stBadge = x.status==='AGUARDANDO_LAUDO' ? gcaSit('Aguardando laudo', 'violeta', 'microscope')
+            : x.status==='OK' ? gcaSit('OK', 'verde', 'check')
+            : x.status==='VENCIDO' ? gcaSit('Vencido', 'vermelho', 'x')
+            : x.status==='ALERTA_30' ? gcaSit('Alerta', 'ambar', 'triangle-alert')
+            : gcaSit('Sem laudo', 'cinza', 'file-question-mark');
           return `<tr style="border-bottom:1px solid var(--border)">
             <td style="padding:8px;font-family:var(--font-mono);font-weight:700;color:var(--accent-text)">${escHtml(x.serial)}${x.cadastradoPor || x.cadastradoEm ? `<div style="font-family:inherit;font-size:9px;font-weight:400;color:var(--text-3);margin-top:2px;font-family:var(--font-sans,inherit)" title="Quem cadastrou o serial">cadastrado ${nr10QuemQuando(x.cadastradoPor, x.cadastradoEm)}</div>` : ''}</td>
             <td style="padding:8px">${nr10CelulaRastreio(x)}</td>
@@ -23705,9 +23819,8 @@ async function carregarRemessas() {
 }
 
 function remStatusBadge(status) {
-  const map = { ENVIADA: ['#3b82f6','Enviada'], PARCIAL: ['#eab308','Parcial'], CONCLUIDA: ['#22c55e','Concluída'] };
-  const [cor, label] = map[status] || ['#888', status];
-  return `<span style="font-size:10px;font-weight:700;color:${cor};border:1px solid ${cor};border-radius:999px;padding:2px 10px;white-space:nowrap">${label}</span>`;
+  const map = { ENVIADA: ['Enviada', 'azul', 'send'], PARCIAL: ['Parcial', 'ambar', 'clock-3'], CONCLUIDA: ['Concluída', 'verde', 'check'] };
+  return gcaSit(...(map[status] || [status || '—', 'cinza', 'clipboard-list']));
 }
 
 function renderRemessas() {
@@ -26860,12 +26973,13 @@ function exportarCtdc() {
 // ═══════════════════════════════════════════
 // BAIXA MANUAL — serviços fora do eOrder (backoffice) e revisão dos medidores liberados no bloqueio
 // ═══════════════════════════════════════════
+// [rótulo (HTML), cor antiga, matiz, símbolo] — situação com a bolinha (22/10/2026)
 const BM_SITUACAO = {
-  PENDENTE: ['<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Pendente', 'var(--yellow)'],
-  INSTALADO_EORDER: ['<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Instalado (eOrder)', 'var(--green)'],
-  INSTALADO_MANUAL: ['<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Instalado (baixa manual)', 'var(--green)'],
-  DEVOLVIDO: ['↩ Voltou ao estoque', 'var(--text-2)'],
-  NAO_INSTALADO: ['✖ Não instalado — com a equipe', 'var(--text-3)'],
+  PENDENTE: ['Pendente', 'var(--yellow)', 'ambar', 'clock-3'],
+  INSTALADO_EORDER: ['Instalado (eOrder)', 'var(--green)', 'verde', 'check'],
+  INSTALADO_MANUAL: ['Instalado (baixa manual)', 'var(--green)', 'verde', 'check'],
+  DEVOLVIDO: ['Voltou ao estoque', 'var(--text-2)', 'azul', 'undo-2'],
+  NAO_INSTALADO: ['Não instalado — com a equipe', 'var(--text-3)', 'cinza', 'x'],
 };
 const BM_MESES = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 // Situação do medidor colocado no serviço (só o já instalado é barrado; o resto vai com aviso)
@@ -27215,7 +27329,7 @@ function bmRenderRevisao() {
     return;
   }
   body.innerHTML = lista.map(r => {
-    const [rot, cor] = BM_SITUACAO[r.situacao] || [r.situacao, 'var(--text-2)'];
+    const [rot, cor, matiz, icone] = BM_SITUACAO[r.situacao] || [r.situacao, 'var(--text-2)', 'cinza', 'clock-3'];
     const comOutra = r.equipe_atual && r.equipe_atual !== r.equipe;
     let detalhe = '';
     if (r.situacao === 'INSTALADO_EORDER' || r.situacao === 'INSTALADO_MANUAL') detalhe = `ordem ${escHtml(r.os_instalacao || '—')}${r.data_instalacao ? ' · ' + formatarData(String(r.data_instalacao).slice(0, 10)) : ''}`;
@@ -27230,7 +27344,7 @@ function bmRenderRevisao() {
       <td style="font-size:12px;font-weight:600">${escHtml(r.equipe || '—')}${comOutra ? `<div style="font-size:10px;color:var(--yellow);font-weight:400">hoje com ${escHtml(r.equipe_atual)}</div>` : ''}</td>
       <td style="font-size:11px;white-space:nowrap">${formatarData(String(r.data_liberacao || '').slice(0, 10))}<div style="color:var(--text-3)">${escHtml(r.liberado_por || '')}${r.dias_na_equipe != null ? ` · ${r.dias_na_equipe} dia(s) na equipe` : ''}</div>${r.liberacoes > 1 ? `<div style="color:var(--yellow)">liberado ${r.liberacoes} vezes</div>` : ''}</td>
       <td style="font-size:11px;color:var(--text-2);white-space:normal;min-width:160px">${escHtml(r.justificativa || '—')}</td>
-      <td style="font-size:11px;white-space:normal;min-width:200px"><span style="font-weight:700;color:${cor};white-space:nowrap">${rot}</span>${detalhe ? `<div style="color:var(--text-3)">${detalhe}</div>` : ''}</td>
+      <td style="font-size:11px;white-space:normal;min-width:200px">${gcaSit(rot, matiz, icone)}${detalhe ? `<div style="color:var(--text-3)">${detalhe}</div>` : ''}</td>
       <td>${acoes}</td>
     </tr>`;
   }).join('');
@@ -27301,7 +27415,7 @@ function bmExcelRevisao() {
   gcaExportarExcel('Revisao_medidores', lista.map(r => ({
     serial: r.numero_serie, medidor: r.material || '', equipe: r.equipe || '', equipe_atual: r.equipe_atual || '',
     liberado_em: formatarData(String(r.data_liberacao || '').slice(0, 10)), liberado_por: r.liberado_por || '', motivo: r.justificativa || '',
-    dias: r.dias_na_equipe ?? '', situacao: gcaSemIcone((BM_SITUACAO[r.situacao] || [r.situacao])[0]).replace(/^[↩✖]\s*/, ''),
+    dias: r.dias_na_equipe ?? '', situacao: (BM_SITUACAO[r.situacao] || [r.situacao])[0],
     ordem: r.os_instalacao || '', instalado_em: r.data_instalacao ? formatarData(String(r.data_instalacao).slice(0, 10)) : '',
     revisado_por: r.revisado_por || '', revisado_em: r.revisado_em ? formatarDataHora(r.revisado_em) : '', obs: r.obs_revisao || '',
   })), [
