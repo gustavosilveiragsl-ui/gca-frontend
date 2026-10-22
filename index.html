@@ -782,6 +782,8 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 .nav-group .ni-icon{color:var(--c)}[data-theme="light"] .nav-group .ni-icon{color:var(--t)}.nav-item.active .ni-icon{opacity:1}
 .card-title>svg[class^="ic"]{color:var(--c,var(--accent-text))}[data-theme="light"] .card-title>svg[class^="ic"]{color:var(--t,var(--accent))}
 .modal-title>svg[class^="ic"]{color:var(--accent-text)}
+.dsc-viz{--dsc-troca:#3987e5;--dsc-reprovado:#d95926;--dsc-outros:#199e70;--dsc-perda:#c98500}
+[data-theme="light"] .dsc-viz{--dsc-troca:#2a78d6;--dsc-reprovado:#eb6834;--dsc-outros:#1baf7a;--dsc-perda:#eda100}
 [data-theme="light"]{--yellow:#b45309;--green:#15803d;--blue:#0369a1;--red:#b91c1c;--accent-text:#4f46e5}
 </style>
 </head>
@@ -870,7 +872,11 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
   <line x1="17" x2="22" y1="8" y2="13" />
   <line x1="22" x2="17" y1="8" y2="13" /></symbol><symbol id="i-user-round-check" viewBox="0 0 24 24"><path d="M2 21a8 8 0 0 1 13.292-6" />
   <circle cx="10" cy="8" r="5" />
-  <path d="m16 19 2 2 4-4" /></symbol></svg>
+  <path d="m16 19 2 2 4-4" /></symbol><symbol id="i-ruler" viewBox="0 0 24 24"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z" />
+  <path d="m14.5 12.5 2-2" />
+  <path d="m11.5 9.5 2-2" />
+  <path d="m8.5 6.5 2-2" />
+  <path d="m17.5 15.5 2-2" /></symbol></svg>
 
 <!-- LOADING -->
 <div id="loadingScreen">
@@ -1085,6 +1091,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <button class="nav-item" data-view="consulta-itens" data-perm="consulta_itens" onclick="showView('consulta-itens',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-search></use></svg></span> Consulta de Itens</button>
           <button class="nav-item" data-view="consulta-colaboradores" data-perm="consulta_colaboradores" onclick="showView('consulta-colaboradores',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></span> Consulta de Colaboradores</button>
           <button class="nav-item" data-view="consulta-ultima-retirada" data-perm="consulta_colaboradores" onclick="showView('consulta-ultima-retirada',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-calendar></use></svg></span> Última Retirada por Item</button>
+          <button class="nav-item" data-view="consulta-tamanhos" data-perm="consulta_colaboradores" onclick="showView('consulta-tamanhos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-ruler></use></svg></span> Tamanhos dos Colaboradores</button>
           <button class="nav-item so-viatura" style="display:none" data-view="consulta-viaturas" data-perm="consulta_viaturas" onclick="showView('consulta-viaturas',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-car-front></use></svg></span> Consulta de Viaturas</button>
           <button class="nav-item" data-view="consulta-dotacao" data-perm="consulta_dotacao" onclick="showView('consulta-dotacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-list-checks></use></svg></span> Consulta de Dotação</button>
         </div>
@@ -2885,6 +2892,33 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       </div>
 
       <!-- ── ÚLTIMA RETIRADA POR ITEM (16/10/2026) ── -->
+      <!-- ── TAMANHOS DOS COLABORADORES (22/10/2026) ── -->
+      <div class="view h-azul" id="view-consulta-tamanhos">
+        <div class="card" style="overflow:visible">
+          <div class="card-header" style="flex-wrap:wrap;gap:10px">
+            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-ruler></use></svg> Tamanhos dos colaboradores</div>
+              <div class="card-sub">Para cada item com tamanho, quantos colaboradores ativos usam cada tamanho (pela última retirada) e quantos ainda não têm registro</div></div>
+            <div class="card-actions"><button class="btn btn-ghost" onclick="tamExcel()" title="Uma linha por colaborador e uma coluna por item, com o tamanho de cada um"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel geral</button></div>
+          </div>
+          <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)">
+            <input class="search-box" type="text" id="tamBusca" placeholder="Buscar item…" oninput="tamRender()" style="width:240px;max-width:100%">
+            <select class="form-input" id="tamFuncao" style="width:200px;font-size:11px" onchange="tamRender()"><option value="">Todas as funções</option></select>
+            <select class="form-input" id="tamSetor" style="width:200px;font-size:11px" onchange="tamRender()"><option value="">Todos os setores</option></select>
+            <span id="tamContagem" style="margin-left:auto;font-size:11px;color:var(--text-3)"></span>
+          </div>
+          <div id="tamLista" style="padding:12px 16px;display:grid;gap:10px"></div>
+        </div>
+        <div class="card" id="tamDetalhe" style="margin-top:12px" hidden>
+          <div class="card-header"><div><div class="card-title" id="tamDetTitulo">—</div><div class="card-sub" id="tamDetSub"></div></div>
+            <div class="card-actions"><button class="btn btn-ghost" onclick="tamExcelLista()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel da lista</button>
+              <button class="btn btn-ghost" onclick="document.getElementById('tamDetalhe').hidden=true;_tam.sel=null;tamRender()">Fechar</button></div></div>
+          <div style="overflow-x:auto"><table>
+            <thead><tr><th>Colaborador</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Tamanho</th><th>Última retirada</th></tr></thead>
+            <tbody id="tamDetBody"></tbody>
+          </table></div>
+        </div>
+      </div>
+
       <div class="view h-azul" id="view-consulta-ultima-retirada">
         <div class="card" style="overflow:visible">
           <div class="card-header">
@@ -5090,6 +5124,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
         <div style="display:flex;gap:4px;margin-bottom:12px;border-bottom:1px solid var(--border)">
           <button class="atend-tab active" id="descTab1" onclick="showDescTab('saldo')"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg> Saldo Atual</button>
           <button class="atend-tab" id="descTab2" onclick="showDescTab('historico')"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Histórico de Despachos</button>
+          <button class="atend-tab" id="descTab3" onclick="showDescTab('indicadores')"><svg class=ic aria-hidden=true><use href=#i-chart-column-increasing></use></svg> Indicadores</button>
         </div>
 
         <!-- ABA SALDO -->
@@ -5132,6 +5167,35 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
                 <tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Clique em ↻ Atualizar</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- ABA INDICADORES (22/10/2026): quanto de cada item saiu por mês, e quanto o estoque dura -->
+        <div id="descTabIndicadores" style="display:none">
+          <div class="card" style="overflow:visible">
+            <div class="card-header" style="flex-wrap:wrap;gap:10px">
+              <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-chart-column-increasing></use></svg> Descartes por mês</div>
+                <div class="card-sub">Troca por desgaste ou dano, reprovados no ensaio, outros descartes e perdas — base para a compra</div></div>
+              <div class="card-actions" style="flex-wrap:wrap">
+                <select class="form-input" id="dscMeses" style="width:150px;font-size:11px" onchange="dscCarregar()">
+                  <option value="3">Últimos 3 meses</option><option value="6" selected>Últimos 6 meses</option><option value="12">Últimos 12 meses</option>
+                </select>
+                <button class="btn btn-ghost" onclick="dscExcel()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
+              </div>
+            </div>
+            <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)">
+              <input class="search-box" type="text" id="dscBusca" placeholder="Buscar item ou código…" oninput="dscRender()" style="width:260px;max-width:100%">
+              <select class="form-input" id="dscCategoria" style="width:180px;font-size:11px" onchange="dscRender()"><option value="">Todas as categorias</option></select>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer"><input type="checkbox" id="dscJuntar" checked onchange="dscRender()"> Juntar os tamanhos</label>
+              <span id="dscFoco" style="font-size:12px;color:var(--text-2)"></span>
+            </div>
+            <div id="dscKpis" class="kpi-grid" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));padding:14px 16px 0;margin:0"></div>
+            <div id="dscGrafico" class="dsc-viz" style="padding:8px 16px 4px;position:relative"></div>
+            <div style="overflow-x:auto"><table>
+              <thead id="dscHead"></thead>
+              <tbody id="dscBody"><tr><td style="padding:16px;text-align:center;color:var(--text-3);font-size:12px">Carregando…</td></tr></tbody>
+            </table></div>
+            <div id="dscNota" style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5"></div>
           </div>
         </div>
       </div>
@@ -5310,6 +5374,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
             <span style="color:var(--text-3);font-size:12px">até</span>
             <input type="date" id="indAte" class="form-input" style="width:145px">
             <button class="btn btn-primary" onclick="carregarIndicadores()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Buscar</button>
+            <button class="btn btn-ghost" data-perm-btn="ver_descarte" onclick="showView('descarte', document.querySelector('.nav-item[data-view=&quot;descarte&quot;]'));showDescTab('indicadores')" title="Quanto de cada item saiu por mês e quanto o estoque dura"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> Descartes por mês</button>
           </div>
         </div>
 
@@ -7877,6 +7942,7 @@ const VIEW_TITLES = {
   'consulta-itens':          ['Consulta de Itens','/ Detalhes'],
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
   'consulta-ultima-retirada':['Última Retirada por Item','/ Consulta'],
+  'consulta-tamanhos':['Tamanhos dos Colaboradores','/ Consulta'],
   'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'],
   // Telas do menu que não tinham título (o topo mostrava o código da tela)
   'enel-atendimento':['Materiais Cliente','/ Atendimento Material'],
@@ -8028,6 +8094,7 @@ function onViewLoad(nome) {
   if (nome === 'consulta-colaboradores') carregarConsultaColabs();
   if (nome === 'consulta-dotacao')   carregarConsultaDotacao();
   if (nome === 'consulta-ultima-retirada') urInit();
+  if (nome === 'consulta-tamanhos') tamInit();
   if (nome === 'gestao-ca')          { caInit(window._caFocoPendente || null); window._caFocoPendente = null; }
   if (nome === 'atendimento') {
     // Garante que colaboradores e itens estejam carregados para o autocomplete
@@ -18847,6 +18914,90 @@ function urExcel() {
      { key: 'proxima_br', label: 'Próxima troca' }, { key: 'situacao_txt', label: 'Situação' }, { key: 'outra', label: 'De outra filial' }]);
 }
 
+// ═══ Tamanhos dos colaboradores (22/10/2026) ═══
+// Pedido do usuário: ver de uma vez quantos usam G, M… em cada item com tamanho, e a lista de quem
+// usa cada um (e de quem não tem registro), sem abrir ficha por ficha.
+let _tam = { dados: null, sel: null };
+async function tamInit() {
+  const box = document.getElementById('tamLista');
+  if (!_tam.dados) box.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Carregando…</div>';
+  const r = await api('/consulta/tamanhos');
+  if (!r?.ok) { box.innerHTML = `<div style="padding:20px;text-align:center;color:var(--red)">${escHtml(r?.erro || 'Erro ao carregar os tamanhos')}</div>`; return; }
+  _tam.dados = r;
+  const preencher = (id, campo, rot) => { const sel = document.getElementById(id), atual = sel.value;
+    const vs = [...new Set(r.colaboradores.map(c => c[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    sel.innerHTML = `<option value="">${rot}</option>` + vs.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+    if (vs.includes(atual)) sel.value = atual; };
+  preencher('tamFuncao', 'funcao', 'Todas as funções');
+  preencher('tamSetor', 'setor', 'Todos os setores');
+  tamRender();
+}
+function tamColabs() {
+  const f = document.getElementById('tamFuncao').value, st = document.getElementById('tamSetor').value;
+  return (_tam.dados?.colaboradores || []).filter(c => (!f || c.funcao === f) && (!st || c.setor === st));
+}
+function tamRender() {
+  const d = _tam.dados; if (!d) return;
+  const colabs = tamColabs();
+  const q = (document.getElementById('tamBusca').value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const fams = d.familias.filter(f => !q || f.familia.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q));
+  document.getElementById('tamContagem').textContent = `${colabs.length} colaboradores ativos · ${fams.length} itens com tamanho`;
+  document.getElementById('tamLista').innerHTML = fams.map(f => {
+    const uso = d.uso[f.familia] || {};
+    const cont = {}; let com = 0;
+    colabs.forEach(c => { const u = uso[c.id]; if (u) { cont[u[0]] = (cont[u[0]] || 0) + 1; com++; } });
+    const sem = colabs.length - com;
+    const max = Math.max(1, ...Object.values(cont));
+    const chip = (tam, n, matiz) => {
+      const ativo = _tam.sel && _tam.sel.familia === f.familia && _tam.sel.tamanho === tam;
+      return `<button type="button" onclick="tamAbrir('${escJs(f.familia)}', ${tam === null ? 'null' : `'${escJs(tam)}'`})" title="Ver a lista"
+        style="display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;cursor:pointer;border:1px solid ${ativo ? 'var(--accent)' : 'var(--border)'};background:${ativo ? 'var(--accent-soft)' : 'var(--bg)'};color:var(--text-1)">
+        <span style="font-weight:700;min-width:22px;text-align:center">${tam === null ? 'Sem registro' : escHtml(tam)}</span>
+        ${tam === null ? '' : `<span style="width:${Math.round(40 * n / max)}px;height:6px;border-radius:3px;background:var(--accent);display:inline-block"></span>`}
+        <span style="font-variant-numeric:tabular-nums;color:${matiz || 'var(--text-2)'}">${n}</span></button>`;
+    };
+    const tams = [...new Set([...f.tamanhos, ...Object.keys(cont)])].filter(t => cont[t]);
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;background:var(--bg-card)">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px"><span style="font-weight:700;color:var(--text-1)">${escHtml(f.familia)}</span>
+        <span style="font-size:11px;color:var(--text-3)">${escHtml(f.categoria || '')} · ${com} com registro${colabs.length ? ` (${Math.round(com / colabs.length * 100)}%)` : ''}</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${tams.map(t => chip(t, cont[t])).join('')}${chip(null, sem, sem ? 'var(--yellow)' : '')}</div></div>`;
+  }).join('') || '<div style="padding:20px;text-align:center;color:var(--text-3)">Nenhum item com tamanho cadastrado nesta filial.</div>';
+  if (_tam.sel) tamRenderDetalhe();
+}
+function tamAbrir(familia, tamanho) {
+  _tam.sel = { familia, tamanho };
+  tamRender();
+  document.getElementById('tamDetalhe').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function tamListaSel() {
+  const d = _tam.dados, sel = _tam.sel; if (!d || !sel) return [];
+  const uso = d.uso[sel.familia] || {};
+  return tamColabs().filter(c => sel.tamanho === null ? !uso[c.id] : uso[c.id]?.[0] === sel.tamanho)
+    .map(c => ({ ...c, tamanho: uso[c.id]?.[0] || '', data: uso[c.id]?.[1] || '' }));
+}
+function tamRenderDetalhe() {
+  const sel = _tam.sel, lista = tamListaSel();
+  document.getElementById('tamDetalhe').hidden = false;
+  document.getElementById('tamDetTitulo').innerHTML = `<svg class=ic aria-hidden=true><use href=#i-users></use></svg> ${escHtml(sel.familia)} · ${sel.tamanho === null ? 'sem registro' : 'tamanho ' + escHtml(sel.tamanho)}`;
+  document.getElementById('tamDetSub').textContent = sel.tamanho === null ? `${lista.length} colaboradores ativos nunca retiraram este item nesta filial` : `${lista.length} colaboradores usam este tamanho (pela última retirada)`;
+  document.getElementById('tamDetBody').innerHTML = lista.map(c => `<tr><td class="td-main">${escHtml(c.nome)}${c.de_outra_filial ? ' <span style="font-size:10px;color:var(--text-3)">(de outra filial)</span>' : ''}</td>
+    <td>${escHtml(c.matricula)}</td><td>${escHtml(c.funcao)}</td><td>${escHtml(c.setor)}</td><td style="font-weight:700">${escHtml(c.tamanho || '—')}</td><td>${c.data ? formatarData(c.data) : '—'}</td></tr>`).join('')
+    || '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Ninguém nesta lista.</td></tr>';
+}
+function tamExcelLista() {
+  const sel = _tam.sel; if (!sel) return;
+  gcaExportarExcel(`Tamanhos_${sel.familia.replace(/[^\wÀ-ú]+/g, '_').slice(0, 25)}_${sel.tamanho === null ? 'sem_registro' : sel.tamanho}`, tamListaSel().map(c => ({ ...c, data_br: c.data ? formatarData(c.data) : '' })),
+    [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' }, { key: 'tamanho', label: 'Tamanho' }, { key: 'data_br', label: 'Última retirada' }]);
+}
+function tamExcel() {
+  const d = _tam.dados; if (!d) return;
+  const fams = d.familias;
+  const linhas = tamColabs().map(c => { const o = { nome: c.nome, matricula: c.matricula, funcao: c.funcao, setor: c.setor };
+    fams.forEach((f, i) => { o['f' + i] = d.uso[f.familia]?.[c.id]?.[0] || ''; }); return o; });
+  gcaExportarExcel('Tamanhos_dos_colaboradores', linhas, [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' },
+    ...fams.map((f, i) => ({ key: 'f' + i, label: f.familia }))]);
+}
+
 // ═══ Gestão de CA (19/10/2026) ═══
 // Os CAs de cada EPI (um por marca) com a validade e o que a base do Ministério do Trabalho diz.
 // CA vencido continua saindo nas entregas (decisão do usuário). "Não compramos mais" (20/10/2026):
@@ -23480,12 +23631,158 @@ async function testarEmailNR10() {
 let _descartData = [];
 
 function showDescTab(tab) {
-  const isSaldo = tab === 'saldo';
-  document.getElementById('descTabSaldo').style.display    = isSaldo ? '' : 'none';
-  document.getElementById('descTabHistorico').style.display = isSaldo ? 'none' : '';
-  document.getElementById('descTab1').classList.toggle('active', isSaldo);
-  document.getElementById('descTab2').classList.toggle('active', !isSaldo);
-  if (!isSaldo) carregarHistoricoDespachos();
+  const abas = { saldo: ['descTabSaldo', 'descTab1'], historico: ['descTabHistorico', 'descTab2'], indicadores: ['descTabIndicadores', 'descTab3'] };
+  Object.entries(abas).forEach(([k, [corpo, botao]]) => {
+    document.getElementById(corpo).style.display = k === tab ? '' : 'none';
+    document.getElementById(botao).classList.toggle('active', k === tab);
+  });
+  if (tab === 'historico') carregarHistoricoDespachos();
+  if (tab === 'indicadores' && !_dsc.dados) dscCarregar();
+}
+
+// ═══ Descartes por mês (22/10/2026) ═══
+// Pedido do usuário: ver quanto de cada item foi descartado por mês (luvas, mantas, mangas…) e os
+// reprovados no ensaio separados, para ter base de compra. Cores das 4 séries: paleta de referência
+// (validada nos fundos do GCA; no claro, duas ficam abaixo de 3:1 → legenda, dica e tabela).
+let _dsc = { dados: null, foco: null };
+const DSC_SERIES = [['troca', 'Troca por desgaste ou dano'], ['reprovado', 'Reprovado no ensaio'], ['outros', 'Outros descartes'], ['perda', 'Perda ou roubo']];
+const dscNum = (v) => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const dscMesTxt = (m) => { const [a, mm] = m.split('-'); return `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(mm) - 1]}/${a.slice(2)}`; };
+async function dscCarregar() {
+  const body = document.getElementById('dscBody');
+  body.innerHTML = '<tr><td style="padding:16px;text-align:center;color:var(--text-3);font-size:12px"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Carregando…</td></tr>';
+  const n = Number(document.getElementById('dscMeses').value || 6);
+  const ate = hojeBR().slice(0, 7);
+  const [a, m] = ate.split('-').map(Number);
+  const de = new Date(Date.UTC(a, m - n, 1)).toISOString().slice(0, 7);
+  const r = await api(`/laudos/descarte/indicadores?de=${de}&ate=${ate}`);
+  if (!r?.ok) { body.innerHTML = `<tr><td style="padding:16px;text-align:center;color:var(--red)">${escHtml(r?.erro || 'Erro ao carregar os indicadores')}</td></tr>`; return; }
+  _dsc.dados = r;
+  const sel = document.getElementById('dscCategoria'), atual = sel.value;
+  const cats = [...new Set(r.itens.map(i => i.categoria).filter(Boolean))].sort((x, y) => x.localeCompare(y, 'pt-BR'));
+  sel.innerHTML = '<option value="">Todas as categorias</option>' + cats.map(c => `<option value="${escHtml(c)}">${escHtml(c)}</option>`).join('');
+  if (cats.includes(atual)) sel.value = atual;
+  dscRender();
+}
+// Linhas da tabela, já filtradas e (se pedido) com os tamanhos juntos
+function dscLinhas() {
+  const d = _dsc.dados; if (!d) return [];
+  const q = (document.getElementById('dscBusca').value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const cat = document.getElementById('dscCategoria').value;
+  const juntar = document.getElementById('dscJuntar').checked;
+  let itens = d.itens.filter(i => (!cat || i.categoria === cat)
+    && (!q || `${i.descricao} ${i.codigo}`.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)));
+  const grupos = new Map();
+  for (const i of itens) {
+    const k = juntar ? 'F:' + i.familia : 'I:' + i.item_id;
+    if (!grupos.has(k)) grupos.set(k, { chave: k, nome: juntar ? i.familia : i.descricao, un_med: i.un_med, categoria: i.categoria, saldo: 0, itens: 0, meses: {} });
+    const g = grupos.get(k);
+    g.saldo += i.saldo; g.itens++;
+    for (const [mes, c] of Object.entries(i.meses)) {
+      const t = (g.meses[mes] ||= { troca: 0, reprovado: 0, outros: 0, perda: 0 });
+      DSC_SERIES.forEach(([s]) => { t[s] += c[s] || 0; });
+    }
+  }
+  return [...grupos.values()].map(g => {
+    const total = d.meses.reduce((t, m) => t + DSC_SERIES.reduce((x, [s]) => x + (g.meses[m]?.[s] || 0), 0), 0);
+    const media = total / d.meses.length;
+    return { ...g, total, media, dura: media > 0 ? g.saldo / media : null };
+  }).sort((x, y) => y.total - x.total || x.nome.localeCompare(y.nome, 'pt-BR'));
+}
+function dscRender() {
+  const d = _dsc.dados; if (!d) return;
+  const linhas = dscLinhas();
+  const foco = _dsc.foco && linhas.find(l => l.chave === _dsc.foco);
+  if (_dsc.foco && !foco) _dsc.foco = null;
+  const base = foco ? [foco] : linhas;
+  // Totais por mês e por série (do item escolhido, ou de tudo o que está na tabela)
+  const porMes = d.meses.map(m => { const c = { mes: m }; DSC_SERIES.forEach(([s]) => { c[s] = base.reduce((t, l) => t + (l.meses[m]?.[s] || 0), 0); }); c.total = DSC_SERIES.reduce((t, [s]) => t + c[s], 0); return c; });
+  const tot = (s) => porMes.reduce((t, c) => t + c[s], 0);
+  const total = porMes.reduce((t, c) => t + c.total, 0);
+  const un = foco ? ` ${escHtml(foco.un_med || '')}` : '';
+  const kpi = (rot, val, sub, matiz) => `<div class="kpi-card"><div class="kpi-top"><span class="kpi-label">${rot}</span></div><div class="kpi-value"${matiz ? ` style="color:var(--${matiz})"` : ''}>${val}</div><div class="kpi-delta">${sub}</div></div>`;
+  document.getElementById('dscKpis').innerHTML =
+    kpi('Saíram no período', dscNum(total) + un, `${d.meses.length} meses${foco ? '' : ' · todos os itens da tabela'}`)
+    + kpi('Média por mês', dscNum(total / d.meses.length) + un, 'troca, reprovado, outros e perdas')
+    + kpi('Reprovados no ensaio', dscNum(tot('reprovado')) + un, total ? `${Math.round(tot('reprovado') / total * 100)}% do que saiu` : '—')
+    + kpi('Troca por desgaste ou dano', dscNum(tot('troca')) + un, total ? `${Math.round(tot('troca') / total * 100)}% do que saiu` : '—');
+  document.getElementById('dscFoco').innerHTML = foco ? `Gráfico de <strong>${escHtml(foco.nome)}</strong> · <a href="#" onclick="_dsc.foco=null;dscRender();return false">ver todos</a>` : '<span style="color:var(--text-3)">Clique num item da tabela para ver só ele no gráfico</span>';
+  dscGrafico(porMes, foco ? (foco.un_med || '') : '');
+  // Tabela: item × mês
+  document.getElementById('dscHead').innerHTML = `<tr><th style="min-width:220px">Item</th>${d.meses.map(m => `<th style="text-align:right">${dscMesTxt(m)}</th>`).join('')}
+    <th style="text-align:right">Total</th><th style="text-align:right">Reprovado</th><th style="text-align:right">Média/mês</th><th style="text-align:right">Saldo hoje</th><th style="text-align:right">Dura</th></tr>`;
+  document.getElementById('dscBody').innerHTML = linhas.map(l => {
+    const rep = d.meses.reduce((t, m) => t + (l.meses[m]?.reprovado || 0), 0);
+    const cel = (m) => { const c = l.meses[m]; const v = c ? DSC_SERIES.reduce((t, [s]) => t + c[s], 0) : 0;
+      const dica = c ? DSC_SERIES.filter(([s]) => c[s]).map(([s, r]) => `${r}: ${dscNum(c[s])}`).join(' · ') : '';
+      return `<td style="text-align:right;font-variant-numeric:tabular-nums;${v ? 'color:var(--text-1)' : 'color:var(--text-3)'}" title="${escHtml(dica)}">${v ? dscNum(v) : '—'}</td>`; };
+    const dura = l.dura == null ? '<span style="color:var(--text-3)">—</span>'
+      : l.dura < 2 ? gcaSit(`${dscNum(l.dura)} ${l.dura < 1.05 && l.dura >= 0.95 ? 'mês' : 'meses'}`, 'vermelho', 'triangle-alert')
+      : l.dura < 4 ? gcaSit(`${dscNum(l.dura)} meses`, 'ambar', 'clock-3') : `${dscNum(l.dura)} meses`;
+    return `<tr style="cursor:pointer${_dsc.foco === l.chave ? ';background:var(--bg-hover)' : ''}" onclick="_dsc.foco=${_dsc.foco === l.chave ? 'null' : `'${escJs(l.chave)}'`};dscRender()">
+      <td><div class="td-main">${escHtml(l.nome)}</div><div style="font-size:10px;color:var(--text-3)">${escHtml(l.categoria || '')}${l.itens > 1 ? ` · ${l.itens} tamanhos` : ''}${l.un_med ? ` · ${escHtml(l.un_med)}` : ''}</div></td>
+      ${d.meses.map(cel).join('')}
+      <td style="text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${dscNum(l.total)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${rep ? dscNum(rep) : '—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${dscNum(l.media)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums">${dscNum(l.saldo)}</td>
+      <td style="text-align:right">${dura}</td></tr>`;
+  }).join('') || `<tr><td colspan="${d.meses.length + 6}" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum descarte no período com esses filtros.</td></tr>`;
+  document.getElementById('dscNota').innerHTML = `Quantidade na unidade do item (luvas em pares). "Dura" = saldo de hoje ÷ média por mês do período. Troca e perda vêm dos atendimentos; reprovados no ensaio e outros descartes vêm das perdas registradas desde ${formatarData(d.perdas_desde)}. Passe o mouse num mês da tabela para ver a divisão.`;
+}
+// Colunas empilhadas por mês: troca, reprovado, outros, perda (baseline única, topo arredondado, 2px entre partes)
+function dscGrafico(porMes, un) {
+  const box = document.getElementById('dscGrafico');
+  const max = Math.max(...porMes.map(c => c.total), 0);
+  if (!max) { box.innerHTML = '<div style="padding:18px 0;text-align:center;color:var(--text-3);font-size:12px">Nada saiu no período.</div>'; return; }
+  const passo = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v))); return [1, 2, 2.5, 5, 10].map(f => f * p).find(x => v / x <= 4) || 10 * p; };
+  const st = passo(max), topo = Math.ceil(max / st) * st;
+  const W = 760, H = 230, L = 40, R = 10, T = 12, B = 28, pw = W - L - R, ph = H - T - B;
+  const slot = pw / porMes.length, bw = Math.min(24, slot * 0.55);
+  const y = (v) => T + ph - (v / topo) * ph;
+  let g = '';
+  for (let v = 0; v <= topo + 1e-9; v += st) g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--border)" stroke-width="1"/><text x="${L - 6}" y="${y(v) + 3.5}" text-anchor="end" font-size="10" fill="var(--text-3)">${dscNum(v)}</text>`;
+  const topoArred = (x, yy, w, h, r) => { r = Math.min(r, h, w / 2); return `M${x},${yy + h}V${yy + r}Q${x},${yy} ${x + r},${yy}H${x + w - r}Q${x + w},${yy} ${x + w},${yy + r}V${yy + h}Z`; };
+  porMes.forEach((c, i) => {
+    const x = L + slot * i + (slot - bw) / 2;
+    let base = T + ph; const partes = DSC_SERIES.filter(([s]) => c[s] > 0);
+    partes.forEach(([s], k) => {
+      const h = (c[s] / topo) * ph, ultimo = k === partes.length - 1;
+      const hh = Math.max(h - (ultimo ? 0 : 2), 0.5); base -= h;
+      g += ultimo ? `<path d="${topoArred(x, base, bw, hh, 4)}" fill="var(--dsc-${s})"/>` : `<rect x="${x}" y="${base + 2}" width="${bw}" height="${hh}" fill="var(--dsc-${s})"/>`;
+    });
+    g += `<text x="${x + bw / 2}" y="${H - 10}" text-anchor="middle" font-size="10" fill="var(--text-3)">${dscMesTxt(c.mes)}</text>`;
+    g += `<rect x="${L + slot * i}" y="${T}" width="${slot}" height="${ph}" fill="transparent" data-i="${i}" class="dsc-alvo"/>`;
+  });
+  box.innerHTML = `<div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--text-2);margin-bottom:4px">${DSC_SERIES.map(([s, r]) => `<span style="display:inline-flex;align-items:center;gap:6px"><i style="width:10px;height:10px;border-radius:3px;background:var(--dsc-${s});display:inline-block"></i>${r}</span>`).join('')}</div>
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;max-height:260px;display:block" role="img" aria-label="Saídas por mês">${g}</svg>
+    <div class="dsc-dica" hidden style="position:absolute;pointer-events:none;background:var(--bg-card);border:1px solid var(--border-mid);border-radius:8px;padding:8px 10px;font-size:11px;color:var(--text-1);box-shadow:0 6px 20px rgba(0,0,0,.25);min-width:180px"></div>`;
+  const dica = box.querySelector('.dsc-dica');
+  box.querySelectorAll('.dsc-alvo').forEach(a => {
+    a.addEventListener('mousemove', (ev) => {
+      const c = porMes[+a.dataset.i];
+      dica.innerHTML = `<div style="font-weight:700;margin-bottom:4px">${dscMesTxt(c.mes)} · ${dscNum(c.total)}${un ? ' ' + escHtml(un) : ''}</div>`
+        + DSC_SERIES.map(([s, r]) => `<div style="display:flex;justify-content:space-between;gap:12px;color:var(--text-2)"><span><i style="width:8px;height:8px;border-radius:2px;background:var(--dsc-${s});display:inline-block;margin-right:5px"></i>${r}</span><span style="font-variant-numeric:tabular-nums;color:var(--text-1)">${dscNum(c[s])}</span></div>`).join('');
+      const bx = box.getBoundingClientRect();
+      dica.hidden = false;
+      dica.style.left = Math.min(ev.clientX - bx.left + 14, bx.width - dica.offsetWidth - 4) + 'px';
+      dica.style.top = (ev.clientY - bx.top + 10) + 'px';
+    });
+    a.addEventListener('mouseleave', () => { dica.hidden = true; });
+  });
+}
+function dscExcel() {
+  const d = _dsc.dados; if (!d) return;
+  const linhas = dscLinhas();
+  const dados = linhas.map(l => {
+    const o = { item: l.nome, categoria: l.categoria, un: l.un_med };
+    d.meses.forEach(m => { const c = l.meses[m] || {}; o[m] = DSC_SERIES.reduce((t, [s]) => t + (c[s] || 0), 0); });
+    DSC_SERIES.forEach(([s]) => { o['t_' + s] = d.meses.reduce((t, m) => t + (l.meses[m]?.[s] || 0), 0); });
+    return { ...o, total: l.total, media: Math.round(l.media * 10) / 10, saldo: l.saldo, dura: l.dura == null ? '' : Math.round(l.dura * 10) / 10 };
+  });
+  gcaExportarExcel('Descartes_por_mes', dados, [{ key: 'item', label: 'Item' }, { key: 'categoria', label: 'Categoria' }, { key: 'un', label: 'Unidade' },
+    ...d.meses.map(m => ({ key: m, label: dscMesTxt(m) })), ...DSC_SERIES.map(([s, r]) => ({ key: 't_' + s, label: r })),
+    { key: 'total', label: 'Total' }, { key: 'media', label: 'Média por mês' }, { key: 'saldo', label: 'Saldo hoje' }, { key: 'dura', label: 'Dura (meses)' }]);
 }
 
 function toggleSelectAllDesc(checked) {
