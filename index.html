@@ -2822,9 +2822,9 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
       <div class="view" id="view-gestao-ca">
         <div class="card" style="overflow:visible">
           <div class="card-header" style="flex-wrap:wrap;gap:10px">
-            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg> Gestão de CA</div><div class="card-sub">Os CAs de cada EPI, um por marca, com a validade. O cadastro do item e a ficha de EPI usam os CAs ativos.</div></div>
+            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg> Gestão de CA</div><div class="card-sub">Os CAs de cada EPI, um por marca, com a validade. O cadastro do item mostra os CAs que compramos; a ficha de EPI leva o CA da peça entregue.</div></div>
             <div class="card-actions" style="flex-wrap:wrap">
-              <button class="btn btn-ghost" id="caBtnTeste" onclick="caEmailTeste()" title="Manda o e-mail de vencimento de CA para a lista de alertas dos laudos NR10"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> E-mail de teste</button>
+              <button class="btn btn-ghost" id="caBtnEmails" onclick="caEmails()" title="Quem recebe o e-mail de CA vencido ou vencendo"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> E-mails do aviso</button>
               <button class="btn btn-ghost" id="caBtnMte" onclick="caAtualizarMte()"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg> Atualizar base do MTE</button>
               <button class="btn btn-ghost" onclick="caExcel()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
               <button class="btn btn-primary" id="caBtnNovo" onclick="caNovo()">＋ Adicionar CA</button>
@@ -2848,6 +2848,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
               <option value="sem_validade">CA sem validade</option>
               <option value="nao_encontrado">CA não achado no MTE</option>
               <option value="inativo">Com CA que não compramos mais</option>
+              <option value="nao_compra">Só com CA que não compramos mais (estoque)</option>
               <option value="dispensado">Não tem CA (ex.: bolsa da luva)</option>
             </select>
             <span id="caFoco" style="font-size:12px;color:var(--text-2)"></span>
@@ -2865,7 +2866,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
             <thead><tr><th>Quando</th><th>Quem</th><th>CA</th><th>Item</th><th>O que mudou</th></tr></thead>
             <tbody id="caBodyHist"></tbody>
           </table></div>
-          <div style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5">Todos os tamanhos de um item recebem os mesmos CAs. A ficha de EPI leva o CA da peça entregue: no recebimento informa-se o CA que chegou e, na entrega de item com mais de uma marca, escolhe-se a marca (já vem marcada a que entrou por último no armazém). CA vencido continua disponível até alguém marcar "Não compramos mais" (o estoque pode ter peças compradas quando o CA valia).</div>
+          <div style="padding:10px 16px;font-size:11px;color:var(--text-3);line-height:1.5">Todos os tamanhos de um item recebem os mesmos CAs. A ficha de EPI leva o CA da peça entregue: no recebimento informa-se o CA que chegou e, na entrega de item com mais de uma marca, escolhe-se a marca (já vem marcada a que entrou por último no armazém). CA vencido continua saindo nas entregas (o estoque pode ter peças compradas quando o CA valia); no recebimento, só com confirmação. "Não compramos mais": o CA não pode mais ser recebido, mas continua nas entregas enquanto houver estoque — quando o estoque acabar, use "Tirar do item".</div>
         </div>
       </div>
 
@@ -12638,12 +12639,13 @@ function renderItemAtendimento(it, i) {
       </datalist>
     </div>`).join('')}` : '';
 
-  // Marca (CA) entregue: só aparece no item com 2 ou mais CAs ativos (Gestão de CA, 19/10/2026)
+  // Marca (CA) entregue: só aparece no item com 2 ou mais CAs (Gestão de CA, 19/10/2026); os que não
+  // compramos mais também aparecem — ainda há estoque (20/10/2026)
   const caBlock = (it.caOpcoes || []).length >= 2 ? `
     <div style="font-size:10px;color:var(--text-3);margin-top:8px;margin-bottom:3px;text-transform:uppercase;letter-spacing:.5px">Marca (CA) entregue ${it.caEscolhido ? '' : '<span style="color:var(--red);text-transform:none;letter-spacing:0;font-weight:600">· escolha a marca</span>'}</div>
     <div style="display:flex;gap:5px;flex-wrap:wrap">${it.caOpcoes.map(c => `<button type="button" onclick="caEscolherAtend(${i},'${escJs(c.ca)}')"
       style="font-size:11px;padding:4px 9px;border-radius:999px;cursor:pointer;border:1px solid ${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--border)'};background:${it.caEscolhido === c.ca ? 'var(--accent)' : 'var(--bg-card)'};color:${it.caEscolhido === c.ca ? '#fff' : 'var(--text-1)'};font-weight:${it.caEscolhido === c.ca ? 700 : 500}">
-      ${c.conjunto ? '<svg class=ic aria-hidden=true><use href=#i-puzzle></use></svg> ' : ''}${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}</button>`).join('')}</div>` : '';
+      ${c.conjunto ? '<svg class=ic aria-hidden=true><use href=#i-puzzle></use></svg> ' : ''}${escHtml(c.marca || '—')} · CA ${escHtml(c.ca)}${c.nao_compra ? ' <span style="font-weight:500;opacity:.8">· estoque antigo</span>' : ''}</button>`).join('')}</div>` : '';
 
   return `<tr>
     <td class="td-main">
@@ -18676,8 +18678,9 @@ function urExcel() {
 
 // ═══ Gestão de CA (19/10/2026) ═══
 // Os CAs de cada EPI (um por marca) com a validade e o que a base do Ministério do Trabalho diz.
-// O cadastro do item e a ficha de EPI usam os CAs ativos; CA vencido continua valendo até
-// alguém marcar "Não compramos mais" (decisão do usuário). Ver: ver_ca; mexer: gerenciar_ca.
+// CA vencido continua saindo nas entregas (decisão do usuário). "Não compramos mais" (20/10/2026):
+// não pode mais ser recebido, mas continua nas entregas enquanto houver estoque; acabou → "Tirar do
+// item". Ver: ver_ca; mexer: gerenciar_ca.
 let _ca = { dados: null, aba: 'itens', filtroSit: '', foco: null, hist: null, novoItem: null };
 const CA_SIT = {
   valido: ['Em dia', '#16a34a', 'rgba(22,163,74,.12)'],
@@ -18688,11 +18691,12 @@ const CA_SIT = {
   sem_ca: ['EPI sem CA', '#7c3aed', 'rgba(124,58,237,.12)'],
   dispensado: ['Não tem CA', '#64748b', 'rgba(100,116,139,.10)'],
   inativo: ['Não compramos mais', '#64748b', 'rgba(100,116,139,.10)'],
+  nao_compra: ['Só estoque (não compramos mais)', '#64748b', 'rgba(100,116,139,.10)'],
 };
 const CA_ACOES = { INCLUIDO: 'Incluído', REATIVADO: 'Voltou a valer', INATIVADO: 'Não compramos mais', REMOVIDO: 'Tirado do item', EDITADO: 'Editado',
   MIGRADO: 'Veio do cadastro do item', RENOVADO_MTE: 'Renovado (base do MTE)', SITUACAO_MTE: 'Base do MTE', MTE_NAO_ENCONTRADO: 'Base do MTE',
   DISPENSADO: 'Não tem CA', DISPENSA_DESFEITA: 'Voltou a precisar de CA', RECEBIDO_VENCIDO: 'Recebido com CA vencido',
-  CONJUNTO: 'Juntado em conjunto', CONJUNTO_SEPARADO: 'Conjunto desfeito' };
+  CONJUNTO: 'Juntado em conjunto', CONJUNTO_SEPARADO: 'Conjunto desfeito', EMAILS: 'E-mails do aviso' };
 const caDataBR = iso => iso ? String(iso).slice(0, 10).split('-').reverse().join('/') : '—';
 const caPodeMexer = () => temPermissao('gerenciar_ca');
 const caSem = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -18719,7 +18723,7 @@ const caMteHtml = (c) => (c.situacao_mte === 'NAO_ENCONTRADO' ? '<svg class=ic a
 
 async function caInit(foco) {
   _ca.foco = foco || null;
-  ['caBtnNovo', 'caBtnMte', 'caBtnTeste'].forEach(id => { document.getElementById(id).style.display = caPodeMexer() ? '' : 'none'; });
+  ['caBtnNovo', 'caBtnMte', 'caBtnEmails'].forEach(id => { document.getElementById(id).style.display = caPodeMexer() ? '' : 'none'; });
   await caCarregar();
 }
 async function caCarregar() {
@@ -18755,6 +18759,7 @@ function caRenderResumo() {
     + card(s.sem_ca, 'EPIs sem CA', '#7c3aed', 'sem_ca')
     + (s.sem_validade ? card(s.sem_validade, 'EPIs com CA sem validade', '#64748b', 'sem_validade') : '')
     + (s.nao_encontrados ? card(s.nao_encontrados, 'CAs não achados no MTE', '#b45309', 'nao_encontrado') : '')
+    + (s.nao_compra ? card(s.nao_compra, 'EPIs só com CA que não compramos mais (estoque)', '#64748b', 'nao_compra') : '')
     + (s.dispensados ? card(s.dispensados, 'EPIs que não têm CA', '#64748b', 'dispensado') : '');
 }
 function caFiltrarSituacao(f) {
@@ -18795,7 +18800,7 @@ function caChip(gr, c) {
   const aviso = c.situacao_mte === 'NAO_ENCONTRADO';
   return `<button type="button" onclick="caAbrirCa('${escJs(gr.item_id)}','${escJs(c.ca)}')" title="${escHtml((c.fabricante || '') + (aviso ? ' · número não encontrado na base do MTE' : ''))}"
     style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;padding:5px 9px;border-radius:10px;border:1px solid ${cor};background:${bg};cursor:pointer;${c.ativo ? '' : 'opacity:.75;'}">
-    <span style="font-size:12px;font-weight:700;color:var(--text-1);${c.ativo ? '' : 'text-decoration:line-through;'}">CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')}${aviso ? ' <svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg>' : ''}</span>
+    <span style="font-size:12px;font-weight:700;color:var(--text-1)">CA ${escHtml(c.ca)} · ${escHtml(c.marca || '—')}${aviso ? ' <svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg>' : ''}</span>
     <span style="font-size:10px;font-weight:600;color:${cor}">${escHtml(c.ativo ? caPrazo(c) : 'Não compramos mais')}</span></button>`;
 }
 // CAs do item: os do mesmo conjunto ficam numa caixa só ("🧩 Conjunto")
@@ -18919,7 +18924,7 @@ function caAbrirCa(itemId, numero) {
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:68vh;overflow-y:auto">
         <div>${caSelo(c.ativo ? c.situacao : 'inativo', c.ativo ? caPrazo(c) : 'Não compramos mais')}</div>
         ${c.conjunto ? `<div style="font-size:12px;color:var(--text-2)"><svg class=ic aria-hidden=true><use href=#i-puzzle></use></svg> Faz parte do conjunto CA ${escHtml(gr.cas.filter(x => x.conjunto === c.conjunto).map(x => x.ca).join(' + '))}: na entrega saem juntos, e "não compramos mais" vale para o conjunto inteiro.</div>` : ''}
-        ${!c.ativo ? `<div style="font-size:12px;color:var(--text-2)">Marcado como "não compramos mais"${c.inativado_por ? ` por ${escHtml(c.inativado_por)}` : ''}${c.inativado_em ? ` em ${caDataBR(c.inativado_em)}` : ''}${c.motivo_inativacao ? ` — ${escHtml(c.motivo_inativacao)}` : ''}. Não sai nas entregas novas.</div>` : ''}
+        ${!c.ativo ? `<div style="font-size:12px;color:var(--text-2)">Marcado como "não compramos mais"${c.inativado_por ? ` por ${escHtml(c.inativado_por)}` : ''}${c.inativado_em ? ` em ${caDataBR(c.inativado_em)}` : ''}${c.motivo_inativacao ? ` — ${escHtml(c.motivo_inativacao)}` : ''}. Não pode mais ser recebido (SC/compra), mas continua saindo nas entregas enquanto houver estoque. Quando o estoque acabar, use "Tirar do item".</div>` : ''}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           ${campo('Fabricante', escHtml(c.fabricante || '—'))}${campo('CNPJ', escHtml(c.cnpj || '—'))}
           ${campo('Equipamento', escHtml(c.equipamento || '—'))}${campo('Base do MTE', caMteHtml(c))}
@@ -18935,7 +18940,7 @@ function caAbrirCa(itemId, numero) {
         <div id="caDetErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
       </div>
       <div class="modal-footer" style="flex-wrap:wrap">
-        ${pode ? `<button class="btn btn-ghost" style="color:var(--red)" onclick="caTirar('${escJs(itemId)}','${escJs(c.ca)}')" title="Só quando foi cadastrado por engano"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> Tirar do item</button>
+        ${pode ? `<button class="btn btn-ghost" style="color:var(--red)" onclick="caTirar('${escJs(itemId)}','${escJs(c.ca)}')" title="Quando o estoque deste CA acabou (ou foi cadastrado por engano)"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> Tirar do item</button>
         ${c.ativo ? `<button class="btn btn-ghost" onclick="caMudarAtivo('${escJs(itemId)}','${escJs(c.ca)}',false)"><svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Não compramos mais</button>`
                   : `<button class="btn btn-ghost" onclick="caMudarAtivo('${escJs(itemId)}','${escJs(c.ca)}',true)"><svg class=ic aria-hidden=true><use href=#i-undo-2></use></svg> Voltar a valer</button>`}` : ''}
         <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
@@ -18962,7 +18967,7 @@ async function caSalvarCa(numero) {
 async function caMudarAtivo(itemId, numero, ativo) {
   let motivo = '';
   if (!ativo) {
-    motivo = prompt(`CA ${numero} deixa de sair nas próximas entregas deste item (todos os tamanhos). As fichas já emitidas não mudam.\n\nMotivo (opcional):`, '');
+    motivo = prompt(`CA ${numero}: não compramos mais (todos os tamanhos do item).\n\nNão poderá mais ser recebido (SC/compra), mas continua saindo nas entregas enquanto houver estoque. Quando o estoque acabar, use "Tirar do item".\n\nMotivo (opcional):`, '');
     if (motivo === null) return;
   }
   const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/${encodeURIComponent(numero)}/${ativo ? 'reativar' : 'inativar'}`, { method: 'POST', body: JSON.stringify({ motivo }) });
@@ -18972,7 +18977,7 @@ async function caMudarAtivo(itemId, numero, ativo) {
   caCarregar();
 }
 async function caTirar(itemId, numero) {
-  if (!confirm(`Tirar o CA ${numero} deste item (todos os tamanhos)?\n\nUse só quando foi cadastrado por engano. Se a marca só deixou de ser comprada, use "Não compramos mais". As fichas de EPI já emitidas não mudam.`)) return;
+  if (!confirm(`Tirar o CA ${numero} deste item (todos os tamanhos)?\n\nUse quando o estoque deste CA acabou (ou se foi cadastrado por engano): ele deixa de aparecer nas entregas. Se só deixamos de comprar e ainda há estoque, use "Não compramos mais". As fichas de EPI já emitidas não mudam.`)) return;
   const r = await api(`/ca/itens/${encodeURIComponent(itemId)}/${encodeURIComponent(numero)}`, { method: 'DELETE', body: JSON.stringify({}) });
   if (!r?.ok) { toast(r?.erro || 'Erro', 'error'); return; }
   document.getElementById('modalCaDetalhe')?.remove();
@@ -19131,10 +19136,57 @@ async function caAtualizarMte() {
     }
   }
 }
+// ── E-mails do aviso de CA (20/10/2026): lista própria, escolhida aqui (antes ia para a lista dos
+// laudos NR10). Vazia = ninguém recebe. ──
+async function caEmails() {
+  const r = await api('/ca/emails');
+  if (!r?.ok) { toast(r?.erro || 'Erro ao carregar os e-mails', 'error'); return; }
+  document.getElementById('modalCaEmails')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalCaEmails';
+  ov.onclick = (e) => { if (e.target === ov) ov.remove(); };
+  ov.innerHTML = `<div class="modal-box" style="max-width:520px;width:100%">
+    <div class="modal-header"><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> E-mails do aviso de CA</div>
+      <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:12px;color:var(--text-2);line-height:1.5">Uma vez por dia, quem estiver nesta lista recebe os CAs desta filial vencidos, cancelados no MTE ou vencendo em até ${_ca.dados?.dias_aviso || 60} dias. Lista vazia: o aviso não é enviado.</div>
+      <div><label class="form-label" for="caEmailsTxt">E-mails (um por linha ou separados por vírgula)</label>
+        <textarea id="caEmailsTxt" class="form-input" rows="5" maxlength="4000" style="resize:vertical;font-family:inherit" placeholder="seguranca@empresa.com.br">${escHtml(r.emails.join('\n'))}</textarea></div>
+      <div id="caEmailsInfo" style="font-size:11px;color:var(--text-3)">${r.emails.length ? `${r.emails.length} e-mail${r.emails.length === 1 ? '' : 's'} na lista` : 'Hoje ninguém recebe o aviso de CA desta filial.'}</div>
+      <div id="caEmailsErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+      <button class="btn btn-ghost" id="caEmailsBtnTeste" onclick="caEmailTeste()" title="Salva a lista e manda o e-mail de hoje (marcado como teste) para ela"><svg class=ic aria-hidden=true><use href=#i-send></use></svg> Salvar e enviar teste</button>
+      <button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove()">Fechar</button>
+      <button class="btn btn-primary" onclick="caEmailsSalvar(true)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar</button>
+    </div></div>`;
+  document.body.appendChild(ov);
+  document.getElementById('caEmailsTxt').focus();
+}
+async function caEmailsSalvar(fechar) {
+  const erro = document.getElementById('caEmailsErro');
+  erro.textContent = '';
+  const r = await api('/ca/emails', { method: 'POST', body: JSON.stringify({ emails: document.getElementById('caEmailsTxt').value }) });
+  if (!r?.ok) { erro.textContent = r?.erro || 'Erro ao salvar'; return null; }
+  document.getElementById('caEmailsTxt').value = r.emails.join('\n');
+  document.getElementById('caEmailsInfo').textContent = r.emails.length ? `${r.emails.length} e-mail${r.emails.length === 1 ? '' : 's'} na lista` : 'Hoje ninguém recebe o aviso de CA desta filial.';
+  _ca.hist = null;
+  if (fechar) {
+    document.getElementById('modalCaEmails')?.remove();
+    toast(r.emails.length ? `Aviso de CA: ${r.emails.length} e-mail${r.emails.length === 1 ? '' : 's'} na lista` : 'Lista vazia: ninguém recebe o aviso de CA', 'success');
+  }
+  return r.emails;
+}
 async function caEmailTeste() {
+  const btn = document.getElementById('caEmailsBtnTeste');
+  const lista = await caEmailsSalvar(false);
+  if (!lista) return;
+  if (!lista.length) { document.getElementById('caEmailsErro').textContent = 'Coloque ao menos um e-mail para enviar o teste.'; return; }
+  if (btn) btn.disabled = true;
   const r = await api('/laudos/testar-alerta', { method: 'POST', body: JSON.stringify({ modulo: 'ca' }) });
+  if (btn) btn.disabled = false;
   if (r?.ok) toast(`E-mail de teste enviado para ${(r.enviado_para || []).join(', ')}`, 'success');
-  else toast((r?.erro === 'Nenhum email configurado' ? 'Nenhum e-mail na lista de alertas dos laudos NR10 (Gestão → Laudos NR10). O e-mail de CA vai para essa mesma lista.' : (r?.erro || 'Erro ao enviar')), 'error');
+  else document.getElementById('caEmailsErro').textContent = r?.erro || 'Erro ao enviar';
 }
 function caExcel() {
   if (!_ca.dados) return;
@@ -19168,7 +19220,8 @@ async function caOpcoesCarregar(forcar) {
 }
 const caMotivoExige = (motivo) => /^(recebimento sc|compra|doacao|garantia)/.test(String(motivo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase());
 
-// Atendimento: item com 2+ CAs ativos ganha a escolha, já marcada com a marca sugerida
+// Atendimento: item com 2+ CAs ganha a escolha, já marcada com a marca sugerida (os que não
+// compramos mais entram: ainda há estoque)
 async function caPrepararItensAtend() {
   const faltam = ATEND.itens.filter(it => !it.caPronto);
   if (!faltam.length) return;
@@ -19204,17 +19257,19 @@ function caCampoEntrada(itemId) {
       <span style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">CA (se tiver)</span>
       <input class="form-input ca-entrada-input" inputmode="numeric" maxlength="12" placeholder="Nº do CA" style="width:110px;font-size:11px;padding:4px 8px"></div>`;
   }
-  const opcoes = op?.opcoes || [];
+  // "Não compramos mais" não pode ser recebido (20/10/2026): fica fora das opções e aparece só como aviso
+  const opcoes = (op?.opcoes || []).filter(o => !o.nao_compra);
+  const parados = (op?.opcoes || []).filter(o => o.nao_compra);
   const pre = opcoes.length === 1 ? opcoes[0].ca : '';
-  const botoes = [...opcoes.map(o => ({ ca: o.ca, rotulo: `${o.conjunto ? '<svg class=ic aria-hidden=true><use href=#i-puzzle></use></svg> ' : ''}${o.marca || '—'} · CA ${o.ca}` })),
-    ...cas.filter(c => !c.ativo).map(c => ({ ca: c.ca, rotulo: `${c.marca || '—'} · CA ${c.ca} (não compramos mais)` }))];
+  const botoes = opcoes.map(o => ({ ca: o.ca, rotulo: `${o.conjunto ? '<svg class=ic aria-hidden=true><use href=#i-puzzle></use></svg> ' : ''}${o.marca || '—'} · CA ${o.ca}` }));
+  const avisoParados = parados.length ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px">Não compramos mais (não recebe): ${parados.map(o => `${escHtml(o.marca || '—')} · CA ${escHtml(o.ca)}`).join(', ')}</div>` : '';
   return `<div class="ca-entrada" style="margin-top:6px">
     <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">CA que chegou *</div>
     <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">
       ${botoes.map(b => `<button type="button" class="ca-chip" data-ca="${escHtml(b.ca)}" onclick="caChipEntrada(this)"
         style="font-size:11px;padding:3px 8px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${escHtml(b.rotulo)}</button>`).join('')}
       <input class="form-input ca-entrada-input" maxlength="40" value="${escHtml(pre)}" placeholder="Outro CA" oninput="caMarcarChips(this)" style="width:120px;font-size:11px;padding:4px 8px">
-    </div></div>`;
+    </div>${avisoParados}</div>`;
 }
 function caChipEntrada(btn) {
   const inp = btn.closest('.ca-entrada')?.querySelector('.ca-entrada-input');
@@ -19263,11 +19318,16 @@ async function caConferirRecebimento(linhas) {
     if (c.status === 'falta') { toast(`Informe o CA que chegou de "${c.descricao}" (o item tem CA cadastrado)`, 'warn', 6000); return null; }
     if (c.status === 'invalido') { toast(`Número do CA inválido em "${c.descricao}"`, 'warn', 6000); return null; }
     if (c.status === 'item_nao_encontrado') { toast('Item não encontrado nesta filial', 'error'); return null; }
+    const parados = (c.detalhes || [c]).filter(d => d.status === 'inativo').map(d => d.ca);
+    if (parados.length) {
+      toast(`O CA ${parados.join(' / ')} de "${c.descricao}" está marcado como "Não compramos mais" e não pode ser recebido. Se voltou a ser comprado, peça a quem cuida da Gestão de CA para usar "Voltar a valer".`, 'warn', 9000);
+      return null;
+    }
   }
-  const problemas = r.itens.filter(c => c.status === 'novo' || c.status === 'inativo' || c.vencido);
+  const problemas = r.itens.filter(c => c.status === 'novo' || c.vencido);
   let dec = {};
   if (problemas.length) { dec = await caConfirmarEntrada(problemas); if (!dec) return null; }
-  if (problemas.some(c => c.status === 'novo' || c.status === 'inativo')) _caOpcoesEm = 0;
+  if (problemas.some(c => c.status === 'novo')) _caOpcoesEm = 0;
   return { extras: Object.fromEntries(r.itens.map(c => [c.item_id, { ca: c.ca || '', cadastrar_ca: !!dec[c.item_id]?.cadastrar,
     marca: dec[c.item_id]?.marca || '', confirmar_vencido: !!dec[c.item_id]?.vencido }])) };
 }
@@ -19289,7 +19349,6 @@ function caConfirmarEntrada(problemas) {
               <div style="display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap"><label class="form-label" style="margin:0">Marca</label>
                 <input class="form-input" data-marca maxlength="80" value="${escHtml(c.marca || '')}" style="width:200px;font-size:12px"></div>
               <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:12px;cursor:pointer"><input type="checkbox" data-cadastrar> Cadastrar como nova marca deste item (vale para todos os tamanhos)</label>` : ''}
-            ${c.status === 'inativo' ? `<div style="font-size:12px;color:var(--text-2);margin-top:6px">O CA <strong>${escHtml(c.ca)}</strong> estava marcado como "não compramos mais" — ele volta a valer.</div>` : ''}
             ${c.vencido ? `<div style="font-size:12px;color:var(--red);margin-top:8px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> CA ${escHtml(c.ca)} ${c.situacao === 'cancelado' ? 'cancelado' : 'vencido'} na base do MTE${c.validade ? ` (validade ${caDataBR(c.validade)})` : ''}.</div>
               <label style="display:flex;gap:8px;align-items:center;margin-top:6px;font-size:12px;cursor:pointer"><input type="checkbox" data-vencido> Recebo mesmo assim (fica registrado no histórico)</label>` : ''}
           </div>`).join('')}
