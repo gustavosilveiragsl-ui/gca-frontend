@@ -738,7 +738,8 @@ function gcaComIcones(html) {
   return /<body[^>]*>/i.test(html) ? html.replace(/<body[^>]*>/i, m => m + extra) : extra + html;
 }
 // Situação com cor (22/10/2026): bolinha cheia na cor, símbolo branco dentro e o texto no tom
-// da mesma cor. matiz: ambar, azul, teal, laranja, ceu, violeta, verde, vermelho, indigo, rosa, cinza
+// da mesma cor. matiz: ambar, azul, teal, laranja, ceu, violeta, verde, vermelho, indigo, rosa, cinza, ardosia
+// "Aguardando transporte/coleta" é ardósia (23/10/2026): em laranja ficava perto demais do "Pendente" (âmbar).
 function gcaSit(texto, matiz, icone) {
   const t = String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   return `<span class="sit h-${matiz}"><span class="sit-bola"><svg class=ic aria-hidden=true><use href=#i-${icone}></use></svg></span>${t}</span>`;
@@ -770,8 +771,8 @@ window.addEventListener('pageshow', function(e) {
 svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
 .ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
 /* Visual com cor (22/10/2026, aprovado): cada situação e cada área tem sua cor (--c = cheia, --t = tom do texto) */
-.h-ambar{--c:#f59e0b;--t:#fcd34d}.h-azul{--c:#3b82f6;--t:#93c5fd}.h-teal{--c:#14b8a6;--t:#5eead4}.h-laranja{--c:#f97316;--t:#fdba74}.h-ceu{--c:#0ea5e9;--t:#7dd3fc}.h-violeta{--c:#8b5cf6;--t:#c4b5fd}.h-verde{--c:#22c55e;--t:#86efac}.h-vermelho{--c:#ef4444;--t:#fca5a5}.h-indigo{--c:#6366f1;--t:#a5b4fc}.h-rosa{--c:#ec4899;--t:#f9a8d4}.h-cinza{--c:#94a3b8;--t:#cbd5e1}
-[data-theme="light"] .h-ambar{--t:#b45309}[data-theme="light"] .h-azul{--t:#1d4ed8}[data-theme="light"] .h-teal{--t:#0f766e}[data-theme="light"] .h-laranja{--t:#c2410c}[data-theme="light"] .h-ceu{--t:#0369a1}[data-theme="light"] .h-violeta{--t:#6d28d9}[data-theme="light"] .h-verde{--t:#15803d}[data-theme="light"] .h-vermelho{--t:#b91c1c}[data-theme="light"] .h-indigo{--t:#4338ca}[data-theme="light"] .h-rosa{--t:#be185d}[data-theme="light"] .h-cinza{--t:#475569}
+.h-ardosia{--c:#64748b;--t:#cbd5e1}.h-ambar{--c:#f59e0b;--t:#fcd34d}.h-azul{--c:#3b82f6;--t:#93c5fd}.h-teal{--c:#14b8a6;--t:#5eead4}.h-laranja{--c:#f97316;--t:#fdba74}.h-ceu{--c:#0ea5e9;--t:#7dd3fc}.h-violeta{--c:#8b5cf6;--t:#c4b5fd}.h-verde{--c:#22c55e;--t:#86efac}.h-vermelho{--c:#ef4444;--t:#fca5a5}.h-indigo{--c:#6366f1;--t:#a5b4fc}.h-rosa{--c:#ec4899;--t:#f9a8d4}.h-cinza{--c:#94a3b8;--t:#cbd5e1}
+[data-theme="light"] .h-ardosia{--t:#334155}[data-theme="light"] .h-ambar{--t:#b45309}[data-theme="light"] .h-azul{--t:#1d4ed8}[data-theme="light"] .h-teal{--t:#0f766e}[data-theme="light"] .h-laranja{--t:#c2410c}[data-theme="light"] .h-ceu{--t:#0369a1}[data-theme="light"] .h-violeta{--t:#6d28d9}[data-theme="light"] .h-verde{--t:#15803d}[data-theme="light"] .h-vermelho{--t:#b91c1c}[data-theme="light"] .h-indigo{--t:#4338ca}[data-theme="light"] .h-rosa{--t:#be185d}[data-theme="light"] .h-cinza{--t:#475569}
 .sit{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--t);font-weight:600;font-size:11px;line-height:1.5;vertical-align:middle}
 .sit-bola{width:17px;height:17px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;flex-shrink:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 28%,transparent)}
 .sit-bola svg[class^="ic"]{width:10px;height:10px;stroke-width:2.8;vertical-align:0}
@@ -823,6 +824,16 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 .dot2-m-aviso{font-size:12px;color:var(--yellow)}
 .dot2-m-opc{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;font-size:12px;color:var(--text-2)}
 .dot2-m-opc strong{color:var(--text-1)}
+.colab-tam-box{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)}
+.colab-tam-box>summary{cursor:pointer;padding:9px 12px;font-size:11px;font-weight:500;color:var(--text-2);text-transform:uppercase;letter-spacing:.5px;list-style:none;display:flex;align-items:center;gap:6px}
+.colab-tam-box>summary::-webkit-details-marker{display:none}
+.colab-tam-box>summary::after{content:'';margin-left:auto;width:6px;height:6px;border-right:1.5px solid var(--text-3);border-bottom:1.5px solid var(--text-3);transform:rotate(45deg);transition:transform .15s}
+.colab-tam-box[open]>summary::after{transform:rotate(-135deg)}
+.colab-tam-lista{display:grid;gap:8px;padding:0 12px 12px;max-height:340px;overflow-y:auto}
+.colab-tam{display:grid;grid-template-columns:minmax(0,1fr) 84px;gap:2px 8px;align-items:center}
+.colab-tam-nome{font-size:11px;color:var(--text-1);font-weight:600;overflow-wrap:anywhere}
+.colab-tam .form-input{padding:5px 8px;font-size:12px}
+.colab-tam-dica{grid-column:1/-1;font-size:10px;color:var(--text-3)}
 </style>
 </head>
 <body>
@@ -1364,6 +1375,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <div id="colabFiliaisExtras" style="display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;padding:4px 0"></div>
                 <div style="font-size:10px;color:var(--text-3)">Aparece também nessas filiais para ser atendido. O cadastro, a ficha de EPI e o histórico continuam um só.</div>
               </div>
+              <details class="colab-tam-box" id="colabTamBox">
+                <summary><svg class=ic aria-hidden=true><use href=#i-ruler></use></svg> Tamanhos <span id="colabTamResumo" style="text-transform:none;letter-spacing:0;color:var(--text-3);font-weight:400"></span></summary>
+                <div style="padding:0 12px 8px;font-size:10px;color:var(--text-3)">Para quem ainda não retirou o item, ou mudou de tamanho. No relatório de tamanhos vale o mais recente: o anotado aqui ou a última retirada.</div>
+                <div class="colab-tam-lista" id="colabTamLista"></div>
+              </details>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarColaborador()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparFormColab()">Limpar</button>
@@ -2169,9 +2185,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
         <!-- FILTROS + TABELA -->
         <div class="card">
-          <div class="card-header">
+          <div class="card-header" style="flex-wrap:wrap">
             <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento</div></div>
-            <div class="card-actions">
+            <div class="card-actions" style="flex-wrap:wrap;justify-content:flex-end;flex:1 1 520px;min-width:0">
               <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
               <input class="search-box" type="text" id="solBuscaItem" placeholder="Item (ex: detector)" oninput="filtrarSolicitacoes()" title="Mostra as solicitações que têm um item com esse nome">
               <select class="form-input" id="solFiltroSolicitante" style="width:180px;font-size:11px" onchange="filtrarSolicitacoes()">
@@ -2201,6 +2217,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
           </div>
+          <div style="overflow-x:auto">
           <table>
             <thead>
               <tr>
@@ -2216,6 +2233,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>
             </tbody>
           </table>
+          </div>
           <div id="solPaginacao"></div>
         </div>
 
@@ -2935,7 +2953,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <div class="card" style="overflow:visible">
           <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-ruler></use></svg> Tamanhos dos colaboradores</div>
-              <div class="card-sub">Para cada item com tamanho, quantos colaboradores ativos usam cada tamanho (pela última retirada) e quantos ainda não têm registro</div></div>
+              <div class="card-sub">Para cada item com tamanho, quantos colaboradores ativos usam cada tamanho (pela última retirada ou pelo anotado no cadastro do colaborador, o mais recente) e quantos ainda não têm registro</div></div>
             <div class="card-actions"><button class="btn btn-ghost" onclick="tamExcel()" title="Uma linha por colaborador e uma coluna por item, com o tamanho de cada um"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel geral</button></div>
           </div>
           <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)">
@@ -2951,7 +2969,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <div class="card-actions"><button class="btn btn-ghost" onclick="tamExcelLista()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel da lista</button>
               <button class="btn btn-ghost" onclick="document.getElementById('tamDetalhe').hidden=true;_tam.sel=null;tamRender()">Fechar</button></div></div>
           <div style="overflow-x:auto"><table>
-            <thead><tr><th>Colaborador</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Tamanho</th><th>Última retirada</th></tr></thead>
+            <thead><tr><th>Colaborador</th><th>Matrícula</th><th>Função</th><th>Setor</th><th>Tamanho</th><th>Desde</th></tr></thead>
             <tbody id="tamDetBody"></tbody>
           </table></div>
         </div>
@@ -7549,7 +7567,7 @@ function pbItensExcel() {
 // ── LOGÍSTICA ── mapa do Brasil com as cargas de entrega e as transferências entre filiais em andamento
 const PBL = { entregues: false, marcadores: [] };
 const PB_TRANSF_STATUS = { AGUARDANDO_ACEITE: 'Aguardando aceite', ACEITA: 'Aceita · preparando o envio', NF_ANEXADA: 'NF anexada · a caminho' };
-const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: gcaSit('Aguardando coleta', 'laranja', 'package'), EM_TRANSITO: gcaSit('Em trânsito', 'ceu', 'truck'),
+const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: gcaSit('Aguardando coleta', 'ardosia', 'package'), EM_TRANSITO: gcaSit('Em trânsito', 'ceu', 'truck'),
   ENTREGUE: gcaSit('Entregue', 'verde', 'check') })[st] || escHtml(PB_TRANSF_STATUS[st] || st);   // devolve HTML; não passar por escHtml
 function pbLogLimparMapa() {
   if (PB.logAnim) { clearInterval(PB.logAnim); PB.logAnim = null; }
@@ -8091,6 +8109,7 @@ function onViewLoad(nome) {
   if (nome === 'colaboradores')      {
     carregarColaboradores();
     carregarFuncoesDotacao();
+    if (!document.getElementById('colabEditId').value) colabCarregarTamanhos('novo');
     // Garante filiais atualizadas (inclusive filiais novas como Piauí)
     carregarFiliais().then(() => popularSelectsFiliais());
   }
@@ -11754,7 +11773,7 @@ function verDetalhesAtendimento(id) {
 }
 
 // Consulta de Atendimentos (22/10/2026): solicitação de origem, assinatura e logística do atendimento
-const ATD_GRUPO_SIT = { AGUARDANDO_COLETA: ['Aguardando coleta', 'laranja', 'package'], EM_TRANSITO: ['Em trânsito', 'ceu', 'truck'],
+const ATD_GRUPO_SIT = { AGUARDANDO_COLETA: ['Aguardando coleta', 'ardosia', 'package'], EM_TRANSITO: ['Em trânsito', 'ceu', 'truck'],
   ENTREGUE: ['Entregue', 'verde', 'check'], CANCELADO: ['Cancelado', 'vermelho', 'x'] };
 async function atdCarregarDetalhe(atend, box) {
   if (!box) return;
@@ -12667,7 +12686,7 @@ function renderSolicitacoes() {
       ? 'border-left:4px solid #3b82f6 !important;background:rgba(59,130,246,.06) !important'
       : 'border-left:4px solid transparent';
     return `<tr style="cursor:pointer;${_rowBorder}" onclick="abrirModalSolicitacao('${escJs(s.id)}')">
-      <td>
+      <td style="white-space:normal;min-width:220px">
         <div class="td-main">${nomeIcone}${escHtml(nome)}</div>
         <div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-top:2px">${escHtml(s.id)}</div>
         ${s.base_colaborador ? `<div style="font-size:10px;color:var(--text-2);margin-top:2px" title="Base do colaborador que vai receber"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(s.base_colaborador)}${
@@ -12676,7 +12695,7 @@ function renderSolicitacoes() {
         ${s.nome_armazem ? `<div style="font-size:10px;color:var(--accent-text);margin-top:2px"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${escHtml(s.nome_armazem)}</div>` : ''}
         ${tags ? `<div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap">${tags}</div>` : ''}
       </td>
-      <td style="font-size:11px;color:var(--text-2)">${escHtml(sol)}${s.base_solicitante ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px" title="${s.base_origem === 'colaborador' ? 'Base do colaborador atendido (o setor do solicitante não tem cidade)' : 'Base do solicitante'}"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(s.base_solicitante)}${s.base_origem === 'colaborador' ? ' (colab.)' : ''}</div>` : ''}</td>
+      <td style="font-size:11px;color:var(--text-2);white-space:normal;min-width:120px">${escHtml(sol)}${s.base_solicitante ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px" title="${s.base_origem === 'colaborador' ? 'Base do colaborador atendido (o setor do solicitante não tem cidade)' : 'Base do solicitante'}"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(s.base_solicitante)}${s.base_origem === 'colaborador' ? ' (colab.)' : ''}</div>` : ''}</td>
       <td>${s.liberada_em && ['PENDENTE', 'VISUALIZADO'].includes(s.status)
         ? `${formatarDataHora(s.liberada_em).slice(0, 10)}<div style="font-size:10px;color:#22c55e;font-weight:600;margin-top:2px" title="O colaborador tinha assinatura pendente; o pedido foi liberado quando ele assinou"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg> liberado após assinatura</div>`
         : (() => {
@@ -12714,7 +12733,7 @@ function solStatusTag(status) {
     'PENDENTE': ['Pendente', 'ambar', 'clock-3'],
     'VISUALIZADO': ['Visualizado', 'azul', 'eye'],
     'ATENDIDO': ['Atendido', 'teal', 'package-check'],
-    'AGUARDANDO TRANSPORTE': ['Aguard. transporte', 'laranja', 'package'],
+    'AGUARDANDO TRANSPORTE': ['Aguard. transporte', 'ardosia', 'package'],
     'EM TRANSITO': ['Em trânsito', 'ceu', 'truck'],
     'NA BASE DESTINO': ['Na base destino', 'violeta', 'map-pin-check'],
     'FINALIZADO': ['Finalizado', 'verde', 'check'],
@@ -12762,7 +12781,7 @@ async function abrirModalSolicitacao(id) {
     'PENDENTE':              gcaSit('Solicitação aberta', 'ambar', 'clock-3'),
     'VISUALIZADO':           gcaSit('Visualizado pelo almoxarifado', 'azul', 'eye'),
     'ATENDIDO':              gcaSit('Atendido', 'teal', 'package-check'),
-    'AGUARDANDO TRANSPORTE': gcaSit('Aguardando transporte', 'laranja', 'package'),
+    'AGUARDANDO TRANSPORTE': gcaSit('Aguardando transporte', 'ardosia', 'package'),
     'EM TRANSITO':           gcaSit('Em trânsito', 'ceu', 'truck'),
     'NA BASE DESTINO':       gcaSit('Na base destino — aguardando entrega ao colaborador', 'violeta', 'map-pin-check'),
     'FINALIZADO':            gcaSit('Finalizado', 'verde', 'check'),
@@ -17567,7 +17586,7 @@ function renderLogViagens() {
     if (g.status === 'ENTREGUE') return gcaSit('Entregue', 'verde', 'check');
     if (g.status === 'CANCELADO') return gcaSit('Cancelado', 'vermelho', 'x');
     if (g.status === 'EM_TRANSITO') return gcaSit('Em trânsito', 'ceu', 'truck');
-    return gcaSit('Aguardando coleta', 'laranja', 'package');
+    return gcaSit('Aguardando coleta', 'ardosia', 'package');
   };
 
   const acoesGrupo = (g) => {
@@ -19236,21 +19255,21 @@ function tamListaSel() {
   const d = _tam.dados, sel = _tam.sel; if (!d || !sel) return [];
   const uso = d.uso[sel.familia] || {};
   return tamColabs().filter(c => sel.tamanho === null ? !uso[c.id] : uso[c.id]?.[0] === sel.tamanho)
-    .map(c => ({ ...c, tamanho: uso[c.id]?.[0] || '', data: uso[c.id]?.[1] || '' }));
+    .map(c => ({ ...c, tamanho: uso[c.id]?.[0] || '', data: uso[c.id]?.[1] || '', origem: uso[c.id]?.[2] === 'anotado' ? 'Anotado no cadastro' : uso[c.id] ? 'Retirada' : '' }));
 }
 function tamRenderDetalhe() {
   const sel = _tam.sel, lista = tamListaSel();
   document.getElementById('tamDetalhe').hidden = false;
   document.getElementById('tamDetTitulo').innerHTML = `<svg class=ic aria-hidden=true><use href=#i-users></use></svg> ${escHtml(sel.familia)} · ${sel.tamanho === null ? 'sem registro' : 'tamanho ' + escHtml(sel.tamanho)}`;
-  document.getElementById('tamDetSub').textContent = sel.tamanho === null ? `${lista.length} colaboradores ativos nunca retiraram este item nesta filial` : `${lista.length} colaboradores usam este tamanho (pela última retirada)`;
+  document.getElementById('tamDetSub').textContent = sel.tamanho === null ? `${lista.length} colaboradores ativos sem retirada deste item nesta filial e sem tamanho anotado no cadastro` : `${lista.length} colaboradores usam este tamanho (pela última retirada ou pelo anotado no cadastro, o mais recente)`;
   document.getElementById('tamDetBody').innerHTML = lista.map(c => `<tr><td class="td-main">${escHtml(c.nome)}${c.de_outra_filial ? ' <span style="font-size:10px;color:var(--text-3)">(de outra filial)</span>' : ''}</td>
-    <td>${escHtml(c.matricula)}</td><td>${escHtml(c.funcao)}</td><td>${escHtml(c.setor)}</td><td style="font-weight:700">${escHtml(c.tamanho || '—')}</td><td>${c.data ? formatarData(c.data) : '—'}</td></tr>`).join('')
+    <td>${escHtml(c.matricula)}</td><td>${escHtml(c.funcao)}</td><td>${escHtml(c.setor)}</td><td style="font-weight:700">${escHtml(c.tamanho || '—')}</td><td>${c.data ? `${formatarData(c.data)}<div style="font-size:10px;color:var(--text-3)">${escHtml(c.origem)}</div>` : '—'}</td></tr>`).join('')
     || '<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Ninguém nesta lista.</td></tr>';
 }
 function tamExcelLista() {
   const sel = _tam.sel; if (!sel) return;
   gcaExportarExcel(`Tamanhos_${sel.familia.replace(/[^\wÀ-ú]+/g, '_').slice(0, 25)}_${sel.tamanho === null ? 'sem_registro' : sel.tamanho}`, tamListaSel().map(c => ({ ...c, data_br: c.data ? formatarData(c.data) : '' })),
-    [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' }, { key: 'tamanho', label: 'Tamanho' }, { key: 'data_br', label: 'Última retirada' }]);
+    [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' }, { key: 'tamanho', label: 'Tamanho' }, { key: 'data_br', label: 'Desde' }, { key: 'origem', label: 'De onde' }]);
 }
 function tamExcel() {
   const d = _tam.dados; if (!d) return;
@@ -20184,6 +20203,49 @@ function colabRenderExtras(marcadas) {
   }).join('') : '<span style="color:var(--text-3)">Nenhuma outra filial.</span>';
 }
 
+// Tamanhos do colaborador (23/10/2026): anotados à mão no cadastro, por família de item com tamanho.
+// No relatório de tamanhos vale o mais recente entre o anotado e a última retirada.
+let _colabTam = null, _colabTamSeq = 0;
+async function colabCarregarTamanhos(id) {
+  const box = document.getElementById('colabTamLista');
+  if (!box) return;
+  const seq = ++_colabTamSeq;
+  _colabTam = null;
+  box.innerHTML = '<div style="font-size:11px;color:var(--text-3)">Carregando…</div>';
+  const r = await api(`/colaboradores/${encodeURIComponent(id || 'novo')}/tamanhos`);
+  if (seq !== _colabTamSeq) return;   // trocou de colaborador enquanto carregava
+  if (!r?.ok) { box.innerHTML = `<div style="font-size:11px;color:var(--text-3)">${escHtml(r?.erro || 'Não foi possível carregar os tamanhos')}</div>`; colabResumoTamanhos(); return; }
+  _colabTam = r;
+  colabRenderTamanhos();
+}
+function colabRenderTamanhos() {
+  const box = document.getElementById('colabTamLista');
+  const d = _colabTam;
+  if (!box || !d) return;
+  box.innerHTML = (d.familias || []).map(f => {
+    const an = d.anotado?.[f.familia], ret = d.retirada?.[f.familia];
+    const opcoes = [...f.tamanhos];
+    if (an?.t && !opcoes.includes(an.t)) opcoes.push(an.t);
+    const dica = [ret ? `última retirada: ${ret[0]} em ${formatarData(ret[1])}` : 'nunca retirou',
+      an?.t ? `anotado ${an.t} em ${formatarData(String(an.em || '').slice(0, 10))}${an.por ? ` por ${an.por}` : ''}` : ''].filter(Boolean).join(' · ');
+    return `<label class="colab-tam"><span class="colab-tam-nome">${escHtml(f.familia)}</span>
+      <select class="form-input colab-tam-sel" data-familia="${escHtml(f.familia)}" onchange="colabResumoTamanhos()"><option value="">—</option>${opcoes.map(t => `<option value="${escHtml(t)}"${an?.t === t ? ' selected' : ''}>${escHtml(t)}</option>`).join('')}</select>
+      <span class="colab-tam-dica">${escHtml(dica)}</span></label>`;
+  }).join('') || '<div style="font-size:11px;color:var(--text-3)">Nenhum item com tamanho cadastrado nesta filial.</div>';
+  colabResumoTamanhos();
+}
+function colabResumoTamanhos() {
+  const el = document.getElementById('colabTamResumo');
+  if (!el) return;
+  const n = [...document.querySelectorAll('.colab-tam-sel')].filter(x => x.value).length;
+  el.textContent = _colabTam ? (n ? `(${n} anotado${n === 1 ? '' : 's'})` : '(nenhum anotado)') : '';
+}
+// O que vai para o servidor: { FAMILIA: 'M' | '' } (vazio tira a anotação). Sem a lista carregada, nada.
+function colabTamanhosDoForm() {
+  if (!_colabTam) return undefined;
+  return Object.fromEntries([...document.querySelectorAll('.colab-tam-sel')].map(x => [x.dataset.familia, x.value]));
+}
+
 async function salvarColaborador() {
   const id   = document.getElementById('colabEditId').value;
   const body = {
@@ -20197,6 +20259,7 @@ async function salvarColaborador() {
     nivel:         document.getElementById('colabNivel').value,
     unidades:      document.getElementById('colabUnidades').value,
     filiais_extras: [...document.querySelectorAll('.colab-extra:checked')].map(x => x.value),
+    tamanhos:      colabTamanhosDoForm(),
   };
   if (!body.nome || !body.matricula) { toast('Nome e matrícula obrigatórios', 'warn'); return; }
   if (!body.unidades) { toast('Escolha a filial principal do colaborador', 'warn'); return; }
@@ -20233,6 +20296,7 @@ async function editarColabForm(id) {
   // Cadastro antigo em "Ambas as filiais": fica sem principal até alguém escolher
   document.getElementById('colabUnidades').value = c.unidade && c.unidade !== 'ambas' ? c.unidade : '';
   colabRenderExtras(c.filiais_extras || []);
+  colabCarregarTamanhos(id);
   if (c.unidade === 'ambas') toast('Cadastro antigo em "Ambas as filiais": escolha a filial principal e marque as outras em "Também atende em".', 'warn', 8000);
   document.getElementById('colabFormTitulo').textContent = 'Editar Colaborador';
   document.getElementById('colabFormTitulo').closest('.card').scrollIntoView({ behavior:'smooth' });
@@ -20268,6 +20332,8 @@ function limparFormColab() {
   _colabExtras = [];
   // Garante que as filiais estejam carregadas no select
   popularSelectsFiliais();
+  const tam = document.getElementById('colabTamBox'); if (tam) tam.open = false;
+  colabCarregarTamanhos('novo');
 }
 
 // ═══════════════════════════════════════════

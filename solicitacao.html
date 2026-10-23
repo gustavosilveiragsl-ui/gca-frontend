@@ -229,8 +229,8 @@ input,select,textarea{font-family:var(--font-main);}
 svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
 .ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
 /* Visual com cor (22/10/2026, aprovado): cada situação e cada área tem sua cor (--c = cheia, --t = tom do texto) */
-.h-ambar{--c:#f59e0b;--t:#fcd34d}.h-azul{--c:#3b82f6;--t:#93c5fd}.h-teal{--c:#14b8a6;--t:#5eead4}.h-laranja{--c:#f97316;--t:#fdba74}.h-ceu{--c:#0ea5e9;--t:#7dd3fc}.h-violeta{--c:#8b5cf6;--t:#c4b5fd}.h-verde{--c:#22c55e;--t:#86efac}.h-vermelho{--c:#ef4444;--t:#fca5a5}.h-indigo{--c:#6366f1;--t:#a5b4fc}.h-rosa{--c:#ec4899;--t:#f9a8d4}.h-cinza{--c:#94a3b8;--t:#cbd5e1}
-[data-theme="light"] .h-ambar{--t:#b45309}[data-theme="light"] .h-azul{--t:#1d4ed8}[data-theme="light"] .h-teal{--t:#0f766e}[data-theme="light"] .h-laranja{--t:#c2410c}[data-theme="light"] .h-ceu{--t:#0369a1}[data-theme="light"] .h-violeta{--t:#6d28d9}[data-theme="light"] .h-verde{--t:#15803d}[data-theme="light"] .h-vermelho{--t:#b91c1c}[data-theme="light"] .h-indigo{--t:#4338ca}[data-theme="light"] .h-rosa{--t:#be185d}[data-theme="light"] .h-cinza{--t:#475569}
+.h-ardosia{--c:#64748b;--t:#cbd5e1}.h-ambar{--c:#f59e0b;--t:#fcd34d}.h-azul{--c:#3b82f6;--t:#93c5fd}.h-teal{--c:#14b8a6;--t:#5eead4}.h-laranja{--c:#f97316;--t:#fdba74}.h-ceu{--c:#0ea5e9;--t:#7dd3fc}.h-violeta{--c:#8b5cf6;--t:#c4b5fd}.h-verde{--c:#22c55e;--t:#86efac}.h-vermelho{--c:#ef4444;--t:#fca5a5}.h-indigo{--c:#6366f1;--t:#a5b4fc}.h-rosa{--c:#ec4899;--t:#f9a8d4}.h-cinza{--c:#94a3b8;--t:#cbd5e1}
+[data-theme="light"] .h-ardosia{--t:#334155}[data-theme="light"] .h-ambar{--t:#b45309}[data-theme="light"] .h-azul{--t:#1d4ed8}[data-theme="light"] .h-teal{--t:#0f766e}[data-theme="light"] .h-laranja{--t:#c2410c}[data-theme="light"] .h-ceu{--t:#0369a1}[data-theme="light"] .h-violeta{--t:#6d28d9}[data-theme="light"] .h-verde{--t:#15803d}[data-theme="light"] .h-vermelho{--t:#b91c1c}[data-theme="light"] .h-indigo{--t:#4338ca}[data-theme="light"] .h-rosa{--t:#be185d}[data-theme="light"] .h-cinza{--t:#475569}
 .sit{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--t);font-weight:600;font-size:11px;line-height:1.5;vertical-align:middle}
 .sit-bola{width:17px;height:17px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;flex-shrink:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 28%,transparent)}
 .sit-bola svg[class^="ic"]{width:10px;height:10px;stroke-width:2.8;vertical-align:0}
@@ -630,7 +630,8 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
 <script>
 // Situação com cor (22/10/2026): bolinha cheia na cor, símbolo branco dentro e o texto no tom
-// da mesma cor. matiz: ambar, azul, teal, laranja, ceu, violeta, verde, vermelho, indigo, rosa, cinza
+// da mesma cor. matiz: ambar, azul, teal, laranja, ceu, violeta, verde, vermelho, indigo, rosa, cinza, ardosia
+// "Aguardando transporte/coleta" é ardósia (23/10/2026): em laranja ficava perto demais do "Pendente" (âmbar).
 function gcaSit(texto, matiz, icone) {
   const t = String(texto ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   return `<span class="sit h-${matiz}"><span class="sit-bola"><svg class=ic aria-hidden=true><use href=#i-${icone}></use></svg></span>${t}</span>`;
@@ -813,7 +814,7 @@ function tag(status) {
     'PENDENTE': ['Pendente', 'ambar', 'clock-3'],
     'VISUALIZADO': ['Visualizado', 'azul', 'eye'],
     'ATENDIDO': ['Atendido', 'teal', 'package-check'],
-    'AGUARDANDO TRANSPORTE': ['Aguard. transporte', 'laranja', 'package'],
+    'AGUARDANDO TRANSPORTE': ['Aguard. transporte', 'ardosia', 'package'],
     'EM TRANSITO': ['Em trânsito', 'ceu', 'truck'],
     'NA BASE DESTINO': ['Na base destino', 'violeta', 'map-pin-check'],
     'FINALIZADO': ['Finalizado', 'verde', 'check'],
@@ -1552,7 +1553,7 @@ function abrirDet(s) {
     {k:'PENDENTE',i:'<svg class=ic aria-hidden=true><use href=#i-clock-3></use></svg>',h:'ambar',l:'Pendente'},
     {k:'VISUALIZADO',i:'<svg class=ic aria-hidden=true><use href=#i-eye></use></svg>',h:'azul',l:'Visualizado'},
     {k:'ATENDIDO',i:'<svg class=ic aria-hidden=true><use href=#i-package-check></use></svg>',h:'teal',l:'Atendido'},
-    {k:'AGUARDANDO TRANSPORTE',i:'<svg class=ic aria-hidden=true><use href=#i-package></use></svg>',h:'laranja',l:'Aguard. Transp.'},
+    {k:'AGUARDANDO TRANSPORTE',i:'<svg class=ic aria-hidden=true><use href=#i-package></use></svg>',h:'ardosia',l:'Aguard. Transp.'},
     {k:'EM TRANSITO',i:'<svg class=ic aria-hidden=true><use href=#i-truck></use></svg>',h:'ceu',l:'Em Trânsito'},
     {k:'NA BASE DESTINO',i:'<svg class=ic aria-hidden=true><use href=#i-map-pin-check></use></svg>',h:'violeta',l:'Na Base Destino'},
     {k:'FINALIZADO',i:'<svg class=ic aria-hidden=true><use href=#i-check></use></svg>',h:'verde',l:'Finalizado'},
