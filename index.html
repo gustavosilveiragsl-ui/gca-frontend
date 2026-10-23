@@ -20019,8 +20019,9 @@ async function caOpcoesCarregar(forcar) {
 }
 const caMotivoExige = (motivo) => /^(recebimento sc|compra|doacao|garantia)/.test(String(motivo || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase());
 
-// Atendimento: item com 2+ CAs ganha a escolha, já marcada com a marca sugerida (os que não
-// compramos mais entram: ainda há estoque)
+// Atendimento: item com 2+ CAs ganha a escolha (os que não compramos mais entram: ainda há estoque).
+// Começa SEM marca escolhida (23/10/2026, pedido do usuário): com a sugestão já marcada, quem atendia
+// deixava passar sem olhar a peça. Sem escolher, o atendimento não finaliza.
 async function caPrepararItensAtend() {
   const faltam = ATEND.itens.filter(it => !it.caPronto);
   if (!faltam.length) return;
@@ -20031,9 +20032,7 @@ async function caPrepararItensAtend() {
     it.caPronto = true;
     if (opcoes.length >= 2) {
       it.caOpcoes = opcoes;
-      const sug = op.sugestao || {};
-      const s1 = [sug.armazens?.[it.armazemId], sug.filial, sug.entregue].find(c => c && opcoes.some(a => a.ca === c));
-      it.caEscolhido = s1 || '';
+      it.caEscolhido = '';
     } else {
       it.caOpcoes = [];
       it.caEscolhido = opcoes.length === 1 ? opcoes[0].ca : '';
