@@ -776,6 +776,8 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 .sit{display:inline-flex;align-items:center;gap:6px;padding:2px 9px 2px 2px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--t);font-weight:600;font-size:11px;line-height:1.5;vertical-align:middle}
 .sit-bola{width:17px;height:17px;border-radius:50%;background:var(--c);color:#fff;display:inline-grid;place-items:center;flex-shrink:0;box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 28%,transparent)}
 .sit-bola svg[class^="ic"]{width:10px;height:10px;stroke-width:2.8;vertical-align:0}
+/* Selo com texto longo numa coluna estreita (histórico da solicitação): quebra a linha dentro do cartão */
+.sit-quebra .sit{white-space:normal;max-width:100%;border-radius:12px;align-items:flex-start;padding-top:2px;padding-bottom:2px}
 .tile{display:inline-grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--c,#6366f1) 17%,transparent);color:var(--c,#6366f1)}
 [data-theme="light"] .tile{color:var(--t,#4338ca);background:color-mix(in srgb,var(--c,#6366f1) 13%,transparent)}
 .tile svg[class^="ic"]{fill:currentColor;fill-opacity:.16}
@@ -13031,7 +13033,7 @@ async function abrirModalSolicitacao(id) {
                 const dataFmt = h.dataHora ? new Date(h.dataHora).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
                 const obsHist = (h.obs||'').trim();
                 return `<div style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card)">
-                  <div style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:6px">${label}</div>
+                  <div class="sit-quebra" style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:6px">${label}</div>
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <span style="font-size:11px;color:var(--text-2)">${h.usuario||'—'}</span>
                     <span style="font-size:10px;color:var(--text-3)">·</span>
