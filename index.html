@@ -848,6 +848,15 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 .ca-opc:has(input:checked){border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--bg))}
 .ca-opc strong{display:block;font-size:13px;color:var(--text-1)}
 .ca-opc span{font-size:11px;color:var(--text-3)}
+.eqt-grid{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:16px;padding:16px}
+@media(max-width:820px){.eqt-grid{grid-template-columns:1fr}}
+.eqt-tipo{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-1);cursor:pointer;font-family:var(--font-main)}
+.eqt-tipo:hover{background:var(--bg-hover)}
+.eqt-tipo.sel{border-color:var(--accent);background:var(--bg-hover)}
+.eqt-tipo b{flex:1;font-size:12px}
+.eqt-tipo span{font-size:10px;color:var(--text-3)}
+.ea-teto{margin:0 14px 12px;padding:6px 10px;border-radius:8px;font-size:11px;background:var(--bg-hover);color:var(--text-2)}
+.ea-teto.passa{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.35);font-weight:600}
 .sol-aba-n{margin-left:5px;padding:0 7px;border-radius:999px;background:var(--bg-hover);color:var(--text-2);font-size:10px;font-weight:700}
 #solAbaCancelarN{background:var(--red);color:#fff}
 </style>
@@ -3983,6 +3992,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                   <div style="flex:1">
                     <div class="ea-topo-lbl">Equipe selecionada</div>
                     <div class="ea-sel-nome" id="eaEquipeNome">—</div>
+                    <div id="eaEquipeTipo" style="font-size:11px;color:var(--text-3)"></div>
                   </div>
                   <button class="btn btn-ghost" onclick="eaTrocarEquipe()">Trocar equipe</button>
                 </div>
@@ -5573,6 +5583,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <div><label class="form-label">Prefixo da Equipe *</label><input id="eqPrefixo" class="form-input" placeholder="Ex: NI206SLP-B" style="text-transform:uppercase" autocapitalize="characters">
                 <div style="font-size:10px;color:var(--text-3);margin-top:3px">O prefixo é o nome da equipe: login do portal, eOrder e controle de medidores.</div></div>
               <div><label class="form-label">Atividades</label><input id="eqAtividades" class="form-input" placeholder="Ex: Manutenção elétrica"></div>
+              <div id="eqTipoBloco"><label class="form-label">Tipo de equipe</label>
+                <select id="eqTipo" class="form-input"><option value="">— sem tipo (sem teto de material) —</option></select>
+                <div style="font-size:10px;color:var(--text-3);margin-top:3px">O tipo define quanto de cada material a equipe pode ter em mãos (cadastro abaixo).</div></div>
               <div><label class="form-label">Status</label>
                 <select id="eqStatus" class="form-input">
                   <option value="ativo">Ativo</option>
@@ -5588,8 +5601,25 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           </div>
           <div class="card">
             <div class="card-header"><div class="card-title">Equipes Cadastradas</div><input class="search-box" type="text" placeholder="Buscar..." oninput="filtrarTabela('eqBody',this.value,[0,1])"></div>
-            <table><thead><tr><th>Equipe (prefixo)</th><th>Atividades</th><th>Status</th><th></th></tr></thead>
-            <tbody id="eqBody"><tr class="loading-row"><td colspan="4"><div class="spinner"></div></td></tr></tbody></table>
+            <table><thead><tr><th>Equipe (prefixo)</th><th>Atividades</th><th>Tipo</th><th>Status</th><th></th></tr></thead>
+            <tbody id="eqBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
+          </div>
+        </div>
+        <!-- Tipos de equipe e teto de material em mãos (26/10/2026) -->
+        <div class="card" style="margin-top:20px" id="eqtCard">
+          <div class="card-header"><div>
+            <div class="card-title"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Tipos de equipe e teto de material</div>
+            <div class="card-sub">Quanto cada tipo de equipe pode ter em mãos de cada material sem serial (medidor não entra). Acima do teto, o Atendimento Material só entrega com motivo, por quem tem a permissão, e o portal da equipe não deixa pedir. Equipe sem tipo não tem teto.</div>
+          </div></div>
+          <div class="eqt-grid">
+            <div>
+              <div style="display:flex;gap:6px;margin-bottom:10px">
+                <input id="eqtNovoNome" class="form-input" placeholder="Novo tipo (ex.: CORTE)" style="text-transform:uppercase" onkeydown="if(event.key==='Enter')eqtNovoTipo()">
+                <button class="btn btn-primary" onclick="eqtNovoTipo()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg></button>
+              </div>
+              <div id="eqtLista"><div class="spinner"></div></div>
+            </div>
+            <div id="eqtLimites"></div>
           </div>
         </div>
       </div>
@@ -15556,16 +15586,144 @@ async function carregarEquipesView() {
   const data = await api('/equipes');
   if (!data) return;
   const lista = data.data || data.equipes || [];
+  await eqtCarregar();
+  const nomeTipo = Object.fromEntries((_eqtTipos || []).map(t => [t.id, t.nome]));
   tbody.innerHTML = lista.length ? lista.map(e => `<tr>
     <td class="td-main">${escHtml(e.prefixo||e.nome_equipe||'—')}</td>
     <td style="font-size:11px;color:var(--text-3)">${escHtml(e.atividades||'—')}</td>
+    <td style="font-size:11px">${e.tipo_id && nomeTipo[e.tipo_id] ? escHtml(nomeTipo[e.tipo_id]) : '<span style="color:var(--text-3)">—</span>'}</td>
     <td>${e.status==='ativo'?'<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativo</span>':'<span style="color:var(--text-3);font-size:11px">Inativo</span>'}</td>
     <td style="display:flex;gap:4px">
       <button class="row-action" onclick="editarEquipe('${e.id}')">Editar</button>
       <button class="row-action" style="color:var(--accent-text)" onclick="definirSenhaEquipe('${e.id}','${escJs(e.nome_equipe||e.nome||'')}')"><svg class=ic aria-hidden=true><use href=#i-key-round></use></svg> Senha</button>
       <button class="row-action" style="color:var(--red)" onclick="excluirEquipe('${e.id}')">✕</button>
     </td>
-  </tr>`).join('') : `<tr><td colspan="4"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
+  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
+}
+
+// ── Tipos de equipe e teto de material em mãos (26/10/2026) ──
+let _eqtTipos = [], _eqtSel = null, _eqtEdit = null, _eqtSujo = false, _eqtSemTipo = 0;
+async function eqtCarregar() {
+  const r = await api('/equipes/tipos');
+  const card = document.getElementById('eqtCard'), bloco = document.getElementById('eqTipoBloco');
+  // Servidor sem a migração: a tela fica como antes
+  if (!r?.ok || r.sem_migracao) { if (card) card.style.display = 'none'; if (bloco) bloco.style.display = 'none'; _eqtTipos = []; return; }
+  if (card) card.style.display = ''; if (bloco) bloco.style.display = '';
+  _eqtTipos = r.data || [];
+  _eqtSemTipo = r.sem_tipo || 0;
+  const sel = document.getElementById('eqTipo');
+  if (sel) {
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">— sem tipo (sem teto de material) —</option>' + _eqtTipos.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.nome)}</option>`).join('');
+    sel.value = _eqtTipos.some(t => t.id === atual) ? atual : '';
+  }
+  if (!_eqtTipos.some(t => t.id === _eqtSel)) { _eqtSel = _eqtTipos[0]?.id || null; _eqtEdit = null; _eqtSujo = false; }
+  if (!_eqtSujo) _eqtEdit = null;
+  if (!_enelMateriais.length) await carregarMateriaisEnel();
+  eqtRender();
+}
+function eqtRender() {
+  const lista = document.getElementById('eqtLista'), box = document.getElementById('eqtLimites');
+  if (!lista || !box) return;
+  lista.innerHTML = (_eqtTipos.length ? _eqtTipos.map(t => `<button class="eqt-tipo ${t.id === _eqtSel ? 'sel' : ''}" onclick="eqtSelecionar('${escJs(t.id)}')">
+      <svg class=ic aria-hidden=true><use href=#i-hard-hat></use></svg><b>${escHtml(t.nome)}</b>
+      <span>${t.equipes} equipe${t.equipes === 1 ? '' : 's'} · ${t.limites.length} teto${t.limites.length === 1 ? '' : 's'}</span></button>`).join('')
+    : '<div style="font-size:12px;color:var(--text-3);padding:8px 2px">Nenhum tipo cadastrado. Crie o primeiro acima (ex.: CORTE, NOVAS LIGAÇÕES).</div>')
+    + (_eqtSemTipo ? `<div style="font-size:11px;color:var(--text-3);margin-top:8px"><svg class=ic aria-hidden=true><use href=#i-info></use></svg> ${_eqtSemTipo} equipe${_eqtSemTipo === 1 ? '' : 's'} sem tipo (sem teto).</div>` : '');
+  const t = _eqtTipos.find(x => x.id === _eqtSel);
+  if (!t) { box.innerHTML = ''; return; }
+  if (!_eqtEdit) _eqtEdit = t.limites.map(l => ({ ...l }));
+  const usados = new Set(_eqtEdit.map(l => l.material_id));
+  const opcoes = (_enelMateriais || []).filter(m => !m.possui_numero_serie && !usados.has(m.id))
+    .sort((a, b) => String(a.descricao || '').localeCompare(String(b.descricao || ''), 'pt-BR'));
+  box.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="flex:1;min-width:160px"><div style="font-size:14px;font-weight:800">${escHtml(t.nome)}</div>
+        <div style="font-size:11px;color:var(--text-3)">${t.equipes} equipe${t.equipes === 1 ? '' : 's'} com este tipo</div></div>
+      <button class="row-action" onclick="eqtRenomear()">Renomear</button>
+      <button class="row-action" style="color:var(--red)" onclick="eqtExcluir()">Excluir tipo</button>
+    </div>
+    <div style="overflow-x:auto"><table style="min-width:420px"><thead><tr><th>Material</th><th style="width:130px">Teto em mãos</th><th style="width:40px"></th></tr></thead><tbody>
+      ${_eqtEdit.length ? _eqtEdit.map((l, i) => `<tr>
+        <td class="td-main">${escHtml(l.descricao)}<div style="font-size:10px;color:var(--text-3)">${escHtml(l.codigo || '')}</div></td>
+        <td><div style="display:flex;align-items:center;gap:6px"><input type="number" min="0" step="any" class="form-input" style="width:90px" value="${l.limite}" oninput="eqtValor(${i}, this.value)">
+          <span style="font-size:11px;color:var(--text-3)">${escHtml(l.unidade_med || 'UN')}</span></div></td>
+        <td><button class="row-action" style="color:var(--red)" title="Tirar o teto deste material" onclick="eqtRemover(${i})">✕</button></td>
+      </tr>`).join('') : '<tr><td colspan="3" style="padding:14px;text-align:center;color:var(--text-3);font-size:12px">Sem teto: este tipo recebe qualquer quantidade. Adicione os materiais abaixo.</td></tr>'}
+    </tbody></table></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+      <select id="eqtNovoMat" class="form-input" style="flex:1;min-width:200px"><option value="">Adicionar material...</option>
+        ${opcoes.map(m => `<option value="${escHtml(m.id)}">${escHtml(m.descricao)}${m.codigo ? ' — ' + escHtml(m.codigo) : ''} (${escHtml(m.unidade_med || 'UN')})</option>`).join('')}</select>
+      <input id="eqtNovoTeto" type="number" min="0" step="any" class="form-input" style="width:110px" placeholder="Teto" onkeydown="if(event.key==='Enter')eqtAdicionar()">
+      <button class="btn btn-ghost" onclick="eqtAdicionar()">Adicionar</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;align-items:center">
+      <span id="eqtSujoTxt" style="font-size:11px;color:var(--yellow)">Alterações não salvas</span>
+      <button id="eqtBtnDescartar" class="btn btn-ghost" onclick="eqtDescartar()">Descartar</button>
+      <button id="eqtBtnSalvar" class="btn btn-primary" onclick="eqtSalvar()">Salvar tetos</button>
+    </div>`;
+  eqtRodape();
+}
+// Só o rodapé muda ao digitar um teto (redesenhar tudo tiraria o cursor do campo)
+function eqtRodape() {
+  const txt = document.getElementById('eqtSujoTxt'), desc = document.getElementById('eqtBtnDescartar'), salvar = document.getElementById('eqtBtnSalvar');
+  if (txt) txt.style.display = _eqtSujo ? '' : 'none';
+  if (desc) desc.style.display = _eqtSujo ? '' : 'none';
+  if (salvar) salvar.disabled = !_eqtSujo;
+}
+function eqtSelecionar(id) {
+  if (_eqtSujo && id !== _eqtSel && !confirm('Descartar as alterações dos tetos que não foram salvas?')) return;
+  _eqtSel = id; _eqtEdit = null; _eqtSujo = false; eqtRender();
+}
+function eqtValor(i, v) { if (!_eqtEdit?.[i]) return; _eqtEdit[i].limite = v; _eqtSujo = true; eqtRodape(); }
+function eqtRemover(i) { _eqtEdit.splice(i, 1); _eqtSujo = true; eqtRender(); }
+function eqtDescartar() { _eqtEdit = null; _eqtSujo = false; eqtRender(); }
+function eqtAdicionar() {
+  const mat = document.getElementById('eqtNovoMat')?.value, teto = document.getElementById('eqtNovoTeto')?.value;
+  if (!mat) { toast('Escolha o material', 'warn'); return; }
+  if (teto === '' || !(Number(teto) >= 0)) { toast('Informe o teto (0 ou mais)', 'warn'); return; }
+  const m = _enelMateriais.find(x => x.id === mat);
+  _eqtEdit.push({ material_id: mat, descricao: m?.descricao || mat, codigo: m?.codigo || '', unidade_med: m?.unidade_med || 'UN', limite: Number(teto) });
+  _eqtSujo = true; eqtRender();
+}
+async function eqtSalvar() {
+  const limites = _eqtEdit.map(l => ({ material_id: l.material_id, limite: Number(l.limite) }));
+  if (limites.some(l => !(l.limite >= 0))) { toast('Todo teto precisa ser um número igual ou maior que zero', 'warn'); return; }
+  const r = await api(`/equipes/tipos/${encodeURIComponent(_eqtSel)}/limites`, { method: 'PUT', body: JSON.stringify({ limites }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao salvar os tetos', 'error'); return; }
+  toast('Tetos salvos', 'success');
+  _eqtSujo = false; _eqtEdit = null;
+  await eqtCarregar();
+}
+async function eqtNovoTipo() {
+  const inp = document.getElementById('eqtNovoNome');
+  const nome = (inp?.value || '').trim();
+  if (nome.length < 2) { toast('Informe o nome do tipo', 'warn'); return; }
+  const r = await api('/equipes/tipos', { method: 'POST', body: JSON.stringify({ nome }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao criar o tipo', 'error'); return; }
+  inp.value = '';
+  if (_eqtSujo && !confirm('Descartar as alterações dos tetos que não foram salvas?')) { await eqtCarregar(); return; }
+  _eqtSel = r.data.id; _eqtEdit = null; _eqtSujo = false;
+  await eqtCarregar();
+  toast(`Tipo ${r.data.nome} criado. Agora informe os tetos.`, 'success');
+}
+async function eqtRenomear() {
+  const t = _eqtTipos.find(x => x.id === _eqtSel);
+  const nome = prompt('Novo nome do tipo:', t?.nome || '');
+  if (nome === null || !nome.trim()) return;
+  const r = await api(`/equipes/tipos/${encodeURIComponent(_eqtSel)}`, { method: 'PUT', body: JSON.stringify({ nome }) });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao renomear', 'error'); return; }
+  await carregarEquipesView();
+}
+async function eqtExcluir() {
+  const t = _eqtTipos.find(x => x.id === _eqtSel);
+  if (!t) return;
+  if (t.equipes) { toast(`${t.equipes} equipe(s) usam o tipo ${t.nome}. Troque o tipo delas antes de excluir.`, 'warn', 6000); return; }
+  if (!confirm(`Excluir o tipo ${t.nome} e os tetos dele?`)) return;
+  const r = await api(`/equipes/tipos/${encodeURIComponent(t.id)}`, { method: 'DELETE' });
+  if (!r?.ok) { toast(r?.erro || 'Erro ao excluir', 'error'); return; }
+  _eqtSel = null; _eqtEdit = null; _eqtSujo = false;
+  await eqtCarregar();
 }
 
 function definirSenhaEquipe(equipeId, nomeEquipe) {
@@ -15745,6 +15903,7 @@ async function salvarEquipe() {
     status:      document.getElementById('eqStatus').value,
     observacoes: document.getElementById('eqObs').value.trim(),
   };
+  if (document.getElementById('eqTipoBloco')?.style.display !== 'none') body.tipo_id = document.getElementById('eqTipo')?.value || '';
   if (!body.prefixo) { toast('Prefixo obrigatório', 'warn'); return; }
   const res = await api(id ? `/equipes/${id}` : '/equipes', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
@@ -15762,12 +15921,14 @@ function editarEquipe(id) {
     document.getElementById('eqAtividades').value = e.atividades||'';
     document.getElementById('eqStatus').value     = e.status||'ativo';
     document.getElementById('eqObs').value        = e.observacoes||'';
+    const tipo = document.getElementById('eqTipo'); if (tipo) tipo.value = e.tipo_id || '';
   });
 }
 
 function limparFormEquipe() {
   ['eqEditId','eqPrefixo','eqAtividades','eqObs'].forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
   const s = document.getElementById('eqStatus'); if(s) s.value='ativo';
+  const t = document.getElementById('eqTipo'); if(t) t.value='';
 }
 
 // ════════════ DOTAÇÃO ════════════
@@ -18596,6 +18757,7 @@ const PERMISSOES_SCHEMA = {
   enel: { label:'Materiais Cliente (concessionária)', icon:'<svg class=ic aria-hidden=true><use href=#i-zap></use></svg>', itens:{
     ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio e Baixa Manual)',
     atendimento_enel:'Atendimento Material, transferência e devolução de seriais',
+    liberar_limite_equipe:'Entregar acima do teto do tipo de equipe (com motivo)',
     desbloqueio:'Desbloqueio de equipamento',
     enel_solicitacoes:'Solicitações da concessionária',
     enel_entrada_saida:'Entrada e saída do estoque',
@@ -26070,6 +26232,10 @@ function eaRenderEquipe() {
     busca.style.display = 'none';
     escolhida.style.display = '';
     document.getElementById('eaEquipeNome').textContent = eq.prefixo || eq.nome;
+    const lim = window.__ENEL__.limites;
+    document.getElementById('eaEquipeTipo').innerHTML = lim
+      ? `<svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Tipo ${escHtml(lim.tipo.nome)} — com teto de material em mãos`
+      : '';
     document.getElementById('eaTopoEquipe').textContent = eq.prefixo || eq.nome;
     passo.classList.remove('ativo'); passo.classList.add('pronto');
     document.getElementById('eaPasso2').classList.add('ativo');
@@ -26140,13 +26306,27 @@ function enelSelecionarEquipe(id, nome, prefixo) {
   document.getElementById('enelEquipeId').value = id;
   document.getElementById('enelEquipeSug').style.display = 'none';
   eaGuardarRecente(prefixo || nome);
+  window.__ENEL__.limites = null;
   eaRenderEquipe();
+  eaCarregarLimites();
   eaMsg(`Equipe ${prefixo || nome} selecionada. Agora escolha os materiais.`, 'ok');
   setTimeout(() => document.getElementById('enelMatBusca')?.focus(), 120);
 }
 
+// Teto do tipo da equipe (26/10/2026): em mãos e quanto ainda cabe de cada material
+async function eaCarregarLimites() {
+  const eq = window.__ENEL__.equipe;
+  if (!eq?.id) { window.__ENEL__.limites = null; return; }
+  const r = await api(`/equipes/limite-situacao?equipe_id=${encodeURIComponent(eq.id)}`);
+  if (window.__ENEL__.equipe !== eq) return;   // trocou de equipe enquanto carregava
+  window.__ENEL__.limites = r?.ok && r.tipo ? { tipo: r.tipo, porMaterial: r.limites || {} } : null;
+  eaRenderEquipe();
+  eaRenderItens();
+}
+
 function eaTrocarEquipe() {
   window.__ENEL__.equipe = null;
+  window.__ENEL__.limites = null;
   document.getElementById('enelEquipeBusca').value = '';
   document.getElementById('enelEquipeId').value = '';
   eaRenderEquipe();
@@ -26487,6 +26667,7 @@ function eaRenderItens() {
         <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.3)" onclick="enelRemItem(${idx})">✕</button>
       </div>
       ${blocoSerial}
+      ${eaBlocoTeto(it)}
     </div>`;
   }).join('');
   if (focoId) {
@@ -26498,6 +26679,59 @@ function eaRenderItens() {
 }
 // Mantido: a tela de solicitações chama enelRenderItens()
 function enelRenderItens() { eaRenderItens(); }
+
+// Linha do teto embaixo do material (só material sem serial com teto no tipo da equipe)
+function eaBlocoTeto(it) {
+  const lims = window.__ENEL__.limites;
+  const l = !it.usaSerial && lims?.porMaterial?.[it.materialId];
+  if (!l) return '';
+  const total = (window.__ENEL__.itens || []).filter(x => !x.usaSerial && x.materialId === it.materialId).reduce((a, x) => a + Number(x.quantidade || 0), 0);
+  const passa = total > l.cabe;
+  return `<div class="ea-teto ${passa ? 'passa' : ''}"><svg class=ic aria-hidden=true><use href=#i-${passa ? 'triangle-alert' : 'scale'}></use></svg>
+    Teto ${escHtml(lims.tipo.nome)}: em mãos ${l.em_maos} · teto ${l.limite} · cabe ${l.cabe}${passa ? ` — esta entrega passa ${total - l.cabe} do teto` : ''}</div>`;
+}
+
+// Entrega acima do teto: mostra o que passa e, para quem pode liberar, pede o motivo
+function eaJanelaLimite(res) {
+  return new Promise(resolve => {
+    document.getElementById('modalLimiteEquipe')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay modal-acima';
+    ov.id = 'modalLimiteEquipe';
+    const linhas = (res.excessos || []).map(e => `<tr><td class="td-main">${escHtml(e.descricao)}</td>
+      <td style="text-align:center">${e.em_maos}</td><td style="text-align:center">${e.limite}</td>
+      <td style="text-align:center;font-weight:700">${e.cabe}</td><td style="text-align:center;color:var(--red);font-weight:700">${e.quantidade}</td></tr>`).join('');
+    ov.innerHTML = `<div class="modal-box" style="max-width:560px">
+      <div class="modal-header"><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Passa do teto do tipo ${escHtml(res.tipo?.nome || '')}</div>
+        <button class="modal-close" data-fechar>×</button></div>
+      <div class="modal-body">
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">A equipe ficaria com mais do que o teto do tipo dela. Nada foi entregue ainda.</div>
+        <div style="overflow-x:auto"><table style="min-width:420px"><thead><tr><th>Material</th><th>Em mãos</th><th>Teto</th><th>Cabe</th><th>Nesta entrega</th></tr></thead><tbody>${linhas}</tbody></table></div>
+        ${res.pode_liberar ? `
+        <label class="form-label" style="margin-top:14px">Motivo para entregar acima do teto</label>
+        <textarea data-motivo class="form-input" rows="3" style="resize:vertical" placeholder="Ex.: obra emergencial no bairro X, autorizada pela supervisão"></textarea>
+        <div style="font-size:11px;color:var(--text-3);margin-top:6px">Fica registrado no atendimento, com o seu nome e a data.</div>
+        <div data-erro style="font-size:11px;color:var(--red);margin-top:6px"></div>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn btn-ghost" style="flex:1" data-fechar>Voltar e ajustar</button>
+          <button class="btn btn-primary" style="flex:1" data-liberar>Entregar acima do teto</button>
+        </div>` : `
+        <div class="ea-banner aviso" style="animation:none;margin-top:14px"><span style="font-size:18px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg></span>
+          <span>Diminua a quantidade até o que cabe, ou peça a entrega a quem tem a permissão "Entregar acima do teto".</span></div>
+        <div style="display:flex;margin-top:14px"><button class="btn btn-primary" style="flex:1" data-fechar>Voltar e ajustar</button></div>`}
+      </div></div>`;
+    const fechar = (v) => { ov.remove(); resolve(v); };
+    ov.querySelectorAll('[data-fechar]').forEach(b => b.addEventListener('click', () => fechar(null)));
+    ov.querySelector('[data-liberar]')?.addEventListener('click', () => {
+      const motivo = ov.querySelector('[data-motivo]').value.trim();
+      if (motivo.length < 5) { ov.querySelector('[data-erro]').textContent = 'Escreva o motivo (pelo menos 5 letras).'; return; }
+      fechar(motivo);
+    });
+    ov.querySelector('[data-motivo]')?.addEventListener('input', () => { ov.querySelector('[data-erro]').textContent = ''; });
+    document.body.appendChild(ov);
+    setTimeout(() => ov.querySelector('[data-motivo]')?.focus(), 50);
+  });
+}
 
 // ══ PASSO 3 — FINALIZAR ══
 // Trava do finalizar: um envio por vez, botões desligados e aviso na tela até a resposta.
@@ -26556,6 +26790,17 @@ async function enelFinalizarAtendimento() {
   } finally {
     enelTravarFinalizar(false);
   }
+  // Passou do teto do tipo da equipe: quem pode liberar escreve o motivo e o envio é repetido
+  let acimaLimite = null;
+  if (!res?.ok && res?.codigo === 'LIMITE') {
+    eaCarregarLimites();
+    const motivo = await eaJanelaLimite(res);
+    if (!motivo) { eaMsg('Entrega não feita: passa do teto do tipo da equipe. Ajuste as quantidades.', 'aviso'); return; }
+    acimaLimite = { motivo, por: GCA.usuario?.nome || GCA.usuario?.username || '—', tipo: res.tipo?.nome || '', itens: res.excessos || [] };
+    corpo.liberar_limite_motivo = motivo;
+    enelTravarFinalizar(true);
+    try { res = await apiMovimentacao('/enel/atendimentos', corpo); } finally { enelTravarFinalizar(false); }
+  }
   if (!res?.ok) { eaMsg(res?.erro || 'Erro ao finalizar o atendimento.', 'erro'); return; }
 
   toast(res.repetido ? 'Este atendimento já estava registrado.' : 'Atendimento finalizado!', 'success');
@@ -26565,9 +26810,10 @@ async function enelFinalizarAtendimento() {
     id: res.id, equipe: equipe.prefixo || equipe.nome, data: corpo.data,
     hora_inicio: corpo.hora_inicio, hora_fim: corpo.hora_fim, tempo_segundos: at.seg,
     atendente: GCA.usuario?.nome || GCA.usuario?.username || '—', itens: corpo.itens,
+    acima_limite: acimaLimite,
   };
   clearInterval(window.__ENEL__.cronInt); window.__ENEL__.cronInt = null;
-  window.__ENEL__.atendimento = null; window.__ENEL__.itens = []; window.__ENEL__.equipe = null;
+  window.__ENEL__.atendimento = null; window.__ENEL__.itens = []; window.__ENEL__.equipe = null; window.__ENEL__.limites = null;
   document.getElementById('enelCronometro').textContent = '00:00:00';
   document.getElementById('areaAtendEnelAndamento').style.display = 'none';
   eaMsg('', '');
@@ -26602,6 +26848,12 @@ function eaAbrirFicha() {
       <div style="font-size:11px;opacity:.85">Liberado por ${escHtml(l.usuario || '—')} em ${formatarDataHora(l.data)}</div>
       ${(l.medidores || []).length ? `<div style="font-size:11px;opacity:.85">Medidores parados: ${l.medidores.map(m => `<span style="font-family:monospace">${escHtml(m.serial)}</span> (${m.diasNaEquipe} dias)`).join(', ')}</div>` : ''}
     </div>`).join('')}
+    ${d.acima_limite ? `<div class="ea-banner aviso" style="animation:none;flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:10px">
+      <div><strong><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Entregue acima do teto${d.acima_limite.tipo ? ' do tipo ' + escHtml(d.acima_limite.tipo) : ''}</strong></div>
+      <div>Motivo: ${escHtml(d.acima_limite.motivo || '—')}</div>
+      <div style="font-size:11px;opacity:.85">Liberado por ${escHtml(d.acima_limite.por || '—')}${d.acima_limite.em ? ' em ' + formatarDataHora(d.acima_limite.em) : ''}</div>
+      ${(d.acima_limite.itens || []).length ? `<div style="font-size:11px;opacity:.85">${d.acima_limite.itens.map(e => `${escHtml(e.descricao)}: tinha ${e.em_maos}, teto ${e.limite}, entregue ${e.quantidade}`).join(' · ')}</div>` : ''}
+    </div>` : ''}
     ${d.cancelado ? `<div class="ea-banner erro" style="animation:none">
       <span style="font-size:18px">✕</span>
       <span>Atendimento CANCELADO por ${escHtml(d.cancelado_por || '—')}${d.cancelado_em ? ' em ' + formatarDataHora(d.cancelado_em) : ''}${d.motivo_cancelamento ? ` — ${escHtml(d.motivo_cancelamento)}` : ''}</span>
@@ -26744,6 +26996,8 @@ async function carregarHistAtendEnel() {
     const libs = a.desbloqueios || [];
     const selo = libs.length ? ` <span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fcd34d;border:1px solid rgba(245,158,11,.5);border-radius:999px;padding:1px 7px;white-space:nowrap"
         title="${escHtml(libs.map(l => `${l.material}: ${l.justificativa} (${l.usuario})`).join(' | '))}"><svg class=ic aria-hidden=true><use href=#i-lock-open></use></svg> Liberado</span>` : '';
+    const teto = a.acima_limite ? ` <span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:700;color:#fca5a5;border:1px solid rgba(239,68,68,.5);border-radius:999px;padding:1px 7px;white-space:nowrap"
+        title="${escHtml(`Acima do teto${a.acima_limite.tipo ? ' do tipo ' + a.acima_limite.tipo : ''}: ${a.acima_limite.motivo} (${a.acima_limite.por})`)}"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Acima do teto</span>` : '';
     return `<tr style="${cancelado ? 'opacity:.6' : ''}">
       <td style="font-size:11px">${a.criado_em ? formatarDataHora(a.criado_em) : formatarData(a.data)}</td>
       <td class="td-main" style="font-family:var(--font-mono)">${escHtml(a.nome_equipe || '—')}</td>
@@ -26752,7 +27006,7 @@ async function carregarHistAtendEnel() {
       <td style="text-align:center">${a.seriais || '—'}</td>
       <td style="text-align:center;font-family:var(--font-mono);font-size:11px">${tempo}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(a.usuario || '—')}</td>
-      <td style="white-space:nowrap">${tag}${selo}</td>
+      <td style="white-space:nowrap">${tag}${selo}${teto}</td>
       <td style="display:flex;gap:4px;justify-content:flex-end">
         <button class="row-action" onclick="eaVerAtendimento(${idx})">Ver</button>
         ${cancelado ? '' : `<button class="row-action" style="color:var(--red)" onclick="eaAbrirCancelamento(${idx})">Cancelar</button>`}
@@ -26768,6 +27022,7 @@ function eaAtendParaFicha(a) {
     cancelado: a.status === 'CANCELADO', motivo_cancelamento: a.motivo_cancelamento,
     cancelado_por: a.cancelado_por, cancelado_em: a.cancelado_em,
     desbloqueios: a.desbloqueios || [],
+    acima_limite: a.acima_limite || null,
   };
 }
 
