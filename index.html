@@ -1169,7 +1169,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <div class="nav-group-items">
           <button class="nav-item" data-view="financeiro" data-perm="painel_financeiro" onclick="showView('financeiro',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-chart-pie></use></svg></span> Painel Financeiro</button>
           <button class="nav-item" data-view="descontos" data-perm="descontos" onclick="showView('descontos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg></span> Descontos</button>
-          <button class="nav-item" data-view="solicitacoes-compra" data-perm="previsao_compra" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-shopping-cart></use></svg></span> Solicitações de Compra</button>
+          <button class="nav-item" data-view="solicitacoes-compra" data-perm="previsao_compra|receber_sc" onclick="showView('solicitacoes-compra',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-shopping-cart></use></svg></span> Solicitações de Compra</button>
           <button class="nav-item" data-view="protheus" data-perm="protheus" onclick="showView('protheus',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-folder-kanban></use></svg></span> Lançamentos Protheus</button>
         </div>
       </div>
@@ -3132,8 +3132,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                   <option value="Recebido Total">Rec. Total</option>
                   <option value="Cancelado">Cancelado</option>
                 </select>
-                <button class="btn btn-primary" onclick="abrirModalSC()">+ Nova SC</button>
-                <button class="btn btn-ghost" onclick="abrirConfigEmailSC()" title="Configurar emails do financeiro"><svg class=ic aria-hidden=true><use href=#i-settings></use></svg> Emails</button>
+                <button class="btn btn-primary" data-perm-btn="previsao_compra" onclick="abrirModalSC()">+ Nova SC</button>
+                <button class="btn btn-ghost" data-perm-btn="previsao_compra" onclick="abrirConfigEmailSC()" title="Configurar emails do financeiro"><svg class=ic aria-hidden=true><use href=#i-settings></use></svg> Emails</button>
                 <button class="btn btn-ghost" onclick="carregarSC()">↻</button>
               </div>
             </div>
@@ -18467,7 +18467,8 @@ const PERMISSOES_SCHEMA = {
     saida_material:'Registrar saída', transferencia:'Transferência',
     transferencia_filial:'Transferência entre filiais (criar e enviar)',
     transferencia_filial_receber:'Transferência entre filiais (aceitar e receber)',
-    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra e Solicitações de compra'
+    ver_movimentacoes:'Ver movimentações', previsao_compra:'Previsão de compra e Solicitações de compra',
+    receber_sc:'Receber SC (só o que está pendente na SC; sem a tela de Entrada)'
   }},
   consulta: { label:'Consulta', icon:'<svg class=ic aria-hidden=true><use href=#i-search></use></svg>', itens:{
     consulta_itens:'Consulta de itens', consulta_colaboradores:'Consulta de colaboradores',
@@ -21987,7 +21988,8 @@ function abrirVerSC(id) {
   // Botão receber: só mostra se não estiver "Recebido Total"
   const btnReceber = document.getElementById('btnAbrirRecebimento');
   if (btnReceber) {
-    btnReceber.style.display = sc.status === 'Recebido Total' ? 'none' : '';
+    const podeReceber = temPermissao('receber_sc') || temPermissao('entrada_material');
+    btnReceber.style.display = sc.status === 'Recebido Total' || !podeReceber ? 'none' : '';
   }
 
   document.getElementById('modalVerSC').classList.remove('hidden');
@@ -22197,7 +22199,6 @@ async function confirmarRecebimentoSC() {
   try {
 
   const scId      = document.getElementById('recSCId').value;
-  const sc        = _scData.find(x=>x.id===scId);
   const nf        = document.getElementById('recNF').value.trim();
   const pedido    = document.getElementById('recPedido').value.trim();
   const fornecedor= document.getElementById('recFornecedor').value.trim();
@@ -22209,28 +22210,12 @@ async function confirmarRecebimentoSC() {
     if (uploaded) pdfLink = uploaded;
   }
   const armId     = document.getElementById('recArmazem').value;
-  const armNome   = document.getElementById('recArmazem').selectedOptions[0]?.dataset.nome||'';
 
   if (!armId) { toast('Selecione o armazém destino', 'warn'); return; }
 
   const checks = document.querySelectorAll('.rec-check');
   const qtdEls = document.querySelectorAll('.rec-qtd');
   const valEls = document.querySelectorAll('.rec-valor');
-
-  let algumSelecionado = false;
-  const itensDestaOp = []; // só os itens recebidos NESTA operação
-  const precosDestaOp = []; // preço pago de cada item — o "real" do financeiro
-
-  // Carrega itens da SC para atualizar
-  let itens = []; 
-  try { 
-    const raw = JSON.parse(sc.itens_json||'[]');
-    itens = raw.map(it => ({...it, 
-      itemId: it.itemId||it.item_id,
-      qtdSolicitada: Number(it.qtdSolicitada||it.qtd||1),
-      qtdRecebida: Number(it.qtdRecebida||0),
-    }));
-  } catch {}
 
   // Confere o valor pago antes de lançar qualquer entrada: sem ele o financeiro fica sem o real.
   for (let i = 0; i < checks.length; i++) {
@@ -22252,87 +22237,29 @@ async function confirmarRecebimentoSC() {
   const conferenciaCa = linhasCa.length ? await caConferirRecebimento(linhasCa) : { extras: {} };
   if (!conferenciaCa) return;   // o finally abaixo devolve o botão
 
+  // Recebimento no servidor (26/10/2026): entrada no estoque, quantidades e situação da SC, histórico
+  // e preço pago numa chamada só, aceitando só o que está pendente na SC (permissão receber_sc).
+  const itensReceber = [];
   for (let i = 0; i < checks.length; i++) {
     if (!checks[i].checked) continue;
-    algumSelecionado = true;
-
-    const itemId   = qtdEls[i].dataset.itemId;
-    const itemNome = qtdEls[i].dataset.itemNome;
-    const qtdSol   = Number(qtdEls[i].dataset.qtdSol||1);
-    const qtdRecAntes = Number(qtdEls[i].dataset.qtdRec||0);
-    const qtdRec   = parseFloat(qtdEls[i].value)||0;
-    const valorUn  = parseFloat(valEls[i]?.value)||0;
-
+    const itemId  = qtdEls[i].dataset.itemId;
+    const qtdRec  = parseFloat(qtdEls[i].value)||0;
+    const valorUn = parseFloat(valEls[i]?.value)||0;
     if (qtdRec <= 0) continue;
-
-    // Registra como recebido NESTA operação
-    itensDestaOp.push({ nome: itemNome, qtdRecebida: qtdRec, qtdSolicitada: qtdSol, valorUn });
-
-    // Lança entrada no estoque
-    const res = await api('/movimentacoes/entrada', {
-      method:'POST',
-      body: JSON.stringify({
-        item_id: itemId, armazem_id: armId,
-        data: hojeBR(),
-        quantidade: qtdRec,
-        motivo: `Recebimento SC ${sc.numero_sc}${nf?` — NF ${nf}`:''}`,
-        observacao: `Fornecedor: ${fornecedor||'—'} | Pedido: ${pedido||'—'}`,
-        ...(conferenciaCa.extras[itemId] || {}),
-      })
-    });
-    if (!res?.ok) { toast(res?.erro ? `${itemNome}: ${res.erro}` : `Erro ao lançar ${itemNome}`, 'error', 7000); return; }
-
-    // Preço pago desta NF: vai para o financeiro e o servidor atualiza o cadastro se mudou.
-    precosDestaOp.push({ item_id: itemId, quantidade: qtdRec, valor_unitario: valorUn });
-    const itemLocal = (_itens||[]).find(x=>x.id===itemId);
-    if (itemLocal && valorUn > 0) itemLocal.valor_un = valorUn;
-
-    // Atualiza qtdRecebida no array local
-    const idx = itens.findIndex(it=>(it.itemId||it.item_id)===itemId);
-    if (idx >= 0) {
-      itens[idx].qtdRecebida = qtdRecAntes + qtdRec;
-      itens[idx].statusItem  = itens[idx].qtdRecebida >= itens[idx].qtdSolicitada ? 'Recebido' : 'Parcial';
-    }
+    itensReceber.push({ item_id: itemId, quantidade: qtdRec, valor_unitario: valorUn, ...(conferenciaCa.extras[itemId] || {}) });
   }
+  if (!itensReceber.length) { toast('Selecione pelo menos um item', 'warn'); return; }
 
-  if (!algumSelecionado) { toast('Selecione pelo menos um item', 'warn'); return; }
-
-  // Calcula status geral
-  const totalSol = itens.reduce((s,it)=>s+Number(it.qtdSolicitada||it.qtd||1),0);
-  const totalRec = itens.reduce((s,it)=>s+Number(it.qtdRecebida||0),0);
-  const novoStatus = totalRec >= totalSol ? 'Recebido Total' : 'Recebido Parcial';
-
-  const dataRec = new Date().toISOString();
-
-  // Registra recebimento no histórico — cada recebimento é independente
-  let recebimentos = [];
-  try { recebimentos = JSON.parse(sc.recebimentos_json || '[]'); } catch {}
-  recebimentos.push({
-    data: dataRec,
-    nf: nf||null,
-    pedido: pedido||null,
-    fornecedor: fornecedor||null,
-    pdf_url: pdfLink||null,
-    armazem: armNome||null,
-    usuario: GCA.usuario?.nome||null,
-    itens_recebidos: itensDestaOp
-  });
-
-  await api(`/solicitacoes-compra/${scId}`, { method:'PUT', body: JSON.stringify({
-    status: novoStatus, itens_json: JSON.stringify(itens),
-    recebimentos_json: JSON.stringify(recebimentos),
-    data_recebimento: dataRec,
-  })});
-
-  if (precosDestaOp.length) {
-    const resPreco = await api(`/solicitacoes-compra/${scId}/precos-recebidos`, { method:'POST',
-      body: JSON.stringify({ nf, fornecedor, pedido, itens: precosDestaOp }) });
-    if (!resPreco?.ok) toast(`Recebimento registrado, mas o valor pago não foi gravado no financeiro: ${resPreco?.erro || 'erro'}`, 'error', 9000);
-  }
-
-  toast('Recebimento registrado!', 'success');
+  const res = await api(`/solicitacoes-compra/${scId}/receber`, { method: 'POST', body: JSON.stringify({
+    armazem_id: armId, nf, pedido, fornecedor, pdf_url: pdfLink || null, itens: itensReceber }) });
+  if (!res?.ok && !res?.parcial) { toast(res?.erro || 'Erro ao registrar o recebimento', 'error', 7000); return; }
+  // O preço pago vira o preço do cadastro (o servidor já gravou): atualiza a lista da tela
+  itensReceber.forEach(x => { const it = (_itens||[]).find(i => i.id === x.item_id); if (it && x.valor_unitario > 0) it.valor_un = x.valor_unitario; });
+  if (res.parcial) toast(res.erro, 'error', 9000);
+  else if (res.aviso_preco) toast(`Recebimento registrado, mas o valor pago não foi gravado no financeiro: ${res.aviso_preco}`, 'error', 9000);
+  else toast('Recebimento registrado!', 'success');
   document.getElementById('modalRecSC').classList.add('hidden');
-  carregarSC();
+  await carregarSC();
 
   // Abrir modal de email ao financeiro (sempre opcional)
   const sc_final = _scData.find(x=>x.id===scId);
@@ -22608,8 +22535,8 @@ function renderSC(lista) {
       <td>${stTag(sc.status)}</td>
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="abrirVerSC('${sc.id}')">Ver</button>
-        <button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button>
-        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirSC('${sc.id}','${(sc.numero_sc||'').replace(/'/g,"\\'")}')"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button>
+        ${temPermissao('previsao_compra') ? `<button class="row-action" onclick="abrirModalSC('${sc.id}')">Editar</button>
+        <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirSC('${sc.id}','${(sc.numero_sc||'').replace(/'/g,"\\'")}')"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button>` : ''}
       </td>
     </tr>`;
   }).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma SC</div></div></td></tr>`;
@@ -33955,7 +33882,7 @@ async function baExcluirEquipe(id) {
       </div>
       <div style="display:flex;gap:8px;align-items:center">
         <span id="verSCStatus"></span>
-        <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalSC(document.getElementById('verSCId').value)"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>
+        <button class="btn btn-ghost" style="font-size:11px" data-perm-btn="previsao_compra" onclick="abrirModalSC(document.getElementById('verSCId').value)"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>
         <button class="modal-close" onclick="document.getElementById('modalVerSC').classList.add('hidden')">×</button>
       </div>
     </div>
