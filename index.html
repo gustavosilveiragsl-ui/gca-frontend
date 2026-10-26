@@ -2195,12 +2195,16 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
             Histórico Completo
           </button>
+          <button id="solAbaCancelar" onclick="mudarAbaSol('cancelar')" title="Pedidos parados há 5 dias úteis ou mais: atenda ou cancele. Sem ação, o GCA cancela no 7º dia útil."
+            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
+            Para cancelar <span id="solAbaCancelarN" style="display:none;margin-left:4px;padding:0 7px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;font-weight:700"></span>
+          </button>
         </div>
 
         <!-- FILTROS + TABELA -->
         <div class="card">
           <div class="card-header" style="flex-wrap:wrap">
-            <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento</div></div>
+            <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento · os em aberto na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)</div></div>
             <div class="card-actions" style="flex-wrap:wrap;justify-content:flex-end;flex:1 1 520px;min-width:0">
               <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
               <input class="search-box" type="text" id="solBuscaItem" placeholder="Item (ex: detector)" oninput="filtrarSolicitacoes()" title="Mostra as solicitações que têm um item com esse nome">
@@ -11337,6 +11341,7 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     usuarioNome:      GCA.usuario?.nome || 'Sistema',
     criadoEm:         agora.toISOString(),
     solicitacaoId:    ATEND.solicitacaoId || null,
+    pularFilaMotivo:  (ATEND.solicitacaoId && _solPuloFila[ATEND.solicitacaoId]) || '',
     necessitaLogistica: necessitaLogistica,
     destinoEntregaId: destinoEntregaId,
   };
@@ -12463,6 +12468,11 @@ function mudarAbaSol(aba) {
   const btnAt = document.getElementById('solAbaAtivas');
   const btnFn = document.getElementById('solAbaFinalizadas');
   const btnHi = document.getElementById('solAbaHistorico');
+  const btnCa = document.getElementById('solAbaCancelar');
+  if (btnCa) {
+    btnCa.style.borderBottom = aba === 'cancelar' ? '2px solid var(--accent)' : '2px solid transparent';
+    btnCa.style.color        = aba === 'cancelar' ? 'var(--accent-text)' : 'var(--text-3)';
+  }
   if (btnAt) {
     btnAt.style.borderBottom = aba === 'ativas' ? '2px solid var(--accent)' : '2px solid transparent';
     btnAt.style.color        = aba === 'ativas' ? 'var(--accent-text)' : 'var(--text-3)';
@@ -12488,7 +12498,12 @@ function mudarAbaSol(aba) {
       <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
       <option value="EM TRANSITO">Em Trânsito</option>
       <option value="NA BASE DESTINO">Na Base Destino</option>`;
-    cardSub.textContent = 'Solicitações em andamento';
+    cardSub.textContent = 'Solicitações em andamento · os em aberto na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)';
+  } else if (aba === 'cancelar') {
+    statusSel.innerHTML = `<option value="">Pendentes e visualizados</option>
+      <option value="PENDENTE">Pendente</option>
+      <option value="VISUALIZADO">Visualizado</option>`;
+    cardSub.textContent = `Parados há ${_solPrazo.dias_lista} dias úteis ou mais: atenda ou cancele. Sem ação, o GCA cancela no ${_solPrazo.dias_cancela}º dia útil.`;
   } else {
     // Mostra só FINALIZADAS (sem canceladas antigas)
     statusSel.innerHTML = `<option value="FINALIZADO">Finalizadas</option>`;
@@ -12557,7 +12572,9 @@ async function carregarSolicitacoes(silencioso = false) {
   if (!data) return;
 
   _solicitacoes = data.solicitacoes || data.data || [];
+  if (data.prazo) _solPrazo = data.prazo;
   _solLimiteCarregado = solLimiteDesejado();
+  solAtualizarContadorCancelar();
   _solPagina = 1;
   solPopularFiltrosExtras();
 
@@ -12614,6 +12631,98 @@ function filtrarSolicitacoes(campo, valor) {
   renderSolicitacoes();
 }
 
+// ── Fila e prazo das solicitações (26/10/2026) ──
+// Cada armazém atende na ordem: urgente primeiro, depois do mais antigo (o servidor manda a posição
+// em s.fila). Com 5 dias úteis em aberto o pedido vai para "Para cancelar"; com 7, o GCA cancela.
+let _solPrazo = { dias_lista: 5, dias_cancela: 7 };
+let _solPuloFila = {};   // solicitação → motivo de atender fora da ordem
+const SOL_ABERTOS = ['PENDENTE', 'VISUALIZADO'];
+const solNaFila = (s) => SOL_ABERTOS.includes(s.status) && s.fila && !s.fila.parada;
+const solParaCancelar = (s) => solNaFila(s) && s.fila.dias_uteis >= _solPrazo.dias_lista;
+function solAtualizarContadorCancelar() {
+  const n = (_solicitacoes || []).filter(solParaCancelar).length;
+  const el = document.getElementById('solAbaCancelarN');
+  if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+}
+// Em aberto primeiro, na ordem da fila; depois o resto como veio (mais recente primeiro)
+function solOrdenarFila(lista) {
+  const urg = (s) => s.prioridade === 'Urgente' ? 0 : 1;
+  const tempo = (s) => s.liberada_em || s.criado_em || '';
+  return lista.map((s, i) => [s, i]).sort(([a, ia], [b, ib]) => {
+    const fa = SOL_ABERTOS.includes(a.status) ? 0 : 1, fb = SOL_ABERTOS.includes(b.status) ? 0 : 1;
+    if (fa !== fb) return fa - fb;
+    if (fa === 0) return urg(a) - urg(b) || String(tempo(a)).localeCompare(String(tempo(b))) || ia - ib;
+    return ia - ib;
+  }).map(([s]) => s);
+}
+function solTagsFila(s) {
+  if (!solNaFila(s)) return [];
+  const f = s.fila, tags = [];
+  tags.push(`<span style="color:${f.posicao === 1 ? 'var(--green)' : 'var(--text-2)'};font-size:10px;font-weight:600" title="Posição na fila do ${escHtml(s.nome_armazem || 'armazém')} (${f.total} em aberto)"><svg class=ic aria-hidden=true><use href=#i-arrow-down-up></use></svg> ${f.posicao === 1 ? 'Próximo da fila' : `${f.posicao}º na fila`}</span>`);
+  if (f.dias_uteis >= _solPrazo.dias_lista) {
+    tags.push(`<span style="color:var(--red);font-size:10px;font-weight:700" title="Sem atendimento até lá, o GCA cancela sozinho por prazo"><svg class=ic aria-hidden=true><use href=#i-calendar-x></use></svg> Cancela em ${formatarData(f.cancela_em)}</span>`);
+  } else if (f.dias_uteis >= 3) {
+    tags.push(`<span style="color:var(--yellow);font-size:10px;font-weight:600" title="Vai para a lista Para cancelar em ${formatarData(f.lista_em)}"><svg class=ic aria-hidden=true><use href=#i-clock-3></use></svg> Parado há ${f.dias_uteis} dias úteis</span>`);
+  }
+  return tags;
+}
+// Ao atender: se há pedidos na frente deste no armazém, mostra quais e deixa pular só com motivo.
+// Devolve true para seguir com este pedido.
+async function solConferirFila(s) {
+  if (!SOL_ABERTOS.includes(s.status)) return true;
+  const r = await api(`/solicitacoes/${encodeURIComponent(s.id)}/fila`);
+  if (!r?.ok) return true;   // sem resposta, o servidor confere de novo ao concluir
+  if (!r.na_frente.length) { delete _solPuloFila[s.id]; return true; }
+  return new Promise(resolve => {
+    document.getElementById('modalSolFila')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalSolFila'; ov.style.zIndex = '10002';
+    const n = r.na_frente.length;
+    const fechar = (valor) => { ov.remove(); resolve(valor); };
+    ov.innerHTML = `<div class="modal-box" style="max-width:600px;width:100%" role="dialog" aria-modal="true">
+      <div class="modal-header"><div style="min-width:0"><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-arrow-down-up></use></svg> ${n === 1 ? 'Há 1 pedido na frente deste' : `Há ${n} pedidos na frente deste`}</div>
+        <div class="modal-sub">${escHtml(r.armazem || 'Armazém')}: urgentes primeiro e, depois, do mais antigo para o mais novo.</div></div>
+        <button class="modal-close" data-acao="fechar" aria-label="Fechar">×</button></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">
+        <div style="display:flex;flex-direction:column;gap:6px">${r.na_frente.slice(0, 8).map((x, i) => `
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg)">
+            <span style="font-weight:700;color:var(--text-2);min-width:22px">${i + 1}º</span>
+            <span style="flex:1;min-width:180px"><strong style="color:var(--text-1)">${escHtml(x.colaborador_nome || '—')}</strong>
+              <span style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-left:4px">${escHtml(x.id)}</span>
+              <span style="display:block;font-size:11px;color:var(--text-3)">por ${escHtml(x.solicitante_nome || '—')} · ${x.dias_uteis === 0 ? 'hoje' : `há ${x.dias_uteis} dia${x.dias_uteis === 1 ? '' : 's'} úte${x.dias_uteis === 1 ? 'l' : 'is'}`}</span></span>
+            ${x.prioridade === 'Urgente' ? gcaSit('Urgente', 'vermelho', 'siren') : ''}
+            <button class="row-action" data-abrir="${escHtml(x.id)}">Abrir</button>
+          </div>`).join('')}${n > 8 ? `<div style="font-size:11px;color:var(--text-3)">… e mais ${n - 8}.</div>` : ''}</div>
+        <details style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px">
+          <summary style="cursor:pointer;font-size:12px;color:var(--text-2)">Precisa atender este antes? Pule a fila com o motivo</summary>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <label class="form-label" for="solFilaMotivo">Motivo (fica no histórico dos pedidos que ficaram para trás)</label>
+            <textarea id="solFilaMotivo" class="form-input" rows="2" maxlength="300" style="resize:vertical;font-family:inherit" placeholder="Ex.: o material do pedido mais antigo acabou; o colaborador está de férias"></textarea>
+            <div id="solFilaErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+            <div><button class="btn btn-ghost" data-acao="pular"><svg class=ic aria-hidden=true><use href=#i-arrow-down-up></use></svg> Pular a fila e atender este</button></div>
+          </div>
+        </details>
+      </div>
+      <div class="modal-footer"><button class="btn btn-ghost" data-acao="fechar">Voltar</button>
+        <button class="btn btn-primary" data-acao="antigo"><svg class=ic aria-hidden=true><use href=#i-hand-helping></use></svg> Abrir o ${n === 1 ? 'pedido da frente' : 'primeiro da fila'}</button></div></div>`;
+    ov.addEventListener('click', (e) => {
+      if (e.target === ov) return fechar(false);
+      const abrir = e.target.closest('[data-abrir]')?.dataset.abrir;
+      if (abrir) { fechar(false); fecharModalSolicitacao(); return abrirModalSolicitacao(abrir); }
+      const acao = e.target.closest('[data-acao]')?.dataset.acao;
+      if (acao === 'fechar') return fechar(false);
+      if (acao === 'antigo') { fechar(false); fecharModalSolicitacao(); return abrirModalSolicitacao(r.na_frente[0].id); }
+      if (acao === 'pular') {
+        const motivo = document.getElementById('solFilaMotivo').value.replace(/\s+/g, ' ').trim();
+        if (motivo.length < 5) { document.getElementById('solFilaErro').textContent = 'Escreva o motivo para pular a fila (pelo menos 5 letras).'; return; }
+        _solPuloFila[s.id] = motivo;
+        fechar(true);
+      }
+    });
+    document.body.appendChild(ov);
+  });
+}
+
 function renderSolicitacoes() {
   const tbody = document.getElementById('solBody');
   if (!tbody) return;
@@ -12638,7 +12747,11 @@ function renderSolicitacoes() {
   } else if (_solAbaAtual === 'finalizadas') {
     // Aba finalizadas: só FINALIZADO
     lista = lista.filter(s => s.status === 'FINALIZADO');
+  } else if (_solAbaAtual === 'cancelar') {
+    // Parados há 5 dias úteis ou mais: os que cancelam primeiro no topo
+    lista = lista.filter(solParaCancelar).sort((a, b) => String(a.fila.cancela_em).localeCompare(String(b.fila.cancela_em)));
   }
+  if (_solAbaAtual === 'ativas') lista = solOrdenarFila(lista);
   // Aba 'historico': mostra TUDO, sem filtro de tempo nem status — busca completa
 
   const { status, prioridade, armazem, busca } = _solFiltros;
@@ -12696,6 +12809,7 @@ function renderSolicitacoes() {
       temForaPrazo ? '<span style="color:#f59e0b;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Fora do prazo</span>' : '',
       temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg> Ass. pendente</span>' : '',
       itensBatem.length ? `<span style="color:var(--accent-text);font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> ${escHtml(itensBatem.slice(0, 2).join(', '))}${itensBatem.length > 2 ? ` +${itensBatem.length - 2}` : ''}</span>` : '',
+      ...solTagsFila(s),
     ].filter(Boolean).join(' ');
 
     const _rowBorder = s.status === 'PENDENTE'
@@ -12804,6 +12918,7 @@ async function abrirModalSolicitacao(id) {
     'NA BASE DESTINO':       gcaSit('Na base destino — aguardando entrega ao colaborador', 'violeta', 'map-pin-check'),
     'FINALIZADO':            gcaSit('Finalizado', 'verde', 'check'),
     'CANCELADO':             gcaSit('Cancelado', 'vermelho', 'x'),
+    'FILA_PULADA':           gcaSit('Outro pedido foi atendido antes deste', 'laranja', 'arrow-down-up'),
   };
 
   document.getElementById('solModalBody').innerHTML = `
@@ -13125,6 +13240,7 @@ async function atenderSolicitacaoViatura(s, btnEl) {
     const pendPessoa = idRetira && (_assinaturas || []).find(a => a.colaboradorId === idRetira && a.statusCalc !== 'ASSINADO');
     if (pendPessoa) { toast(`<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(s.retirado_por_nome || 'Quem vai retirar')} tem uma assinatura pendente (de ${formatarData(pendPessoa.data)}). Resolva antes de iniciar o atendimento.`, 'error', 6000); return; }
     if (await bloqueadoPorInventario(s.armazem_id)) return;
+    if (!await solConferirFila(s)) return;
 
     fecharModalSolicitacao();
     showView('carga-viatura');
@@ -13217,6 +13333,9 @@ async function atenderSolicitacao(id, btnEl) {
     // sair da solicitação, em vez de deixar a pessoa montar o atendimento inteiro e só
     // descobrir na hora de concluir.
     if (await bloqueadoPorInventario(s.armazem_id || s.armazemId)) return;
+
+    // ── Fila do armazém (26/10/2026): pedido mais antigo na frente → atende na ordem ou pula com motivo ──
+    if (!await solConferirFila(s)) return;
 
     // ── Vincula a solicitação ao atendimento ──
     window._solicitacaoAtendimento = s;
@@ -31824,6 +31943,7 @@ async function cvFinalizarEntrega(necessitaLogistica, destinoEntregaId) {
     necessitaLogistica: !!necessitaLogistica,
     destinoEntregaId: necessitaLogistica ? destinoEntregaId : null,
     solicitacaoId: CV.solicitacaoId || null,
+    pularFilaMotivo: (CV.solicitacaoId && _solPuloFila[CV.solicitacaoId]) || '',
   };
   const res = await apiMovimentacao('/atendimentos', corpo);
   if (!res || res.ok === false || res.erro) { btn.disabled = false; cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
