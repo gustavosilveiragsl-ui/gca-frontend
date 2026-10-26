@@ -852,6 +852,25 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 .eq-aba{display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0}
 .eq-aba:hover{color:var(--text-1)}
 .eq-aba.ativa{border-bottom-color:var(--accent);color:var(--accent-text)}
+.cd-grupo{padding:12px 18px 6px;font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t);display:flex;justify-content:space-between}
+.cd-grupo span{color:var(--text-3);font-weight:500;letter-spacing:0;text-transform:none}
+.cd-item{display:flex;align-items:center;gap:12px;padding:10px 18px;border-top:1px solid var(--border)}
+.cd-foto{width:44px;height:44px;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text-3)}
+.cd-foto img{width:100%;height:100%;object-fit:cover;cursor:zoom-in}
+.cd-nome{flex:1;min-width:0;font-size:13px;font-weight:600;color:var(--text-1);overflow-wrap:anywhere}
+.cd-sub{font-size:10px;color:var(--text-3);font-weight:400;margin-top:2px}
+.cd-qtd{text-align:right;flex-shrink:0;min-width:64px}
+.cd-qtd b{font-size:18px;color:var(--text-1);font-family:var(--font-mono)}
+.cd-qtd span{display:block;font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px}
+.cd-tag{font-size:9px;font-weight:700;color:var(--t);background:color-mix(in srgb,var(--c) 18%,transparent);border-radius:10px;padding:1px 7px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+.cd-resumo{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--border)}
+.cd-resumo div{font-size:11px;color:var(--text-2);background:var(--bg);border:1px solid var(--border);border-radius:999px;padding:4px 12px}
+.cd-resumo b{color:var(--text-1)}
+.cd-funcs{display:flex;flex-wrap:wrap;gap:6px;padding:0 18px 12px 74px}
+@media(max-width:600px){.cd-funcs{padding-left:18px}}
+.cd-func{all:unset;box-sizing:border-box;font-size:11px;border:1px solid var(--border);border-radius:999px;padding:4px 11px;color:var(--text-2);cursor:pointer}
+.cd-func:hover{border-color:var(--c);color:var(--text-1)}
+.cd-func b{color:var(--text-1)}
 .eqt-grid{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:16px;padding:16px}
 @media(max-width:820px){.eqt-grid{grid-template-columns:1fr}}
 .eqt-tipo{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-1);cursor:pointer;font-family:var(--font-main)}
@@ -3105,19 +3124,38 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
       <!-- ── CONSULTA DE DOTAÇÃO ── -->
       <div class="view h-azul" id="view-consulta-dotacao">
-        <div class="card">
-          <div class="card-header">
-            <div><div class="card-title">Consulta de Dotação por Função</div><div class="card-sub">O que cada função deve receber</div></div>
-            <div class="card-actions">
-              <input class="search-box" type="text" id="consultaDotBusca" placeholder="Buscar função..." oninput="renderConsultaDotacao()">
-              <select class="form-input" id="consultaDotNivel" style="width:130px;font-size:11px" onchange="renderConsultaDotacao()">
-                <option value="">Todos os níveis</option>
-                <option value="Pleno">Pleno</option>
-                <option value="Junior">Junior</option>
-              </select>
-            </div>
+        <!-- Redesenho 26/10/2026: igual à Dotação por Função, só leitura, com a aba "Por item" -->
+        <div class="eq-abas">
+          <button class="eq-aba ativa" id="cdAbaFuncao" onclick="cdMudarAba('funcao')"><svg class=ic aria-hidden=true><use href=#i-hard-hat></use></svg> Por função</button>
+          <button class="eq-aba" id="cdAbaItem" onclick="cdMudarAba('item')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Por item</button>
+        </div>
+        <div class="dot2" id="cdPainelFuncao">
+          <div class="card dot2-lista">
+            <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-hard-hat></use></svg> Funções</div><div class="card-sub" id="cdFunSub">—</div></div></div>
+            <div class="dot2-busca"><input class="search-box" type="text" id="cdFunBusca" placeholder="Buscar função..." oninput="cdRenderFuncoes()" autocomplete="off"></div>
+            <div id="cdFunLista" class="dot2-funs"><div class="spinner"></div></div>
           </div>
-          <div id="consultaDotGrid" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px"></div>
+          <div class="card dot2-det" id="cdDet">
+            <div class="card-header">
+              <div><div class="card-title" id="cdDetTitulo">—</div><div class="card-sub">O que cada colaborador desta função pode receber</div></div>
+              <div class="card-actions">
+                <select class="form-input" id="cdNivel" style="width:auto;font-size:11px" onchange="cdRenderDetalhe()">
+                  <option value="">Todos os itens</option>
+                  <option value="Junior">O que o Júnior recebe</option>
+                </select>
+              </div>
+            </div>
+            <div id="cdDetCorpo"></div>
+          </div>
+        </div>
+        <div id="cdPainelItem" style="display:none">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Quem pode receber cada item</div><div class="card-sub" id="cdItemSub">—</div></div>
+              <div class="card-actions"><input class="search-box" type="text" id="cdItemBusca" placeholder="Buscar item..." oninput="cdRenderPorItem()" autocomplete="off"></div>
+            </div>
+            <div id="cdItemCorpo"></div>
+          </div>
         </div>
       </div>
       <!-- ── SOLICITAÇÕES DE COMPRA ── -->
@@ -21671,56 +21709,124 @@ async function confirmarTransfColab() {
 }
 
 // ── CONSULTA DOTAÇÃO ──
+// ════════════ CONSULTA DE DOTAÇÃO (redesenho 26/10/2026) ════════════
+// Só leitura, no mesmo jeito da Dotação por Função: funções à esquerda e, à direita, os itens da
+// escolhida (foto, quantidade e nível, por grupo). A aba "Por item" mostra quem pode receber cada item.
+let _cdFuncoes = [], _cdSel = null, _cdAba = 'funcao';
 async function carregarConsultaDotacao() {
-  const grid = document.getElementById('consultaDotGrid');
-  if (!grid) return;
-  grid.innerHTML = '<div style="grid-column:span 3;text-align:center;padding:32px"><div class="spinner"></div></div>';
+  const lista = document.getElementById('cdFunLista');
+  if (lista) lista.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  const [dot, fun] = await Promise.all([api('/dotacao'), api('/funcoes'), (_itens || []).length ? null : carregarItensAtendimento()]);
+  _consultaDotData = dot?.data || [];
+  // Funções do cadastro (com quantos colaboradores); sem o cadastro, as que aparecem na dotação
+  const porNome = {};
+  (fun?.ok ? fun.data || [] : []).forEach(f => { porNome[f.nome] = { nome: f.nome, colaboradores: f.colaboradores || 0 }; });
+  _consultaDotData.forEach(d => { if (d.funcao && !porNome[d.funcao]) porNome[d.funcao] = { nome: d.funcao, colaboradores: null }; });
+  _cdFuncoes = Object.values(porNome).map(f => ({ ...f, itens: _consultaDotData.filter(d => d.funcao === f.nome).length }))
+    .sort((a, b) => (b.itens > 0) - (a.itens > 0) || a.nome.localeCompare(b.nome, 'pt-BR'));
+  if (!_cdFuncoes.some(f => f.nome === _cdSel)) _cdSel = (_cdFuncoes.find(f => f.itens) || _cdFuncoes[0])?.nome || null;
+  cdRenderFuncoes();
+  cdRenderDetalhe();
+  cdRenderPorItem();
+  cdMudarAba(_cdAba);
+}
+// Mantido: outras partes chamam renderConsultaDotacao()
+function renderConsultaDotacao() { cdRenderFuncoes(); cdRenderDetalhe(); cdRenderPorItem(); }
 
-  const data = await api('/dotacao');
-  if (!data) return;
-  _consultaDotData = data.data || [];
-  renderConsultaDotacao();
+function cdMudarAba(aba) {
+  _cdAba = aba;
+  document.getElementById('cdAbaFuncao')?.classList.toggle('ativa', aba === 'funcao');
+  document.getElementById('cdAbaItem')?.classList.toggle('ativa', aba === 'item');
+  const pf = document.getElementById('cdPainelFuncao'), pi = document.getElementById('cdPainelItem');
+  if (pf) pf.style.display = aba === 'funcao' ? '' : 'none';
+  if (pi) pi.style.display = aba === 'item' ? '' : 'none';
 }
 
-function renderConsultaDotacao() {
-  const grid   = document.getElementById('consultaDotGrid');
-  const busca  = (document.getElementById('consultaDotBusca')?.value||'').toLowerCase();
-  const nivel  = document.getElementById('consultaDotNivel')?.value||'';
+// Foto do item: a do item da dotação; "qualquer tamanho" usa a de um tamanho da mesma família
+function cdFoto(d) {
+  const itens = _itens || [];
+  const it = d.item_id ? itens.find(i => i.id === d.item_id) : null;
+  const img = it?.img || itens.find(i => i.img && _extrairBaseItem(i.descricao) === (d.item_base_nome || ''))?.img || '';
+  return `<div class="cd-foto">${img ? `<img src="${escHtml(img)}" alt="" loading="lazy" onclick="abrirFotoItem(this.src)" onerror="this.remove()">` : '<svg class=ic aria-hidden=true><use href=#i-package></use></svg>'}</div>`;
+}
+const cdNomeItem = (d) => d.item_base_nome || d.item_descricao || '—';
+const cdSoPleno = (d) => String(d.nivel_minimo || 'Todos').toLowerCase() === 'pleno';
 
-  let lista = _consultaDotData;
-  if (busca) lista = lista.filter(d=>(d.funcao||'').toLowerCase().includes(busca));
-  if (nivel) lista = lista.filter(d=>d.nivel_minimo===nivel||d.nivel_minimo==='Todos');
+function cdRenderFuncoes() {
+  const el = document.getElementById('cdFunLista');
+  if (!el) return;
+  const q = _dotSemAcento(document.getElementById('cdFunBusca')?.value).trim();
+  const lista = _cdFuncoes.filter(f => !q || _dotSemAcento(f.nome).includes(q));
+  document.getElementById('cdFunSub').textContent = `${_dotPlural(_cdFuncoes.filter(f => f.itens).length, 'função', 'funções')} com dotação nesta filial`;
+  el.innerHTML = lista.length ? lista.map(f => `<button type="button" class="dot2-fun${f.nome === _cdSel ? ' on' : ''}" data-nome="${escHtml(f.nome)}" onclick="cdSelecionar(this.dataset.nome)">
+      <span class="dot2-fun-nome">${escHtml(f.nome)}</span>
+      <span class="dot2-fun-meta">${f.itens ? _dotPlural(f.itens, 'item', 'itens') : '<span class="dot2-zero">sem itens</span>'}${f.colaboradores != null ? ' · ' + _dotPlural(f.colaboradores, 'colaborador', 'colaboradores') : ''}</span>
+    </button>`).join('')
+    : `<div class="empty-state" style="padding:24px 12px"><div class="es-title">${q ? 'Nenhuma função com esse nome' : 'Nenhuma dotação cadastrada'}</div></div>`;
+}
 
-  // Agrupa por função
-  const grupos = {};
-  lista.forEach(d => {
-    const f = d.funcao||'—';
-    if (!grupos[f]) grupos[f] = [];
-    grupos[f].push(d);
-  });
+function cdSelecionar(nome) {
+  _cdSel = nome;
+  cdMudarAba('funcao');
+  cdRenderFuncoes();
+  cdRenderDetalhe();
+  if (window.innerWidth <= 900) document.getElementById('cdDet')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-  if (!Object.keys(grupos).length) {
-    grid.innerHTML = '<div style="grid-column:span 3;text-align:center;color:var(--text-3);padding:32px">Nenhuma dotação encontrada</div>';
+function cdRenderDetalhe() {
+  const corpo = document.getElementById('cdDetCorpo');
+  if (!corpo) return;
+  const f = _cdFuncoes.find(x => x.nome === _cdSel);
+  document.getElementById('cdDetTitulo').textContent = f ? f.nome : 'Escolha uma função';
+  if (!f) { corpo.innerHTML = '<div class="empty-state" style="padding:32px 12px"><div class="es-title">Escolha uma função na lista</div></div>'; return; }
+  const junior = document.getElementById('cdNivel')?.value === 'Junior';
+  const todos = _consultaDotData.filter(d => d.funcao === f.nome);
+  const itens = todos.filter(d => !junior || !cdSoPleno(d));
+  const nPleno = todos.filter(cdSoPleno).length;
+  const resumo = `<div class="cd-resumo">
+      <div><b>${todos.length}</b> ${todos.length === 1 ? 'item' : 'itens'} na dotação</div>
+      ${f.colaboradores != null ? `<div><b>${f.colaboradores}</b> ${f.colaboradores === 1 ? 'colaborador ativo' : 'colaboradores ativos'}</div>` : ''}
+      ${nPleno ? `<div><b>${nPleno}</b> só para Pleno</div>` : ''}
+    </div>`;
+  if (!itens.length) {
+    corpo.innerHTML = resumo + `<div class="empty-state" style="padding:28px 12px"><div class="es-title">${todos.length ? 'O Júnior desta função não recebe nenhum item' : 'Esta função ainda não tem dotação'}</div>
+      ${todos.length ? '' : '<div style="font-size:11px">A dotação é cadastrada em Cadastros → Dotação por Função.</div>'}</div>`;
     return;
   }
+  // Agrupa por grupo (sem grupo por último) e, dentro, por nome do item
+  const grupos = {};
+  itens.forEach(d => { const g = (d.grupo || '').trim() || 'Sem grupo'; (grupos[g] ||= []).push(d); });
+  const ordem = Object.keys(grupos).sort((a, b) => (a === 'Sem grupo') - (b === 'Sem grupo') || a.localeCompare(b, 'pt-BR'));
+  corpo.innerHTML = resumo + ordem.map(g => `
+    <div class="cd-grupo">${escHtml(g)}<span>${_dotPlural(grupos[g].length, 'item', 'itens')}</span></div>
+    ${grupos[g].sort((a, b) => cdNomeItem(a).localeCompare(cdNomeItem(b), 'pt-BR')).map(d => `<div class="cd-item">
+      ${cdFoto(d)}
+      <div class="cd-nome">${escHtml(cdNomeItem(d))}${!d.item_id ? '<span class="cd-tag">qualquer tamanho</span>' : ''}${cdSoPleno(d) ? '<span class="cd-tag">só Pleno</span>' : ''}
+        ${d.item_id && d.item_descricao && d.item_descricao !== cdNomeItem(d) ? `<div class="cd-sub">${escHtml(d.item_descricao)}</div>` : ''}</div>
+      <div class="cd-qtd"><b>${escHtml(d.quantidade_maxima || 1)}</b><span>qtd. máx.</span></div>
+    </div>`).join('')}`).join('');
+}
 
-  grid.innerHTML = Object.entries(grupos).map(([funcao, itens]) => `
-    <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
-      <div style="font-size:12px;font-weight:700;color:var(--text-1);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)">${funcao} <span style="font-size:10px;color:var(--text-3);font-weight:400">(${itens.length} iten(s))</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px">
-        ${itens.map(d=>{
-          const itemLocal = (_itens||[]).find(i=>i.id===d.item_id);
-          const img = itemLocal?.img;
-          return `<div style="text-align:center" title="${escHtml(d.item_base_nome||'—')} — Máx: ${d.quantidade_maxima||1}">
-            <div style="width:56px;height:56px;margin:0 auto 4px;border-radius:var(--radius-sm);overflow:hidden;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center">
-              ${img?`<img src="${img}" style="width:100%;height:100%;object-fit:cover">`:'<span style="font-size:20px"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span>'}
-            </div>
-            <div style="font-size:9px;color:var(--text-2);line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${d.item_base_nome||'—'}</div>
-            <div style="font-size:9px;color:var(--text-3);margin-top:2px">Máx: ${d.quantidade_maxima||1}</div>
-          </div>`;
-        }).join('')}
+function cdRenderPorItem() {
+  const corpo = document.getElementById('cdItemCorpo');
+  if (!corpo) return;
+  const q = _dotSemAcento(document.getElementById('cdItemBusca')?.value).trim();
+  // Um bloco por item (pelo nome do item na dotação), com as funções que têm ele
+  const porItem = {};
+  _consultaDotData.forEach(d => { const n = cdNomeItem(d); (porItem[n] ||= []).push(d); });
+  const nomes = Object.keys(porItem).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const achados = nomes.filter(n => !q || _dotSemAcento(n).includes(q) || porItem[n].some(d => _dotSemAcento(d.item_descricao).includes(q)));
+  document.getElementById('cdItemSub').textContent = `${_dotPlural(nomes.length, 'item', 'itens')} em alguma dotação · clique numa função para ver tudo o que ela recebe`;
+  corpo.innerHTML = achados.length ? achados.map(n => {
+    const linhas = porItem[n].slice().sort((a, b) => String(a.funcao).localeCompare(String(b.funcao), 'pt-BR'));
+    return `<div class="cd-item" style="border-top:1px solid var(--border)">
+        ${cdFoto(linhas[0])}
+        <div class="cd-nome">${escHtml(n)}<div class="cd-sub">${_dotPlural(new Set(linhas.map(d => d.funcao)).size, 'função recebe', 'funções recebem')}</div></div>
       </div>
-    </div>`).join('');
+      <div class="cd-funcs">${linhas.map(d => `<button type="button" class="cd-func" data-nome="${escHtml(d.funcao)}" onclick="cdSelecionar(this.dataset.nome)"
+          title="Ver a dotação de ${escHtml(d.funcao)}">${escHtml(d.funcao)} · máx. <b>${escHtml(d.quantidade_maxima || 1)}</b>${cdSoPleno(d) ? ' · só Pleno' : ''}</button>`).join('')}</div>`;
+  }).join('')
+    : `<div class="empty-state" style="padding:28px 12px"><div class="es-title">${q ? 'Nenhum item da dotação com esse nome' : 'Nenhuma dotação cadastrada'}</div></div>`;
 }
 
 // ═══════════════════════════════════════════
