@@ -848,6 +848,10 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 .ca-opc:has(input:checked){border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--bg))}
 .ca-opc strong{display:block;font-size:13px;color:var(--text-1)}
 .ca-opc span{font-size:11px;color:var(--text-3)}
+.eq-abas{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto}
+.eq-aba{display:flex;align-items:center;gap:6px;padding:10px 16px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0}
+.eq-aba:hover{color:var(--text-1)}
+.eq-aba.ativa{border-bottom-color:var(--accent);color:var(--accent-text)}
 .eqt-grid{display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:16px;padding:16px}
 @media(max-width:820px){.eqt-grid{grid-template-columns:1fr}}
 .eqt-tipo{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:9px 10px;margin-bottom:6px;border:1px solid var(--border);border-radius:var(--radius-sm);background:transparent;color:var(--text-1);cursor:pointer;font-family:var(--font-main)}
@@ -5575,7 +5579,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       </div>
       <!-- ── EQUIPES ── -->
       <div class="view h-ambar" id="view-equipes">
-        <div style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
+        <div class="eq-abas">
+          <button class="eq-aba ativa" id="eqAbaEquipes" onclick="eqMudarAba('equipes')"><svg class=ic aria-hidden=true><use href=#i-hard-hat></use></svg> Equipes <span class="sol-aba-n" id="eqAbaEquipesN" style="display:none"></span></button>
+          <button class="eq-aba" id="eqAbaTipos" onclick="eqMudarAba('tipos')"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Tipos e teto de material <span class="sol-aba-n" id="eqAbaTiposN" style="display:none"></span></button>
+        </div>
+        <div id="eqPainelEquipes" style="display:grid;grid-template-columns:minmax(320px,380px) 1fr;gap:20px;align-items:start">
           <div class="card">
             <div class="card-header"><div><div class="card-title">Cadastrar Equipe</div><div class="card-sub">Cadastre as equipes de campo</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
@@ -5585,7 +5593,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <div><label class="form-label">Atividades</label><input id="eqAtividades" class="form-input" placeholder="Ex: Manutenção elétrica"></div>
               <div id="eqTipoBloco"><label class="form-label">Tipo de equipe</label>
                 <select id="eqTipo" class="form-input"><option value="">— sem tipo (sem teto de material) —</option></select>
-                <div style="font-size:10px;color:var(--text-3);margin-top:3px">O tipo define quanto de cada material a equipe pode ter em mãos (cadastro abaixo).</div></div>
+                <div style="font-size:10px;color:var(--text-3);margin-top:3px">O tipo define quanto de cada material a equipe pode ter em mãos (aba "Tipos e teto de material").</div></div>
               <div><label class="form-label">Status</label>
                 <select id="eqStatus" class="form-input">
                   <option value="ativo">Ativo</option>
@@ -5605,8 +5613,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <tbody id="eqBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody></table>
           </div>
         </div>
-        <!-- Tipos de equipe e teto de material em mãos (26/10/2026) -->
-        <div class="card" style="margin-top:20px" id="eqtCard">
+        <!-- Tipos de equipe e teto de material em mãos (26/10/2026) — aba própria -->
+        <div class="card" id="eqtCard" style="display:none">
           <div class="card-header"><div>
             <div class="card-title"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Tipos de equipe e teto de material</div>
             <div class="card-sub">Quanto cada tipo de equipe pode ter em mãos de cada material sem serial (medidor não entra). Acima do teto, o Atendimento Material só entrega com motivo, por quem tem a permissão, e o portal da equipe não deixa pedir. Equipe sem tipo não tem teto.</div>
@@ -15586,6 +15594,7 @@ async function carregarEquipesView() {
   const data = await api('/equipes');
   if (!data) return;
   const lista = data.data || data.equipes || [];
+  eqContador('eqAbaEquipesN', lista.length);
   await eqtCarregar();
   const nomeTipo = Object.fromEntries((_eqtTipos || []).map(t => [t.id, t.nome]));
   tbody.innerHTML = lista.length ? lista.map(e => `<tr>
@@ -15601,15 +15610,30 @@ async function carregarEquipesView() {
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhuma equipe</div></div></td></tr>`;
 }
 
+// ── Abas da tela de Equipes (26/10/2026): "Equipes" e "Tipos e teto de material" ──
+let _eqAba = 'equipes';
+function eqMudarAba(aba) {
+  if (aba === 'tipos' && document.getElementById('eqAbaTipos')?.style.display === 'none') aba = 'equipes';
+  _eqAba = aba;
+  document.getElementById('eqAbaEquipes')?.classList.toggle('ativa', aba === 'equipes');
+  document.getElementById('eqAbaTipos')?.classList.toggle('ativa', aba === 'tipos');
+  const pe = document.getElementById('eqPainelEquipes'), pt = document.getElementById('eqtCard');
+  if (pe) pe.style.display = aba === 'equipes' ? 'grid' : 'none';
+  if (pt) pt.style.display = aba === 'tipos' ? '' : 'none';
+}
+function eqContador(id, n) { const el = document.getElementById(id); if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; } }
+
 // ── Tipos de equipe e teto de material em mãos (26/10/2026) ──
 let _eqtTipos = [], _eqtSel = null, _eqtEdit = null, _eqtSujo = false, _eqtSemTipo = 0;
 async function eqtCarregar() {
   const r = await api('/equipes/tipos');
-  const card = document.getElementById('eqtCard'), bloco = document.getElementById('eqTipoBloco');
-  // Servidor sem a migração: a tela fica como antes
-  if (!r?.ok || r.sem_migracao) { if (card) card.style.display = 'none'; if (bloco) bloco.style.display = 'none'; _eqtTipos = []; return; }
-  if (card) card.style.display = ''; if (bloco) bloco.style.display = '';
+  const aba = document.getElementById('eqAbaTipos'), bloco = document.getElementById('eqTipoBloco');
+  // Servidor sem a migração: a tela fica como antes (sem a aba de tipos)
+  if (!r?.ok || r.sem_migracao) { if (aba) aba.style.display = 'none'; if (bloco) bloco.style.display = 'none'; _eqtTipos = []; eqMudarAba('equipes'); return; }
+  if (aba) aba.style.display = ''; if (bloco) bloco.style.display = '';
   _eqtTipos = r.data || [];
+  eqContador('eqAbaTiposN', _eqtTipos.length);
+  eqMudarAba(_eqAba);
   _eqtSemTipo = r.sem_tipo || 0;
   const sel = document.getElementById('eqTipo');
   if (sel) {
@@ -15669,7 +15693,7 @@ function eqtRodape() {
   const txt = document.getElementById('eqtSujoTxt'), desc = document.getElementById('eqtBtnDescartar'), salvar = document.getElementById('eqtBtnSalvar');
   if (txt) txt.style.display = _eqtSujo ? '' : 'none';
   if (desc) desc.style.display = _eqtSujo ? '' : 'none';
-  if (salvar) salvar.disabled = !_eqtSujo;
+  if (salvar) { salvar.disabled = !_eqtSujo; salvar.style.opacity = _eqtSujo ? '' : '.45'; salvar.style.cursor = _eqtSujo ? '' : 'default'; }
 }
 function eqtSelecionar(id) {
   if (_eqtSujo && id !== _eqtSel && !confirm('Descartar as alterações dos tetos que não foram salvas?')) return;
@@ -15913,6 +15937,7 @@ async function salvarEquipe() {
 }
 
 function editarEquipe(id) {
+  eqMudarAba('equipes');
   api('/equipes').then(data => {
     const e = (data?.data||data?.equipes||[]).find(x => x.id === id);
     if (!e) return;
