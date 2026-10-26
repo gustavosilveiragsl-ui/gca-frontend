@@ -12689,7 +12689,7 @@ async function solConferirFila(s) {
             <span style="font-weight:700;color:var(--text-2);min-width:22px">${i + 1}º</span>
             <span style="flex:1;min-width:180px"><strong style="color:var(--text-1)">${escHtml(x.colaborador_nome || '—')}</strong>
               <span style="font-size:10px;color:var(--text-3);font-family:var(--font-mono);margin-left:4px">${escHtml(x.id)}</span>
-              <span style="display:block;font-size:11px;color:var(--text-3)">por ${escHtml(x.solicitante_nome || '—')} · ${x.dias_uteis === 0 ? 'hoje' : `há ${x.dias_uteis} dia${x.dias_uteis === 1 ? '' : 's'} úte${x.dias_uteis === 1 ? 'l' : 'is'}`}</span></span>
+              <span style="display:block;font-size:11px;color:var(--text-3)">por ${escHtml(x.solicitante_nome || '—')} · na fila desde ${x.desde ? formatarDataHora(x.desde).slice(0, 10) : '—'}</span></span>
             ${x.prioridade === 'Urgente' ? gcaSit('Urgente', 'vermelho', 'siren') : ''}
             <button class="row-action" data-abrir="${escHtml(x.id)}">Abrir</button>
           </div>`).join('')}${n > 8 ? `<div style="font-size:11px;color:var(--text-3)">… e mais ${n - 8}.</div>` : ''}</div>
