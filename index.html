@@ -848,6 +848,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 .ca-opc:has(input:checked){border-color:var(--c);background:color-mix(in srgb,var(--c) 10%,var(--bg))}
 .ca-opc strong{display:block;font-size:13px;color:var(--text-1)}
 .ca-opc span{font-size:11px;color:var(--text-3)}
+.sol-aba-n{margin-left:5px;padding:0 7px;border-radius:999px;background:var(--bg-hover);color:var(--text-2);font-size:10px;font-weight:700}
+#solAbaCancelarN{background:var(--red);color:#fff}
 </style>
 </head>
 <body>
@@ -2181,24 +2183,25 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           </div>
         </div>
 
-        <!-- ABAS ATIVAS / FINALIZADAS -->
-        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px">
-          <button id="solAbaAtivas" onclick="mudarAbaSol('ativas')"
-            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid var(--accent);color:var(--accent-text);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
-            Em Andamento
-          </button>
+        <!-- ABAS: em andamento (pendente/visualizado), uma por etapa depois do atendimento, finalizadas,
+             histórico e "para cancelar" (26/10/2026) -->
+        <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;overflow-x:auto;width:0;min-width:100%">
+          <button id="solAbaAtivas" onclick="mudarAbaSol('ativas')" title="Pendentes e visualizados, na ordem da fila de cada armazém"
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Em Andamento <span id="solAbaAtivasN" class="sol-aba-n" style="display:none"></span></button>
+          <button id="solAbaAtendidos" onclick="mudarAbaSol('atendidos')" title="Atendidos, esperando a assinatura do colaborador"
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Atendidos <span id="solAbaAtendidosN" class="sol-aba-n" style="display:none"></span></button>
+          <button id="solAbaAguardando" onclick="mudarAbaSol('aguardando')" title="Atendidos com logística, esperando a coleta"
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Aguardando transporte <span id="solAbaAguardandoN" class="sol-aba-n" style="display:none"></span></button>
+          <button id="solAbaTransito" onclick="mudarAbaSol('transito')" title="Com o transportador, a caminho da base"
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Em trânsito <span id="solAbaTransitoN" class="sol-aba-n" style="display:none"></span></button>
+          <button id="solAbaNaBase" onclick="mudarAbaSol('nabase')" title="Chegou na base: falta entregar ao colaborador e ele assinar"
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Na base destino <span id="solAbaNaBaseN" class="sol-aba-n" style="display:none"></span></button>
           <button id="solAbaFinalizadas" onclick="mudarAbaSol('finalizadas')"
-            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
-            Finalizadas
-          </button>
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Finalizadas</button>
           <button id="solAbaHistorico" onclick="mudarAbaSol('historico')"
-            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
-            Histórico Completo
-          </button>
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Histórico Completo</button>
           <button id="solAbaCancelar" onclick="mudarAbaSol('cancelar')" title="Pedidos parados há 5 dias úteis ou mais: atenda ou cancele. Sem ação, o GCA cancela no 7º dia útil."
-            style="padding:10px 20px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main)">
-            Para cancelar <span id="solAbaCancelarN" style="display:none;margin-left:4px;padding:0 7px;border-radius:999px;background:var(--red);color:#fff;font-size:10px;font-weight:700"></span>
-          </button>
+            style="padding:10px 12px;font-size:12px;font-weight:500;background:transparent;border:none;border-bottom:2px solid transparent;color:var(--text-3);cursor:pointer;margin-bottom:-1px;font-family:var(--font-main);white-space:nowrap;flex-shrink:0">Para cancelar <span id="solAbaCancelarN" class="sol-aba-n" style="display:none"></span></button>
         </div>
 
         <!-- FILTROS + TABELA -->
@@ -12463,52 +12466,40 @@ const SOL_LIMITE_PADRAO = 500, SOL_LIMITE_HISTORICO = 2000;
 let _solLimiteCarregado = 0;
 let _solAbaAtual    = 'ativas'; // 'ativas' ou 'finalizadas'
 
+// Abas (26/10/2026, pedido do usuário): "Em andamento" só com pendentes e visualizados; cada etapa
+// depois do atendimento tem a sua aba. Situações de cada aba de etapa:
+const SOL_ABAS = {
+  ativas:      { id: 'solAbaAtivas',      status: ['PENDENTE', 'VISUALIZADO'], sub: 'Pendentes e visualizados · na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)' },
+  atendidos:   { id: 'solAbaAtendidos',   status: ['ATENDIDO'],                sub: 'Atendidos, esperando a assinatura do colaborador' },
+  aguardando:  { id: 'solAbaAguardando',  status: ['AGUARDANDO TRANSPORTE'],   sub: 'Atendidos com logística, esperando a coleta pelo transportador' },
+  transito:    { id: 'solAbaTransito',    status: ['EM TRANSITO'],             sub: 'Com o transportador, a caminho da base' },
+  nabase:      { id: 'solAbaNaBase',      status: ['NA BASE DESTINO'],         sub: 'Chegaram na base: falta entregar ao colaborador e ele assinar' },
+  finalizadas: { id: 'solAbaFinalizadas', status: ['FINALIZADO'],              sub: 'Solicitações finalizadas' },
+  historico:   { id: 'solAbaHistorico',   status: null,                        sub: 'Todas as solicitações' },
+  cancelar:    { id: 'solAbaCancelar',    status: ['PENDENTE', 'VISUALIZADO'], sub: '' },
+};
+const SOL_ROTULO_STATUS = { PENDENTE: 'Pendente', VISUALIZADO: 'Visualizado', ATENDIDO: 'Atendido', 'AGUARDANDO TRANSPORTE': 'Aguard. Transporte',
+  'EM TRANSITO': 'Em Trânsito', 'NA BASE DESTINO': 'Na Base Destino', FINALIZADO: 'Finalizado', CANCELADO: 'Cancelado' };
 function mudarAbaSol(aba) {
   _solAbaAtual = aba;
-  const btnAt = document.getElementById('solAbaAtivas');
-  const btnFn = document.getElementById('solAbaFinalizadas');
-  const btnHi = document.getElementById('solAbaHistorico');
-  const btnCa = document.getElementById('solAbaCancelar');
-  if (btnCa) {
-    btnCa.style.borderBottom = aba === 'cancelar' ? '2px solid var(--accent)' : '2px solid transparent';
-    btnCa.style.color        = aba === 'cancelar' ? 'var(--accent-text)' : 'var(--text-3)';
-  }
-  if (btnAt) {
-    btnAt.style.borderBottom = aba === 'ativas' ? '2px solid var(--accent)' : '2px solid transparent';
-    btnAt.style.color        = aba === 'ativas' ? 'var(--accent-text)' : 'var(--text-3)';
-  }
-  if (btnFn) {
-    btnFn.style.borderBottom = aba === 'finalizadas' ? '2px solid var(--accent)' : '2px solid transparent';
-    btnFn.style.color        = aba === 'finalizadas' ? 'var(--accent-text)' : 'var(--text-3)';
-  }
-  if (btnHi) {
-    btnHi.style.borderBottom = aba === 'historico' ? '2px solid var(--accent)' : '2px solid transparent';
-    btnHi.style.color        = aba === 'historico' ? 'var(--accent-text)' : 'var(--text-3)';
-  }
-
-  const statusSel  = document.getElementById('solFiltroStatus');
-  const cardSub    = document.getElementById('solCardSub');
-
-  if (aba === 'ativas') {
-    // Mostra filtros normais sem FINALIZADO/CANCELADO
-    statusSel.innerHTML = `<option value="">Todos os status</option>
-      <option value="PENDENTE">Pendente</option>
-      <option value="VISUALIZADO">Visualizado</option>
-      <option value="ATENDIDO">Atendido</option>
-      <option value="AGUARDANDO TRANSPORTE">Aguard. Transporte</option>
-      <option value="EM TRANSITO">Em Trânsito</option>
-      <option value="NA BASE DESTINO">Na Base Destino</option>`;
-    cardSub.textContent = 'Solicitações em andamento · os em aberto na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)';
-  } else if (aba === 'cancelar') {
-    statusSel.innerHTML = `<option value="">Pendentes e visualizados</option>
-      <option value="PENDENTE">Pendente</option>
-      <option value="VISUALIZADO">Visualizado</option>`;
-    cardSub.textContent = `Parados há ${_solPrazo.dias_lista} dias úteis ou mais: atenda ou cancele. Sem ação, o GCA cancela no ${_solPrazo.dias_cancela}º dia útil.`;
-  } else {
-    // Mostra só FINALIZADAS (sem canceladas antigas)
-    statusSel.innerHTML = `<option value="FINALIZADO">Finalizadas</option>`;
-    cardSub.textContent = 'Solicitações finalizadas';
-  }
+  Object.entries(SOL_ABAS).forEach(([chave, cfg]) => {
+    const btn = document.getElementById(cfg.id);
+    if (!btn) return;
+    btn.style.borderBottom = chave === aba ? '2px solid var(--accent)' : '2px solid transparent';
+    btn.style.color        = chave === aba ? 'var(--accent-text)' : 'var(--text-3)';
+  });
+  const cfg = SOL_ABAS[aba] || SOL_ABAS.ativas;
+  const statusSel = document.getElementById('solFiltroStatus');
+  const cardSub   = document.getElementById('solCardSub');
+  // Filtro de situação: só faz sentido onde a aba junta mais de uma
+  const lista = cfg.status || Object.keys(SOL_ROTULO_STATUS);
+  statusSel.innerHTML = lista.length > 1
+    ? `<option value="">Todos os status</option>` + lista.map(st => `<option value="${st}">${SOL_ROTULO_STATUS[st]}</option>`).join('')
+    : `<option value="">${SOL_ROTULO_STATUS[lista[0]]}</option>`;
+  statusSel.disabled = lista.length <= 1;
+  cardSub.textContent = aba === 'cancelar'
+    ? `Parados há ${_solPrazo.dias_lista} dias úteis ou mais: atenda ou cancele. Sem ação, o GCA cancela no ${_solPrazo.dias_cancela}º dia útil.`
+    : cfg.sub;
   statusSel.value = '';
   _solFiltros.status = '';
   _solPagina = 1;
@@ -12612,6 +12603,12 @@ function atualizarKpisSolicitacoes() {
 }
 
 function filtrarSolicitacoes(campo, valor) {
+  // Cartão do topo com uma situação que fica em outra aba (ex.: Atendidos): vai para a aba dela
+  if (campo === 'status') {
+    const destino = Object.keys(SOL_ABAS).find(k => k !== 'cancelar' && k !== 'historico' && SOL_ABAS[k].status?.includes(valor));
+    if (destino && destino !== _solAbaAtual) mudarAbaSol(destino);
+    if (destino && SOL_ABAS[destino].status.length === 1) return;
+  }
   if (campo === 'status') {
     document.getElementById('solFiltroStatus').value = valor;
     _solFiltros.status = valor;
@@ -12640,9 +12637,12 @@ const SOL_ABERTOS = ['PENDENTE', 'VISUALIZADO'];
 const solNaFila = (s) => SOL_ABERTOS.includes(s.status) && s.fila && !s.fila.parada;
 const solParaCancelar = (s) => solNaFila(s) && s.fila.dias_uteis >= _solPrazo.dias_lista;
 function solAtualizarContadorCancelar() {
-  const n = (_solicitacoes || []).filter(solParaCancelar).length;
-  const el = document.getElementById('solAbaCancelarN');
-  if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; }
+  const conta = { solAbaCancelarN: (_solicitacoes || []).filter(solParaCancelar).length };
+  ['ativas', 'atendidos', 'aguardando', 'transito', 'nabase'].forEach(chave => {
+    const cfg = SOL_ABAS[chave];
+    conta[cfg.id + 'N'] = (_solicitacoes || []).filter(x => cfg.status.includes(x.status)).length;
+  });
+  Object.entries(conta).forEach(([id, n]) => { const el = document.getElementById(id); if (el) { el.textContent = n; el.style.display = n ? '' : 'none'; } });
 }
 // Em aberto primeiro, na ordem da fila; depois o resto como veio (mais recente primeiro)
 function solOrdenarFila(lista) {
@@ -12727,32 +12727,19 @@ function renderSolicitacoes() {
   const tbody = document.getElementById('solBody');
   if (!tbody) return;
 
-  const agora = new Date();
-  const PRAZO_CANCELADO_MS = 24 * 60 * 60 * 1000; // 24h
-
   let lista = _solicitacoes;
 
   // ── Filtra por aba ──
-  if (_solAbaAtual === 'ativas') {
-    // Aba principal: excluir FINALIZADO e CANCELADO com mais de 5 dias
-    lista = lista.filter(s => {
-      if (s.status === 'FINALIZADO') return false;
-      if (s.status === 'CANCELADO') {
-        // Mantém canceladas recentes (até 5 dias)
-        const dataCanc = new Date(s.atualizado_em || s.criado_em || s.data_hora || 0);
-        return (agora - dataCanc) < PRAZO_CANCELADO_MS;
-      }
-      return true;
-    });
-  } else if (_solAbaAtual === 'finalizadas') {
-    // Aba finalizadas: só FINALIZADO
-    lista = lista.filter(s => s.status === 'FINALIZADO');
-  } else if (_solAbaAtual === 'cancelar') {
+  const abaCfg = SOL_ABAS[_solAbaAtual];
+  if (_solAbaAtual === 'cancelar') {
     // Parados há 5 dias úteis ou mais: os que cancelam primeiro no topo
     lista = lista.filter(solParaCancelar).sort((a, b) => String(a.fila.cancela_em).localeCompare(String(b.fila.cancela_em)));
+  } else if (abaCfg?.status) {
+    // Em andamento só pendentes e visualizados; cada etapa na sua aba
+    lista = lista.filter(s => abaCfg.status.includes(s.status));
   }
+  // Aba 'historico': mostra TUDO
   if (_solAbaAtual === 'ativas') lista = solOrdenarFila(lista);
-  // Aba 'historico': mostra TUDO, sem filtro de tempo nem status — busca completa
 
   const { status, prioridade, armazem, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
