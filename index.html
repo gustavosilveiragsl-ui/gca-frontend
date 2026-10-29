@@ -4275,8 +4275,13 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <label class="form-label">E-mails que recebem o alerta <span style="color:var(--text-3);font-weight:400;text-transform:none">(separados por vírgula)</span></label>
               <textarea id="cmAlertaEmails" class="form-input" rows="3" placeholder="email1@empresa.com, email2@empresa.com..." style="resize:vertical"></textarea>
             </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-primary" onclick="cmAlertaSalvar(this)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar</button>
+              <select id="cmAlertaFormato" class="form-input" style="width:auto" title="Formato do e-mail de teste (o envio diário continua com a lista completa)">
+                <option value="completo">Teste: lista completa (como está hoje)</option>
+                <option value="resumo_seriais">Teste: resumo por equipe + seriais curtos</option>
+                <option value="numeros">Teste: só os números (sem lista)</option>
+              </select>
               <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="cmAlertaTestar(this)" title="Manda agora para a lista salva, com [TESTE] no assunto"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> Testar envio</button>
               <button class="btn btn-ghost" onclick="document.getElementById('cmAlertaPainel').classList.add('hidden')">✕ Fechar</button>
             </div>
@@ -24576,10 +24581,11 @@ async function cmAlertaSalvar(btn) {
 async function cmAlertaTestar(btn) {
   btn.disabled = true;
   cmAlertaMensagem('Enviando o e-mail de teste...', '#f59e0b');
-  const res = await api('/enel/alerta-medidores/testar', { method: 'POST' });
+  const sel = document.getElementById('cmAlertaFormato');
+  const res = await api('/enel/alerta-medidores/testar', { method: 'POST', body: JSON.stringify({ formato: sel?.value || 'completo' }) });
   btn.disabled = false;
   if (!res?.ok) { cmAlertaMensagem(res?.erro || 'Erro ao enviar', '#ef4444'); toast(res?.erro || 'Erro ao enviar o e-mail', 'error'); return; }
-  cmAlertaMensagem('E-mail de teste enviado para: ' + res.enviado_para.join(', '), '#22c55e');
+  cmAlertaMensagem(`E-mail de teste (${sel ? sel.options[sel.selectedIndex].textContent.replace(/^Teste: /, '') : 'lista completa'}) enviado para: ` + res.enviado_para.join(', '), '#22c55e');
   toast('E-mail de teste enviado!', 'success');
 }
 
