@@ -4255,9 +4255,33 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
       <!-- CONTROLE DE MEDIDORES -->
       <div class="view h-ceu" id="view-enel-medidores">
-        <div style="margin-bottom:20px">
-          <div class="page-title">Controle de Medidores</div>
-          <div class="page-sub">Gerencie seriais, status e localização dos medidores</div>
+        <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap">
+          <div>
+            <div class="page-title">Controle de Medidores</div>
+            <div class="page-sub">Gerencie seriais, status e localização dos medidores</div>
+          </div>
+          <button class="btn btn-ghost" data-perm-btn="enel_alerta_medidores|ver_enel" onclick="cmAlertaAbrir()" title="Quem recebe o e-mail diário dos medidores bloqueados com as equipes"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> Alerta por e-mail</button>
+        </div>
+
+        <!-- Alerta diário de medidores bloqueados (29/10/2026): quem recebe -->
+        <div id="cmAlertaPainel" class="card hidden" style="margin-bottom:16px;border:1px solid rgba(239,68,68,.3)">
+          <div class="card-header"><div>
+            <div class="card-title"><svg class=ic aria-hidden=true><use href=#i-lock></use></svg> Alerta diário de medidores bloqueados</div>
+            <div class="card-sub">Todo dia, junto com os alertas de laudos, sai um e-mail com as equipes que têm medidor há mais de 10 dias sem instalar (a equipe fica bloqueada para receber o mesmo modelo). Só sai quando há medidor bloqueado.</div>
+          </div></div>
+          <div style="padding:16px;display:flex;flex-direction:column;gap:14px">
+            <div id="cmAlertaHoje" style="font-size:12px;color:var(--text-2)"></div>
+            <div>
+              <label class="form-label">E-mails que recebem o alerta <span style="color:var(--text-3);font-weight:400;text-transform:none">(separados por vírgula)</span></label>
+              <textarea id="cmAlertaEmails" class="form-input" rows="3" placeholder="email1@empresa.com, email2@empresa.com..." style="resize:vertical"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary" onclick="cmAlertaSalvar(this)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar</button>
+              <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="cmAlertaTestar(this)" title="Manda agora para a lista salva, com [TESTE] no assunto"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> Testar envio</button>
+              <button class="btn btn-ghost" onclick="document.getElementById('cmAlertaPainel').classList.add('hidden')">✕ Fechar</button>
+            </div>
+            <div id="cmAlertaMsg" style="font-size:12px;min-height:16px"></div>
+          </div>
         </div>
         <!-- Botões principais -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px">
@@ -5034,7 +5058,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <button class="btn btn-ghost" style="color:#0ea5e9;border-color:#0ea5e9" onclick="abrirLocalizadorNR10()"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Localizador NR10</button>
             <button class="btn btn-ghost" style="color:#a855f7;border-color:#a855f7" data-perm-btn="gerenciar_seriais" onclick="abrirDevolucaoNR10()"><svg class=ic aria-hidden=true><use href=#i-mailbox></use></svg> Devolver ao Estoque</button>
             <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" data-perm-btn="limpar_descartes" onclick="limparDescartes()"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> Limpar Descartes</button>
-            <button class="btn btn-ghost" onclick="abrirValoresLaudo()"><svg class=ic aria-hidden=true><use href=#i-circle-dollar-sign></use></svg> Valores de Laudo</button>
+            <button class="btn btn-ghost" onclick="abrirValoresLaudo()" title="Valor do laudo e tipo de ensaio (laudo elétrico ou calibração) de cada item"><svg class=ic aria-hidden=true><use href=#i-circle-dollar-sign></use></svg> Valores e tipo de ensaio</button>
             <button class="btn btn-ghost" style="color:#16a34a;border-color:#16a34a" onclick="laudosExportarExcel()" title="Exporta o que está na tela, com os filtros aplicados"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Exportar Excel</button>
             <button class="btn btn-ghost" data-perm-btn="inserir_laudo|ver_laudos_viatura" onclick="toggleConfigNR10()"><svg class=ic aria-hidden=true><use href=#i-settings></use></svg> Configurações</button>
           </div>
@@ -5098,8 +5122,15 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
         <!-- Filtros -->
         <div class="card" style="margin-bottom:12px">
-          <div style="padding:12px;display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
+          <div style="padding:12px;display:grid;grid-template-columns:2fr 1.1fr 1.4fr 1fr 1fr 1fr 1fr auto;gap:8px;align-items:end">
             <div><label class="form-label">Buscar item / serial</label><input id="laudoFiltro" class="form-input" placeholder="Nome, serial ou rastreio..." oninput="laudosRender_()"></div>
+            <div><label class="form-label">Tipo de ensaio</label>
+              <select id="laudoFiltroTipo" class="form-input" onchange="laudosRender_()">
+                <option value="">Todos</option>
+                <option value="LAUDO_ELETRICO">Laudo elétrico</option>
+                <option value="CALIBRACAO">Calibração</option>
+              </select>
+            </div>
             <div><label class="form-label">Armazém</label>
               <select id="laudoFiltroArmazem" class="form-input" onchange="laudosRender_()" title="Seriais, pendências e saldo do armazém escolhido">
                 <option value="">Todos os armazéns</option>
@@ -5141,6 +5172,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           <table style="width:100%;border-collapse:collapse" id="tbLaudos">
             <thead><tr style="border-bottom:1px solid var(--border)">
               <th style="padding:10px;text-align:left;font-size:10px;color:var(--text-3)">Item</th>
+              <th style="padding:10px;text-align:left;font-size:10px;color:var(--text-3)" title="Laudo elétrico ou calibração — troque em 'Valores e tipo de ensaio'">Tipo de ensaio</th>
               <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3)">Seriais</th>
               <th style="padding:10px;text-align:center;font-size:10px;color:var(--text-3)">Localização</th>
               <th style="padding:10px;font-size:10px;color:var(--text-3)" colspan="2">Status</th>
@@ -6736,8 +6768,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
   <div class="modal-box modal-alto" style="max-width:780px;width:100%">
     <div class="modal-header">
       <div>
-        <div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-circle-dollar-sign></use></svg> Tabela de valores de laudo</div>
+        <div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-circle-dollar-sign></use></svg> Valores e tipo de ensaio por item</div>
         <div style="font-size:11px;color:var(--text-3)">Valor fixo do ensaio NR10 de cada item. Itens controlados por par: informe o valor do PAR (cada peça enviada soma metade).</div>
+        <div style="font-size:11px;color:var(--text-3)">Tipo de ensaio: laudo elétrico ou calibração — aparece na Gestão de Laudos e no Excel. Sem escolha salva, vale o nome (alicate amperímetro e ADR = calibração).</div>
       </div>
       <button class="modal-close" onclick="fecharValoresLaudo()">×</button>
     </div>
@@ -6751,7 +6784,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       <div id="vlResumo" style="font-size:11px;color:var(--text-3)"></div>
       <div style="overflow:auto;max-height:430px">
         <table>
-          <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Un.</th><th style="text-align:right;width:160px">Valor do laudo (R$)</th></tr></thead>
+          <thead><tr><th>Item</th><th>Código</th><th style="text-align:center">Un.</th><th style="width:170px">Tipo de ensaio</th><th style="text-align:right;width:160px">Valor do laudo (R$)</th></tr></thead>
           <tbody id="vlBody"></tbody>
         </table>
       </div>
@@ -6759,7 +6792,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
     <div class="modal-footer">
       <span id="vlAlteracoes" style="font-size:11px;color:var(--yellow);margin-right:auto"></span>
       <button class="btn btn-ghost" onclick="fecharValoresLaudo()">Fechar</button>
-      <button class="btn btn-primary" id="vlBtnSalvar" data-perm-btn="inserir_laudo" onclick="salvarValoresLaudo(this)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar valores</button>
+      <button class="btn btn-primary" id="vlBtnSalvar" data-perm-btn="inserir_laudo" onclick="salvarValoresLaudo(this)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar</button>
     </div>
   </div>
 </div>
@@ -18827,6 +18860,7 @@ const PERMISSOES_SCHEMA = {
     enel_solicitacoes:'Solicitações da concessionária',
     enel_entrada_saida:'Entrada e saída do estoque',
     enel_medidores:'Controle de Medidores (consultar)',
+    enel_alerta_medidores:'E-mail diário de medidores bloqueados (escolher quem recebe)',
     enel_controle_materiais:'Controle de Materiais por equipe (consultar)',
     enel_consulta_tdc:'Consulta TdC e Baixas por TdC (consultar)',
     enel_consulta_estoque:'Consulta Estoque e Consulta Saídas (consultar)',
@@ -23363,7 +23397,7 @@ function laudosAtualizarContadores_(lista) {
 }
 
 function laudosLimparFiltros_() {
-  ['laudoFiltro','laudoFiltroStatus','laudoFiltroLocal','laudoFiltroVencDe','laudoFiltroVencAte'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['laudoFiltro','laudoFiltroTipo','laudoFiltroStatus','laudoFiltroLocal','laudoFiltroVencDe','laudoFiltroVencAte'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const arm = document.getElementById('laudoFiltroArmazem');
   if (arm && !arm.disabled) arm.value = '';
   laudosRender_();
@@ -23380,14 +23414,14 @@ function laudosRender_() {
 
   // Agrupa por item
   const grupos = {};
-  lista.forEach(x=>{ const k=x.itemId||x.itemNome; if(!grupos[k]) grupos[k]={itemId:x.itemId,itemNome:x.itemNome,seriais:[]}; grupos[k].seriais.push(x); });
+  lista.forEach(x=>{ const k=x.itemId||x.itemNome; if(!grupos[k]) grupos[k]={itemId:x.itemId,itemNome:x.itemNome,tipoEnsaio:laudosTipoDe_(x),seriais:[]}; grupos[k].seriais.push(x); });
   const arr = Object.values(grupos).sort((a,b)=>a.itemNome.localeCompare(b.itemNome));
 
   if (info) info.textContent = `${arr.length} item(ns) · ${lista.length} serial(is)`;
   tbody.innerHTML = '';
 
   if (!arr.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum ativo encontrado</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="padding:20px;text-align:center;color:var(--text-3)">Nenhum ativo encontrado</td></tr>`;
     return;
   }
 
@@ -23431,6 +23465,7 @@ function laudosRender_() {
     trGrupo.onclick = () => laudosToggleGrupo_(gid);
     trGrupo.innerHTML = `
       <td style="padding:12px;font-weight:700;color:var(--text-1)"><span id="icon_${gid}" style="margin-right:8px;font-size:11px">▶</span>${escHtml(grupo.itemNome)}</td>
+      <td style="padding:12px">${laudosSeloTipo_(grupo.tipoEnsaio)}</td>
       <td style="padding:12px;text-align:center"><span style="color:var(--accent-text);font-size:11px;font-weight:700">${s.length} serial(is)</span></td>
       <td style="padding:12px;text-align:center;font-size:11px;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${emEst} · <svg class=ic aria-hidden=true><use href=#i-user></use></svg> ${comColab}${aguard>0?` · <svg class=ic aria-hidden=true><use href=#i-microscope></use></svg> ${aguard}`:''}${enviado>0?` · <svg class=ic aria-hidden=true><use href=#i-send></use></svg> ${enviado}`:''}${descartados>0?` · <svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> ${descartados}`:''}</td>
       <td style="padding:12px" colspan="2">${badge}</td>
@@ -23441,7 +23476,7 @@ function laudosRender_() {
     trContent.id = gid;
     trContent.style.display = 'none';
     const td = document.createElement('td');
-    td.colSpan = 7;
+    td.colSpan = 8;
     td.style.cssText = 'padding:0;background:var(--bg)';
     td.innerHTML = `<div style="padding:8px 16px">
       <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -23503,8 +23538,20 @@ function laudosRender_() {
   });
 }
 
+// Tipo de ensaio do item (29/10/2026, auditoria): vem do servidor; sem ele, o nome decide
+// (alicate amperímetro e ADR = calibração), a mesma regra de services/tipo_ensaio.js
+const LAUDOS_TIPO_TXT = { LAUDO_ELETRICO: 'Laudo elétrico', CALIBRACAO: 'Calibração' };
+function laudosTipoDe_(x) {
+  if (LAUDOS_TIPO_TXT[x?.tipoEnsaio]) return x.tipoEnsaio;
+  return /ALICATE[\s-]*AMPER|\bADR(?=\d|\b)|AFERI[CÇ]|CALIBRA/i.test(String(x?.itemNome || '')) ? 'CALIBRACAO' : 'LAUDO_ELETRICO';
+}
+function laudosSeloTipo_(tipo) {
+  return tipo === 'CALIBRACAO' ? gcaSit('Calibração', 'teal', 'ruler') : gcaSit('Laudo elétrico', 'azul', 'zap');
+}
+
 function laudosFiltrarLista_() {
   const texto  = (document.getElementById('laudoFiltro')?.value||'').toLowerCase();
+  const tipo   = document.getElementById('laudoFiltroTipo')?.value||'';
   const status = document.getElementById('laudoFiltroStatus')?.value||'';
   const local  = document.getElementById('laudoFiltroLocal')?.value||'';
   const vencDe = document.getElementById('laudoFiltroVencDe')?.value||'';
@@ -23512,6 +23559,7 @@ function laudosFiltrarLista_() {
 
   let lista = laudosDoArmazem_(__LAUDOS_NR10__.lista || []);
   if (texto) lista = lista.filter(x=>(x.itemNome||'').toLowerCase().includes(texto)||(x.serial||'').toLowerCase().includes(texto)||(x.rastreio||'').toLowerCase().includes(texto)||(x.nomeColab||'').toLowerCase().includes(texto));
+  if (tipo)   lista = lista.filter(x=>laudosTipoDe_(x)===tipo);
   if (status) lista = lista.filter(x=>x.status===status);
   if (local)  lista = lista.filter(x=>x.statusLocal===local);
   if (vencDe) lista = lista.filter(x=>x.dataVenc&&x.dataVenc.slice(0,10)>=vencDe);
@@ -23545,16 +23593,17 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     String(a.itemNome || '').localeCompare(String(b.itemNome || ''), 'pt-BR') ||
     String(a.serial || '').localeCompare(String(b.serial || ''), 'pt-BR', { numeric: true }));
 
-  const seriais = [['Item', 'Código', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Rastreio (nº laudo / lote)', 'Data do ensaio',
+  const tipoTxt = (x) => LAUDOS_TIPO_TXT[laudosTipoDe_(x)];
+  const seriais = [['Item', 'Código', 'Tipo de ensaio', 'Serial', 'Local', 'Colaborador', 'Status do laudo', 'Rastreio (nº laudo / lote)', 'Data do ensaio',
     'Validade (dias)', 'Vencimento', 'Dias restantes', 'Motivo do descarte', 'Última movimentação', 'Link do laudo', 'Armazém']];
   ordenada.forEach(x => {
     const it = itemPorId[x.itemId];
     if (x.status === 'PENDENTE_CADASTRO') {
-      seriais.push([x.itemNome || '', it?.codigo || '', '(sem serial)', x.nomeArmazem || 'Estoque', '', LAUDOS_STATUS_TXT.PENDENTE_CADASTRO, '', '', '', '', '', '', '', '', x.nomeArmazem || '']);
+      seriais.push([x.itemNome || '', it?.codigo || '', tipoTxt(x), '(sem serial)', x.nomeArmazem || 'Estoque', '', LAUDOS_STATUS_TXT.PENDENTE_CADASTRO, '', '', '', '', '', '', '', '', x.nomeArmazem || '']);
       return;
     }
     seriais.push([
-      x.itemNome || '', it?.codigo || '', x.serial || '', LAUDOS_LOCAL_TXT[x.statusLocal] || x.statusLocal || '',
+      x.itemNome || '', it?.codigo || '', tipoTxt(x), x.serial || '', LAUDOS_LOCAL_TXT[x.statusLocal] || x.statusLocal || '',
       x.statusLocal === 'COM_COLAB' ? (x.nomeColab || '') : '', LAUDOS_STATUS_TXT[x.status] || x.status || '',
       x.rastreio || x.loteLaudo || '', dataBR(x.dataEnsaio), numero(x.validadeDias), dataBR(x.dataVenc), numero(x.diasRest),
       x.statusLocal === 'DESCARTE' ? (x.motivo || '') : '', dataHoraBR(x.dtUltMov), x.anexoUrl || '', x.nomeArmazem || '',
@@ -23564,10 +23613,10 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
   const grupos = new Map();
   ordenada.forEach(x => {
     const k = x.itemId || x.itemNome;
-    if (!grupos.has(k)) grupos.set(k, { itemId: x.itemId, itemNome: x.itemNome, s: [] });
+    if (!grupos.has(k)) grupos.set(k, { itemId: x.itemId, itemNome: x.itemNome, tipo: tipoTxt(x), s: [] });
     grupos.get(k).s.push(x);
   });
-  const resumo = [['Item', 'Código', 'Seriais cadastrados', 'Em estoque', 'Com colaborador', 'Aguardando laudo', 'Enviado para laudo',
+  const resumo = [['Item', 'Código', 'Tipo de ensaio', 'Seriais cadastrados', 'Em estoque', 'Com colaborador', 'Aguardando laudo', 'Enviado para laudo',
     'Descarte', 'Laudo OK', 'Alerta 30 dias', 'Vencidos', 'Sem laudo', 'Pendentes de cadastro', 'Saldo (armazéns da tela)',
     'Unidade', 'Seriais esperados em estoque', 'Situação']];
   [...grupos.values()].forEach(g => {
@@ -23582,7 +23631,7 @@ function laudosMontarPlanilhas_(lista, { itens = [], saldos = [], armazemPrincip
     const situacao = pend > 0 ? `Faltam ${pend} serial(is)`
       : emEst > esperados ? `${emEst - esperados} serial(is) a mais que o saldo` : 'Consistente';
     resumo.push([
-      g.itemNome || '', it?.codigo || '', conta(cadastrado), emEst,
+      g.itemNome || '', it?.codigo || '', g.tipo, conta(cadastrado), emEst,
       conta(x => x.statusLocal === 'COM_COLAB'), conta(x => x.statusLocal === 'AGUARDANDO_LAUDO'),
       conta(x => x.statusLocal === 'ENVIADO_LAUDO'), conta(x => x.statusLocal === 'DESCARTE'),
       conta(x => x.status === 'OK'), conta(x => x.status === 'ALERTA_30'), conta(x => x.status === 'VENCIDO'),
@@ -23622,6 +23671,7 @@ function laudosExportarExcel() {
     [],
     ['Filtros aplicados', filtrado ? 'Sim — só o que estava na tela' : 'Nenhum — tudo'],
     ['Busca', document.getElementById('laudoFiltro')?.value || '—'],
+    ['Tipo de ensaio', textoSelect('laudoFiltroTipo')],
     ['Status', textoSelect('laudoFiltroStatus')],
     ['Local', textoSelect('laudoFiltroLocal')],
     ['Vencimento de', dataFiltro('laudoFiltroVencDe')],
@@ -23641,8 +23691,8 @@ function laudosExportarExcel() {
       }
       XLSX.utils.book_append_sheet(wb, ws, nome);
     };
-    aba('Seriais', seriais, [34, 12, 16, 18, 30, 20, 18, 14, 14, 14, 14, 36, 18, 40, 28], true);
-    aba('Resumo por item', resumo, [34, 12, 12, 11, 15, 15, 15, 10, 10, 13, 10, 10, 15, 16, 9, 18, 32], true);
+    aba('Seriais', seriais, [34, 12, 16, 16, 18, 30, 20, 18, 14, 14, 14, 14, 36, 18, 40, 28], true);
+    aba('Resumo por item', resumo, [34, 12, 16, 12, 11, 15, 15, 15, 10, 10, 13, 10, 10, 15, 16, 9, 18, 32], true);
     aba('Filtros', filtros, [26, 44], false);
     const nome = `laudos_nr10_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}${filtrado ? '_filtrado' : ''}.xlsx`;
     XLSX.writeFile(wb, nome);
@@ -23662,7 +23712,7 @@ function laudosToggleGrupo_(gid) {
 async function laudosCarregar_() {
   const tbody = document.getElementById('tbLaudosTbody');
   const info  = document.getElementById('laudoInfo');
-  if (tbody) tbody.innerHTML = `<tr><td colspan="7" style="padding:40px;text-align:center">
+  if (tbody) tbody.innerHTML = `<tr><td colspan="8" style="padding:40px;text-align:center">
     <div class="spinner" style="width:32px;height:32px;border-width:3px;margin:0 auto 12px"></div>
     <div style="font-size:13px;font-weight:600;color:var(--text-2)">Carregando laudos NR10...</div>
     <div style="font-size:11px;color:var(--text-3);margin-top:4px">Buscando seriais e laudos no banco de dados</div>
@@ -24484,6 +24534,53 @@ async function testarEmailNR10() {
     if (msg) { msg.style.color='#ef4444'; msg.textContent=''+(res?.erro||'Erro ao enviar'); }
     toast(res?.erro||'Erro ao enviar email','error');
   }
+}
+
+// ═══════════════════════════════════════════
+// ALERTA DE MEDIDORES BLOQUEADOS (29/10/2026) — e-mail diário com as equipes que têm medidor
+// há mais de 10 dias sem instalar. Quem recebe: lista por filial, no Controle de Medidores.
+// ═══════════════════════════════════════════
+function cmAlertaMensagem(texto, cor) {
+  const msg = document.getElementById('cmAlertaMsg');
+  if (msg) { msg.style.color = cor || 'var(--text-3)'; msg.textContent = texto || ''; }
+}
+
+async function cmAlertaAbrir() {
+  const painel = document.getElementById('cmAlertaPainel');
+  if (!painel) return;
+  if (!painel.classList.contains('hidden')) { painel.classList.add('hidden'); return; }
+  painel.classList.remove('hidden');
+  cmAlertaMensagem('');
+  const hoje = document.getElementById('cmAlertaHoje');
+  if (hoje) hoje.textContent = 'Carregando...';
+  const res = await api('/enel/alerta-medidores');
+  if (!res?.ok) { if (hoje) hoje.textContent = ''; cmAlertaMensagem(res?.erro || 'Erro ao carregar', '#ef4444'); return; }
+  document.getElementById('cmAlertaEmails').value = (res.emails || []).join(', ');
+  const h = res.hoje || {};
+  if (hoje) hoje.innerHTML = h.medidores
+    ? `<svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Se o e-mail saísse agora: <strong>${h.medidores}</strong> medidor(es) bloqueado(s) em <strong>${h.equipes}</strong> equipe(s).`
+    : '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Hoje nenhuma equipe tem medidor há mais de 10 dias: o e-mail não sairia.';
+}
+
+async function cmAlertaSalvar(btn) {
+  btn.disabled = true;
+  cmAlertaMensagem('Salvando...');
+  const res = await api('/enel/alerta-medidores', { method: 'PUT', body: JSON.stringify({ emails: document.getElementById('cmAlertaEmails').value }) });
+  btn.disabled = false;
+  if (!res?.ok) { cmAlertaMensagem(res?.erro || 'Erro ao salvar', '#ef4444'); toast(res?.erro || 'Erro ao salvar', 'error'); return; }
+  document.getElementById('cmAlertaEmails').value = (res.emails || []).join(', ');
+  cmAlertaMensagem(res.emails?.length ? `Salvo: ${res.emails.length} e-mail(s) recebem o alerta.` : 'Salvo: lista vazia — ninguém recebe o alerta.', '#22c55e');
+  toast('E-mails do alerta salvos!', 'success');
+}
+
+async function cmAlertaTestar(btn) {
+  btn.disabled = true;
+  cmAlertaMensagem('Enviando o e-mail de teste...', '#f59e0b');
+  const res = await api('/enel/alerta-medidores/testar', { method: 'POST' });
+  btn.disabled = false;
+  if (!res?.ok) { cmAlertaMensagem(res?.erro || 'Erro ao enviar', '#ef4444'); toast(res?.erro || 'Erro ao enviar o e-mail', 'error'); return; }
+  cmAlertaMensagem('E-mail de teste enviado para: ' + res.enviado_para.join(', '), '#22c55e');
+  toast('E-mail de teste enviado!', 'success');
 }
 
 // ═══════════════════════════════════════════
@@ -25458,16 +25555,18 @@ async function remRecalcularValores() {
 // ═══════════════════════════════════════════
 let _vlItens = [];
 let _vlEditados = {}; // item_id → valor digitado ('' = sem valor)
+let _vlTipoEditados = {}; // item_id → LAUDO_ELETRICO | CALIBRACAO (escolha ainda não salva)
 
 async function abrirValoresLaudo() {
   document.getElementById('modalValoresLaudo').classList.remove('hidden');
   document.getElementById('vlBusca').value = '';
-  document.getElementById('vlBody').innerHTML = '<tr><td colspan="4"><div class="spinner" style="margin:14px auto"></div></td></tr>';
+  document.getElementById('vlBody').innerHTML = '<tr><td colspan="5"><div class="spinner" style="margin:14px auto"></div></td></tr>';
   _vlEditados = {};
+  _vlTipoEditados = {};
   vlAtualizarResumo();
   const res = await api('/laudos/valores-laudo');
   if (!res?.ok) {
-    document.getElementById('vlBody').innerHTML = `<tr><td colspan="4" style="color:var(--red);font-size:12px">${escHtml(res?.erro || 'Erro ao carregar a tabela')}</td></tr>`;
+    document.getElementById('vlBody').innerHTML = `<tr><td colspan="5" style="color:var(--red);font-size:12px">${escHtml(res?.erro || 'Erro ao carregar a tabela')}</td></tr>`;
     return;
   }
   _vlItens = res.data || [];
@@ -25476,13 +25575,25 @@ async function abrirValoresLaudo() {
 }
 
 function fecharValoresLaudo() {
-  if (Object.keys(_vlEditados).length && !confirm('Há valores alterados que não foram salvos. Fechar mesmo assim?')) return;
+  if ((Object.keys(_vlEditados).length || Object.keys(_vlTipoEditados).length) && !confirm('Há alterações que não foram salvas. Fechar mesmo assim?')) return;
   _vlEditados = {};
+  _vlTipoEditados = {};
   document.getElementById('modalValoresLaudo').classList.add('hidden');
 }
 
 function vlValorAtual(it) {
   return Object.prototype.hasOwnProperty.call(_vlEditados, it.item_id) ? _vlEditados[it.item_id] : (it.valor != null ? String(it.valor) : '');
+}
+// Tipo de ensaio: o escolhido agora, o salvo ou o que vale pelo nome
+function vlTipoAtual(it) {
+  return _vlTipoEditados[it.item_id] || (LAUDOS_TIPO_TXT[it.tipo_ensaio] ? it.tipo_ensaio : laudosTipoDe_({ itemNome: it.descricao }));
+}
+function vlEditarTipo(itemId, tipo) {
+  const it = _vlItens.find(i => i.item_id === itemId);
+  if (!it || !LAUDOS_TIPO_TXT[tipo]) return;
+  if (tipo === it.tipo_ensaio) delete _vlTipoEditados[itemId];
+  else _vlTipoEditados[itemId] = tipo;
+  vlAtualizarResumo();
 }
 
 function renderValoresLaudo() {
@@ -25492,10 +25603,18 @@ function renderValoresLaudo() {
   document.getElementById('vlBody').innerHTML = lista.length ? lista.map(it => {
     const par = String(it.un_med || '').toUpperCase() === 'PAR';
     const editado = Object.prototype.hasOwnProperty.call(_vlEditados, it.item_id);
+    const tipo = vlTipoAtual(it), tipoEditado = !!_vlTipoEditados[it.item_id];
     return `<tr>
       <td class="td-main">${escHtml(it.descricao || '—')}</td>
       <td class="td-mono" style="font-size:11px">${escHtml(it.codigo || '—')}</td>
       <td style="text-align:center;font-size:11px">${escHtml(it.un_med || 'UN')}${par ? '<div style="font-size:9px;color:var(--text-3)">valor do par</div>' : ''}</td>
+      <td>
+        <select class="form-input" data-tipo-item="${escHtml(it.item_id)}" style="width:150px;${tipoEditado ? 'border-color:var(--yellow)' : ''}" ${pode ? '' : 'disabled'}
+          onchange="vlEditarTipo('${escJs(it.item_id)}', this.value); renderValoresLaudo()">
+          ${Object.entries(LAUDOS_TIPO_TXT).map(([k, t]) => `<option value="${k}"${k === tipo ? ' selected' : ''}>${t}</option>`).join('')}
+        </select>
+        ${!it.tipo_salvo && !tipoEditado ? '<div style="font-size:9px;color:var(--text-3);margin-top:2px">automático pelo nome</div>' : ''}
+      </td>
       <td style="text-align:right">
         <input type="number" min="0" step="0.01" class="form-input" data-item="${escHtml(it.item_id)}"
           style="width:140px;text-align:right;display:inline-block;${editado ? 'border-color:var(--yellow)' : ''}"
@@ -25503,7 +25622,7 @@ function renderValoresLaudo() {
           oninput="vlEditar('${escJs(it.item_id)}', this.value); this.style.borderColor = 'var(--yellow)'">
       </td>
     </tr>`;
-  }).join('') : '<tr><td colspan="4"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum item que exige ensaio encontrado</div></div></td></tr>';
+  }).join('') : '<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum item que exige ensaio encontrado</div></div></td></tr>';
   vlAtualizarResumo();
 }
 
@@ -25519,9 +25638,10 @@ function vlEditar(itemId, valor) {
 function vlAtualizarResumo() {
   const total = _vlItens.length;
   const comValor = _vlItens.filter(i => vlValorAtual(i) !== '').length;
+  const calib = _vlItens.filter(i => vlTipoAtual(i) === 'CALIBRACAO').length;
   const resumo = document.getElementById('vlResumo');
-  if (resumo) resumo.textContent = total ? `${comValor} de ${total} item(ns) com valor cadastrado` : '';
-  const alt = Object.keys(_vlEditados).length;
+  if (resumo) resumo.textContent = total ? `${comValor} de ${total} item(ns) com valor cadastrado · ${total - calib} laudo elétrico · ${calib} calibração` : '';
+  const alt = Object.keys(_vlEditados).length + Object.keys(_vlTipoEditados).length;
   const txt = document.getElementById('vlAlteracoes');
   if (txt) txt.textContent = alt ? `${alt} alteração(ões) não salva(s)` : '';
 }
@@ -25538,22 +25658,35 @@ async function salvarValoresLaudo(btn) {
     }
     valores.push({ item_id, valor: n });
   }
-  if (!valores.length) { toast('Nenhuma alteração para salvar', 'info'); return; }
+  const tipos = Object.entries(_vlTipoEditados).map(([item_id, tipo_ensaio]) => ({ item_id, tipo_ensaio }));
+  if (!valores.length && !tipos.length) { toast('Nenhuma alteração para salvar', 'info'); return; }
   btn.disabled = true;
-  const res = await api('/laudos/valores-laudo', { method: 'PUT', body: JSON.stringify({ valores }) });
+  const partes = [];
+  if (valores.length) {
+    const res = await api('/laudos/valores-laudo', { method: 'PUT', body: JSON.stringify({ valores }) });
+    if (!res?.ok) { btn.disabled = false; toast(res?.erro || 'Erro ao salvar os valores', 'error'); return; }
+    _vlEditados = {};
+    partes.push(`${res.salvos} valor(es)${res.removidos ? `, ${res.removidos} removido(s)` : ''}`);
+  }
+  if (tipos.length) {
+    const res = await api('/laudos/tipos-ensaio', { method: 'PUT', body: JSON.stringify({ tipos }) });
+    if (!res?.ok) { btn.disabled = false; toast(res?.erro || 'Erro ao salvar o tipo de ensaio', 'error'); if (partes.length) renderValoresLaudo(); return; }
+    _vlTipoEditados = {};
+    partes.push(`${res.salvos} tipo(s) de ensaio`);
+  }
   btn.disabled = false;
-  if (!res?.ok) { toast(res?.erro || 'Erro ao salvar', 'error'); return; }
-  toast(`Tabela salva: ${res.salvos} valor(es)${res.removidos ? `, ${res.removidos} removido(s)` : ''}`, 'success');
+  toast(`Salvo: ${partes.join(' · ')}`, 'success');
   await abrirValoresLaudo();
+  if (__LAUDOS_NR10__.lista?.length) laudosCarregar_();   // a coluna da Gestão de Laudos segue o tipo novo
 }
 
 function exportarModeloValoresLaudo() {
   if (!_vlItens.length) { toast('A tabela ainda não carregou', 'warn'); return; }
   gcaCarregarSheetJS(() => {
-    const linhas = [['Código', 'Item', 'Unidade', 'Valor do laudo (R$)'],
-      ..._vlItens.map(i => { const v = vlValorAtual(i); return [i.codigo || '', i.descricao || '', i.un_med || 'UN', v === '' ? '' : Number(v)]; })];
+    const linhas = [['Código', 'Item', 'Unidade', 'Tipo de ensaio', 'Valor do laudo (R$)'],
+      ..._vlItens.map(i => { const v = vlValorAtual(i); return [i.codigo || '', i.descricao || '', i.un_med || 'UN', LAUDOS_TIPO_TXT[vlTipoAtual(i)], v === '' ? '' : Number(v)]; })];
     const ws = XLSX.utils.aoa_to_sheet(linhas);
-    ws['!cols'] = [{ wch: 16 }, { wch: 44 }, { wch: 10 }, { wch: 20 }];
+    ws['!cols'] = [{ wch: 16 }, { wch: 44 }, { wch: 10 }, { wch: 18 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Valores de laudo');
     XLSX.writeFile(wb, 'valores_de_laudo.xlsx');
@@ -25577,7 +25710,8 @@ function vlAplicarPlanilha(linhas) {
   const iCod = cab.findIndex(c => c.startsWith('cod'));
   const iDesc = cab.findIndex(c => c === 'item' || c.startsWith('descri') || c === 'material');
   const iVal = cab.findIndex(c => c.includes('valor') || c.includes('preco'));
-  if (iVal < 0 || (iCod < 0 && iDesc < 0)) return { erro: 'A planilha precisa das colunas "Código" (ou "Item") e "Valor do laudo" na primeira linha.' };
+  const iTipo = cab.findIndex(c => c.startsWith('tipo'));   // "Tipo de ensaio" (opcional)
+  if ((iVal < 0 && iTipo < 0) || (iCod < 0 && iDesc < 0)) return { erro: 'A planilha precisa das colunas "Código" (ou "Item") e "Valor do laudo" (ou "Tipo de ensaio") na primeira linha.' };
   const porCodigo = {}, porDesc = {};
   _vlItens.forEach(i => { if (i.codigo) porCodigo[norm(i.codigo)] = i; if (i.descricao) porDesc[norm(i.descricao)] = i; });
   let aplicados = 0;
@@ -25588,6 +25722,13 @@ function vlAplicarPlanilha(linhas) {
     if (!cod && !desc) return;
     const it = (cod && porCodigo[cod]) || (desc && porDesc[desc]);
     if (!it) { naoEncontrados.push(String((iCod >= 0 && l[iCod]) || l[iDesc] || '')); return; }
+    const tipoTxt = iTipo >= 0 ? norm(l[iTipo]) : '';
+    if (tipoTxt) {
+      const tipo = tipoTxt.includes('calibr') ? 'CALIBRACAO' : (tipoTxt.includes('laudo') || tipoTxt.includes('eletr')) ? 'LAUDO_ELETRICO' : '';
+      if (tipo) { if (tipo !== vlTipoAtual(it)) { vlEditarTipo(it.item_id, tipo); aplicados++; } }
+      else invalidos.push(it.descricao);
+    }
+    if (iVal < 0) return;
     const bruto = l[iVal];
     if (bruto === '' || bruto == null) return; // célula vazia não apaga o que já existe
     const valor = vlNumeroPlanilha(bruto);
@@ -25609,9 +25750,9 @@ function importarValoresLaudo(input) {
       const r = vlAplicarPlanilha(linhas);
       if (r.erro) { toast(r.erro, 'error', 8000); return; }
       renderValoresLaudo();
-      toast(`${r.aplicados} valor(es) carregado(s) da planilha — confira e clique em Salvar.` +
+      toast(`${r.aplicados} alteração(ões) carregada(s) da planilha (valor ou tipo de ensaio) — confira e clique em Salvar.` +
         (r.naoEncontrados.length ? ` ${r.naoEncontrados.length} linha(s) sem item correspondente.` : '') +
-        (r.invalidos.length ? ` ${r.invalidos.length} valor(es) inválido(s).` : ''), r.aplicados ? 'success' : 'warn', 9000);
+        (r.invalidos.length ? ` ${r.invalidos.length} valor(es) ou tipo(s) inválido(s).` : ''), r.aplicados ? 'success' : 'warn', 9000);
     } catch (e) { toast('Não foi possível ler a planilha: ' + e.message, 'error', 8000); }
   });
 }
