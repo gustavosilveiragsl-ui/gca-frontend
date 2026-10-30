@@ -4277,12 +4277,10 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button class="btn btn-primary" onclick="cmAlertaSalvar(this)"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar</button>
-              <select id="cmAlertaFormato" class="form-input" style="width:auto" title="Formato do e-mail de teste (o envio diário usa a nova versão)">
-                <option value="pendencias">Teste: nova versão (a do envio diário)</option>
-                <option value="pendencias_resumo">Teste: nova versão sem seriais</option>
-                <option value="completo">Teste: lista completa (versão antiga)</option>
-                <option value="resumo_seriais">Teste: resumo por equipe + seriais curtos</option>
-                <option value="numeros">Teste: só os números (sem lista)</option>
+              <select id="cmAlertaFormato" class="form-input" style="width:auto" title="Formato do e-mail de teste (o envio diário usa a lista em planilha anexa)">
+                <option value="anexo">Teste: lista em planilha anexa (a do envio diário)</option>
+                <option value="pendencias">Teste: lista no corpo do e-mail</option>
+                <option value="pendencias_resumo">Teste: lista no corpo, sem seriais</option>
               </select>
               <button class="btn btn-ghost" style="color:#22c55e;border-color:#22c55e" onclick="cmAlertaTestar(this)" title="Manda agora para a lista salva, com [TESTE] no assunto"><svg class=ic aria-hidden=true><use href=#i-mail></use></svg> Testar envio</button>
               <button class="btn btn-ghost" onclick="document.getElementById('cmAlertaPainel').classList.add('hidden')">✕ Fechar</button>
