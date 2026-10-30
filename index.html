@@ -22481,6 +22481,8 @@ function abrirRecebimentoSC() {
   document.getElementById('recFornecedor').value = '';
   document.getElementById('recPdfLink').value    = '';
   _recNFPendingFile = null;
+  ['recNF', 'recPedido', 'recFornecedor', 'recArmazem'].forEach(id => recMarcarCampo(id, false));
+  recMarcarCampo('recNFDropArea', false);
   const dropContent = document.getElementById('recNFDropContent');
   if (dropContent) dropContent.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-paperclip></use></svg> Arraste o PDF da NF aqui ou clique para selecionar';
 
@@ -22625,7 +22627,15 @@ function recNFOnFileSelected(file) {
   }
   // Armazena localmente — só faz upload ao confirmar recebimento
   _recNFPendingFile = file;
+  document.getElementById('recNFDropArea').style.borderColor = 'var(--border)';
   dropContent.innerHTML = `<svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> <strong>${escHtml(file.name)}</strong> selecionado — será enviado ao confirmar`;
+}
+
+// Campo obrigatório do recebimento da SC em vermelho (some ao preencher)
+function recMarcarCampo(id, faltando) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.borderColor = faltando ? 'var(--red)' : (id === 'recNFDropArea' ? 'var(--border)' : '');
 }
 
 async function _uploadNFPendente(scId) {
@@ -22656,20 +22666,23 @@ async function confirmarRecebimentoSC() {
   const nf        = document.getElementById('recNF').value.trim();
   const pedido    = document.getElementById('recPedido').value.trim();
   const fornecedor= document.getElementById('recFornecedor').value.trim();
-  // Upload do PDF pendente antes de confirmar (se houver arquivo selecionado)
-  let pdfLink = document.getElementById('recPdfLink').value.trim();
-  if (_recNFPendingFile) {
-    const scIdForUpload = document.getElementById('recSCId').value;
-    const uploaded = await _uploadNFPendente(scIdForUpload);
-    if (uploaded) pdfLink = uploaded;
-  }
   const armId     = document.getElementById('recArmazem').value;
+  let pdfLink = document.getElementById('recPdfLink').value.trim();
 
-  if (!armId) { toast('Selecione o armazém destino', 'warn'); return; }
+  // Dados da NF obrigatórios (30/10/2026, pedido do usuário): tudo conferido antes de enviar o PDF
+  const faltando = [[!nf, 'recNF', 'o nº da NF'], [!pedido, 'recPedido', 'o pedido de compra'], [!fornecedor, 'recFornecedor', 'o fornecedor'],
+    [!armId, 'recArmazem', 'o armazém destino'], [!pdfLink && !_recNFPendingFile, 'recNFDropArea', 'o PDF da NF']];
+  faltando.forEach(([falta, id]) => recMarcarCampo(id, falta));
+  const nomes = faltando.filter(f => f[0]).map(f => f[2]);
+  if (nomes.length) {
+    toast(`Preencha ${nomes.length > 1 ? nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1] : nomes[0]} para confirmar o recebimento`, 'warn', 6000);
+    return;
+  }
 
   const checks = document.querySelectorAll('.rec-check');
   const qtdEls = document.querySelectorAll('.rec-qtd');
   const valEls = document.querySelectorAll('.rec-valor');
+  if (![...checks].some((c, i) => c.checked && (parseFloat(qtdEls[i].value) || 0) > 0)) { toast('Selecione pelo menos um item', 'warn'); return; }
 
   // Confere o valor pago antes de lançar qualquer entrada: sem ele o financeiro fica sem o real.
   for (let i = 0; i < checks.length; i++) {
@@ -22679,6 +22692,14 @@ async function confirmarRecebimentoSC() {
       toast(`Informe o valor pago (NF) de "${qtdEls[i].dataset.itemNome}"`, 'warn');
       return;
     }
+  }
+
+  // PDF da NF: só sobe para o Drive depois de tudo conferido; sem ele não segue
+  if (_recNFPendingFile) {
+    const uploaded = await _uploadNFPendente(scId);
+    if (!uploaded) { recMarcarCampo('recNFDropArea', true); return; }
+    pdfLink = uploaded;
+    document.getElementById('recPdfLink').value = uploaded;   // se algo depois falhar, não sobe de novo
   }
 
   // CA que chegou (Gestão de CA, 19/10/2026): confere tudo antes de lançar qualquer entrada
@@ -34591,14 +34612,14 @@ async function baExcluirEquipe(id) {
 
       <!-- Dados NF -->
       <div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Dados da NF</div>
+        <div style="font-size:11px;font-weight:600;color:var(--text-2);text-transform:uppercase;margin-bottom:10px"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Dados da NF <span style="font-weight:400;text-transform:none;color:var(--text-3)">· todos os campos são obrigatórios</span></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label class="form-label">Nº da NF</label><input id="recNF" class="form-input" placeholder="Ex: 123456"></div>
-          <div><label class="form-label">Pedido de Compra</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001"></div>
-          <div><label class="form-label">Fornecedor</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor"></div>
-          <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input"></select></div>
+          <div><label class="form-label">Nº da NF *</label><input id="recNF" class="form-input" placeholder="Ex: 123456" oninput="this.style.borderColor=''"></div>
+          <div><label class="form-label">Pedido de Compra *</label><input id="recPedido" class="form-input" placeholder="Ex: PC-2024-001" oninput="this.style.borderColor=''"></div>
+          <div><label class="form-label">Fornecedor *</label><input id="recFornecedor" class="form-input" placeholder="Nome do fornecedor" oninput="this.style.borderColor=''"></div>
+          <div><label class="form-label">Armazém destino *</label><select id="recArmazem" class="form-input" onchange="this.style.borderColor=''"></select></div>
           <div style="grid-column:span 2">
-            <label class="form-label">PDF da NF</label>
+            <label class="form-label">PDF da NF *</label>
             <input type="hidden" id="recPdfLink">
             <div id="recNFDropArea"
                  ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-soft)'"
