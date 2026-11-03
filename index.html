@@ -3008,16 +3008,27 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <div class="card" style="overflow:visible">
           <div class="card-header" style="flex-wrap:wrap;gap:10px">
             <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-ruler></use></svg> Tamanhos dos colaboradores</div>
-              <div class="card-sub">Para cada item com tamanho, quantos colaboradores ativos usam cada tamanho (pela última retirada ou pelo anotado no cadastro do colaborador, o mais recente) e quantos ainda não têm registro</div></div>
-            <div class="card-actions"><button class="btn btn-ghost" onclick="tamExcel()" title="Uma linha por colaborador e uma coluna por item, com o tamanho de cada um"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel geral</button></div>
+              <div class="card-sub">Que tamanho cada colaborador ativo usa (pela última retirada ou pelo anotado no cadastro do colaborador, o mais recente): por item ou por colaborador, com o total do grupo filtrado</div></div>
+            <div class="card-actions">
+              <button class="btn btn-ghost" onclick="tamExcelResumo()" title="Para o grupo filtrado: cada item, cada tamanho e quantos usam"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel do total</button>
+              <button class="btn btn-ghost" onclick="tamExcel()" title="Uma linha por colaborador (do filtro) e uma coluna por item, com o tamanho de cada um"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel por colaborador</button></div>
+          </div>
+          <!-- Abas (03/11/2026): por item (a de antes) e por colaborador -->
+          <div style="display:flex;gap:4px;padding:0 16px;border-bottom:1px solid var(--border)">
+            <button class="atend-tab active" data-tam-aba="item" onclick="tamAba('item')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Por item</button>
+            <button class="atend-tab" data-tam-aba="pessoa" onclick="tamAba('pessoa')"><svg class=ic aria-hidden=true><use href=#i-users></use></svg> Por colaborador</button>
           </div>
           <div style="padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--border)">
             <input class="search-box" type="text" id="tamBusca" placeholder="Buscar item…" oninput="tamRender()" style="width:240px;max-width:100%">
+            <input class="search-box" type="text" id="tamBuscaPessoa" placeholder="Buscar nome ou matrícula…" oninput="tamRender()" style="width:240px;max-width:100%;display:none">
+            <select class="form-input" id="tamBase" style="width:180px;font-size:11px" onchange="tamRender()"><option value="">Todas as bases</option></select>
             <select class="form-input" id="tamFuncao" style="width:200px;font-size:11px" onchange="tamRender()"><option value="">Todas as funções</option></select>
             <select class="form-input" id="tamSetor" style="width:200px;font-size:11px" onchange="tamRender()"><option value="">Todos os setores</option></select>
+            <button class="btn btn-ghost btn-sm" id="tamLimpar" onclick="tamLimparFiltros()" style="display:none">Limpar filtros</button>
             <span id="tamContagem" style="margin-left:auto;font-size:11px;color:var(--text-3)"></span>
           </div>
           <div id="tamLista" style="padding:12px 16px;display:grid;gap:10px"></div>
+          <div id="tamPessoas" style="display:none"></div>
         </div>
         <div class="card" id="tamDetalhe" style="margin-top:12px" hidden>
           <div class="card-header"><div><div class="card-title" id="tamDetTitulo">—</div><div class="card-sub" id="tamDetSub"></div></div>
@@ -19533,7 +19544,9 @@ function urExcel() {
 // ═══ Tamanhos dos colaboradores (22/10/2026) ═══
 // Pedido do usuário: ver de uma vez quantos usam G, M… em cada item com tamanho, e a lista de quem
 // usa cada um (e de quem não tem registro), sem abrir ficha por ficha.
-let _tam = { dados: null, sel: null };
+// Por colaborador (03/11/2026, pedido do usuário): cada pessoa com o tamanho de cada item e, em cima,
+// o total do grupo filtrado (base, função, setor) — ex.: 40 camisas G, 30 calças 40 e 10 calças 42.
+let _tam = { dados: null, sel: null, aba: 'item', famOcultas: new Set() };
 async function tamInit() {
   const box = document.getElementById('tamLista');
   if (!_tam.dados) box.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Carregando…</div>';
@@ -19544,16 +19557,48 @@ async function tamInit() {
     const vs = [...new Set(r.colaboradores.map(c => c[campo]).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     sel.innerHTML = `<option value="">${rot}</option>` + vs.map(v => `<option value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
     if (vs.includes(atual)) sel.value = atual; };
+  preencher('tamBase', 'base', 'Todas as bases');
   preencher('tamFuncao', 'funcao', 'Todas as funções');
   preencher('tamSetor', 'setor', 'Todos os setores');
   tamRender();
 }
-function tamColabs() {
-  const f = document.getElementById('tamFuncao').value, st = document.getElementById('tamSetor').value;
-  return (_tam.dados?.colaboradores || []).filter(c => (!f || c.funcao === f) && (!st || c.setor === st));
+const tamSemAcento = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+// Colaboradores do filtro (base, função e setor valem nas duas abas; a busca por nome só na aba por colaborador)
+function tamColabs({ comBusca = false } = {}) {
+  const v = (id) => document.getElementById(id)?.value || '';
+  const b = v('tamBase'), f = v('tamFuncao'), st = v('tamSetor');
+  const q = comBusca ? tamSemAcento(v('tamBuscaPessoa')).trim() : '';
+  return (_tam.dados?.colaboradores || []).filter(c => (!b || c.base === b) && (!f || c.funcao === f) && (!st || c.setor === st)
+    && (!q || tamSemAcento(c.nome).includes(q) || tamSemAcento(c.matricula).includes(q)));
+}
+function tamAba(aba) {
+  _tam.aba = aba;
+  document.querySelectorAll('[data-tam-aba]').forEach(b => b.classList.toggle('active', b.dataset.tamAba === aba));
+  document.getElementById('tamBusca').style.display = aba === 'item' ? '' : 'none';
+  document.getElementById('tamBuscaPessoa').style.display = aba === 'pessoa' ? '' : 'none';
+  document.getElementById('tamLista').style.display = aba === 'item' ? 'grid' : 'none';
+  document.getElementById('tamPessoas').style.display = aba === 'pessoa' ? '' : 'none';
+  if (aba === 'pessoa') document.getElementById('tamDetalhe').hidden = true;
+  tamRender();
+}
+function tamLimparFiltros() {
+  ['tamBase', 'tamFuncao', 'tamSetor', 'tamBusca', 'tamBuscaPessoa'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  tamRender();
+}
+// Quantos usam cada tamanho de um item, entre os colaboradores informados
+function tamContar(familia, colabs) {
+  const uso = _tam.dados?.uso[familia] || {};
+  const cont = {}; let com = 0;
+  colabs.forEach(c => { const u = uso[c.id]; if (u) { cont[u[0]] = (cont[u[0]] || 0) + 1; com++; } });
+  const f = _tam.dados.familias.find(x => x.familia === familia);
+  const tams = [...new Set([...(f?.tamanhos || []), ...Object.keys(cont)])].filter(t => cont[t]);
+  return { cont, tams, com, sem: colabs.length - com };
 }
 function tamRender() {
   const d = _tam.dados; if (!d) return;
+  const filtrado = ['tamBase', 'tamFuncao', 'tamSetor'].some(id => document.getElementById(id)?.value);
+  document.getElementById('tamLimpar').style.display = filtrado ? '' : 'none';
+  if (_tam.aba === 'pessoa') return tamRenderPessoas();
   const colabs = tamColabs();
   const q = (document.getElementById('tamBusca').value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const fams = d.familias.filter(f => !q || f.familia.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q));
@@ -19605,12 +19650,85 @@ function tamExcelLista() {
   gcaExportarExcel(`Tamanhos_${sel.familia.replace(/[^\wÀ-ú]+/g, '_').slice(0, 25)}_${sel.tamanho === null ? 'sem_registro' : sel.tamanho}`, tamListaSel().map(c => ({ ...c, data_br: c.data ? formatarData(c.data) : '' })),
     [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' }, { key: 'tamanho', label: 'Tamanho' }, { key: 'data_br', label: 'Desde' }, { key: 'origem', label: 'De onde' }]);
 }
+// Itens que aparecem na tabela por colaborador (o usuário pode esconder os que não interessam)
+function tamFamiliasVisiveis() { return (_tam.dados?.familias || []).filter(f => !_tam.famOcultas.has(f.familia)); }
+function tamAlternarFamilia(familia) {
+  if (_tam.famOcultas.has(familia)) _tam.famOcultas.delete(familia); else _tam.famOcultas.add(familia);
+  tamRenderPessoas();
+}
+function tamTodasFamilias(mostrar) {
+  _tam.famOcultas = mostrar ? new Set() : new Set((_tam.dados?.familias || []).map(f => f.familia));
+  tamRenderPessoas();
+}
+function tamRenderPessoas() {
+  const d = _tam.dados, box = document.getElementById('tamPessoas'); if (!d || !box) return;
+  const grupo = tamColabs();                       // total: o grupo do filtro (sem a busca por nome)
+  const lista = tamColabs({ comBusca: true });      // tabela: com a busca por nome ou matrícula
+  const fams = tamFamiliasVisiveis();
+  document.getElementById('tamContagem').textContent = `${grupo.length} colaboradores no filtro${lista.length !== grupo.length ? ` · ${lista.length} na busca` : ''} · ${fams.length} de ${d.familias.length} itens`;
+  const nomeCurto = (f) => escHtml(f.familia);
+  // Total do grupo filtrado: por item, quantos usam cada tamanho (é a quantidade para comprar/separar)
+  const total = fams.map(f => {
+    const { cont, tams, com, sem } = tamContar(f.familia, grupo);
+    return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 10px;background:var(--bg-card);min-width:0">
+      <div style="font-weight:700;font-size:12px;color:var(--text-1);margin-bottom:6px;line-height:1.3">${nomeCurto(f)}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">${tams.map(t => `<span style="display:inline-flex;gap:5px;align-items:baseline;padding:3px 8px;border-radius:8px;background:var(--accent-soft);font-size:12px">
+          <strong>${escHtml(t)}</strong><span style="font-variant-numeric:tabular-nums">${cont[t]}</span></span>`).join('')}
+        ${sem ? `<span style="display:inline-flex;gap:5px;align-items:baseline;padding:3px 8px;border-radius:8px;border:1px dashed var(--border);font-size:11px;color:var(--yellow)">sem registro <span style="font-variant-numeric:tabular-nums">${sem}</span></span>` : ''}
+        ${!com && !sem ? '<span style="font-size:11px;color:var(--text-3)">ninguém no filtro</span>' : ''}</div></div>`;
+  }).join('');
+  const chipsFam = d.familias.map(f => {
+    const on = !_tam.famOcultas.has(f.familia);
+    return `<button type="button" onclick="tamAlternarFamilia('${escJs(f.familia)}')" style="padding:3px 9px;border-radius:999px;font-size:11px;cursor:pointer;border:1px solid ${on ? 'var(--accent)' : 'var(--border)'};background:${on ? 'var(--accent-soft)' : 'transparent'};color:${on ? 'var(--text-1)' : 'var(--text-3)'}">${escHtml(f.familia)}</button>`;
+  }).join('');
+  const LIMITE = 600;
+  const linhas = lista.slice(0, LIMITE).map(c => `<tr>
+      <td class="td-main" style="position:sticky;left:0;background:var(--bg-card);z-index:1;min-width:200px">${escHtml(c.nome)}${c.de_outra_filial ? ' <span style="font-size:10px;color:var(--text-3)">(de outra filial)</span>' : ''}
+        <div style="font-size:10px;color:var(--text-3);font-weight:400">${escHtml(c.matricula || '—')} · ${escHtml(c.funcao || '—')}</div></td>
+      <td style="font-size:11px">${escHtml(c.base || '—')}</td>
+      ${fams.map(f => { const u = d.uso[f.familia]?.[c.id];
+        return u ? `<td style="text-align:center;font-weight:700" title="${escHtml((u[2] === 'anotado' ? 'Anotado no cadastro' : 'Última retirada') + ' em ' + formatarData(u[1]))}">${escHtml(u[0])}</td>`
+                 : '<td style="text-align:center;color:var(--text-3)" title="Sem retirada e sem tamanho anotado">—</td>'; }).join('')}
+    </tr>`).join('');
+  box.innerHTML = `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <span style="font-weight:700;color:var(--text-1)">Total do filtro</span>
+        <span style="font-size:11px;color:var(--text-3)">${grupo.length} colaboradores — quantos usam cada tamanho de cada item (a busca por nome não muda o total)</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px">${total || '<div style="font-size:12px;color:var(--text-3)">Escolha pelo menos um item abaixo.</div>'}</div>
+    </div>
+    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span style="font-size:11px;color:var(--text-3);margin-right:4px">Itens na tabela:</span>${chipsFam}
+      <button class="btn btn-ghost btn-sm" onclick="tamTodasFamilias(true)">Todos</button><button class="btn btn-ghost btn-sm" onclick="tamTodasFamilias(false)">Nenhum</button>
+    </div>
+    <div style="overflow:auto;max-height:70vh"><table>
+      <thead><tr><th style="position:sticky;left:0;top:0;background:var(--bg-card);z-index:2">Colaborador</th><th style="position:sticky;top:0;background:var(--bg-card)">Base</th>
+        ${fams.map(f => `<th style="position:sticky;top:0;background:var(--bg-card);text-align:center;white-space:normal;min-width:90px;max-width:130px;font-size:10px;line-height:1.25">${nomeCurto(f)}</th>`).join('')}</tr></thead>
+      <tbody>${linhas || `<tr><td colspan="${fams.length + 2}" style="padding:16px;text-align:center;color:var(--text-3)">Ninguém com esse filtro.</td></tr>`}</tbody>
+    </table></div>
+    ${lista.length > LIMITE ? `<div style="padding:10px 16px;font-size:11px;color:var(--text-3)">Mostrando ${LIMITE} de ${lista.length}. Use os filtros ou a busca; o Excel por colaborador traz todos.</div>` : ''}`;
+}
+// Excel do total: para o grupo filtrado, cada item, cada tamanho e quantos usam (e quantos sem registro)
+function tamExcelResumo() {
+  const d = _tam.dados; if (!d) return;
+  const grupo = tamColabs();
+  const fams = _tam.aba === 'pessoa' ? tamFamiliasVisiveis() : d.familias;
+  const linhas = [];
+  fams.forEach(f => {
+    const { cont, tams, sem } = tamContar(f.familia, grupo);
+    tams.forEach(t => linhas.push({ item: f.familia, tamanho: t, quantidade: cont[t] }));
+    if (sem) linhas.push({ item: f.familia, tamanho: 'Sem registro', quantidade: sem });
+  });
+  const filtro = ['tamBase', 'tamFuncao', 'tamSetor'].map(id => document.getElementById(id)?.value).filter(Boolean).join('_');
+  gcaExportarExcel(`Tamanhos_total${filtro ? '_' + filtro.replace(/[^\wÀ-ú]+/g, '_').slice(0, 30) : ''}`, linhas,
+    [{ key: 'item', label: 'Item' }, { key: 'tamanho', label: 'Tamanho' }, { key: 'quantidade', label: `Colaboradores (${grupo.length} no filtro)` }]);
+}
 function tamExcel() {
   const d = _tam.dados; if (!d) return;
-  const fams = d.familias;
-  const linhas = tamColabs().map(c => { const o = { nome: c.nome, matricula: c.matricula, funcao: c.funcao, setor: c.setor };
+  const fams = _tam.aba === 'pessoa' ? tamFamiliasVisiveis() : d.familias;
+  const linhas = tamColabs({ comBusca: _tam.aba === 'pessoa' }).map(c => { const o = { nome: c.nome, matricula: c.matricula, funcao: c.funcao, base: c.base, setor: c.setor };
     fams.forEach((f, i) => { o['f' + i] = d.uso[f.familia]?.[c.id]?.[0] || ''; }); return o; });
-  gcaExportarExcel('Tamanhos_dos_colaboradores', linhas, [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'setor', label: 'Setor' },
+  gcaExportarExcel('Tamanhos_dos_colaboradores', linhas, [{ key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' }, { key: 'funcao', label: 'Função' }, { key: 'base', label: 'Base' }, { key: 'setor', label: 'Setor' },
     ...fams.map((f, i) => ({ key: 'f' + i, label: f.familia }))]);
 }
 
