@@ -3522,6 +3522,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           </div>
         </div>
 
+        <!-- Saldo × seriais do material com serial (03/11/2026): mostra se batem e os acertos feitos -->
+        <div id="enelConfSeriais" style="margin-bottom:12px"></div>
+
         <div class="card">
           <div class="card-header">
             <div><div class="card-title">Consulta de Estoque <span class="nome-conc">Concessionária</span></div><div class="card-sub">Saldo atual de materiais</div></div>
@@ -26349,6 +26352,37 @@ function limparSaidaEnel() {
   document.getElementById('enelSaiMotivo').selectedIndex = 0;
   document.getElementById('enelSaiEquipeBusca').value = '';
   document.getElementById('enelSaiObs').value = '';
+  _saiMatSel = null; _saiSeriaisAtual = [];
+  saiEnelModoSerial(false);
+}
+
+// ── Seriais da saída (03/11/2026): material com serial só sai com os seriais, e a quantidade é o
+// número de seriais bipados (o servidor confere de novo: estoque, material e quantidade)
+let _saiSeriaisAtual = [];
+function saiEnelModoSerial(temSerial) {
+  const box = document.getElementById('enelSaiSeriaisBox');
+  const qtd = document.getElementById('enelSaiQtd');
+  if (box) box.style.display = temSerial ? '' : 'none';
+  if (qtd) { qtd.readOnly = !!temSerial; qtd.title = temSerial ? 'Material com serial: a quantidade é o número de seriais bipados' : ''; }
+  renderSeriaisSai();
+}
+function addSerialSaiEnel(texto) {
+  const partes = String(texto || '').split(/[\n\r\t,; ]+/).map(s => s.trim().toUpperCase()).filter(Boolean);
+  if (!partes.length) return;
+  let novos = 0, rep = 0;
+  partes.forEach(s => { if (_saiSeriaisAtual.includes(s)) rep++; else { _saiSeriaisAtual.push(s); novos++; } });
+  renderSeriaisSai();
+  if (partes.length > 1) toast(`${novos} serial(is) adicionado(s)${rep ? `, ${rep} repetido(s) ignorado(s)` : ''}`, novos ? 'success' : 'warn');
+  else if (rep) toast('Serial repetido: ' + partes[0], 'warn');
+}
+function remSerialSaiEnel(s) { _saiSeriaisAtual = _saiSeriaisAtual.filter(x => x !== s); renderSeriaisSai(); }
+function renderSeriaisSai() {
+  const el = document.getElementById('enelSaiSeriaisList');
+  const cnt = document.getElementById('enelSaiSeriaisCount');
+  if (cnt) cnt.textContent = `(${_saiSeriaisAtual.length})`;
+  if (_saiMatSel?.possui_numero_serie) { const q = document.getElementById('enelSaiQtd'); if (q) q.value = _saiSeriaisAtual.length || ''; }
+  if (!el) return;
+  el.innerHTML = _saiSeriaisAtual.map(s => `<span style="display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;border:1px solid var(--border);font-size:11px;font-family:var(--font-mono)">${escHtml(s)}<button style="background:none;border:0;color:#ef4444;cursor:pointer" onclick="remSerialSaiEnel('${escJs(s)}')">✕</button></span>`).join('');
 }
 
 function filtrarMatSaiEnel(q) {
@@ -26369,6 +26403,8 @@ function selecionarMatSaiEnel(id, texto) {
   document.getElementById('enelSaiMatBusca').value = texto;
   document.getElementById('enelSaiMatId').value = id;
   document.getElementById('enelSaiMatSug').classList.add('hidden');
+  _saiSeriaisAtual = [];
+  saiEnelModoSerial(!!_saiMatSel?.possui_numero_serie);
 }
 
 
@@ -26388,16 +26424,19 @@ async function registrarSaidaEnel() {
   const motivo = document.getElementById('enelSaiMotivo')?.value||'';
   const obs    = document.getElementById('enelSaiObs').value.trim();
   const msg    = document.getElementById('enelSaiMsg');
-  if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
   const mat = _enelMateriais.find(m=>m.id===matId);
+  if (mat?.possui_numero_serie && !_saiSeriaisAtual.length) { msg.style.color='#ef4444'; msg.textContent='Material com serial: bipe os seriais que estão saindo.'; return; }
+  if (!matId||!data||qtd<=0||!motivo) { msg.style.color='#ef4444'; msg.textContent='Preencha material, data, quantidade e motivo.'; return; }
   const res = await apiMovimentacao('/enel/saida', {
     material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
-    tipo_saida:motivo, destino:equipe, data, quantidade:qtd, obs,
+    tipo_saida:motivo, destino:equipe, data, quantidade: mat?.possui_numero_serie ? _saiSeriaisAtual.length : qtd, obs,
+    seriais: mat?.possui_numero_serie ? _saiSeriaisAtual.slice() : [],
   });
   if (res?.ok) {
     carregarEstoqueEnel(); limparSaidaEnel(); msg.textContent='';
     document.getElementById('modalEnelSaida').classList.add('hidden');
     toast('Saída registrada!', 'success');
+    (res.avisos || []).forEach(a => toast(a, 'warn'));
     carregarHistSaidas();
   }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
@@ -26509,6 +26548,88 @@ async function carregarEstoqueEnel() {
   _enelMateriais = matData?.data||[];
   _enelSaldos    = saldData?.data||[];
   filtrarEstoqueEnel();
+  carregarConferenciaSeriais();
+}
+
+// ═══ SALDO × SERIAIS (03/11/2026) ═══
+// O saldo de material com serial é sempre o número de seriais no estoque: toda movimentação termina
+// acertando, e a conferência diária também. Este quadro mostra se batem e os acertos registrados.
+let _enelConfSeriais = null;
+async function carregarConferenciaSeriais() {
+  const box = document.getElementById('enelConfSeriais');
+  if (!box) return;
+  const r = await api('/enel/conferencia-seriais');
+  if (!r?.ok || !(r.materiais || []).length) { box.innerHTML = ''; _enelConfSeriais = null; return; }
+  _enelConfSeriais = r;
+  const mats = r.materiais, div = mats.filter(m => m.diferenca !== 0), acertos = r.acertos || [];
+  const pode = temPermissao('enel_cancelar_entrada');
+  const botaoAcertos = acertos.length ? `<button class="btn btn-ghost btn-sm" onclick="enelConfMostrarAcertos()">Acertos registrados (${acertos.length})</button>` : '';
+  if (!div.length) {
+    box.innerHTML = `<div class="card" style="padding:10px 14px;border-left:3px solid #22c55e">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <svg class=ic-verde aria-hidden=true><use href=#i-circle-check></use></svg>
+        <div style="flex:1;min-width:200px;font-size:12px"><strong>Saldo e seriais batem</strong> nos ${mats.length} materiais com serial.</div>
+        ${botaoAcertos}
+      </div>
+      <div id="enelConfSeriaisExtra"></div>
+    </div>`;
+    return;
+  }
+  box.innerHTML = `<div class="card" style="padding:12px 14px;border-left:3px solid #f59e0b">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <svg class=ic-amarelo aria-hidden=true><use href=#i-triangle-alert></use></svg>
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:700;font-size:13px">Saldo diferente dos seriais em ${div.length} material(is)</div>
+        <div style="font-size:11px;color:var(--text-3)">O saldo de material com serial tem que ser igual aos seriais no estoque. ${pode ? '' : 'Quem tem a permissão de corrigir entradas pode acertar.'}</div>
+      </div>
+      ${pode ? `<button class="btn btn-primary btn-sm" onclick="enelConfPedirAcerto()">Acertar pelos seriais</button>` : ''}
+      ${botaoAcertos}
+    </div>
+    <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Material</th><th style="text-align:center">Saldo</th><th style="text-align:center">Seriais no estoque</th><th style="text-align:center">Diferença</th></tr></thead><tbody>
+      ${div.map(m => `<tr><td class="td-main">${escHtml(m.descricao || '—')} <span class="td-mono" style="font-size:10px;color:var(--text-3)">${escHtml(m.codigo || '')}</span></td>
+        <td style="text-align:center">${enelNum(m.saldo)}</td><td style="text-align:center">${enelNum(m.seriais)}</td>
+        <td style="text-align:center;font-weight:700;color:${m.diferenca > 0 ? '#f59e0b' : '#ef4444'}">${m.diferenca > 0 ? '+' : ''}${enelNum(m.diferenca)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div id="enelConfSeriaisExtra"></div>
+  </div>`;
+}
+
+function enelConfPedirAcerto() {
+  const extra = document.getElementById('enelConfSeriaisExtra');
+  if (!extra) return;
+  extra.innerHTML = `<div style="margin-top:10px;padding:12px;border:1px solid rgba(245,158,11,.4);border-radius:var(--radius-md);display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:12px;color:var(--text-2)">O saldo de cada material da lista passa a ser o número de seriais no estoque. Cada acerto fica registrado (saldo antes, seriais, quem e quando). Os seriais não mudam: se faltar ou sobrar medidor de verdade, o acerto é pelos seriais (entrada, saída ou devolução).</div>
+    <div><button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="enelConfConfirmarAcerto(this)">Confirmar acerto</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('enelConfSeriaisExtra').innerHTML=''">Voltar</button></div>
+  </div>`;
+}
+
+async function enelConfConfirmarAcerto(btn) {
+  btn.disabled = true;
+  const r = await apiMovimentacao('/enel/conferencia-seriais/acertar', {});
+  btn.disabled = false;
+  if (!r?.ok) { toast(r?.erro || 'Erro ao acertar', 'error', 8000); return; }
+  toast(r.acertos?.length ? `Saldo acertado pelos seriais em ${r.acertos.length} material(is).` : 'Já estava tudo certo.', 'success', 6000);
+  carregarEstoqueEnel();
+}
+
+function enelConfMostrarAcertos() {
+  const extra = document.getElementById('enelConfSeriaisExtra');
+  const acertos = _enelConfSeriais?.acertos || [];
+  if (!extra) return;
+  if (extra.dataset.aberto === '1') { extra.innerHTML = ''; extra.dataset.aberto = ''; return; }
+  extra.dataset.aberto = '1';
+  const origem = { ENTRADA: 'Entrada', SAIDA: 'Saída', DEVOLUCAO: 'Devolução', ATENDIMENTO: 'Atendimento', CANCELAMENTO_ATENDIMENTO: 'Cancelamento de atendimento',
+    TROCA_DE_MODELO: 'Troca de modelo', CANCELAMENTO_ENTRADA: 'Cancelamento de entrada', CORRECAO_MATERIAL: 'Correção de material', BAIXA_AUTOMATICA: 'Baixa automática (eOrder)',
+    BAIXA_MANUAL: 'Baixa manual', ESTORNO_BAIXA_MANUAL: 'Estorno de baixa manual', SUCATA: 'Sucata', SUCATA_DESFEITA: 'Tirado da sucata',
+    CONFERENCIA_DIARIA: 'Conferência diária', ACERTO_MANUAL: 'Acerto pelo botão' };
+  extra.innerHTML = `<div style="margin-top:10px">
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Cada linha é uma vez em que o saldo não batia com os seriais e foi acertado. Fora o acerto inicial, acerto aqui indica uma movimentação que mexeu num sem o outro.</div>
+    <div style="overflow-x:auto;max-height:320px"><table class="data-table"><thead><tr><th>Quando</th><th>Material</th><th style="text-align:center">Saldo antes</th><th style="text-align:center">Seriais (saldo depois)</th><th>Origem</th><th>Quem</th></tr></thead><tbody>
+      ${acertos.map(a => `<tr><td style="font-size:11px;white-space:nowrap">${escHtml(new Date(a.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }))}</td>
+        <td class="td-main">${escHtml(a.descricao || a.material_id)}</td><td style="text-align:center">${enelNum(a.saldo_antes)}</td><td style="text-align:center">${enelNum(a.seriais)}</td>
+        <td style="font-size:11px">${escHtml(origem[a.origem] || a.origem || '—')}</td><td style="font-size:11px">${escHtml(a.usuario || '—')}</td></tr>`).join('')}
+    </tbody></table></div></div>`;
 }
 
 // Busca, status e categoria valem juntos: mexer num filtro não desfaz os outros
@@ -27759,7 +27880,15 @@ async function devEnelConfirmar() {
   const equipeId = document.getElementById('devEnelEquipeId').value;
   const equipeNome = document.getElementById('devEnelEquipeBusca').value.trim();
   const res = await apiMovimentacao('/enel/devolucao', {seriais, equipeId, equipeNome});
-  if (res?.ok) { devEnelMsg(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${res.devolvidos} serial(is) devolvido(s)!`, true); devEnelLimpar(); carregarEstoqueEnel(); }
+  // Desde 03/11/2026 o servidor recusa serial que já está no estoque, instalado ou na sucata (o saldo
+  // somava sem o serial voltar): a resposta diz quais e por quê
+  const recusados = res?.recusados || res?.seriais_recusados || [];
+  if (res?.ok) {
+    devEnelLimpar();
+    devEnelMsg(`${res.devolvidos} serial(is) devolvido(s).${recusados.length ? ` ${recusados.length} recusado(s): ${recusados.slice(0, 8).map(r => `${r.serial} (${r.motivo})`).join('; ')}${recusados.length > 8 ? '…' : ''}` : ''}`, !recusados.length);
+    if (recusados.length) { window.__DEV_ENEL__.seriais = recusados.map(r => r.serial); devEnelRender(); }
+    carregarEstoqueEnel();
+  }
   else devEnelMsg(res?.erro||'Erro na devolução', false);
 }
 
@@ -27775,7 +27904,10 @@ async function trfVerificarSeriais() {
   const res = await api('/enel/transferencia/verificar', {method:'POST', body:JSON.stringify({seriais})});
   if (!res?.ok) { toast('Erro ao verificar','error'); return; }
   _trfSeriaisVerificados = res.encontrados||[];
-  const naoEnc = res.naoEncontrados||[];
+  // Desde 03/11/2026 só troca o modelo de medidor no estoque (o saldo vai junto): os outros vêm
+  // recusados, com o motivo
+  const naoEnc = (res.recusados || []).map(r => `${r.serial} — ${r.motivo}`);
+  if (!res.recusados) naoEnc.push(...(res.naoEncontrados || []));
   const enc = document.getElementById('trfSerialEncontrados');
   const nEnc = document.getElementById('trfSerialNaoEncontrados');
   enc.innerHTML = _trfSeriaisVerificados.length ? `<div style="margin-bottom:8px">
@@ -27783,8 +27915,8 @@ async function trfVerificarSeriais() {
     <div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${_trfSeriaisVerificados.map(s=>`
       <span style="padding:3px 8px;border-radius:4px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);font-size:11px;font-family:var(--font-mono);color:#22c55e">${escHtml(s.numero_serie)} <span style="color:var(--text-3)">${escHtml(s.material_descricao||'')}</span></span>
     `).join('')}</div></div>` : '';
-  nEnc.innerHTML = naoEnc.length ? `<div><strong style="color:#ef4444"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> ${naoEnc.length} não encontrado(s):</strong>
-    <div style="margin-top:4px;font-size:11px;font-family:var(--font-mono);color:var(--text-3)">${naoEnc.join(', ')}</div></div>` : '';
+  nEnc.innerHTML = naoEnc.length ? `<div><strong style="color:#ef4444"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> ${naoEnc.length} não pode(m) trocar de modelo (ficam de fora):</strong>
+    <div style="margin-top:4px;font-size:11px;font-family:var(--font-mono);color:var(--text-3);display:flex;flex-direction:column;gap:2px">${naoEnc.map(t => `<span>${escHtml(t)}</span>`).join('')}</div></div>` : '';
   document.getElementById('trfSerialResultado').style.display = '';
   // Popula destino com materiais que têm serial
   const sel = document.getElementById('trfSerialDestino');
@@ -27792,7 +27924,10 @@ async function trfVerificarSeriais() {
   if (_trfSeriaisVerificados.length) {
     document.getElementById('trfSerialResumo').style.display = '';
     document.getElementById('btnConfirmarTrfSerial').disabled = false;
-    document.getElementById('trfSerialResumoTexto').textContent = `${_trfSeriaisVerificados.length} serial(is) serão transferidos para o material selecionado.`;
+    document.getElementById('trfSerialResumoTexto').textContent = `${_trfSeriaisVerificados.length} serial(is) serão transferidos para o material selecionado (o saldo vai junto).`;
+  } else {
+    document.getElementById('trfSerialResumo').style.display = 'none';
+    document.getElementById('btnConfirmarTrfSerial').disabled = true;
   }
 }
 
@@ -27808,7 +27943,8 @@ async function trfConfirmar() {
     usuario: GCA.usuario?.nome||GCA.usuario?.username,
   });
   if (res?.ok) {
-    msg.style.color='#22c55e'; msg.textContent=`${_trfSeriaisVerificados.length} serial(is) transferido(s)!`;
+    msg.style.color='#22c55e'; msg.textContent=`${res.trocados ?? _trfSeriaisVerificados.length} serial(is) transferido(s) — o saldo passou junto para o novo modelo.`;
+    carregarEstoqueEnel();
     _trfSeriaisVerificados=[]; document.getElementById('trfSerialLista').value='';
     document.getElementById('trfSerialResultado').style.display='none';
     document.getElementById('trfSerialResumo').style.display='none';
@@ -34884,7 +35020,7 @@ async function baExcluirEquipe(id) {
               <div class="form-group">
                 <label class="form-label">Material *</label>
                 <div style="position:relative">
-                  <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelSaiMatSug').classList.add('hidden'),200)" autocomplete="off">
                   <div id="enelSaiMatSug" class="autocomplete-list hidden"></div>
                   <input type="hidden" id="enelSaiMatId">
                 </div>
@@ -34906,6 +35042,16 @@ async function baExcluirEquipe(id) {
                   <option value="Ajuste de inventário">Ajuste de Inventário</option>
                   <option value="Outro">Outro</option>
                 </select>
+              </div>
+              <!-- Material com serial (03/11/2026): a saída leva os seriais; a quantidade é o número de seriais -->
+              <div id="enelSaiSeriaisBox" style="display:none">
+                <label class="form-label">Seriais que estão saindo <span id="enelSaiSeriaisCount" style="color:var(--accent-text)">(0)</span></label>
+                <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Material controlado por serial: bipe ou cole os seriais. Só sai serial que está no estoque e é deste material.</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <input id="enelSaiSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialSaiEnel(this.value);this.value=''}" onpaste="event.preventDefault();addSerialSaiEnel((event.clipboardData||window.clipboardData).getData('text'));this.value=''">
+                  <button class="btn btn-ghost" onclick="const i=document.getElementById('enelSaiSerialInput');addSerialSaiEnel(i.value);i.value=''">+</button>
+                </div>
+                <div id="enelSaiSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px;max-height:160px;overflow:auto"></div>
               </div>
               <div class="form-group"><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
               <div id="enelSaiMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
