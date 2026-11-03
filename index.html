@@ -3438,119 +3438,55 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       </div>
 
       <div class="view h-ceu" id="view-enel-entrada">
-        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Entrada de Estoque</div><div class="card-sub">Registrar recebimento de materiais</div></div>
-            </div>
-            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-              <div class="form-group">
-                <label class="form-label">Material *</label>
-                <div style="position:relative">
-                  <input id="enelEntMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelEntMatSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="enelEntMatSug" class="autocomplete-list hidden"></div>
-                  <input type="hidden" id="enelEntMatId">
-                </div>
-              </div>
-              <div class="grid-2">
-                <div class="form-group"><label class="form-label">Data *</label><input id="enelEntData" class="form-input" type="date"></div>
-                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelEntQtd" class="form-input" type="number" min="1" placeholder="0"></div>
-              </div>
-              <div class="form-group"><label class="form-label">Motivo *</label>
-                <select id="enelEntMotivo" class="form-input">
-                  <option value="">Selecione...</option>
-                  <option value="Recebimento do fornecedor">Recebimento do fornecedor</option>
-                  <option value="Devolução de equipe">Devolução de equipe</option>
-                  <option value="Transferência de parceira">Transferência de parceira</option>
-                  <option value="Ajuste de inventário">Ajuste de inventário</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </div>
-              <div id="enelEntSeriaisBox" style="display:none">
-                <label class="form-label">Seriais <span id="enelEntSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
-                <div style="display:flex;gap:8px;margin-bottom:8px">
-                  <input id="enelEntSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}" onpaste="event.preventDefault();addSerialEntEnel((event.clipboardData||window.clipboardData).getData('text'));this.value=''">
-                  <button class="btn btn-ghost" onclick="const i=document.getElementById('enelEntSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
-                </div>
-                <div id="enelEntSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
-              </div>
-              <div class="form-group"><label class="form-label">Observação</label><input id="enelEntObs" class="form-input" placeholder="Opcional"></div>
-              <div id="enelEntMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
-              <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Registrar Entrada</button>
-            </div>
+        <!-- Redesenho 30/10/2026: histórico em destaque, clique abre o detalhe (seriais, cancelar, corrigir) -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <div>
+            <div class="page-title">Entrada de Estoque</div>
+            <div class="page-sub">Entradas do material do cliente. Clique numa entrada para ver os seriais e o que foi feito com ela.</div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Histórico de Entradas</div></div>
-              <div class="card-actions">
-                <input class="form-input" type="date" id="enelEntHistDe" style="width:130px;font-size:11px">
-                <input class="form-input" type="date" id="enelEntHistAte" style="width:130px;font-size:11px">
-                <select class="form-input" id="enelEntHistMotivo" style="width:170px;font-size:11px" onchange="carregarHistEntradas()">
-                  <option value="">Todos os motivos</option>
-                </select>
-                <button class="btn btn-ghost" onclick="carregarHistEntradas()">↻ Buscar</button>
-              </div>
-            </div>
-            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th></tr></thead>
-            <tbody id="enelEntHistBody"><tr><td colspan="5" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
+          <button class="btn btn-primary" data-perm-btn="enel_entrada_saida|ver_enel" onclick="entEnelNova()"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Nova entrada</button>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end">
+            <div><label class="form-label">De</label><input class="form-input" type="date" id="enelEntHistDe"></div>
+            <div><label class="form-label">Até</label><input class="form-input" type="date" id="enelEntHistAte"></div>
+            <div><label class="form-label">Material</label><select class="form-input" id="enelEntHistMaterial" onchange="carregarHistEntradas()"><option value="">Todos os materiais</option></select></div>
+            <div><label class="form-label">Motivo</label><select class="form-input" id="enelEntHistMotivo" onchange="carregarHistEntradas()"><option value="">Todos os motivos</option></select></div>
+            <div><label class="form-label">Serial</label><input class="form-input" id="enelEntHistSerial" placeholder="Bipar ou digitar..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter')carregarHistEntradas()"></div>
+            <div style="display:flex;gap:6px"><button class="btn btn-primary" onclick="carregarHistEntradas()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Buscar</button><button class="btn btn-ghost" onclick="entEnelLimparFiltros()">Limpar</button></div>
           </div>
+          <div id="enelEntHistResumo" style="padding:0 12px 10px;font-size:12px;color:var(--text-3)"></div>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Usuário</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="enelEntHistBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody></table>
         </div>
       </div>
 
       <!-- SAÍDA ESTOQUE -->
       <div class="view h-ceu" id="view-enel-saida">
-        <div style="display:grid;grid-template-columns:400px 1fr;gap:20px;align-items:start">
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Saída de Estoque</div><div class="card-sub">Registrar saída de materiais</div></div>
-            </div>
-            <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
-              <div class="form-group">
-                <label class="form-label">Material *</label>
-                <div style="position:relative">
-                  <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="enelSaiMatSug" class="autocomplete-list hidden"></div>
-                  <input type="hidden" id="enelSaiMatId">
-                </div>
-              </div>
-              <div class="grid-2">
-                <div class="form-group"><label class="form-label">Data *</label><input id="enelSaiData" class="form-input" type="date"></div>
-                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelSaiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
-              </div>
-              <div class="form-group"><label class="form-label">Equipe / Destino *</label>
-                <div style="position:relative">
-                  <input id="enelSaiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelSaiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
-                  <div id="enelSaiEquipeSug" class="autocomplete-list hidden"></div>
-                </div>
-              </div>
-              <div class="form-group"><label class="form-label">Motivo *</label>
-                <select id="enelSaiMotivo" class="form-input">
-                  <option value="">Selecione...</option>
-                  <option value="Transferência">Transferência</option>
-                  <option value="Ajuste de inventário">Ajuste de Inventário</option>
-                  <option value="Outro">Outro</option>
-                </select>
-              </div>
-              <div class="form-group"><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
-              <div id="enelSaiMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
-              <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()"><svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Registrar Saída</button>
-            </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+          <div>
+            <div class="page-title">Saída de Estoque</div>
+            <div class="page-sub">Saídas do material do cliente (manuais e dos atendimentos). Clique numa saída para ver os seriais e onde estão hoje.</div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <div><div class="card-title">Histórico de Saídas</div></div>
-              <div class="card-actions">
-                <input class="form-input" type="date" id="enelSaiHistDe" style="width:130px;font-size:11px">
-                <input class="form-input" type="date" id="enelSaiHistAte" style="width:130px;font-size:11px">
-                <select class="form-input" id="enelSaiHistMotivo" style="width:190px;font-size:11px" onchange="carregarHistSaidas()">
-                  <option value="">Todos os motivos</option>
-                </select>
-                <button class="btn btn-ghost" onclick="carregarHistSaidas()">↻ Buscar</button>
-              </div>
-            </div>
-            <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Equipe/Destino</th><th>Usuário</th></tr></thead>
-            <tbody id="enelSaiHistBody"><tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Selecione o período e clique em ↻ Buscar</td></tr></tbody></table>
+          <button class="btn btn-primary" data-perm-btn="enel_entrada_saida|ver_enel" onclick="saiEnelNova()"><svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Nova saída</button>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div style="padding:12px;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;align-items:end">
+            <div><label class="form-label">De</label><input class="form-input" type="date" id="enelSaiHistDe"></div>
+            <div><label class="form-label">Até</label><input class="form-input" type="date" id="enelSaiHistAte"></div>
+            <div><label class="form-label">Material</label><select class="form-input" id="enelSaiHistMaterial" onchange="carregarHistSaidas()"><option value="">Todos os materiais</option></select></div>
+            <div><label class="form-label">Motivo</label><select class="form-input" id="enelSaiHistMotivo" onchange="carregarHistSaidas()"><option value="">Todos os motivos</option></select></div>
+            <div><label class="form-label">Equipe / destino</label><input class="form-input" id="enelSaiHistDestino" placeholder="Filtrar..." oninput="renderHistSaidas()"></div>
+            <div><label class="form-label">Serial</label><input class="form-input" id="enelSaiHistSerial" placeholder="Bipar ou digitar..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter')carregarHistSaidas()"></div>
+            <div style="display:flex;gap:6px"><button class="btn btn-primary" onclick="carregarHistSaidas()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Buscar</button><button class="btn btn-ghost" onclick="saiEnelLimparFiltros()">Limpar</button></div>
           </div>
+          <div id="enelSaiHistResumo" style="padding:0 12px 10px;font-size:12px;color:var(--text-3)"></div>
+        </div>
+        <div class="card" style="overflow-x:auto">
+          <table><thead><tr><th>Data</th><th>Material</th><th style="text-align:center">Qtd</th><th>Motivo</th><th>Equipe / destino</th><th>Usuário</th><th></th></tr></thead>
+          <tbody id="enelSaiHistBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody></table>
         </div>
       </div>
 
@@ -8286,8 +8222,8 @@ function onViewLoad(nome) {
   if (nome === 'consulta-viaturas')  carregarFrota();
   if (nome === 'carga-viatura')      { cvIniciar(); cvAba('iniciar', document.querySelector('#view-carga-viatura .atend-tab')); }
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
-  if (nome === 'enel-entrada')       { if (!_enelMateriais.length) carregarMateriaisEnel(); document.getElementById('entData').value=hojeBR(); }
-  if (nome === 'enel-saida')         { if (!_enelMateriais.length) carregarMateriaisEnel(); if (!_equipes.length) carregarEquipes(); document.getElementById('enelSaiData').value=hojeBR(); }
+  if (nome === 'enel-entrada')       entEnelAbrirTela();
+  if (nome === 'enel-saida')         { if (!_equipes.length) carregarEquipes(); saiEnelAbrirTela(); }
   if (nome === 'enel-baixas')        { btdcIniciar(); }
   if (nome === 'enel-tdc')           { ctdcIniciar(); }
   if (nome === 'enel-baixa-manual')  { bmIniciar(); }
@@ -18858,12 +18794,13 @@ const PERMISSOES_SCHEMA = {
     cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
   } },
   enel: { label:'Materiais Cliente (concessionária)', icon:'<svg class=ic aria-hidden=true><use href=#i-zap></use></svg>', itens:{
-    ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio e Baixa Manual)',
+    ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio, Baixa Manual e Cancelar entrada)',
     atendimento_enel:'Atendimento Material, transferência e devolução de seriais',
     liberar_limite_equipe:'Entregar acima do teto do tipo de equipe (com motivo)',
     desbloqueio:'Desbloqueio de equipamento',
     enel_solicitacoes:'Solicitações da concessionária',
     enel_entrada_saida:'Entrada e saída do estoque',
+    enel_cancelar_entrada:'Cancelar ou corrigir o material de uma entrada (com motivo)',
     enel_medidores:'Controle de Medidores (consultar)',
     enel_alerta_medidores:'E-mail diário de medidores bloqueados (escolher quem recebe)',
     enel_controle_materiais:'Controle de Materiais por equipe (consultar)',
@@ -26138,30 +26075,256 @@ async function registrarEntradaEnel() {
     unidade_med:mat?.unidade_med||'UN', motivo, data, quantidade:qtd,
     seriais:mat?.possui_numero_serie?_entSeriaisAtual:[], observacao:obs,
   });
-  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Entrada registrada!'; _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); limparEntradaEnel(); setTimeout(()=>msg.textContent='',3000); }
+  if (res?.ok) {
+    _entSeriaisAtual=[]; renderSeriaisEnt(); carregarEstoqueEnel(); limparEntradaEnel(); msg.textContent='';
+    document.getElementById('modalEnelEntrada').classList.add('hidden');
+    toast('Entrada registrada!', 'success');
+    carregarHistEntradas();
+  }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
+}
+
+// ═══ ENTRADA E SAÍDA DO MATERIAL DO CLIENTE — redesenho de 30/10/2026 ═══
+// Histórico em destaque (filtros de período, material, motivo e serial); clicar numa linha abre o
+// detalhe com os seriais e onde cada um está hoje. Na entrada, "Corrigir material" e "Cancelar"
+// (permissão enel_cancelar_entrada; se algum serial já saiu do estoque, não deixa).
+const ENEL_MOV = { entradas: [], saidas: [], detalhe: null };
+const enelDataMenos = (dias) => { const d = new Date(); d.setDate(d.getDate() - dias); return d.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }); };
+const enelDataHora = (iso) => { if (!iso) return ''; const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }); };
+const enelNum = (n) => Number(n || 0).toLocaleString('pt-BR');
+
+function enelPreencherMateriais(id) {
+  const sel = document.getElementById(id);
+  if (!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Todos os materiais</option>' + [...(_enelMateriais || [])]
+    .sort((a, b) => String(a.descricao || '').localeCompare(String(b.descricao || ''), 'pt-BR'))
+    .map(m => `<option value="${escHtml(m.id)}"${m.id === atual ? ' selected' : ''}>${escHtml(m.descricao || '—')}${m.codigo ? ` (${escHtml(m.codigo)})` : ''}</option>`).join('');
+}
+
+async function entEnelAbrirTela() {
+  if (!_enelMateriais.length) await carregarMateriaisEnel();
+  const de = document.getElementById('enelEntHistDe'), ate = document.getElementById('enelEntHistAte');
+  if (de && !de.value) de.value = enelDataMenos(30);
+  if (ate && !ate.value) ate.value = hojeBR();
+  enelPreencherMateriais('enelEntHistMaterial');
+  carregarHistEntradas();
+}
+
+function entEnelNova() {
+  limparEntradaEnel();
+  document.getElementById('enelEntMsg').textContent = '';
+  document.getElementById('modalEnelEntrada').classList.remove('hidden');
+}
+
+function entEnelLimparFiltros() {
+  document.getElementById('enelEntHistDe').value = enelDataMenos(30);
+  document.getElementById('enelEntHistAte').value = hojeBR();
+  ['enelEntHistMaterial', 'enelEntHistMotivo', 'enelEntHistSerial'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  carregarHistEntradas();
 }
 
 async function carregarHistEntradas() {
   const tbody = document.getElementById('enelEntHistBody');
   if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML='<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
   const de  = document.getElementById('enelEntHistDe')?.value||'';
   const ate = document.getElementById('enelEntHistAte')?.value||'';
   const motivo = document.getElementById('enelEntHistMotivo')?.value||'';
+  const material = document.getElementById('enelEntHistMaterial')?.value||'';
+  const serial = (document.getElementById('enelEntHistSerial')?.value||'').trim();
   const qs = new URLSearchParams();
-  if (de||ate) { qs.set('data_inicio', de); qs.set('data_fim', ate); }
+  // Buscando por serial, o período não limita (o serial pode ter entrado há meses)
+  if (!serial && (de||ate)) { qs.set('data_inicio', de); qs.set('data_fim', ate); }
   if (motivo) qs.set('motivo', motivo);
+  if (material) qs.set('material_id', material);
+  if (serial) qs.set('serial', serial);
   const data = await api('/enel/historico-entradas' + (qs.toString() ? '?' + qs : ''));
-  const lista = data?.data||[];
+  if (!data?.ok) { tbody.innerHTML = `<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--red)">${escHtml(data?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  const lista = data.data||[];
+  ENEL_MOV.entradas = lista;
   preencherFiltroMotivo('enelEntHistMotivo', data?.motivos);
-  tbody.innerHTML = lista.length ? lista.map(e=>`<tr>
-    <td>${formatarData(e.data)}</td>
-    <td class="td-main">${e.descricao_material||'—'}</td>
-    <td style="text-align:center;font-weight:600;color:#22c55e">${e.quantidade}</td>
+  const ativas = lista.filter(e => !e.cancelada_em);
+  const resumo = document.getElementById('enelEntHistResumo');
+  if (resumo) resumo.textContent = lista.length
+    ? `${lista.length} entrada(s) · ${enelNum(ativas.reduce((t, e) => t + Number(e.quantidade || 0), 0))} item(ns)${lista.length > ativas.length ? ` · ${lista.length - ativas.length} cancelada(s)` : ''}${serial ? ` · com o serial ${serial.toUpperCase()}` : ''}${lista.length >= 500 ? ' · mostrando as 500 mais recentes: use os filtros' : ''}`
+    : '';
+  tbody.innerHTML = lista.length ? lista.map(e => {
+    const ajustes = (() => { try { return JSON.parse(e.ajustes_json || '[]'); } catch { return []; } })();
+    const situacao = e.cancelada_em ? gcaSit('Cancelada', 'vermelho', 'x')
+      : ajustes.length ? gcaSit('Material corrigido', 'ambar', 'pencil') : '<span style="font-size:11px;color:var(--text-3)">—</span>';
+    return `<tr style="cursor:pointer${e.cancelada_em ? ';opacity:.6' : ''}" onclick="entEnelDetalhe('${escJs(e.id)}')" title="Ver os seriais e o detalhe">
+    <td style="white-space:nowrap">${formatarData(e.data)}${e.lancada_em ? `<div style="font-size:10px;color:var(--text-3)">lançada ${enelDataHora(e.lancada_em).slice(11)}</div>` : ''}</td>
+    <td class="td-main">${escHtml(e.descricao_material||'—')}${e.codigo_material ? `<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${escHtml(e.codigo_material)}</div>` : ''}</td>
+    <td style="text-align:center;font-weight:700;color:${e.cancelada_em ? 'var(--text-3)' : '#22c55e'}${e.cancelada_em ? ';text-decoration:line-through' : ''}">${enelNum(e.quantidade)}${e.qtd_seriais ? `<div style="font-size:10px;font-weight:400;color:var(--text-3)">${e.qtd_seriais} serial(is)</div>` : ''}</td>
     <td style="font-size:11px">${escHtml(e.motivo||'—')}</td>
-    <td style="font-size:11px;color:var(--text-3)">${e.usuario||'—'}</td>
-  </tr>`).join('') : `<tr><td colspan="5" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma entrada</td></tr>`;
+    <td style="font-size:11px;color:var(--text-3)">${escHtml(e.usuario||'—')}</td>
+    <td>${situacao}</td>
+    <td style="text-align:right"><svg class=ic aria-hidden=true><use href=#i-arrow-right></use></svg></td>
+  </tr>`; }).join('') : `<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma entrada com esses filtros</td></tr>`;
+}
+
+// Tabela de seriais do detalhe (entrada ou saída): busca, contagem por situação e Excel
+function enelTabelaSeriais(seriais, titulo) {
+  if (!seriais.length) return '';
+  const porOnde = {};
+  seriais.forEach(s => { porOnde[s.onde] = (porOnde[s.onde] || 0) + 1; });
+  const resumo = Object.entries(porOnde).sort((a, b) => b[1] - a[1]).map(([o, n]) => `${escHtml(o)}: <b>${n}</b>`).join(' · ');
+  return `<div style="border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden">
+    <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg)">
+      <div><div style="font-size:12px;font-weight:700;color:var(--text-1)">${escHtml(titulo)} · ${seriais.length}</div><div style="font-size:11px;color:var(--text-3);margin-top:2px">${resumo}</div></div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <input class="form-input" id="enelMovDetBusca" placeholder="Buscar serial..." style="width:170px;font-family:var(--font-mono);text-transform:uppercase" oninput="enelFiltrarSeriaisDetalhe(this.value)">
+        <button class="btn btn-ghost" onclick="enelExcelSeriaisDetalhe()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
+      </div>
+    </div>
+    <div style="max-height:320px;overflow:auto">
+      <table><thead><tr><th>Serial</th><th>Onde está hoje</th></tr></thead>
+      <tbody id="enelMovDetSeriais">${seriais.map(s => `<tr data-serial="${escHtml(s.serial)}"><td class="td-mono" style="font-weight:700">${escHtml(s.serial)}</td>
+        <td style="font-size:12px;${s.no_estoque === false ? 'color:var(--red);font-weight:600' : 'color:var(--text-2)'}">${escHtml(s.onde)}</td></tr>`).join('')}</tbody></table>
+    </div>
+  </div>`;
+}
+function enelFiltrarSeriaisDetalhe(q) {
+  const t = String(q || '').trim().toUpperCase();
+  document.querySelectorAll('#enelMovDetSeriais tr').forEach(tr => { tr.style.display = !t || tr.dataset.serial.includes(t) ? '' : 'none'; });
+}
+function enelExcelSeriaisDetalhe() {
+  const d = ENEL_MOV.detalhe;
+  if (!d?.seriais?.length) return;
+  gcaCarregarSheetJS(() => {
+    const ws = XLSX.utils.aoa_to_sheet([['Serial', 'Material', 'Onde está hoje'], ...d.seriais.map(s => [s.serial, d.material || '', s.onde])]);
+    ws['!cols'] = [{ wch: 20 }, { wch: 40 }, { wch: 40 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Seriais');
+    XLSX.writeFile(wb, `${d.tipo}_${d.data || ''}_${String(d.material || '').slice(0, 30).replace(/[^\w-]+/g, '_')}.xlsx`);
+  });
+}
+function enelLinhaInfo(rotulo, valor) {
+  return `<div><div style="font-size:10px;font-weight:700;letter-spacing:.4px;color:var(--text-3);text-transform:uppercase">${rotulo}</div><div style="font-size:13px;color:var(--text-1);margin-top:2px">${valor}</div></div>`;
+}
+
+async function entEnelDetalhe(id) {
+  const modal = document.getElementById('modalEnelMovDetalhe');
+  const corpo = document.getElementById('enelMovDetCorpo');
+  document.getElementById('enelMovDetTitulo').innerHTML = '<svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Entrada';
+  document.getElementById('enelMovDetSub').textContent = '';
+  corpo.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  modal.classList.remove('hidden');
+  const r = await api(`/enel/entradas/${encodeURIComponent(id)}`);
+  if (!r?.ok) { corpo.innerHTML = `<div style="color:var(--red);font-size:13px">${escHtml(r?.erro || 'Erro ao abrir a entrada')}</div>`; return; }
+  const e = r.entrada;
+  ENEL_MOV.detalhe = { tipo: 'entrada', id: e.id, data: e.data, material: e.descricao_material, material_id: e.material_id, seriais: r.seriais, tem_serial: r.material_tem_serial };
+  document.getElementById('enelMovDetTitulo').innerHTML = `<svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Entrada de ${enelNum(e.quantidade)} · ${escHtml(e.descricao_material || '—')}`;
+  document.getElementById('enelMovDetSub').textContent = `${e.codigo_material ? `Código ${e.codigo_material} · ` : ''}${formatarData(e.data)}${e.lancada_em ? ` · lançada em ${enelDataHora(e.lancada_em)}` : ''}`;
+  const historico = [
+    ...(e.ajustes || []).map(a => `<div style="font-size:12px;color:var(--text-2)"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> <b>Material corrigido</b> de ${escHtml(a.de?.descricao || '—')} (${escHtml(a.de?.codigo || '—')}) para <b>${escHtml(a.para?.descricao || '—')}</b> (${escHtml(a.para?.codigo || '—')}) · ${escHtml(a.por || '—')} em ${enelDataHora(a.em)} · <i>${escHtml(a.motivo || '')}</i></div>`),
+    ...(e.cancelada ? [`<div style="font-size:12px;color:var(--red)"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> <b>Cancelada</b> por ${escHtml(e.cancelada_por || '—')} em ${enelDataHora(e.cancelada_em)} · <i>${escHtml(e.motivo_cancelamento || '')}</i></div>`] : []),
+  ];
+  const pode = temPermissao('enel_cancelar_entrada');
+  let acoes = '';
+  if (!e.cancelada && pode) {
+    const bloqueio = r.fora_do_estoque ? `${r.fora_do_estoque} serial(is) desta entrada já não estão no estoque (em vermelho na lista). Para cancelar ou corrigir, todos precisam voltar ao estoque antes.`
+      : r.aviso_seriais && r.material_tem_serial ? r.aviso_seriais
+      : r.saldo_material < Number(e.quantidade || 0) ? `O saldo deste material é ${enelNum(r.saldo_material)}, menor que os ${enelNum(e.quantidade)} da entrada.` : '';
+    acoes = bloqueio
+      ? `<div style="padding:10px 12px;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.06);border-radius:var(--radius-md);font-size:12px;color:var(--text-2)"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> ${escHtml(bloqueio)}</div>`
+      : `<div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="entEnelMostrarAcao('corrigir')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Corrigir material</button>
+          <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="entEnelMostrarAcao('cancelar')"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Cancelar entrada</button>
+        </div>
+        <div id="enelEntAcao"></div>`;
+  }
+  corpo.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+      ${enelLinhaInfo('Data', formatarData(e.data))}${enelLinhaInfo('Quantidade', `<b>${enelNum(e.quantidade)}</b>`)}
+      ${enelLinhaInfo('Motivo', escHtml(e.motivo || '—'))}${enelLinhaInfo('Lançada por', escHtml(e.usuario || '—'))}
+      ${e.observacao ? enelLinhaInfo('Observação', escHtml(e.observacao)) : ''}
+    </div>
+    ${historico.length ? `<div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-md)">${historico.join('')}</div>` : ''}
+    ${r.aviso_seriais ? `<div style="font-size:12px;color:var(--yellow)"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(r.aviso_seriais)}</div>` : ''}
+    ${r.origem_seriais === 'historico' && r.seriais.length ? `<div style="font-size:11px;color:var(--text-3)">Entrada anterior a 30/10/2026: os seriais foram achados pelo histórico de cada medidor.</div>` : ''}
+    ${enelTabelaSeriais(r.seriais, 'Seriais desta entrada')}
+    ${acoes}`;
+}
+
+function entEnelMostrarAcao(qual) {
+  const box = document.getElementById('enelEntAcao');
+  const d = ENEL_MOV.detalhe;
+  if (!box || !d) return;
+  if (qual === 'cancelar') {
+    box.innerHTML = `<div style="padding:12px;border:1px solid rgba(239,68,68,.35);border-radius:var(--radius-md);display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:12px;color:var(--text-2)">Cancelar tira a quantidade desta entrada do saldo${d.seriais.length ? ` e os ${d.seriais.length} seriais do controle de medidores (para lançar de novo no material certo)` : ''}. A entrada continua no histórico, marcada como cancelada.</div>
+      <label class="form-label">Motivo do cancelamento *</label>
+      <textarea id="enelEntAcaoMotivo" class="form-input" rows="2" placeholder="Ex.: lançada no código errado"></textarea>
+      <div><button class="btn btn-primary" style="background:#ef4444;border-color:#ef4444" onclick="entEnelConfirmarCancelar(this)">Confirmar cancelamento</button></div>
+    </div>`;
+  } else {
+    box.innerHTML = `<div style="padding:12px;border:1px solid rgba(245,158,11,.4);border-radius:var(--radius-md);display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:12px;color:var(--text-2)">Corrigir passa a quantidade${d.seriais.length ? ` e os ${d.seriais.length} seriais` : ''} desta entrada para o material certo, de uma vez (sem bipar de novo).</div>
+      <label class="form-label">Material certo *</label>
+      <div style="position:relative">
+        <input id="enelEntAcaoMatBusca" class="form-input" placeholder="Buscar material por nome ou código..." autocomplete="off" oninput="entEnelBuscarMaterial(this.value)" onblur="setTimeout(()=>document.getElementById('enelEntAcaoMatSug')?.classList.add('hidden'),200)">
+        <div id="enelEntAcaoMatSug" class="autocomplete-list hidden"></div>
+        <input type="hidden" id="enelEntAcaoMatId">
+      </div>
+      <label class="form-label">Motivo da correção *</label>
+      <textarea id="enelEntAcaoMotivo" class="form-input" rows="2" placeholder="Ex.: lançada no código do bifásico, o certo é o monofásico"></textarea>
+      <div><button class="btn btn-primary" style="background:#f59e0b;border-color:#f59e0b" onclick="entEnelConfirmarCorrigir(this)">Confirmar correção</button></div>
+    </div>`;
+  }
+}
+
+function entEnelBuscarMaterial(q) {
+  const sug = document.getElementById('enelEntAcaoMatSug');
+  const d = ENEL_MOV.detalhe;
+  document.getElementById('enelEntAcaoMatId').value = '';
+  if (!sug || String(q || '').trim().length < 2) { sug?.classList.add('hidden'); return; }
+  const t = q.trim().toLowerCase();
+  // Entrada com serial só vai para material com serial (e vice-versa)
+  const lista = (_enelMateriais || []).filter(m => m.id !== d.material_id && !!m.possui_numero_serie === !!d.tem_serial
+    && ((m.descricao || '').toLowerCase().includes(t) || (m.codigo || '').toLowerCase().includes(t))).slice(0, 15);
+  sug.innerHTML = lista.length ? lista.map(m => `<div class="autocomplete-item" onmousedown="entEnelEscolherMaterial('${escJs(m.id)}')">
+    <div style="font-size:12px;font-weight:600">${escHtml(m.descricao || '—')}</div><div style="font-size:10px;color:var(--text-3)">${escHtml(m.codigo || '—')}${m.possui_numero_serie ? ' · com serial' : ''}</div></div>`).join('')
+    : '<div class="autocomplete-item" style="color:var(--text-3)">Nenhum material compatível</div>';
+  sug.classList.remove('hidden');
+}
+function entEnelEscolherMaterial(id) {
+  const m = (_enelMateriais || []).find(x => x.id === id);
+  if (!m) return;
+  document.getElementById('enelEntAcaoMatId').value = id;
+  document.getElementById('enelEntAcaoMatBusca').value = `${m.descricao}${m.codigo ? ` (${m.codigo})` : ''}`;
+  document.getElementById('enelEntAcaoMatSug').classList.add('hidden');
+}
+
+async function entEnelConfirmarCancelar(btn) {
+  const d = ENEL_MOV.detalhe;
+  const motivo = (document.getElementById('enelEntAcaoMotivo')?.value || '').trim();
+  if (motivo.length < 5) { toast('Informe o motivo do cancelamento', 'warn'); return; }
+  btn.disabled = true;
+  const r = await apiMovimentacao(`/enel/entradas/${encodeURIComponent(d.id)}/cancelar`, { motivo });
+  btn.disabled = false;
+  if (!r?.ok) { toast(r?.erro || 'Erro ao cancelar', 'error', 8000); if (r?.fora_do_estoque) entEnelDetalhe(d.id); return; }
+  toast(`Entrada cancelada: ${enelNum(r.quantidade)} saíram do saldo${r.seriais ? ` e ${r.seriais} seriais do controle` : ''}.`, 'success', 6000);
+  carregarEstoqueEnel();
+  await carregarHistEntradas();
+  entEnelDetalhe(d.id);
+}
+
+async function entEnelConfirmarCorrigir(btn) {
+  const d = ENEL_MOV.detalhe;
+  const materialId = document.getElementById('enelEntAcaoMatId')?.value || '';
+  const motivo = (document.getElementById('enelEntAcaoMotivo')?.value || '').trim();
+  if (!materialId) { toast('Escolha o material certo na lista', 'warn'); return; }
+  if (motivo.length < 5) { toast('Informe o motivo da correção', 'warn'); return; }
+  btn.disabled = true;
+  const r = await apiMovimentacao(`/enel/entradas/${encodeURIComponent(d.id)}/corrigir-material`, { material_id: materialId, motivo });
+  btn.disabled = false;
+  if (!r?.ok) { toast(r?.erro || 'Erro ao corrigir', 'error', 8000); if (r?.fora_do_estoque) entEnelDetalhe(d.id); return; }
+  toast(`Corrigido: ${enelNum(r.quantidade)}${r.seriais ? ` (${r.seriais} seriais)` : ''} passaram de ${r.de?.descricao || '—'} para ${r.para?.descricao || '—'}.`, 'success', 7000);
+  carregarEstoqueEnel();
+  await carregarHistEntradas();
+  entEnelDetalhe(d.id);
 }
 
 // ── SAÍDA ──
@@ -26231,8 +26394,35 @@ async function registrarSaidaEnel() {
     material_id:matId, material_descricao:mat?.descricao||'', codigo:mat?.codigo||'',
     tipo_saida:motivo, destino:equipe, data, quantidade:qtd, obs,
   });
-  if (res?.ok) { msg.style.color='#22c55e'; msg.textContent='Saída registrada!'; carregarEstoqueEnel(); limparSaidaEnel(); setTimeout(()=>msg.textContent='',3000); }
+  if (res?.ok) {
+    carregarEstoqueEnel(); limparSaidaEnel(); msg.textContent='';
+    document.getElementById('modalEnelSaida').classList.add('hidden');
+    toast('Saída registrada!', 'success');
+    carregarHistSaidas();
+  }
   else { msg.style.color='#ef4444'; msg.textContent=res?.erro||'Erro ao registrar'; }
+}
+
+async function saiEnelAbrirTela() {
+  if (!_enelMateriais.length) await carregarMateriaisEnel();
+  const de = document.getElementById('enelSaiHistDe'), ate = document.getElementById('enelSaiHistAte');
+  if (de && !de.value) de.value = enelDataMenos(30);
+  if (ate && !ate.value) ate.value = hojeBR();
+  enelPreencherMateriais('enelSaiHistMaterial');
+  carregarHistSaidas();
+}
+
+function saiEnelNova() {
+  limparSaidaEnel();
+  document.getElementById('enelSaiMsg').textContent = '';
+  document.getElementById('modalEnelSaida').classList.remove('hidden');
+}
+
+function saiEnelLimparFiltros() {
+  document.getElementById('enelSaiHistDe').value = enelDataMenos(30);
+  document.getElementById('enelSaiHistAte').value = hojeBR();
+  ['enelSaiHistMaterial', 'enelSaiHistMotivo', 'enelSaiHistDestino', 'enelSaiHistSerial'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  carregarHistSaidas();
 }
 
 async function carregarHistSaidas() {
@@ -26240,22 +26430,64 @@ async function carregarHistSaidas() {
   const de    = document.getElementById('enelSaiHistDe')?.value;
   const ate   = document.getElementById('enelSaiHistAte')?.value;
   if (!tbody) return;
-  tbody.innerHTML='<tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr>';
+  tbody.innerHTML='<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
   const motivo = document.getElementById('enelSaiHistMotivo')?.value||'';
+  const material = document.getElementById('enelSaiHistMaterial')?.value||'';
+  const serial = (document.getElementById('enelSaiHistSerial')?.value||'').trim();
   const qs = new URLSearchParams();
-  if (de||ate) { qs.set('data_inicio', de||''); qs.set('data_fim', ate||''); }
+  if (!serial && (de||ate)) { qs.set('data_inicio', de||''); qs.set('data_fim', ate||''); }
   if (motivo) qs.set('motivo', motivo);
+  if (material) qs.set('material_id', material);
+  if (serial) qs.set('serial', serial);
   const data = await api('/enel/historico-saidas' + (qs.toString() ? '?' + qs : ''));
-  const lista = data?.data||[];
+  if (!data?.ok) { tbody.innerHTML = `<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--red)">${escHtml(data?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  ENEL_MOV.saidas = data.data||[];
   preencherFiltroMotivo('enelSaiHistMotivo', data?.motivos);
-  tbody.innerHTML = lista.length ? lista.map(s=>`<tr>
-    <td>${formatarData(s.data)}</td>
-    <td class="td-main">${escHtml(s.material_descricao||'—')}</td>
-    <td style="text-align:center;font-weight:600;color:${Number(s.quantidade)<0?'#22c55e':'#ef4444'}">${s.quantidade}</td>
+  renderHistSaidas();
+}
+
+// O filtro de equipe/destino é na própria tela (digita e já filtra)
+function renderHistSaidas() {
+  const tbody = document.getElementById('enelSaiHistBody');
+  if (!tbody) return;
+  const destino = (document.getElementById('enelSaiHistDestino')?.value || '').trim().toLowerCase();
+  const serial = (document.getElementById('enelSaiHistSerial')?.value||'').trim();
+  const lista = ENEL_MOV.saidas.filter(s => !destino || String(s.destino || '').toLowerCase().includes(destino));
+  const resumo = document.getElementById('enelSaiHistResumo');
+  if (resumo) resumo.textContent = lista.length
+    ? `${lista.length} saída(s) · ${enelNum(lista.reduce((t, s) => t + Number(s.quantidade || 0), 0))} item(ns)${serial ? ` · com o serial ${serial.toUpperCase()}` : ''}${ENEL_MOV.saidas.length >= 500 ? ' · mostrando as 500 mais recentes: use os filtros' : ''}`
+    : '';
+  tbody.innerHTML = lista.length ? lista.map(s=>`<tr style="cursor:pointer" onclick="saiEnelDetalhe('${escJs(s.id)}')" title="Ver os seriais e o detalhe">
+    <td style="white-space:nowrap">${formatarData(s.data)}${s.hora ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(String(s.hora).slice(0, 5))}</div>` : ''}</td>
+    <td class="td-main">${escHtml(s.material_descricao||'—')}${s.codigo ? `<div style="font-size:10px;color:var(--text-3);font-family:var(--font-mono)">${escHtml(s.codigo)}</div>` : ''}</td>
+    <td style="text-align:center;font-weight:700;color:${Number(s.quantidade)<0?'#22c55e':'#ef4444'}">${enelNum(s.quantidade)}${s.qtd_seriais ? `<div style="font-size:10px;font-weight:400;color:var(--text-3)">${s.qtd_seriais} serial(is)</div>` : ''}</td>
     <td style="font-size:11px">${escHtml(txtConc(s.tipo_saida)||'—')}</td>
     <td style="font-size:11px">${escHtml(s.destino||'—')}</td>
     <td style="font-size:11px;color:var(--text-3)">${escHtml(s.usuario||'—')}</td>
-  </tr>`).join('') : `<tr><td colspan="6" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma saída</td></tr>`;
+    <td style="text-align:right"><svg class=ic aria-hidden=true><use href=#i-arrow-right></use></svg></td>
+  </tr>`).join('') : `<tr><td colspan="7" style="padding:16px;text-align:center;color:var(--text-3)">Nenhuma saída com esses filtros</td></tr>`;
+}
+
+async function saiEnelDetalhe(id) {
+  const modal = document.getElementById('modalEnelMovDetalhe');
+  const corpo = document.getElementById('enelMovDetCorpo');
+  document.getElementById('enelMovDetTitulo').innerHTML = '<svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Saída';
+  document.getElementById('enelMovDetSub').textContent = '';
+  corpo.innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  modal.classList.remove('hidden');
+  const r = await api(`/enel/saidas/${encodeURIComponent(id)}`);
+  if (!r?.ok) { corpo.innerHTML = `<div style="color:var(--red);font-size:13px">${escHtml(r?.erro || 'Erro ao abrir a saída')}</div>`; return; }
+  const s = r.saida;
+  ENEL_MOV.detalhe = { tipo: 'saida', id: s.id, data: s.data, material: s.material_descricao, seriais: r.seriais };
+  document.getElementById('enelMovDetTitulo').innerHTML = `<svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Saída de ${enelNum(s.quantidade)} · ${escHtml(s.material_descricao || '—')}`;
+  document.getElementById('enelMovDetSub').textContent = `${s.codigo ? `Código ${s.codigo} · ` : ''}${formatarData(s.data)}${s.hora ? ` às ${String(s.hora).slice(0, 5)}` : ''}`;
+  corpo.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+      ${enelLinhaInfo('Data', `${formatarData(s.data)}${s.hora ? ` ${escHtml(String(s.hora).slice(0, 5))}` : ''}`)}${enelLinhaInfo('Quantidade', `<b>${enelNum(s.quantidade)}</b>`)}
+      ${enelLinhaInfo('Motivo', escHtml(txtConc(s.tipo_saida) || '—'))}${enelLinhaInfo('Equipe / destino', escHtml(s.destino || '—'))}
+      ${enelLinhaInfo('Lançada por', escHtml(s.usuario || '—'))}${s.obs ? enelLinhaInfo('Observação', escHtml(s.obs)) : ''}
+    </div>
+    ${r.seriais.length ? enelTabelaSeriais(r.seriais, 'Seriais desta saída') : '<div style="font-size:12px;color:var(--text-3)">Saída sem seriais (material sem número de série ou lançada só pela quantidade).</div>'}`;
 }
 
 // Monta o filtro de motivo com o que existe no período, sem perder o que já estava escolhido
@@ -34594,6 +34826,101 @@ async function baExcluirEquipe(id) {
       <button class="btn btn-ghost" onclick="document.getElementById('modalVerSC').classList.add('hidden')">Fechar</button>
       <button class="btn btn-primary" id="btnAbrirRecebimento" onclick="abrirRecebimentoSC()"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Registrar Recebimento</button>
     </div>
+  </div>
+</div>
+
+<!-- MATERIAL DO CLIENTE: nova entrada / nova saída (formulários de antes, agora em janela) e detalhes (30/10/2026) -->
+<div class="modal-overlay hidden" id="modalEnelEntrada">
+  <div class="modal-box" style="max-width:520px;width:100%">
+    <div class="modal-header">
+      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Nova entrada</div><div style="font-size:11px;color:var(--text-3)">Registrar recebimento de materiais do cliente</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEnelEntrada').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group">
+                <label class="form-label">Material *</label>
+                <div style="position:relative">
+                  <input id="enelEntMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatEntEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelEntMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelEntMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="enelEntMatId">
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Data *</label><input id="enelEntData" class="form-input" type="date"></div>
+                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelEntQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Motivo *</label>
+                <select id="enelEntMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Recebimento do fornecedor">Recebimento do fornecedor</option>
+                  <option value="Devolução de equipe">Devolução de equipe</option>
+                  <option value="Transferência de parceira">Transferência de parceira</option>
+                  <option value="Ajuste de inventário">Ajuste de inventário</option>
+                  <option value="Outros">Outros</option>
+                </select>
+              </div>
+              <div id="enelEntSeriaisBox" style="display:none">
+                <label class="form-label">Seriais <span id="enelEntSeriaisCount" style="color:var(--accent-text)">(0/0)</span></label>
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <input id="enelEntSerialInput" class="form-input" placeholder="Bipar/colar serial..." style="font-family:var(--font-mono);text-transform:uppercase" onkeydown="if(event.key==='Enter'){addSerialEntEnel(this.value);this.value=''}" onpaste="event.preventDefault();addSerialEntEnel((event.clipboardData||window.clipboardData).getData('text'));this.value=''">
+                  <button class="btn btn-ghost" onclick="const i=document.getElementById('enelEntSerialInput');addSerialEntEnel(i.value);i.value=''">+</button>
+                </div>
+                <div id="enelEntSeriaisList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Observação</label><input id="enelEntObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelEntMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarEntradaEnel()"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Registrar Entrada</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalEnelSaida">
+  <div class="modal-box" style="max-width:520px;width:100%">
+    <div class="modal-header">
+      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Nova saída</div><div style="font-size:11px;color:var(--text-3)">Registrar saída de materiais do cliente</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEnelSaida').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+              <div class="form-group">
+                <label class="form-label">Material *</label>
+                <div style="position:relative">
+                  <input id="enelSaiMatBusca" class="form-input" placeholder="Buscar material..." oninput="filtrarMatSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('saiMatSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelSaiMatSug" class="autocomplete-list hidden"></div>
+                  <input type="hidden" id="enelSaiMatId">
+                </div>
+              </div>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Data *</label><input id="enelSaiData" class="form-input" type="date"></div>
+                <div class="form-group"><label class="form-label">Quantidade *</label><input id="enelSaiQtd" class="form-input" type="number" min="1" placeholder="0"></div>
+              </div>
+              <div class="form-group"><label class="form-label">Equipe / Destino *</label>
+                <div style="position:relative">
+                  <input id="enelSaiEquipeBusca" class="form-input" placeholder="Nome da equipe..." oninput="filtrarEquipeSaiEnel(this.value)" onblur="setTimeout(()=>document.getElementById('enelSaiEquipeSug').classList.add('hidden'),200)" autocomplete="off">
+                  <div id="enelSaiEquipeSug" class="autocomplete-list hidden"></div>
+                </div>
+              </div>
+              <div class="form-group"><label class="form-label">Motivo *</label>
+                <select id="enelSaiMotivo" class="form-input">
+                  <option value="">Selecione...</option>
+                  <option value="Transferência">Transferência</option>
+                  <option value="Ajuste de inventário">Ajuste de Inventário</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Observação</label><input id="enelSaiObs" class="form-input" placeholder="Opcional"></div>
+              <div id="enelSaiMsg" style="font-size:11px;min-height:14px;color:var(--red)"></div>
+              <button class="btn btn-primary" style="justify-content:center" onclick="registrarSaidaEnel()"><svg class=ic aria-hidden=true><use href=#i-package-minus></use></svg> Registrar Saída</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="modalEnelMovDetalhe">
+  <div class="modal-box modal-alto" style="max-width:820px;width:100%">
+    <div class="modal-header">
+      <div><div class="modal-title" id="enelMovDetTitulo"></div><div style="font-size:11px;color:var(--text-3)" id="enelMovDetSub"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalEnelMovDetalhe').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" id="enelMovDetCorpo" style="display:flex;flex-direction:column;gap:12px"></div>
   </div>
 </div>
 
