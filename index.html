@@ -8878,7 +8878,7 @@ async function verificarTokenAssinatura() {
             </tr></thead>
             <tbody>
               ${itens.map(it => `<tr>
-                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}${/^\d+( \/ \d+)*$/.test(String(it.ca||'')) ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">CA ${escHtml(it.ca)}${it.marca ? ` · ${escHtml(it.marca)}` : ''}</div>` : ''}</td>
+                <td style="padding:8px 4px;font-size:12px;color:#e2e8f0;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.descricao||it.nomeItem||'—')}${/^\d+( \/ \d+)*$/.test(String(it.ca||'')) ? `<div style="font-size:10px;color:#94a3b8;margin-top:2px">CA ${escHtml(it.ca)}${it.marca ? ` · ${escHtml(it.marca)}` : ''}</div>` : ''}${seriaisEntreguesItem(it).length ? `<div style="font-size:11px;color:#93c5fd;margin-top:2px;font-family:monospace;font-weight:700">${seriaisEntreguesItem(it).length > 1 ? 'Seriais' : 'Serial'}: ${seriaisEntreguesItem(it).map(escHtml).join(', ')}</div>` : ''}</td>
                 <td style="padding:8px 4px;font-size:12px;text-align:center;color:#e2e8f0;border-bottom:1px solid #1e293b;white-space:nowrap">${it.quantidade} ${it.unidade||'UN'}</td>
                 <td style="padding:8px 4px;font-size:11px;color:#94a3b8;border-bottom:1px solid #1e293b;word-break:break-word">${escHtml(it.motivo||'—')}</td>
               </tr>`).join('')}
@@ -11583,6 +11583,7 @@ function imprimirFicha() {
   const sol = window._solicitacaoAtendimento || null;
   imprimirFichaSeparacao(ATEND.id, colabId, itensAT.map(it=>({
     descricao: it.descricao, quantidade: it.quantidade, itemId: it.itemId,
+    seriais: it.seriais || [],   // serial NR10 entregue (03/11/2026): aparece na ficha
   })), link, sol ? { id: sol.id, solicitanteNome: sol.solicitante_nome, prioridade: sol.prioridade } : null);
 }
 
@@ -33226,6 +33227,11 @@ const CSS_PDF_BASE = `
 // ═══════════════════════════════════════════
 // PDF 2 — FICHA DE SEPARAÇÃO (após atendimento, com QR)
 // ═══════════════════════════════════════════
+// Seriais NR10 entregues num item (03/11/2026): a ficha, a página de assinatura e o comprovante mostram
+// o serial de cada EPI/ferramenta com serial. `seriais` é sempre um array (vazio sem serial; 2 no PAR).
+function seriaisEntreguesItem(it) {
+  return [...new Set((Array.isArray(it?.seriais) ? it.seriais : []).map(s => String(s ?? '').trim().toUpperCase()).filter(Boolean))];
+}
 async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirmacao, solicitacao) {
   const colab   = _colaboradores.find(c=>c.id===colabId)||{};
   const agora   = new Date();
@@ -33255,9 +33261,10 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
     const itemGlobal = (_itens||[]).find(i=>i.id===it.itemId||i.descricao===it.descricao);
     const loc = itemGlobal ? [itemGlobal.corredor,itemGlobal.prateleira,itemGlobal.box].filter(Boolean).join(' · ') : '—';
     const bg = i%2===0?'#f8fafc':'#ffffff';
+    const seriais = seriaisEntreguesItem(it);
     return `<tr style="background:${bg}">
       <td style="width:28px;text-align:center;"><div style="width:20px;height:20px;border:2px solid #333;border-radius:3px;display:inline-block;"></div></td>
-      <td>${escHtml(it.descricao||'—')}</td>
+      <td>${escHtml(it.descricao||'—')}${seriais.length ? `<div style="font-family:monospace;font-size:11px;font-weight:700;color:${AZUL};margin-top:2px">${seriais.length > 1 ? 'Seriais' : 'Serial'}: ${seriais.map(escHtml).join(', ')}</div>` : ''}</td>
       <td style="text-align:center;font-weight:700;font-size:15px;">${it.quantidade||1}</td>
       <td style="font-family:monospace;color:${AZUL};font-weight:700;">${loc}</td>
     </tr>`;

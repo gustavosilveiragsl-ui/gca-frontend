@@ -93,6 +93,7 @@ canvas{display:block;}
 .item-qty{font-size:20px;font-weight:800;color:#6366f1;min-width:36px;text-align:center;}
 .item-desc{font-size:13px;font-weight:600;color:#f1f5f9;line-height:1.3;}
 .item-mot{font-size:11px;color:#475569;margin-top:2px;}
+.item-serial{font-size:12px;color:#93c5fd;margin-top:2px;font-family:monospace;font-weight:700;}
 
 /* Canvas de assinatura (coluna direita) */
 .ass-canvas-wrap{display:flex;flex-direction:column;padding:20px 28px;}
@@ -359,6 +360,10 @@ function contarItens(json) {
 }
 
 // ── TELA DE ASSINATURA ────────────────────────────────────
+// Serial NR10 entregue (03/11/2026): aparece embaixo do item (2 no item PAR)
+function seriaisDoItem(it) {
+  return [...new Set((Array.isArray(it?.seriais) ? it.seriais : []).map(s => String(s ?? '').trim().toUpperCase()).filter(Boolean))];
+}
 function abrirAssinatura(id) {
   _atual = _pendentes.find(a => a.id === id);
   if (!_atual) return;
@@ -372,6 +377,7 @@ function abrirAssinatura(id) {
       <div class="item-qty">${it.quantidade||1}</div>
       <div>
         <div class="item-desc">${escHtml(it.descricao||it.nome||'—')}</div>
+        ${seriaisDoItem(it).length?`<div class="item-serial">${seriaisDoItem(it).length>1?'Seriais':'Serial'}: ${seriaisDoItem(it).map(escHtml).join(', ')}</div>`:''}
         ${it.motivo?`<div class="item-mot">${escHtml(it.motivo)}</div>`:''}
       </div>
     </div>
