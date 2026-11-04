@@ -1389,9 +1389,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <div class="card-header"><div><div class="card-title" id="colabFormTitulo">Novo Colaborador</div></div></div>
             <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
               <input type="hidden" id="colabEditId">
-              <div><label class="form-label">Nome *</label><input id="colabNome" class="form-input" placeholder="Nome completo"></div>
+              <div><label class="form-label">Nome *</label><input id="colabNome" class="form-input" placeholder="NOME COMPLETO" style="text-transform:uppercase" onblur="this.value=textoCadastroTela(this.value)"></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div><label class="form-label">Matrícula *</label><input id="colabMatricula" class="form-input" placeholder="Ex: 12345"></div>
+                <div><label class="form-label">Matrícula *</label><input id="colabMatricula" class="form-input" placeholder="Ex: 12345" style="text-transform:uppercase" onblur="this.value=textoCadastroTela(this.value)"></div>
                 <div><label class="form-label">Status *</label>
                   <select id="colabStatus" class="form-input">
                     <option value="ativo">Ativo</option>
@@ -1405,7 +1405,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                   <option value="">Carregando funções...</option>
                 </select>
               </div>
-              <div><label class="form-label">Setor</label><input id="colabSetor" class="form-input" placeholder="Ex: Operacional SOC"></div>
+              <div><label class="form-label">Setor</label><input id="colabSetor" class="form-input" placeholder="Escolha da lista ou digite (ex.: LEITURA SAO RAIMUNDO NONATO)" list="colabSetoresLista" autocomplete="off" style="text-transform:uppercase" onfocus="colabPreencherSetores()" onblur="this.value=textoCadastroTela(this.value)">
+                <datalist id="colabSetoresLista"></datalist>
+                <div style="font-size:10px;color:var(--text-3);margin-top:3px">Nome, matrícula e setor são gravados em MAIÚSCULO e SEM ACENTO.</div></div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div><label class="form-label">Telefone</label><input id="colabTelefone" class="form-input" placeholder="(00) 00000-0000"></div>
                 <div><label class="form-label">Admissão</label><input id="colabAdmissao" class="form-input" type="date"></div>
@@ -20882,14 +20884,27 @@ function colabTamanhosDoForm() {
   return Object.fromEntries([...document.querySelectorAll('.colab-tam-sel')].map(x => [x.dataset.familia, x.value]));
 }
 
+// Texto do cadastro do colaborador (04/11/2026): MAIÚSCULO, SEM ACENTO e sem espaço sobrando — igual ao
+// servidor, que grava assim de qualquer jeito. Evita "São Raimundo Nonato" e "SAO RAIMUNDO NONATO"
+// virarem dois setores nos relatórios e filtros.
+function textoCadastroTela(s) {
+  return String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/\s+/g, ' ').trim();
+}
+// Sugestões do setor: os setores que já existem nos colaboradores carregados (para escolher em vez de redigitar)
+function colabPreencherSetores() {
+  const dl = document.getElementById('colabSetoresLista');
+  if (!dl) return;
+  const setores = [...new Set((_colaboradores || []).map(c => textoCadastroTela(c.setor)).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  dl.innerHTML = setores.map(s => `<option value="${escHtml(s)}"></option>`).join('');
+}
 async function salvarColaborador() {
   const id   = document.getElementById('colabEditId').value;
   const body = {
-    nome:          document.getElementById('colabNome').value.trim().toUpperCase(),
-    matricula:     document.getElementById('colabMatricula').value.trim(),
+    nome:          textoCadastroTela(document.getElementById('colabNome').value),
+    matricula:     textoCadastroTela(document.getElementById('colabMatricula').value),
     status:        document.getElementById('colabStatus').value,
     funcao:        document.getElementById('colabFuncao').value.trim().toUpperCase(),
-    setor:         document.getElementById('colabSetor').value.trim(),
+    setor:         textoCadastroTela(document.getElementById('colabSetor').value),
     telefone:      document.getElementById('colabTelefone').value.trim(),
     data_admissao: document.getElementById('colabAdmissao').value,
     nivel:         document.getElementById('colabNivel').value,
