@@ -483,10 +483,28 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-popup .lp-link{display:block;text-align:center;margin-top:10px;font-size:11px;color:#4f46e5;background:#eef2ff;border-radius:9px;padding:7px;text-decoration:none;font-weight:700;}
 .log-popup .lp-link:hover{background:#e0e7ff;}
 
-/* Marcadores do mapa: origem (armazém) e o emoji que corre pela rota */
-.mapa-origem-pin{width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--accent);
-  display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 10px rgba(15,23,42,.28);}
+/* Marcadores do mapa de logística (04/11/2026): armazém de origem com anel pulsando, caminhão desenhado
+   que corre pela rota (vira para o lado em que vai, rodas girando), caixa esperando coleta e pino do destino */
+.mapa-origem-pin{position:relative;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 3px 10px rgba(15,23,42,.28);color:var(--accent);}
+.mapa-origem-pin::after{content:'';position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--accent);opacity:0;animation:mapaPulso 2.6s ease-out infinite;pointer-events:none;}
 .mapa-emoji-movel{font-size:19px;line-height:1;filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));transition:transform .09s linear;}
+.mapa-veiculo{width:46px;height:31px;filter:drop-shadow(0 3px 3px rgba(15,23,42,.38));pointer-events:none;}
+.mapa-veiculo svg{display:block;width:100%;height:100%;overflow:visible;animation:mapaBalanco .55s ease-in-out infinite alternate;}
+.mapa-veiculo .ve{display:none;} .mapa-veiculo.esq .vd{display:none;} .mapa-veiculo.esq .ve{display:inline;}
+.mapa-veiculo .roda{transform-box:fill-box;transform-origin:center;animation:mapaRoda .6s linear infinite;}
+.mapa-caixa{position:relative;width:30px;height:30px;filter:drop-shadow(0 3px 3px rgba(15,23,42,.35));pointer-events:none;}
+.mapa-caixa svg{display:block;width:100%;height:100%;overflow:visible;animation:mapaFlutua 1.5s ease-in-out infinite alternate;}
+.mapa-caixa::after{content:'';position:absolute;left:3px;right:3px;bottom:-3px;height:10px;border-radius:50%;border:2px solid #f59e0b;opacity:0;animation:mapaPulso 2s ease-out infinite;}
+.mapa-destino{width:24px;height:32px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.4));}
+.mapa-destino svg{display:block;overflow:visible;}
+.mapa-rota-fluxo{animation:mapaFluxo .9s linear infinite;}
+@keyframes mapaFluxo{to{stroke-dashoffset:-16}}
+@keyframes mapaPulso{0%{transform:scale(.75);opacity:.65}100%{transform:scale(1.45);opacity:0}}
+@keyframes mapaBalanco{from{transform:translateY(0)}to{transform:translateY(-1.2px)}}
+@keyframes mapaFlutua{from{transform:translateY(0)}to{transform:translateY(-3px)}}
+@keyframes mapaRoda{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){.mapa-rota-fluxo,.mapa-veiculo svg,.mapa-veiculo .roda,.mapa-caixa svg,.mapa-caixa::after,.mapa-origem-pin::after{animation:none}}
 
 /* ═══ ATENDIMENTO ═══ */
 .atend-tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:0}
@@ -7663,7 +7681,7 @@ const PB_TRANSF_STATUS = { AGUARDANDO_ACEITE: 'Aguardando aceite', ACEITA: 'Acei
 const pbLogStatus = (st) => ({ AGUARDANDO_COLETA: gcaSit('Aguardando coleta', 'ardosia', 'package'), EM_TRANSITO: gcaSit('Em trânsito', 'ceu', 'truck'),
   ENTREGUE: gcaSit('Entregue', 'verde', 'check') })[st] || escHtml(PB_TRANSF_STATUS[st] || st);   // devolve HTML; não passar por escHtml
 function pbLogLimparMapa() {
-  if (PB.logAnim) { clearInterval(PB.logAnim); PB.logAnim = null; }
+  if (PB.logAnim) { if (typeof PB.logAnim === 'function') PB.logAnim(); else clearInterval(PB.logAnim); PB.logAnim = null; }
   if (PB.logMap) { try { PB.logMap.remove(); } catch {} PB.logMap = null; }
   PBL.marcadores = [];
 }
@@ -7746,8 +7764,6 @@ async function pbLogDesenharMapa(cargas, transf) {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 }).addTo(mapa);
   PB.logMap = mapa;
   const camadas = [], anim = [], origens = {};
-  const pino = (cor) => L.divIcon({ className: '', html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${cor};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`, iconSize: [16, 16], iconAnchor: [8, 16] });
-  const emoji = (e) => L.divIcon({ className: '', html: `<div class="mapa-emoji-movel">${e}</div>`, iconSize: [26, 26], iconAnchor: [13, 13] });
   const pontoOrigem = (c, nome, icone) => {
     const k = `${c.lat.toFixed(4)},${c.lng.toFixed(4)}`;
     if (origens[k]) return;
@@ -7762,14 +7778,12 @@ async function pbLogDesenharMapa(cargas, transf) {
     if (c.de) {
       pontoOrigem(c.de, c.origem || 'Armazém', '<svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg>');
       const pts = curvaEntrePontos([c.de.lat, c.de.lng], [c.para.lat, c.para.lng]);
-      camadas.push(L.polyline(pts, { color: cor, weight: andando ? 3 : 2, opacity: andando ? 0.85 : 0.4, dashArray: c.status === 'AGUARDANDO_COLETA' ? '6 8' : null }).addTo(mapa));
-      if (andando) {
-        const m = L.marker(pts[0], { icon: emoji(c.status === 'EM_TRANSITO' ? '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-package></use></svg>'), interactive: false, zIndexOffset: 900 }).addTo(mapa);
-        camadas.push(m); anim.push({ m, pts, passo: c.status === 'EM_TRANSITO' ? 0.9 : 0.35, pos: Math.random() * pts.length });
-      }
+      const situacao = mapaSituacao(c.status);
+      camadas.push(...mapaDesenharRota(mapa, pts, cor, situacao).camadas);
+      if (andando) camadas.push(mapaVeiculoNaRota(mapa, pts, situacao, cor, anim));
     }
     const atends = c.atendimentos.slice(0, 8).map(a => `<div class="lp-atend"><span class="lp-atend-nome">${escHtml(a.nome || '—')}</span>${a.assinado ? ' <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>' : ''}</div>`).join('');
-    const mk = L.marker([c.para.lat, c.para.lng], { icon: pino(cor) }).addTo(mapa).bindPopup(`<div class="log-popup">
+    const mk = L.marker([c.para.lat, c.para.lng], { icon: mapaIconeDestino(cor, c.status === 'ENTREGUE') }).addTo(mapa).bindPopup(`<div class="log-popup">
       <div class="lp-head"><div class="lp-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(c.destino)}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${pbLogStatus(c.status)}</span></div>
       <div class="lp-rota-mini"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> ${escHtml(c.filial)}${c.origem ? ` · <svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> ${escHtml(c.origem)} <span class="lp-seta">→</span> ${escHtml(c.destino)}` : ''}</div>
       <div class="lp-transp"><svg class=ic aria-hidden=true><use href=#i-user></use></svg> ${escHtml(c.transportador || 'sem transportador')}${c.status !== 'ENTREGUE' && c.dias != null ? ` · há ${c.dias} dia(s)` : ''}</div>
@@ -7784,21 +7798,20 @@ async function pbLogDesenharMapa(cargas, transf) {
     pontoOrigem(t._de, `${t.origem}${t.armazem_origem ? ' · ' + t.armazem_origem : ''}`, '<svg class=ic aria-hidden=true><use href=#i-building-2></use></svg>');
     pontoOrigem(t._para, `${t.destino}${t.armazem_destino ? ' · ' + t.armazem_destino : ''}`, '<svg class=ic aria-hidden=true><use href=#i-building-2></use></svg>');
     const pts = curvaEntrePontos([t._de.lat, t._de.lng], [t._para.lat, t._para.lng]);
-    const linha = L.polyline(pts, { color: cor, weight: 3, opacity: 0.85, dashArray: '10 8' }).addTo(mapa).bindPopup(`<div class="log-popup">
+    const rotaTrf = mapaDesenharRota(mapa, pts, cor, 'transito');
+    camadas.push(...rotaTrf.camadas.filter(x => x !== rotaTrf.base));
+    const linha = rotaTrf.base.bindPopup(`<div class="log-popup">
       <div class="lp-head"><div class="lp-destino"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Transferência ${escHtml(t.numero || '')}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${escHtml(PB_TRANSF_STATUS[t.status] || t.status)}</span></div>
       <div class="lp-rota-mini"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> ${escHtml(t.origem)} <span class="lp-seta">→</span> ${escHtml(t.destino)}</div>
       <div class="lp-transp">${escHtml(t.armazem_origem || '—')} → ${escHtml(t.armazem_destino || '—')}</div>
       <div class="lp-transp"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> ${escHtml(t.meio || 'meio não informado')}${t.valor != null ? ` · ${pbDinheiro(t.valor)}` : ''} · há ${t.dias ?? 0} dia(s)</div>
     </div>`);
     camadas.push(linha); marcadores[i] = linha;
-    const m = L.marker(pts[0], { icon: emoji('<svg class=ic aria-hidden=true><use href=#i-truck></use></svg>'), interactive: false, zIndexOffset: 900 }).addTo(mapa);
-    camadas.push(m); anim.push({ m, pts, passo: 0.6, pos: Math.random() * pts.length });
+    camadas.push(mapaVeiculoNaRota(mapa, pts, 'transito', cor, anim));
   });
   PBL.marcadores = marcadores;
   if (camadas.length) mapa.fitBounds(L.featureGroup(camadas).getBounds().pad(0.2), { maxZoom: 11 });
-  if (anim.length && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-    PB.logAnim = setInterval(() => anim.forEach(a => { a.pos += a.passo; if (a.pos >= a.pts.length) a.pos = 0; a.m.setLatLng(a.pts[Math.floor(a.pos)]); }), 90);
-  }
+  PB.logAnim = mapaAnimarVeiculos(anim);   // devolve a função que para (04/11/2026)
   setTimeout(() => mapa.invalidateSize(), 60);
 }
 function pbLogFoco(i) {
@@ -18078,33 +18091,17 @@ async function renderLogMapa() {
     const cor = corPorStatusGrupo(g.status);
     const emAndamento = g.status === 'AGUARDANDO_COLETA' || g.status === 'EM_TRANSITO';
 
-    // Linha curva da origem até o destino
+    // Rota curva da origem até o destino (04/11/2026: visual novo — brilho, pontinhos andando em trânsito,
+    // pontilhada esperando coleta) e o caminhão ou a caixa nela
     if (g.origem) {
       const pontos = curvaEntrePontos([g.origem.latitude, g.origem.longitude], [g.latitude, g.longitude]);
-      const linha = L.polyline(pontos, {
-        color: cor,
-        weight: emAndamento ? 3 : 2,
-        opacity: emAndamento ? 0.85 : 0.35,
-        dashArray: g.status === 'AGUARDANDO_COLETA' ? '6 8' : null,
-      }).addTo(_logMap);
-      _logMapMarkers.push(linha);
-
-      // Emoji correndo pela linha: caixa esperando coleta, caminhão quando está a caminho
-      if (emAndamento) {
-        const emoji = g.status === 'EM_TRANSITO' ? '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-package></use></svg>';
-        const icon = L.divIcon({ className: '', html: `<div class="mapa-emoji-movel">${emoji}</div>`, iconSize: [26,26], iconAnchor: [13,13] });
-        const movel = L.marker(pontos[0], { icon, interactive: false, zIndexOffset: 900 }).addTo(_logMap);
-        _logMapMarkers.push(movel);
-        animaveis.push({ marker: movel, pontos, passo: g.status === 'EM_TRANSITO' ? 0.9 : 0.35, pos: Math.random() * pontos.length });
-      }
+      const situacao = mapaSituacao(g.status);
+      _logMapMarkers.push(...mapaDesenharRota(_logMap, pontos, cor, situacao).camadas);
+      if (emAndamento) _logMapMarkers.push(mapaVeiculoNaRota(_logMap, pontos, situacao, cor, animaveis));
     }
 
-    // Pin do destino
-    const icon = L.divIcon({
-      className: '', html: `<div style="width:16px;height:16px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:${cor};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>`,
-      iconSize: [16,16], iconAnchor: [8,16],
-    });
-    const marker = L.marker([g.latitude, g.longitude], { icon }).addTo(_logMap);
+    // Pino do destino (com ✓ quando entregue)
+    const marker = L.marker([g.latitude, g.longitude], { icon: mapaIconeDestino(cor, g.status === 'ENTREGUE') }).addTo(_logMap);
     marker.bindPopup(montarPopupGrupo(g, cor), { maxWidth: 300, minWidth: 240 });
     _logMapMarkers.push(marker);
   });
@@ -18140,22 +18137,97 @@ function curvaEntrePontos(a, b, segmentos = 64) {
   return pontos;
 }
 
-// Move os emojis pelas curvas. Um único timer pra todos, em vez de um por carga.
+// ═══ Visual do mapa de logística (04/11/2026, pedido do usuário: "ficou feio") ═══
+// Usado no mapa da Logística e no do Painel Brasil. Desenhos próprios em SVG (o emoji muda de cara em
+// cada aparelho): caminhão na cor da situação, caixa esperando coleta, pino do destino (com ✓ quando
+// entregue) e a rota com brilho; em trânsito, pontinhos correm no sentido da entrega.
+function mapaEscurecer(hex, f = 0.3) {
+  const n = parseInt(String(hex).replace('#', ''), 16);
+  if (!Number.isFinite(n)) return '#334155';
+  const c = (s) => Math.round(((n >> s) & 255) * (1 - f));
+  return `rgb(${c(16)},${c(8)},${c(0)})`;
+}
+function mapaSvgCaminhao(cor) {
+  const cab = mapaEscurecer(cor);
+  const roda = (x) => `<g transform="translate(${x} 25.5)"><g class="roda"><circle r="4.4" fill="#1e293b" stroke="#fff" stroke-width="1.5"/><path d="M-2.4 0h4.8M0-2.4v4.8" stroke="#94a3b8" stroke-width="1.1" stroke-linecap="round"/></g></g>`;
+  const forma = `<rect x="2" y="4" width="30" height="18.5" rx="3.5" fill="${cor}"/>
+    <rect x="3.5" y="5.3" width="27" height="4" rx="2" fill="#fff" opacity=".22"/>
+    <path d="M33 10h8.4c1.2 0 2.3.6 3 1.6l3.8 5.4c.4.5.6 1.1.6 1.7v3.8H33z" fill="${cab}"/>
+    <path d="M35.6 12.4h5.3l3.2 4.5h-8.5z" fill="#e0f2fe"/>
+    <rect x="2" y="21" width="47" height="3" rx="1.5" fill="#334155"/>
+    <rect x="46" y="18.6" width="3" height="2" rx="1" fill="#fde68a"/>
+    ${roda(11)}${roda(40)}`;
+  const texto = (x) => `<text x="${x}" y="16.6" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" font-weight="800" fill="#fff" letter-spacing=".5">GCA</text>`;
+  return `<svg viewBox="0 0 51 31" aria-hidden="true">
+    <g class="vd">${forma}${texto(17)}</g>
+    <g class="ve"><g transform="translate(51 0) scale(-1 1)">${forma}</g>${texto(34)}</g></svg>`;
+}
+function mapaIconeCaminhao(cor) {
+  return L.divIcon({ className: '', html: `<div class="mapa-veiculo">${mapaSvgCaminhao(cor)}</div>`, iconSize: [46, 31], iconAnchor: [23, 27] });
+}
+function mapaIconeCaixa() {
+  return L.divIcon({ className: '', iconSize: [30, 30], iconAnchor: [15, 24], html: `<div class="mapa-caixa"><svg viewBox="0 0 36 36" aria-hidden="true">
+    <path d="M18 3.5 31.5 10v15.5L18 32 4.5 25.5V10z" fill="#d39b52"/>
+    <path d="M18 3.5 31.5 10 18 16.5 4.5 10z" fill="#ebbf7f"/>
+    <path d="M18 16.5V32L4.5 25.5V10z" fill="#bb8239"/>
+    <path d="M11 6.9 24.6 13.4v4.8l-3.2-1.5v-3.1L7.8 8.4z" fill="#fbe7c4"/></svg></div>` });
+}
+function mapaIconeDestino(cor, entregue) {
+  const miolo = entregue
+    ? '<path d="M7.8 12.7l2.9 2.9 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
+    : '<circle cx="12" cy="12.4" r="4.2" fill="#fff"/>';
+  return L.divIcon({ className: '', iconSize: [24, 32], iconAnchor: [12, 31], popupAnchor: [0, -27],
+    html: `<div class="mapa-destino"><svg viewBox="0 0 24 32" width="24" height="32" aria-hidden="true"><path d="M12 31.2S2 20.7 2 12.4a10 10 0 0 1 20 0c0 8.3-10 18.8-10 18.8z" fill="${cor}" stroke="#fff" stroke-width="2"/>${miolo}</svg></div>` });
+}
+// Rota: brilho por baixo + linha. situacao: 'transito' (pontinhos andando), 'aguardando' (pontilhada),
+// 'entregue' ou 'cancelado' (apagadinha). Devolve as camadas e a linha principal (para o popup).
+function mapaDesenharRota(mapa, pts, cor, situacao) {
+  const ativa = situacao === 'transito' || situacao === 'aguardando';
+  const camadas = [L.polyline(pts, { color: cor, weight: ativa ? 11 : 6, opacity: ativa ? 0.15 : 0.06, lineCap: 'round', interactive: false }).addTo(mapa)];
+  const base = L.polyline(pts, { color: cor, weight: ativa ? 3.6 : 2.4, opacity: ativa ? 0.95 : 0.4, lineCap: 'round', lineJoin: 'round',
+    dashArray: situacao === 'aguardando' ? '1 8' : null }).addTo(mapa);
+  camadas.push(base);
+  if (situacao === 'transito') camadas.push(L.polyline(pts, { color: '#ffffff', weight: 2.2, opacity: 0.95, lineCap: 'round',
+    dashArray: '1 15', className: 'mapa-rota-fluxo', interactive: false }).addTo(mapa));
+  return { camadas, base };
+}
+// Caminhões andando: movimento suave, viram para o lado em que vão, param um pouco no destino e
+// recomeçam. Um laço só para todos. Devolve a função que para.
+function mapaAnimarVeiculos(lista) {
+  if (!lista.length || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return () => {};
+  let ativo = true, id = 0, antes = performance.now();
+  const quadro = (agora) => {
+    if (!ativo) return;
+    const dt = Math.min(0.1, (agora - antes) / 1000); antes = agora;
+    for (const a of lista) {
+      const n = a.pts.length - 1;
+      if (a.pausa > 0) { a.pausa -= dt; if (a.pausa <= 0) a.pos = 0; continue; }
+      a.pos += a.vel * dt;
+      if (a.pos >= n) { a.pos = n; a.pausa = 1.4; }
+      const i = Math.min(n - 1, Math.floor(a.pos)), f = a.pos - i, p = a.pts[i], q = a.pts[i + 1];
+      a.m.setLatLng([p[0] + (q[0] - p[0]) * f, p[1] + (q[1] - p[1]) * f]);
+      const esq = q[1] < p[1];
+      if (esq !== a.esq) { const el = a.m.getElement()?.querySelector('.mapa-veiculo'); if (el) { el.classList.toggle('esq', esq); a.esq = esq; } }
+    }
+    id = requestAnimationFrame(quadro);
+  };
+  id = requestAnimationFrame(quadro);
+  return () => { ativo = false; cancelAnimationFrame(id); };
+}
+// Põe o caminhão (em trânsito) ou a caixa (esperando coleta) na rota. A caixa fica parada perto da
+// origem, flutuando; o caminhão entra na lista da animação, cada um num ponto da viagem.
+function mapaVeiculoNaRota(mapa, pts, situacao, cor, animaveis) {
+  if (situacao === 'aguardando') return L.marker(pts[Math.round((pts.length - 1) * 0.18)], { icon: mapaIconeCaixa(), interactive: false, zIndexOffset: 800 }).addTo(mapa);
+  const m = L.marker(pts[0], { icon: mapaIconeCaminhao(cor), interactive: false, zIndexOffset: 900 }).addTo(mapa);
+  animaveis.push({ m, pts, vel: (pts.length - 1) / 9, pos: Math.random() * (pts.length - 1), pausa: 0, esq: null });
+  return m;
+}
+const mapaSituacao = (status) => status === 'EM_TRANSITO' ? 'transito' : status === 'AGUARDANDO_COLETA' ? 'aguardando' : status === 'CANCELADO' ? 'cancelado' : status === 'ENTREGUE' ? 'entregue' : 'aguardando';
+
+// Animação do mapa da Logística (usa a de cima)
 let _logMapAnim = null;
-function iniciarAnimacaoMapa(animaveis) {
-  if (!animaveis.length) return;
-  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-  _logMapAnim = setInterval(() => {
-    animaveis.forEach(a => {
-      a.pos += a.passo;
-      if (a.pos >= a.pontos.length) a.pos = 0; // recomeça a viagem
-      a.marker.setLatLng(a.pontos[Math.floor(a.pos)]);
-    });
-  }, 90);
-}
-function pararAnimacaoMapa() {
-  if (_logMapAnim) { clearInterval(_logMapAnim); _logMapAnim = null; }
-}
+function iniciarAnimacaoMapa(animaveis) { _logMapAnim = mapaAnimarVeiculos(animaveis); }
+function pararAnimacaoMapa() { if (_logMapAnim) { _logMapAnim(); _logMapAnim = null; } }
 
 // Card do destino no mapa — cabeçalho com o destino, status em pílula, transportador, e a
 // lista de atendimentos separada e rolável (antes era tudo um bloco de texto corrido).
