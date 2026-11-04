@@ -496,8 +496,17 @@ tbody tr:hover td{background:var(--bg-hover);}
 .mapa-caixa{position:relative;width:30px;height:30px;filter:drop-shadow(0 3px 3px rgba(15,23,42,.35));pointer-events:none;}
 .mapa-caixa svg{display:block;width:100%;height:100%;overflow:visible;animation:mapaFlutua 1.5s ease-in-out infinite alternate;}
 .mapa-caixa::after{content:'';position:absolute;left:3px;right:3px;bottom:-3px;height:10px;border-radius:50%;border:2px solid #f59e0b;opacity:0;animation:mapaPulso 2s ease-out infinite;}
-.mapa-destino{width:24px;height:32px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.4));}
+.mapa-destino{position:relative;width:24px;height:32px;filter:drop-shadow(0 2px 3px rgba(15,23,42,.4));transform-origin:50% 100%;transition:transform .28s cubic-bezier(.3,1.4,.5,1);}
 .mapa-destino svg{display:block;overflow:visible;}
+/* Mesmo destino com mais de uma logística (04/11/2026): parado, um atrás do outro; aberto, em leque */
+.mapa-pino{position:relative;width:24px;height:32px;cursor:pointer;}
+.mapa-pino.pilha .mapa-destino{transform:translate(calc(var(--atras) * 6px), calc(var(--atras) * -4px));}
+.mapa-pino.pilha.aberta .mapa-destino{transform:translate(var(--dx), -6px) rotate(var(--giro));}
+.mapa-qtd{position:absolute;top:-7px;right:-9px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#0f172a;color:#fff;
+  font:700 10px/14px Arial,sans-serif;text-align:center;border:1.5px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:opacity .15s;}
+.mapa-pino.aberta .mapa-qtd{opacity:0;}
+.mapa-pino-area{display:none;position:absolute;left:calc(50% - var(--larg) / 2);width:var(--larg);top:-16px;height:54px;}
+.mapa-pino.aberta .mapa-pino-area{display:block;}
 .mapa-rota-fluxo{animation:mapaFluxo .9s linear infinite;}
 @keyframes mapaFluxo{to{stroke-dashoffset:-16}}
 @keyframes mapaPulso{0%{transform:scale(.75);opacity:.65}100%{transform:scale(1.45);opacity:0}}
@@ -7771,26 +7780,30 @@ async function pbLogDesenharMapa(cargas, transf) {
       .addTo(mapa).bindPopup(`<div class="log-popup"><b>${icone} ${escHtml(nome)}</b></div>`);
     camadas.push(origens[k]);
   };
-  const marcadores = [];
+  const marcadores = [], destinosPb = [], idxDestino = [], repetida = {};
   cargas.forEach((c, i) => {
     if (!c.para) { marcadores[i] = null; return; }
     const cor = corPorStatusGrupo(c.status), andando = c.status !== 'ENTREGUE';
     if (c.de) {
       pontoOrigem(c.de, c.origem || 'Armazém', '<svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg>');
-      const pts = curvaEntrePontos([c.de.lat, c.de.lng], [c.para.lat, c.para.lng]);
+      // mesma rota repetida: curva um pouco diferente, para os caminhões não andarem juntos (04/11/2026)
+      const k = mapaChaveRota(c.de.lat, c.de.lng, c.para.lat, c.para.lng), vez = repetida[k] = (repetida[k] ?? -1) + 1;
+      const pts = curvaEntrePontos([c.de.lat, c.de.lng], [c.para.lat, c.para.lng], 64, 0.16 + vez * 0.09);
       const situacao = mapaSituacao(c.status);
       camadas.push(...mapaDesenharRota(mapa, pts, cor, situacao).camadas);
       if (andando) camadas.push(mapaVeiculoNaRota(mapa, pts, situacao, cor, anim));
     }
     const atends = c.atendimentos.slice(0, 8).map(a => `<div class="lp-atend"><span class="lp-atend-nome">${escHtml(a.nome || '—')}</span>${a.assinado ? ' <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>' : ''}</div>`).join('');
-    const mk = L.marker([c.para.lat, c.para.lng], { icon: mapaIconeDestino(cor, c.status === 'ENTREGUE') }).addTo(mapa).bindPopup(`<div class="log-popup">
+    // pino do destino: montado depois, junto com os outros (o mesmo destino empilha e abre em leque — 04/11/2026)
+    destinosPb.push({ lat: c.para.lat, lng: c.para.lng, cor, entregue: c.status === 'ENTREGUE', popupOpcoes: { maxWidth: 300, minWidth: 240 }, popup: `<div class="log-popup">
       <div class="lp-head"><div class="lp-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(c.destino)}</div><span class="lp-status" style="background:${cor}1f;color:${cor};border:1px solid ${cor}55">${pbLogStatus(c.status)}</span></div>
       <div class="lp-rota-mini"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> ${escHtml(c.filial)}${c.origem ? ` · <svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> ${escHtml(c.origem)} <span class="lp-seta">→</span> ${escHtml(c.destino)}` : ''}</div>
       <div class="lp-transp"><svg class=ic aria-hidden=true><use href=#i-user></use></svg> ${escHtml(c.transportador || 'sem transportador')}${c.status !== 'ENTREGUE' && c.dias != null ? ` · há ${c.dias} dia(s)` : ''}</div>
       <div class="lp-atend-head">${c.atendimentos.length} atendimento(s)</div><div class="lp-atendimentos">${atends}${c.atendimentos.length > 8 ? `<div class="lp-atend">+${c.atendimentos.length - 8}</div>` : ''}</div>
-    </div>`, { maxWidth: 300, minWidth: 240 });
-    camadas.push(mk); marcadores[i] = mk;
+    </div>` });
+    idxDestino.push(i);
   });
+  mapaPinosDestino(mapa, destinosPb).forEach((mk, j) => { camadas.push(mk); marcadores[idxDestino[j]] = mk; });
   transf.forEach((t, j) => {
     const i = cargas.length + j;
     if (!t._de || !t._para) { marcadores[i] = null; return; }
@@ -7820,7 +7833,7 @@ function pbLogFoco(i) {
   document.getElementById('pbLogMapa')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   if (mk.getLatLng) PB.logMap.setView(mk.getLatLng(), Math.max(PB.logMap.getZoom(), 9));
   else PB.logMap.fitBounds(mk.getBounds().pad(0.3));
-  mk.openPopup();
+  if (mk.abrirDetalhe) mk.abrirDetalhe(true); else mk.openPopup();
 }
 function pbLogExcel() {
   const ls = (PBL.linhas || []).map(l => ({ ...l, status: gcaSemIcone(pbLogStatus(l.status)).replace(/&amp;/g, '&'), desde: l.desde ? formatarData(String(l.desde).slice(0, 10)) : '' }));
@@ -18086,25 +18099,26 @@ async function renderLogMapa() {
   });
 
   // ── Rotas + destinos ──
-  const animaveis = [];
+  const animaveis = [], destinos = [], repetida = {};
   comCoord.forEach(g => {
     const cor = corPorStatusGrupo(g.status);
     const emAndamento = g.status === 'AGUARDANDO_COLETA' || g.status === 'EM_TRANSITO';
 
     // Rota curva da origem até o destino (04/11/2026: visual novo — brilho, pontinhos andando em trânsito,
-    // pontilhada esperando coleta) e o caminhão ou a caixa nela
+    // pontilhada esperando coleta) e o caminhão ou a caixa nela. Mais de uma logística na mesma rota:
+    // cada uma com uma curva um pouco diferente, para os caminhões não andarem um em cima do outro.
     if (g.origem) {
-      const pontos = curvaEntrePontos([g.origem.latitude, g.origem.longitude], [g.latitude, g.longitude]);
+      const k = mapaChaveRota(g.origem.latitude, g.origem.longitude, g.latitude, g.longitude);
+      const vez = repetida[k] = (repetida[k] ?? -1) + 1;
+      const pontos = curvaEntrePontos([g.origem.latitude, g.origem.longitude], [g.latitude, g.longitude], 64, 0.16 + vez * 0.09);
       const situacao = mapaSituacao(g.status);
       _logMapMarkers.push(...mapaDesenharRota(_logMap, pontos, cor, situacao).camadas);
       if (emAndamento) _logMapMarkers.push(mapaVeiculoNaRota(_logMap, pontos, situacao, cor, animaveis));
     }
-
-    // Pino do destino (com ✓ quando entregue)
-    const marker = L.marker([g.latitude, g.longitude], { icon: mapaIconeDestino(cor, g.status === 'ENTREGUE') }).addTo(_logMap);
-    marker.bindPopup(montarPopupGrupo(g, cor), { maxWidth: 300, minWidth: 240 });
-    _logMapMarkers.push(marker);
+    destinos.push({ lat: g.latitude, lng: g.longitude, cor, entregue: g.status === 'ENTREGUE', popup: montarPopupGrupo(g, cor), popupOpcoes: { maxWidth: 300, minWidth: 240 } });
   });
+  // Pinos do destino (com ✓ quando entregue); o mesmo destino empilha e abre em leque (04/11/2026)
+  _logMapMarkers.push(...mapaPinosDestino(_logMap, destinos));
 
   iniciarAnimacaoMapa(animaveis);
 
@@ -18118,13 +18132,14 @@ async function renderLogMapa() {
 // Gera os pontos de uma curva (bezier quadrática) entre origem e destino — uma linha reta
 // entre duas cidades fica sem graça e se confunde com estrada; a curva deixa claro que é
 // um trajeto lógico, não um caminho real.
-function curvaEntrePontos(a, b, segmentos = 64) {
+function curvaEntrePontos(a, b, segmentos = 64, fator = 0.16) {
   const [lat1, lng1] = a, [lat2, lng2] = b;
   // Ponto de controle deslocado perpendicularmente ao meio da reta, pra "abaular" a curva
+  // (fator maior = curva mais aberta; usado para separar rotas repetidas)
   const meioLat = (lat1 + lat2) / 2, meioLng = (lng1 + lng2) / 2;
   const dLat = lat2 - lat1, dLng = lng2 - lng1;
-  const ctrlLat = meioLat + dLng * 0.16;
-  const ctrlLng = meioLng - dLat * 0.16;
+  const ctrlLat = meioLat + dLng * fator;
+  const ctrlLng = meioLng - dLat * fator;
 
   const pontos = [];
   for (let i = 0; i <= segmentos; i++) {
@@ -18172,12 +18187,67 @@ function mapaIconeCaixa() {
     <path d="M18 16.5V32L4.5 25.5V10z" fill="#bb8239"/>
     <path d="M11 6.9 24.6 13.4v4.8l-3.2-1.5v-3.1L7.8 8.4z" fill="#fbe7c4"/></svg></div>` });
 }
-function mapaIconeDestino(cor, entregue) {
+// pilha (04/11/2026): { i, n, dx, giro } quando há mais de uma logística para o mesmo destino — parado,
+// um atrás do outro (o primeiro com o número); aberto, em leque, cada um deitado para um lado.
+function mapaIconeDestino(cor, entregue, pilha = null) {
   const miolo = entregue
     ? '<path d="M7.8 12.7l2.9 2.9 5.6-5.8" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'
     : '<circle cx="12" cy="12.4" r="4.2" fill="#fff"/>';
-  return L.divIcon({ className: '', iconSize: [24, 32], iconAnchor: [12, 31], popupAnchor: [0, -27],
-    html: `<div class="mapa-destino"><svg viewBox="0 0 24 32" width="24" height="32" aria-hidden="true"><path d="M12 31.2S2 20.7 2 12.4a10 10 0 0 1 20 0c0 8.3-10 18.8-10 18.8z" fill="${cor}" stroke="#fff" stroke-width="2"/>${miolo}</svg></div>` });
+  const pino = `<div class="mapa-destino"><svg viewBox="0 0 24 32" width="24" height="32" aria-hidden="true"><path d="M12 31.2S2 20.7 2 12.4a10 10 0 0 1 20 0c0 8.3-10 18.8-10 18.8z" fill="${cor}" stroke="#fff" stroke-width="2"/>${miolo}</svg>${pilha && pilha.i === 0 ? `<span class="mapa-qtd">${pilha.n}</span>` : ''}</div>`;
+  const html = !pilha ? `<div class="mapa-pino">${pino}</div>`
+    // a área invisível fica no último pino (o de baixo): segura o leque aberto entre um pino e outro
+    : `<div class="mapa-pino pilha" style="--dx:${pilha.dx}px;--giro:${pilha.giro}deg;--atras:${pilha.i};--larg:${pilha.n * 30 + 26}px">${pilha.i === pilha.n - 1 ? '<div class="mapa-pino-area"></div>' : ''}${pino}</div>`;
+  return L.divIcon({ className: '', iconSize: [24, 32], iconAnchor: [12, 31], popupAnchor: [0, -27], html });
+}
+// Chave de um ponto/rota no mapa (coordenadas arredondadas: ~10 m)
+const mapaChavePonto = (lat, lng) => `${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`;
+const mapaChaveRota = (lat1, lng1, lat2, lng2) => `${mapaChavePonto(lat1, lng1)}>${mapaChavePonto(lat2, lng2)}`;
+// Pinos de destino (04/11/2026, pedido do usuário): várias logísticas para o mesmo destino ficam uma atrás
+// da outra, com o número; passando o mouse (ou tocando, no celular) abrem em leque e cada uma pode ser
+// clicada. itens: [{ lat, lng, cor, entregue, popup (html), popupOpcoes }]. Devolve os marcadores na
+// mesma ordem; cada um tem abrirDetalhe() (usado pela lista do Painel Brasil para abrir o popup).
+function mapaPinosDestino(mapa, itens) {
+  const grupos = new Map();
+  itens.forEach((it, idx) => { const k = mapaChavePonto(it.lat, it.lng); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(idx); });
+  const marcadores = new Array(itens.length).fill(null);
+  for (const idxs of grupos.values()) {
+    const n = idxs.length;
+    const pilha = { aberta: false, timer: null, ms: [], popup: null };
+    const marcar = (abrir) => pilha.ms.forEach(m => m.getElement()?.querySelector('.mapa-pino')?.classList.toggle('aberta', abrir));
+    const abrir = () => { clearTimeout(pilha.timer); if (n < 2 || pilha.aberta) return; pilha.aberta = true; marcar(true); };
+    const fechar = () => {
+      if (n < 2) return;
+      clearTimeout(pilha.timer);
+      pilha.timer = setTimeout(() => { if (pilha.popup) return; pilha.aberta = false; marcar(false); }, 450);
+    };
+    idxs.forEach((idx, i) => {
+      const it = itens[idx];
+      const dx = n > 1 ? Math.round((i - (n - 1) / 2) * 30) : 0;
+      const giro = n > 1 ? Math.round((i - (n - 1) / 2) * 14) : 0;
+      const m = L.marker([it.lat, it.lng], { icon: mapaIconeDestino(it.cor, it.entregue, n > 1 ? { i, n, dx, giro } : null),
+        zIndexOffset: (n - i) * 10, riseOnHover: false }).addTo(mapa);
+      const popup = L.popup({ ...(it.popupOpcoes || {}), offset: L.point(0, -20) }).setContent(it.popup);
+      popup.on('add', () => { pilha.popup = popup; });
+      popup.on('remove', () => { if (pilha.popup === popup) pilha.popup = null; fechar(); });
+      // o popup sai em cima do pino certo: no leque, deslocado para o lado dele
+      // comLeque: vindo da lista do Painel, abre o leque primeiro para mostrar qual dos pinos é
+      m.abrirDetalhe = (comLeque = false) => {
+        if (comLeque) abrir();
+        popup.options.offset = L.point(pilha.aberta ? dx : 0, pilha.aberta ? -26 : -20); popup.setLatLng(m.getLatLng()); mapa.openPopup(popup);
+      };
+      m.on('mouseover', abrir);
+      m.on('mouseout', fechar);
+      // parado e com mais de um: o toque abre o leque (no celular não tem "passar o mouse"); aberto: mostra o detalhe
+      m.on('click', (e) => {
+        if (e.originalEvent?.target?.closest?.('.mapa-pino-area')) return;   // clique no vão entre os pinos do leque
+        if (n > 1 && !pilha.aberta) { abrir(); return; }
+        m.abrirDetalhe();
+      });
+      pilha.ms.push(m);
+      marcadores[idx] = m;
+    });
+  }
+  return marcadores;
 }
 // Rota: brilho por baixo + linha. situacao: 'transito' (pontinhos andando), 'aguardando' (pontilhada),
 // 'entregue' ou 'cancelado' (apagadinha). Devolve as camadas e a linha principal (para o popup).
