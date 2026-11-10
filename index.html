@@ -9933,6 +9933,13 @@ function escHtml(s) {
 function escJs(s) {
   return escHtml(String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"));
 }
+// Mensagem com ícone do conjunto (<svg class=ic ...><use href=#i-...></use></svg>): escapa todo o
+// texto e devolve só o desenho do ícone. Para as mensagens que iam por textContent e mostravam o
+// código do ícone escrito na tela (10/11/2026).
+function textoComIcone(s) {
+  return escHtml(s).replace(/&lt;svg class=(ic[\w-]*) aria-hidden=true&gt;&lt;use href=#(i-[\w-]+)&gt;&lt;\/use&gt;&lt;\/svg&gt;/g,
+    '<svg class=$1 aria-hidden=true><use href=#$2></use></svg>');
+}
 
 // Bloqueia esquemas perigosos (javascript:, data:, vbscript:...) em atributos href/src
 // vindos de dados do usuário/banco — escHtml sozinho não protege contra isso, pois
@@ -11252,12 +11259,12 @@ function mostrarResumoAvisos(comAviso, qtdLimpos) {
 }
 
 function mostrarModalBloqueio(titulo, mensagem) {
-  document.getElementById('modalBloqueioTitulo').textContent = titulo;
+  document.getElementById('modalBloqueioTitulo').innerHTML = textoComIcone(titulo);
   const msgEl = document.getElementById('modalBloqueioMsg');
   if (typeof mensagem === 'string' && mensagem.startsWith('__HTML__')) {
     msgEl.innerHTML = mensagem.replace('__HTML__', '');
   } else {
-    msgEl.textContent = mensagem;
+    msgEl.innerHTML = textoComIcone(mensagem);
   }
   document.getElementById('modalBloqueio').classList.remove('hidden');
 }
@@ -28735,7 +28742,7 @@ function devEnelLimpar() { window.__DEV_ENEL__.seriais=[]; devEnelRender(); devE
 function devEnelMsg(txt, ok) {
   const el = document.getElementById('msgDevEnel');
   if (!el) return;
-  el.style.color = ok?'#22c55e':'#ef4444'; el.textContent = txt||'';
+  el.style.color = ok?'#22c55e':'#ef4444'; el.innerHTML = textoComIcone(txt||'');
 }
 
 async function devEnelConfirmar() {
@@ -28750,7 +28757,9 @@ async function devEnelConfirmar() {
   const recusados = res?.recusados || res?.seriais_recusados || [];
   if (res?.ok) {
     devEnelLimpar();
-    devEnelMsg(`${res.devolvidos} serial(is) devolvido(s).${recusados.length ? ` ${recusados.length} recusado(s): ${recusados.slice(0, 8).map(r => `${r.serial} (${r.motivo})`).join('; ')}${recusados.length > 8 ? '…' : ''}` : ''}`, !recusados.length);
+    // Desde 10/11/2026 o medidor que estava com uma equipe sai também do saldo dela
+    const equipes = (res.saldo_equipes || []).map(e => `${e.equipe} (${e.devolvidos} ${e.material})`);
+    devEnelMsg(`${res.devolvidos} serial(is) devolvido(s).${equipes.length ? ` Saiu do saldo da equipe: ${equipes.slice(0, 5).join('; ')}${equipes.length > 5 ? '…' : ''}.` : ''}${recusados.length ? ` ${recusados.length} recusado(s): ${recusados.slice(0, 8).map(r => `${r.serial} (${r.motivo})`).join('; ')}${recusados.length > 8 ? '…' : ''}` : ''}`, !recusados.length);
     if (recusados.length) { window.__DEV_ENEL__.seriais = recusados.map(r => r.serial); devEnelRender(); }
     carregarEstoqueEnel();
   }
@@ -33696,7 +33705,7 @@ function cvMsg(txt, ok) {
   const el = document.getElementById('cvMsg');
   if (!el) return;
   el.style.color = ok ? 'var(--text-3)' : 'var(--red)';
-  el.textContent = txt || '';
+  el.innerHTML = textoComIcone(txt || '');
 }
 
 // ── Conclusão ──

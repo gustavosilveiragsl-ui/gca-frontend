@@ -445,7 +445,13 @@ function fecharModalSerial() {
 function retorno(texto, tipo) {
   const el = document.getElementById('bipRetorno');
   el.className = 'retorno' + (tipo ? ' ' + tipo : '');
-  el.textContent = texto;
+  el.innerHTML = textoComIcone(texto);
+}
+// Escapa todo o texto e devolve só o desenho do ícone do conjunto (com textContent aparecia o
+// código "<svg ...>" escrito na tela, 10/11/2026)
+function textoComIcone(s) {
+  return escHtml(s).replace(/&lt;svg class=(ic[\w-]*) aria-hidden=true&gt;&lt;use href=#(i-[\w-]+)&gt;&lt;\/use&gt;&lt;\/svg&gt;/g,
+    '<svg class=$1 aria-hidden=true><use href=#$2></use></svg>');
 }
 
 function atualizarTotal(total) {
