@@ -3460,6 +3460,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           </div>
           <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
             <div id="ivenDetResumo" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <div id="ivenDetAcoes" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"></div>
+            <div id="ivenDetRodadas"></div>
             <div id="ivenDetSeriaisBox" class="hidden" style="border:1px solid rgba(139,92,246,.35);border-radius:var(--radius-md);padding:10px">
               <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px">
                 <div style="font-size:12px;font-weight:700;color:var(--text-1)" id="ivenDetSeriaisTitulo">—</div>
@@ -3476,10 +3478,133 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <table>
                 <thead><tr>
                   <th>Material</th><th style="text-align:center">Saldo na contagem</th><th style="text-align:center">Contado</th>
-                  <th>Diverg.</th><th>Seriais</th><th>Contado por</th><th></th>
+                  <th style="text-align:center">Contagem</th><th>Diverg.</th><th>Seriais</th><th>Contado por</th><th></th>
                 </tr></thead>
                 <tbody id="ivenDetItensBody"></tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: RECONTAGEM DO INVENTÁRIO ENEL — quais materiais voltam a ser contados -->
+      <div class="modal-overlay hidden" id="modalIvenRecontagem">
+        <div class="modal-box modal-alto" style="max-width:560px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Recontar materiais</div><div style="font-size:11px;color:var(--text-3)" id="ivenRecInfo"></div></div>
+            <button class="modal-close" onclick="fecharRecontagemIven()">×</button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+            <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+              Os materiais escolhidos voltam a ficar sem contagem e são contados de novo pelo mesmo link. O material com serial é lido de novo do zero (a caixa fechada ajuda).
+              A contagem anterior fica guardada, com a lista dos seriais que faltaram ou sobraram. Os outros materiais continuam como estão.
+            </div>
+            <div id="ivenRecModos" style="display:flex;flex-direction:column;gap:6px"></div>
+            <div id="ivenRecEscolha" class="hidden" style="display:flex;flex-direction:column;gap:6px">
+              <input class="search-box" id="ivenRecBusca" placeholder="Buscar material..." oninput="renderRecontagemItensIven()" style="width:100%">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                <button class="row-action" onclick="marcarRecontagemIven('divergentes')">Marcar os divergentes</button>
+                <button class="row-action" onclick="marcarRecontagemIven('nenhum')">Desmarcar todos</button>
+                <span id="ivenRecContador" style="font-size:11px;color:var(--text-3)"></span>
+              </div>
+              <div id="ivenRecLista" style="max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md)"></div>
+            </div>
+            <div>
+              <label class="form-label">Motivo da recontagem *</label>
+              <textarea class="form-input" id="ivenRecMotivo" rows="2" placeholder="Ex.: seriais faltando — conferir de novo antes de corrigir o estoque"></textarea>
+            </div>
+            <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-2);cursor:pointer">
+              <input type="checkbox" id="ivenRecIniciar" checked style="margin-top:2px">
+              <span>Já iniciar a recontagem agora: o estoque <span class="nome-conc">Concessionária</span> fica congelado até finalizar. Desmarque para iniciar depois, pelo card do inventário.</span>
+            </label>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost" onclick="fecharRecontagemIven()">Cancelar</button>
+              <button class="btn btn-primary" id="ivenRecBtn" onclick="confirmarRecontagemIven()"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Reabrir para recontagem</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MODAL: CORRIGIR DIVERGÊNCIAS DO INVENTÁRIO ENEL — dois modos separados: sem serial / com serial -->
+      <div class="modal-overlay hidden" id="modalIvenCorrecao">
+        <div class="modal-box modal-alto" style="max-width:1100px;width:100%">
+          <div class="modal-header">
+            <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Corrigir divergências</div><div style="font-size:11px;color:var(--text-3)" id="ivenCorInfo"></div></div>
+            <button class="modal-close" onclick="fecharCorrecaoIven()">×</button>
+          </div>
+          <div class="modal-body" style="display:flex;flex-direction:column;gap:10px">
+            <div id="ivenCorBloqueio" class="hidden" style="font-size:12px;color:var(--yellow);border:1px solid var(--yellow);border-radius:var(--radius-md);padding:8px 10px"></div>
+            <div class="eq-abas" style="margin-bottom:0">
+              <button class="eq-aba" id="ivenCorAbaQtd" onclick="ivenCorAba('QTD')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Sem serial (quantidade) <span id="ivenCorNQtd"></span></button>
+              <button class="eq-aba" id="ivenCorAbaSer" onclick="ivenCorAba('SER')"><svg class=ic aria-hidden=true><use href=#i-scan-barcode></use></svg> Com serial <span id="ivenCorNSer"></span></button>
+            </div>
+
+            <div id="ivenCorQtd" style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+                O saldo anda a diferença que a contagem achou (contado − saldo do sistema na hora da contagem). O que entrou ou saiu depois da contagem continua valendo.
+                Fica um lançamento "Ajuste de inventário" em Entrada/Saída.
+              </div>
+              <div style="overflow:auto;max-height:380px">
+                <table>
+                  <thead><tr>
+                    <th style="width:28px"><input type="checkbox" id="ivenCorQtdTodos" onchange="ivenCorMarcarQtd(this.checked)"></th>
+                    <th>Material</th><th style="text-align:center">Sistema na contagem</th><th style="text-align:center">Contado</th>
+                    <th style="text-align:center">Ajuste</th><th style="text-align:center">Saldo hoje → depois</th><th>Situação</th>
+                  </tr></thead>
+                  <tbody id="ivenCorQtdBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="ivenCorSer" class="hidden" style="display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+                Cada serial que faltou ou sobrou, com onde o sistema diz que ele está agora. Escolha o que fazer com cada um: o saldo acompanha os seriais.
+                Instalado e na sucata ficam bloqueados por enquanto.
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+                <select class="form-input" id="ivenCorFiltroMat" style="width:auto;min-width:200px;font-size:12px" onchange="renderCorrecaoSeriaisIven()"></select>
+                <select class="form-input" id="ivenCorFiltroSit" style="width:auto;font-size:12px" onchange="renderCorrecaoSeriaisIven()">
+                  <option value="PENDENTES">A corrigir</option>
+                  <option value="FALTANDO">Faltando (a corrigir)</option>
+                  <option value="SOBRANDO">Sobrando (a corrigir)</option>
+                  <option value="BLOQUEADOS">Bloqueados</option>
+                  <option value="CORRIGIDOS">Já corrigidos</option>
+                  <option value="TODOS">Todos</option>
+                </select>
+                <input class="search-box" id="ivenCorBusca" placeholder="Buscar serial..." oninput="renderCorrecaoSeriaisIven()" style="width:170px">
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--text-2)">
+                <span>Para os marcados:</span>
+                <select class="form-input" id="ivenCorAcaoLote" style="width:auto;font-size:12px">
+                  <option value="NAO_ENCONTRADO">Não encontrado (sai do estoque)</option>
+                  <option value="MANTER">Deixar como está / foi achado</option>
+                  <option value="TRAZER_AO_ESTOQUE">Trazer de volta ao estoque</option>
+                  <option value="DAR_ENTRADA">Dar entrada no estoque</option>
+                  <option value="TROCAR_MODELO">Trocar para o modelo contado</option>
+                </select>
+                <button class="row-action" onclick="ivenCorAplicarLote()">Escolher para os marcados</button>
+                <button class="row-action" onclick="ivenCorLimparEscolhas()">Limpar escolhas</button>
+                <span id="ivenCorContSer" style="color:var(--text-3)"></span>
+              </div>
+              <div style="overflow:auto;max-height:360px">
+                <table>
+                  <thead><tr>
+                    <th style="width:28px"><input type="checkbox" id="ivenCorSerTodos" onchange="ivenCorMarcarSer(this.checked)"></th>
+                    <th>Material</th><th>Serial</th><th>Situação</th><th>No sistema agora</th><th style="min-width:220px">O que fazer</th>
+                  </tr></thead>
+                  <tbody id="ivenCorSerBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div>
+              <label class="form-label">Motivo da correção *</label>
+              <textarea class="form-input" id="ivenCorMotivo" rows="2" placeholder="Ex.: recontagem confirmou; medidores não localizados no estoque"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;flex-wrap:wrap">
+              <span id="ivenCorResumo" style="font-size:11px;color:var(--text-3);margin-right:auto"></span>
+              <button class="btn btn-ghost" onclick="fecharCorrecaoIven()">Fechar</button>
+              <button class="btn btn-primary" id="ivenCorBtn" data-perm-btn="inventario_ajustar_divergencia" onclick="aplicarCorrecaoIven()"><svg class=ic aria-hidden=true><use href=#i-check></use></svg> Corrigir</button>
             </div>
           </div>
         </div>
@@ -16982,7 +17107,7 @@ const INV_MODO_RECONTAGEM = { DIVERGENTES: 'só os divergentes', TODOS: 'invent�
 function renderDetalheInventario() {
   const { inventario: inv, itens, rodadas } = _invDetalheAberto;
   const emRecontagem = inv.status === 'RECONTAGEM';
-  document.getElementById('invDetInfo').textContent = `${inv.nome_armazem} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`
+  document.getElementById('invDetInfo').innerHTML = `${escHtml(inv.nome_armazem)} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`
     + (emRecontagem ? ` · <svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> ${inv.rodada}ª contagem em andamento` : '');
 
   // Corrigir e recontar só com o inventário fechado: durante a recontagem a contagem ainda vai mudar
@@ -17225,7 +17350,8 @@ async function carregarInventarioEnel() {
   if (res && !res.ok) toast(res.erro || 'Erro ao carregar o inventário ' + nomeConc(), 'error');
   _ivenHist = res?.data || [];
 
-  const entregues = _ivenHist.filter(r => r.status === 'ENTREGUE');
+  // Em recontagem o mês já foi entregue (só alguns materiais voltaram a contar)
+  const entregues = _ivenHist.filter(r => r.status === 'ENTREGUE' || r.status === 'RECONTAGEM');
   const atrasados = _ivenHist.filter(r => r.status !== 'ENTREGUE' && r.bloqueado);
   const comAcuracia = entregues.filter(r => r.acuracia_pct != null);
   const media = comAcuracia.length ? comAcuracia.reduce((t, r) => t + Number(r.acuracia_pct), 0) / comAcuracia.length : null;
@@ -17235,9 +17361,11 @@ async function carregarInventarioEnel() {
   document.getElementById('ivenKpiEntregues').textContent = entregues.length;
   document.getElementById('ivenKpiAtrasados').textContent = atrasados.length;
   document.getElementById('ivenKpiAcuracia').textContent = media != null ? media.toFixed(1) + '%' : '—';
-  document.getElementById('ivenKpiMes').textContent = !doMes
+  // innerHTML: o ícone é código (com textContent aparecia "<svg ...>" escrito na tela)
+  document.getElementById('ivenKpiMes').innerHTML = !doMes
     ? (res?.tem_materiais === false ? 'Sem materiais' : 'Não gerado')
     : doMes.status === 'ENTREGUE' ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue'
+    : doMes.status === 'RECONTAGEM' ? '<svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Recontando'
     : doMes.bloqueado ? '<svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg> Atrasado'
     : doMes.congelado ? '<svg class=ic aria-hidden=true><use href=#i-lock></use></svg> Contando' : '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Aguardando início';
 
@@ -17261,16 +17389,25 @@ function renderInventarioEnel() {
     return;
   }
   const badge = (r) => r.status === 'ENTREGUE' ? '<span class="log-badge log-badge-verde"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entregue</span>'
+    : r.status === 'RECONTAGEM' ? `<span class="log-badge" style="color:#a78bfa;border:1px solid #a78bfa"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Recontagem (${r.rodada}ª) · ${r.congelado ? 'contando' : 'aguardando início'}</span>`
     : r.bloqueado ? '<span class="log-badge" style="color:var(--red);border:1px solid var(--red)"><svg class=ic-vermelho aria-hidden=true><use href=#i-_ponto></use></svg> Atrasado</span>'
     : r.congelado ? '<span class="log-badge" style="color:#a78bfa;border:1px solid #a78bfa"><svg class=ic aria-hidden=true><use href=#i-lock></use></svg> Contando</span>'
     : '<span class="log-badge log-badge-azul"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Aguardando início</span>';
 
   cont.innerHTML = lista.map((r, i) => {
     const classe = r.status === 'ENTREGUE' ? 'entregue' : r.bloqueado ? 'atrasado' : 'andamento';
-    const seriais = r.status === 'ENTREGUE'
+    const seriais = (r.status === 'ENTREGUE' || r.status === 'RECONTAGEM')
       ? `<div class="inv-hist-meta" style="margin-top:4px">Seriais: <b style="color:var(--green)">${r.seriais_conferidos ?? 0}</b> conferidos · <b style="color:#ef4444">${r.seriais_faltando ?? 0}</b> faltando · <b style="color:#f59e0b">${r.seriais_sobrando ?? 0}</b> sobrando</div>` : '';
     let acoes;
-    if (r.status === 'ENTREGUE') {
+    if (r.status === 'RECONTAGEM') {
+      // Recontagem: o detalhe continua aberto para consulta; o link conta só os materiais recontados
+      acoes = `<button class="row-action" onclick="ivenAbrirDetalhe('${escJs(r.id)}')">Ver</button>
+        ${r.congelado ? `<button class="row-action" onclick="abrirProgressoInventario('${escJs(r.id)}','/inventario-enel')"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Andamento</button>` : ''}
+        ${r.link ? `<button class="row-action" onclick="abrirLinkInventario('${escJs(r.link)}','Estoque ' + nomeConc())"><svg class=ic aria-hidden=true><use href=#i-link></use></svg> Link / QR</button>` : ''}
+        ${r.congelado
+          ? `<button class="row-action" style="color:#f59e0b;border-color:#f59e0b" data-perm-btn="inventario_liberar_movimentacao" onclick="ivenDescongelar('${escJs(r.id)}')"><svg class=ic aria-hidden=true><use href=#i-lock-open></use></svg> Descongelar</button>`
+          : `<button class="row-action" style="color:#a78bfa;border-color:#a78bfa" data-perm-btn="inventario_gerar_link" onclick="ivenIniciar('${escJs(r.id)}')">▶ Iniciar recontagem</button>`}`;
+    } else if (r.status === 'ENTREGUE') {
       acoes = `<button class="row-action" onclick="ivenAbrirDetalhe('${escJs(r.id)}')">Ver</button>
         <button class="row-action" onclick="ivenPdf('${escJs(r.id)}')"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> PDF</button>`;
     } else if (r.bloqueado) {
@@ -17344,16 +17481,55 @@ async function ivenLiberarAtraso(anoMes) {
 async function ivenAbrirDetalhe(id) {
   const res = await api(`/inventario-enel/${encodeURIComponent(id)}/itens`);
   if (!res?.ok) { toast(res?.erro || 'Erro ao carregar o detalhe', 'error'); return; }
-  _ivenDet = { id, inventario: res.inventario, itens: res.itens };
+  _ivenDet = { id, inventario: res.inventario, itens: res.itens, rodadas: res.rodadas || [], pendentes: res.pendentes || { quantidade: 0, seriais: 0 },
+    pode_ajustar: !!res.pode_ajustar, motivo_bloqueio: res.motivo_bloqueio || null };
   document.getElementById('ivenDetSeriaisBox').classList.add('hidden');
   ivenRenderDetalhe();
   document.getElementById('modalIvenDetalhe').classList.remove('hidden');
 }
 
+const IVEN_MODO_RECONTAGEM = { DIVERGENTES: 'só os divergentes', TODOS: 'inventário todo', SELECIONADOS: 'materiais escolhidos' };
+
 function ivenRenderDetalhe() {
-  const { inventario: inv, itens } = _ivenDet;
+  const { inventario: inv, itens, rodadas, pendentes } = _ivenDet;
+  const emRecontagem = inv.status === 'RECONTAGEM';
   document.getElementById('ivenDetInfo').textContent =
-    `Estoque ${nomeConc()} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`;
+    `Estoque ${nomeConc()} · ${formatarMesAno(inv.ano_mes)} · Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`
+    + (emRecontagem ? ` · ${inv.rodada}ª contagem em andamento` : '');
+
+  // Recontar e corrigir: só com o inventário fechado, o mais novo da filial e sem contagem em andamento
+  const acoesEl = document.getElementById('ivenDetAcoes');
+  if (inv.status !== 'ENTREGUE') {
+    acoesEl.innerHTML = emRecontagem ? `<span style="font-size:11px;color:#a78bfa"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Recontagem em andamento: corrigir e recontar de novo só depois de finalizar.</span>` : '';
+  } else {
+    const nPend = (pendentes.quantidade || 0) + (pendentes.seriais || 0);
+    const temDivergencia = itens.some(i => i.divergencia || (i.seriais && (i.seriais.faltando || i.seriais.sobrando)));
+    const podeRecontar = itens.some(i => i.pode_recontar);
+    const bloqueio = !_ivenDet.pode_ajustar && _ivenDet.motivo_bloqueio;
+    acoesEl.innerHTML = [
+      temDivergencia ? `<button class="btn btn-primary" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" onclick="abrirCorrecaoIven()"><svg class=ic aria-hidden=true><use href=#i-scale></use></svg> Corrigir divergências${nPend ? ` (${nPend} a corrigir)` : ''}</button>` : '',
+      podeRecontar ? `<button class="btn btn-ghost" style="font-size:11px" data-perm-btn="inventario_ajustar_divergencia" ${bloqueio ? 'disabled' : ''} onclick="abrirRecontagemIven()"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Recontar materiais</button>` : '',
+      bloqueio ? `<span style="font-size:11px;color:var(--yellow)"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(bloqueio)}</span>` : '',
+    ].join('');
+  }
+
+  // Uma linha por rodada, da contagem inicial às recontagens — só quando houve recontagem
+  document.getElementById('ivenDetRodadas').innerHTML = (rodadas || []).length > 1 ? `
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Contagens</div>
+      ${rodadas.map(r => {
+        const titulo = r.rodada === 1 ? 'Contagem inicial' : `Recontagem (${IVEN_MODO_RECONTAGEM[r.modo] || 'materiais escolhidos'}): ${r.qtd_itens} material(is)`;
+        const quem = r.rodada === 1 ? '' : ` · aberta por ${escHtml(r.aberta_por || '—')}${r.aberta_em ? ' em ' + formatarData(String(r.aberta_em).slice(0, 10)) : ''}`;
+        const seriaisTxt = r.seriais_faltando != null ? ` · seriais: ${r.seriais_faltando} faltando, ${r.seriais_sobrando ?? 0} sobrando` : '';
+        const fim = r.finalizada_em
+          ? `finalizada em ${formatarData(String(r.finalizada_em).slice(0, 10))}${r.finalizada_por ? ' por ' + escHtml(r.finalizada_por) : ''}${r.qtd_divergencias != null ? ` · <b>${r.qtd_divergencias}</b> divergência(s) · ${Number(r.acuracia_pct).toFixed(1)}%` : ''}${seriaisTxt}`
+          : (r.iniciada_em ? '<span style="color:#a78bfa">contando agora</span>' : '<span style="color:#a78bfa">aguardando início</span>');
+        return `<div style="font-size:12px;color:var(--text-1);line-height:1.45">
+          <b>${r.rodada}ª</b> · ${titulo}${quem} · ${fim}
+          ${r.rodada > 1 && r.motivo ? `<div style="font-size:11px;color:var(--text-3)">Motivo: ${escHtml(r.motivo)}</div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>` : '';
   const chip = (txt, cor, acao) => `<button class="row-action" style="color:${cor};border-color:${cor}" ${acao ? `onclick="${acao}"` : 'disabled'}>${txt}</button>`;
   document.getElementById('ivenDetResumo').innerHTML = [
     chip(`<svg class=ic aria-hidden=true><use href=#i-target></use></svg> Acurácia ${inv.acuracia_pct != null ? Number(inv.acuracia_pct).toFixed(1) + '%' : '—'}`, '#a78bfa', null),
@@ -17371,22 +17547,30 @@ function ivenRenderDetalhe() {
       moveu ? `<div style="font-size:10px;color:var(--yellow);margin-top:2px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${moveu > 0 ? '+' : ''}${moveu} após a contagem (liberado)</div>` : '',
       (libs.length && it.divergencia) ? `<div style="font-size:10px;color:var(--yellow);margin-top:3px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${libs.length} movimentação(ões) liberada(s) durante o inventário</div>` : '',
       it.divergencia_reclassificada ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px"><svg class=ic aria-hidden=true><use href=#i-check></use></svg> Não é divergência — ${escHtml(it.reclassificada_motivo || '')}${it.reclassificada_por ? ' · ' + escHtml(it.reclassificada_por) : ''}</div>` : '',
+      it.corrigido ? `<div style="font-size:10px;color:var(--green);margin-top:3px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Estoque corrigido: ${Number(it.correcao_ajuste) > 0 ? '+' : ''}${it.correcao_ajuste ?? 0}${it.corrigido_por ? ' · ' + escHtml(it.corrigido_por) : ''}${it.corrigido_em ? ' · ' + formatarData(String(it.corrigido_em).slice(0, 10)) : ''}${it.correcao_motivo ? ' — ' + escHtml(it.correcao_motivo) : ''}</div>` : '',
+      // Contagens anteriores (a última é a que está nas colunas)
+      (it.contagens_anteriores || []).length ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px;line-height:1.4"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> ${it.contagens_anteriores.map(c => `${c.contagem}ª: <b>${c.saldo_contado ?? '—'}</b>${c.divergencia ? ' (divergente)' : ''}${c.seriais_faltando ? ` · ${c.seriais_faltando} falt.` : ''}${c.seriais_sobrando ? ` · ${c.seriais_sobrando} sobr.` : ''}${c.nome_contador ? ' · ' + escHtml(c.nome_contador) : ''}`).join(' — ')}</div>` : '',
     ].join('');
-    const diverg = !it.divergencia ? '<span style="color:var(--text-3);font-size:11px">não</span>'
+    const diverg = it.em_recontagem ? '<span style="color:#a78bfa;font-weight:600;font-size:11px">recontando</span>'
+      : !it.divergencia ? '<span style="color:var(--text-3);font-size:11px">não</span>'
       : it.divergencia_reclassificada ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">justificada</span>'
-      : '<span style="color:#ef4444;font-weight:700;font-size:11px">SIM</span>';
+      : `<span style="color:#ef4444;font-weight:700;font-size:11px">SIM${it.corrigido ? ' ✓ corrigido' : ''}</span>`;
     const s = it.seriais;
     const seriais = !it.possui_serie ? '<span style="color:var(--text-3);font-size:11px">—</span>'
       : `<div style="font-size:11px;white-space:nowrap">${s.lidos} lido(s)${s.faltando ? ` · <b style="color:#ef4444">${s.faltando} falt.</b>` : ''}${s.sobrando ? ` · <b style="color:#f59e0b">${s.sobrando} sobr.</b>` : ''}</div>
+         ${s.corrigidos ? `<div style="font-size:10px;color:var(--green)">${s.corrigidos} corrigido(s)${s.pendentes ? ` · <span style="color:#ef4444">${s.pendentes} a corrigir</span>` : ''}</div>` : ''}
          <button class="row-action" style="margin-top:3px" onclick="ivenVerSeriais(null,'${escJs(it.id)}','${escJs(it.descricao || '')}')">Ver seriais</button>`;
+    const nCont = Number(it.qtd_contagens) || 1;
+    const fechado = inv.status === 'ENTREGUE';
     return `<tr>
-      <td class="td-main">${escHtml(it.descricao || '—')}${it.possui_serie ? ' <span style="font-size:9px;font-weight:700;color:#a78bfa;border:1px solid #a78bfa;border-radius:4px;padding:0 4px">SERIAL</span>' : ''}${avisos}</td>
+      <td class="td-main" style="white-space:normal;min-width:200px">${escHtml(it.descricao || '—')}${it.possui_serie ? ' <span style="font-size:9px;font-weight:700;color:#a78bfa;border:1px solid #a78bfa;border-radius:4px;padding:0 4px">SERIAL</span>' : ''}${avisos}</td>
       <td style="text-align:center">${it.saldo_na_contagem ?? it.saldo_sistema ?? '—'}</td>
       <td style="text-align:center;font-weight:700">${it.saldo_contado ?? '—'}</td>
+      <td style="text-align:center;${nCont > 1 ? 'font-weight:700;color:#a78bfa' : 'color:var(--text-3)'}">${nCont}ª</td>
       <td>${diverg}</td>
       <td>${seriais}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(it.nome_contador || '—')}</td>
-      <td style="white-space:nowrap">${it.divergencia ? (it.divergencia_reclassificada
+      <td style="white-space:nowrap">${fechado && it.divergencia && !it.corrigido ? (it.divergencia_reclassificada
         ? `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="ivenReclassificar('${escJs(it.id)}', true)">Desfazer</button>`
         : `<button class="row-action" data-perm-btn="inventario_ajustar_divergencia" onclick="ivenReclassificar('${escJs(it.id)}', false)">Não é divergência</button>`) : ''}</td>
     </tr>`;
@@ -17431,7 +17615,8 @@ async function ivenVerSeriais(situacao, itemId, nomeItem) {
       <td style="font-size:11px">${escHtml(sr.descricao || '—')}</td>
       <td style="font-family:var(--font-mono);font-weight:700">${escHtml(sr.numero_serie)}${sr.modo === 'LOTE' ? ' <span style="font-size:9px;color:#a78bfa"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span>' : ''}</td>
       <td>${gcaSit(txt, matiz, icone)}</td>
-      <td style="font-size:11px;color:var(--text-2)">${escHtml(sr.situacao_detalhe || '—')}</td>
+      <td style="font-size:11px;color:var(--text-2)">${escHtml(sr.situacao_detalhe || '—')}${sr.correcao
+        ? `<div style="color:var(--green);margin-top:2px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${escHtml(sr.correcao_detalhe || sr.correcao)}${sr.corrigido_por ? ' · ' + escHtml(sr.corrigido_por) : ''}${sr.encontrado_em ? ' · encontrado depois' : ''}</div>` : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(sr.nome_contador || '—')}</td>
     </tr>`;
   }).join('') : '<tr><td colspan="5" style="color:var(--text-3);font-size:12px;padding:12px">Nenhum serial nesta lista.</td></tr>';
@@ -17444,6 +17629,350 @@ async function ivenPdf(id) {
     if (!r.ok) { toast('Erro ao gerar PDF', 'error'); return; }
     window.open(URL.createObjectURL(await r.blob()), '_blank');
   } catch { toast('Erro ao gerar PDF', 'error'); }
+}
+
+// ── Recontagem do inventário ENEL (10/11/2026): só os divergentes, tudo ou os escolhidos ──
+// Material que já teve correção não volta: o saldo dele já foi levado à contagem.
+let _ivenRec = { modo: 'DIVERGENTES', marcados: new Set() };
+const ivenRecDivergente = (i) => i.pode_recontar && ((i.divergencia && !i.divergencia_reclassificada) || !!(i.seriais && i.seriais.pendentes));
+
+function abrirRecontagemIven() {
+  if (!_ivenDet) return;
+  if (!_ivenDet.pode_ajustar) { toast(_ivenDet.motivo_bloqueio || 'Não dá para recontar este inventário agora', 'warn'); return; }
+  const { inventario: inv, itens } = _ivenDet;
+  const divergentes = itens.filter(ivenRecDivergente);
+  _ivenRec = { modo: divergentes.length ? 'DIVERGENTES' : 'SELECIONADOS', marcados: new Set(divergentes.map(i => i.id)) };
+  document.getElementById('ivenRecInfo').textContent = `Estoque ${nomeConc()} · ${formatarMesAno(inv.ano_mes)} · próxima: ${(Number(inv.rodada) || 1) + 1}ª contagem`;
+  document.getElementById('ivenRecMotivo').value = '';
+  document.getElementById('ivenRecBusca').value = '';
+  document.getElementById('ivenRecIniciar').checked = true;
+  document.querySelectorAll('#modalIvenRecontagem .nome-conc').forEach(el => { el.textContent = nomeConc(); });
+  renderRecontagemModosIven();
+  document.getElementById('modalIvenRecontagem').classList.remove('hidden');
+}
+
+function fecharRecontagemIven() {
+  document.getElementById('modalIvenRecontagem').classList.add('hidden');
+}
+
+function renderRecontagemModosIven() {
+  const itens = _ivenDet.itens;
+  const nDiv = itens.filter(ivenRecDivergente).length;
+  const nAbertos = itens.filter(i => i.pode_recontar).length;
+  const nCorrigidos = itens.length - nAbertos;
+  const opcoes = [
+    ['DIVERGENTES', 'Só os materiais com divergência', nDiv ? `${nDiv} material(is)` : 'nenhuma divergência pendente', !nDiv],
+    ['TODOS', 'O inventário todo', `${nAbertos} material(is)${nCorrigidos ? ` · ${nCorrigidos} já corrigido(s) ficam de fora` : ''}`, !nAbertos],
+    ['SELECIONADOS', 'Escolher os materiais', 'marque na lista', false],
+  ];
+  document.getElementById('ivenRecModos').innerHTML = opcoes.map(([valor, titulo, sub, desabilitado]) => `
+    <label style="display:flex;gap:10px;align-items:center;padding:8px 10px;border:1px solid ${_ivenRec.modo === valor ? '#a78bfa' : 'var(--border)'};border-radius:var(--radius-md);cursor:${desabilitado ? 'not-allowed' : 'pointer'};opacity:${desabilitado ? .5 : 1}">
+      <input type="radio" name="ivenRecModo" value="${valor}" ${_ivenRec.modo === valor ? 'checked' : ''} ${desabilitado ? 'disabled' : ''} onchange="_ivenRec.modo='${valor}';renderRecontagemModosIven()">
+      <span style="display:flex;flex-direction:column">
+        <span style="font-size:13px;color:var(--text-1);font-weight:600">${titulo}</span>
+        <span style="font-size:11px;color:var(--text-3)">${sub}</span>
+      </span>
+    </label>`).join('');
+  document.getElementById('ivenRecEscolha').classList.toggle('hidden', _ivenRec.modo !== 'SELECIONADOS');
+  if (_ivenRec.modo === 'SELECIONADOS') renderRecontagemItensIven();
+}
+
+function renderRecontagemItensIven() {
+  const q = (document.getElementById('ivenRecBusca').value || '').trim().toLowerCase();
+  const itens = _ivenDet.itens.filter(i => !q || (i.descricao || '').toLowerCase().includes(q) || (i.codigo || '').toLowerCase().includes(q));
+  document.getElementById('ivenRecLista').innerHTML = itens.length ? itens.map(i => {
+    const travado = !i.pode_recontar;
+    const tag = travado ? '<span style="color:var(--text-3)">já corrigido</span>'
+      : ivenRecDivergente(i) ? '<span style="color:#ef4444;font-weight:600">divergente</span>' : '';
+    const contagem = i.possui_serie
+      ? `${i.seriais?.lidos ?? 0} lido(s)${i.seriais?.faltando ? ` · ${i.seriais.faltando} falt.` : ''}${i.seriais?.sobrando ? ` · ${i.seriais.sobrando} sobr.` : ''}`
+      : `contado ${i.saldo_contado ?? '—'} · sistema ${i.saldo_na_contagem ?? i.saldo_sistema ?? '—'}`;
+    return `<label style="display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--border);font-size:12px;cursor:${travado ? 'not-allowed' : 'pointer'};opacity:${travado ? .5 : 1}">
+      <input type="checkbox" ${_ivenRec.marcados.has(i.id) ? 'checked' : ''} ${travado ? 'disabled' : ''} onchange="marcarItemRecontagemIven('${escJs(i.id)}', this.checked)">
+      <span style="flex:1;color:var(--text-1)">${escHtml(i.descricao || '—')}${i.possui_serie ? ' <span style="font-size:9px;color:#a78bfa">SERIAL</span>' : ''}</span>
+      <span style="font-size:11px;color:var(--text-3);white-space:nowrap">${contagem}</span>
+      ${tag ? `<span style="font-size:10px;white-space:nowrap">${tag}</span>` : ''}
+    </label>`;
+  }).join('') : '<div style="padding:12px;font-size:12px;color:var(--text-3)">Nenhum material encontrado</div>';
+  document.getElementById('ivenRecContador').textContent = `${_ivenRec.marcados.size} material(is) marcado(s)`;
+}
+
+function marcarItemRecontagemIven(id, marcado) {
+  if (marcado) _ivenRec.marcados.add(id); else _ivenRec.marcados.delete(id);
+  document.getElementById('ivenRecContador').textContent = `${_ivenRec.marcados.size} material(is) marcado(s)`;
+}
+
+function marcarRecontagemIven(qual) {
+  _ivenRec.marcados = new Set(qual === 'divergentes' ? _ivenDet.itens.filter(ivenRecDivergente).map(i => i.id) : []);
+  renderRecontagemItensIven();
+}
+
+async function confirmarRecontagemIven() {
+  const inv = _ivenDet.inventario;
+  const motivo = document.getElementById('ivenRecMotivo').value.trim();
+  if (_ivenRec.modo === 'SELECIONADOS' && !_ivenRec.marcados.size) { toast('Marque pelo menos um material para recontar', 'warn'); return; }
+  if (motivo.length < 5) { toast('Escreva o motivo da recontagem (mínimo 5 letras)', 'warn'); return; }
+  const iniciar = document.getElementById('ivenRecIniciar').checked;
+  const btn = document.getElementById('ivenRecBtn');
+  btn.disabled = true;
+  const corpo = { modo: _ivenRec.modo, motivo, iniciar_agora: iniciar };
+  if (_ivenRec.modo === 'SELECIONADOS') corpo.itens = [..._ivenRec.marcados];
+  const res = await api(`/inventario-enel/${encodeURIComponent(inv.id)}/recontagem`, { method: 'POST', body: JSON.stringify(corpo) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao reabrir para recontagem', 'error'); return; }
+  fecharRecontagemIven();
+  document.getElementById('modalIvenDetalhe').classList.add('hidden');
+  toast(`Recontagem aberta: ${res.itens} material(is), ${res.rodada}ª contagem${res.iniciada ? ` — estoque ${nomeConc()} congelado, já pode contar pelo link` : '. Clique em "Iniciar recontagem" no card quando a equipe estiver pronta'}`, 'success', 7000);
+  carregarInventarioEnel();
+  if (res.iniciada && res.link) abrirLinkInventario(res.link, 'Estoque ' + nomeConc());
+}
+
+// ── Correção de divergências do inventário ENEL (10/11/2026), em dois modos separados ──
+// Sem serial: o saldo anda a diferença que a contagem achou. Com serial: cada serial faltando ou
+// sobrando, com a ação que vale para onde ele está agora no sistema.
+let _ivenCor = null;
+const ivenRotuloAcao = (acao, situacao) => ({
+  NAO_ENCONTRADO: 'Não encontrado (sai do estoque)',
+  MANTER: situacao === 'FALTANDO' ? 'Foi achado: fica no estoque' : 'Deixar como está',
+  DAR_ENTRADA: 'Dar entrada no estoque',
+  TRAZER_AO_ESTOQUE: 'Trazer de volta ao estoque',
+  TROCAR_MODELO: 'Trocar para o modelo contado',
+}[acao] || acao);
+
+async function abrirCorrecaoIven(aba) {
+  if (!_ivenDet) return;
+  const res = await api(`/inventario-enel/${encodeURIComponent(_ivenDet.id)}/correcoes`);
+  if (!res?.ok) { toast(res?.erro || 'Erro ao carregar as divergências', 'error'); return; }
+  const anterior = _ivenCor && _ivenCor.inventario.id === res.inventario.id ? _ivenCor : null;
+  const qtdPend = res.quantidade.filter(q => q.situacao === 'PENDENTE');
+  const serPend = res.seriais.filter(s => !s.correcao && (s.acoes || []).length);
+  _ivenCor = {
+    ...res,
+    aba: aba || anterior?.aba || (qtdPend.length || !serPend.length ? (res.quantidade.length ? 'QTD' : 'SER') : 'SER'),
+    marcQtd: new Set(qtdPend.map(q => q.id)),
+    escolha: {},
+    marcSer: new Set(),
+  };
+  document.getElementById('ivenCorInfo').textContent = `Estoque ${nomeConc()} · ${formatarMesAno(res.inventario.ano_mes)}`;
+  if (!anterior) document.getElementById('ivenCorMotivo').value = '';
+  const bloq = document.getElementById('ivenCorBloqueio');
+  bloq.classList.toggle('hidden', !!res.pode_corrigir);
+  bloq.innerHTML = res.pode_corrigir ? '' : `<svg class=ic aria-hidden=true><use href=#i-lock></use></svg> ${escHtml(res.motivo_bloqueio || 'Não dá para corrigir este inventário agora.')} Dá para consultar o que já foi corrigido.`;
+  const materiais = [...new Map(res.seriais.map(s => [s.item_id, s.descricao])).entries()].sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'));
+  const selMat = document.getElementById('ivenCorFiltroMat');
+  selMat.innerHTML = '<option value="">Todos os materiais</option>' + materiais.map(([id, d]) => `<option value="${escHtml(id)}">${escHtml(d || '—')}</option>`).join('');
+  if (anterior && materiais.some(([id]) => id === anterior.filtroMat)) selMat.value = anterior.filtroMat;
+  ivenCorAba(_ivenCor.aba);
+  document.getElementById('modalIvenCorrecao').classList.remove('hidden');
+}
+
+function fecharCorrecaoIven() {
+  document.getElementById('modalIvenCorrecao').classList.add('hidden');
+}
+
+function ivenCorAba(aba) {
+  _ivenCor.aba = aba;
+  document.getElementById('ivenCorAbaQtd').classList.toggle('ativa', aba === 'QTD');
+  document.getElementById('ivenCorAbaSer').classList.toggle('ativa', aba === 'SER');
+  document.getElementById('ivenCorQtd').classList.toggle('hidden', aba !== 'QTD');
+  document.getElementById('ivenCorSer').classList.toggle('hidden', aba !== 'SER');
+  const nQtd = _ivenCor.quantidade.filter(q => q.situacao === 'PENDENTE' || q.situacao === 'NEGATIVO').length;
+  const nSer = _ivenCor.seriais.filter(s => !s.correcao).length;
+  document.getElementById('ivenCorNQtd').innerHTML = nQtd ? `<b style="color:#ef4444">(${nQtd})</b>` : '';
+  document.getElementById('ivenCorNSer').innerHTML = nSer ? `<b style="color:#ef4444">(${nSer})</b>` : '';
+  if (aba === 'QTD') renderCorrecaoQtdIven(); else renderCorrecaoSeriaisIven();
+}
+
+function renderCorrecaoQtdIven() {
+  const lista = _ivenCor.quantidade;
+  const pode = _ivenCor.pode_corrigir;
+  const sinal = (n) => `${Number(n) > 0 ? '+' : ''}${Number(n || 0).toLocaleString('pt-BR')}`;
+  document.getElementById('ivenCorQtdBody').innerHTML = lista.length ? lista.map(q => {
+    const pend = q.situacao === 'PENDENTE';
+    const situacao = q.situacao === 'CORRIGIDO'
+      ? `<span style="color:var(--green);font-size:11px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Corrigido (${sinal(q.correcao_ajuste ?? q.ajuste)})${q.corrigido_por ? ' · ' + escHtml(q.corrigido_por) : ''}${q.corrigido_em ? ' · ' + formatarData(String(q.corrigido_em).slice(0, 10)) : ''}</span>`
+      : q.situacao === 'JUSTIFICADO' ? `<span style="color:var(--text-3);font-size:11px">Não é divergência${q.reclassificada_motivo ? ' — ' + escHtml(q.reclassificada_motivo) : ''}</span>`
+      : q.situacao === 'NEGATIVO' ? `<span style="color:#ef4444;font-size:11px">O saldo ficaria negativo: confira as saídas depois da contagem</span>`
+      : '<span style="color:#ef4444;font-weight:600;font-size:11px">A corrigir</span>';
+    return `<tr style="${pend ? '' : 'opacity:.75'}">
+      <td><input type="checkbox" ${_ivenCor.marcQtd.has(q.id) ? 'checked' : ''} ${pend && pode ? '' : 'disabled'} onchange="ivenCorMarcarUmQtd('${escJs(q.id)}', this.checked)"></td>
+      <td class="td-main" style="white-space:normal">${escHtml(q.descricao || '—')}${q.codigo ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(q.codigo)}</div>` : ''}</td>
+      <td style="text-align:center">${q.referencia}</td>
+      <td style="text-align:center;font-weight:700">${q.contado}</td>
+      <td style="text-align:center;font-weight:700;color:${q.ajuste < 0 ? '#ef4444' : 'var(--green)'}">${sinal(q.ajuste)}</td>
+      <td style="text-align:center;white-space:nowrap">${q.situacao === 'CORRIGIDO' ? `${q.saldo_atual}` : `${q.saldo_atual} → <b>${q.saldo_depois}</b>`}</td>
+      <td>${situacao}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="7" style="color:var(--text-3);font-size:12px;padding:12px">Nenhum material sem serial com divergência neste inventário.</td></tr>';
+  const pendentes = lista.filter(q => q.situacao === 'PENDENTE');
+  document.getElementById('ivenCorQtdTodos').checked = pendentes.length > 0 && pendentes.every(q => _ivenCor.marcQtd.has(q.id));
+  document.getElementById('ivenCorQtdTodos').disabled = !pode || !pendentes.length;
+  ivenCorAtualizarBotao();
+}
+
+function ivenCorMarcarUmQtd(id, marcado) {
+  if (marcado) _ivenCor.marcQtd.add(id); else _ivenCor.marcQtd.delete(id);
+  ivenCorAtualizarBotao();
+}
+
+function ivenCorMarcarQtd(marcar) {
+  _ivenCor.marcQtd = new Set(marcar ? _ivenCor.quantidade.filter(q => q.situacao === 'PENDENTE').map(q => q.id) : []);
+  renderCorrecaoQtdIven();
+}
+
+// Seriais visíveis com o filtro de agora
+function ivenCorSeriaisFiltrados() {
+  const mat = document.getElementById('ivenCorFiltroMat').value;
+  const sit = document.getElementById('ivenCorFiltroSit').value;
+  const busca = (document.getElementById('ivenCorBusca').value || '').trim().toUpperCase();
+  _ivenCor.filtroMat = mat;
+  return _ivenCor.seriais.filter(s => {
+    if (mat && s.item_id !== mat) return false;
+    if (busca && !String(s.numero_serie).toUpperCase().includes(busca)) return false;
+    const aCorrigir = !s.correcao && (s.acoes || []).length > 0;
+    if (sit === 'PENDENTES') return aCorrigir;
+    if (sit === 'FALTANDO' || sit === 'SOBRANDO') return aCorrigir && s.situacao === sit;
+    if (sit === 'BLOQUEADOS') return !s.correcao && !(s.acoes || []).length;
+    if (sit === 'CORRIGIDOS') return !!s.correcao;
+    return true;
+  });
+}
+
+function renderCorrecaoSeriaisIven() {
+  const lista = ivenCorSeriaisFiltrados();
+  const pode = _ivenCor.pode_corrigir;
+  const LIMITE = 600;
+  const mostrar = lista.slice(0, LIMITE);
+  document.getElementById('ivenCorSerBody').innerHTML = mostrar.length ? mostrar.map(s => {
+    const [txt, , matiz, icone] = IVEN_SITUACAO[s.situacao] || ['—', '', 'cinza', 'timer'];
+    let acao;
+    if (s.correcao) {
+      acao = `<span style="color:var(--green);font-size:11px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${escHtml(s.correcao_detalhe || s.rotulo_correcao || s.correcao)}${s.corrigido_por ? ' · ' + escHtml(s.corrigido_por) : ''}${s.corrigido_em ? ' · ' + formatarData(String(s.corrigido_em).slice(0, 10)) : ''}</span>
+        ${s.encontrado_em ? `<div style="font-size:10px;color:var(--green)">Encontrado depois${s.encontrado_por ? ' · ' + escHtml(s.encontrado_por) : ''}</div>` : ''}
+        ${s.pode_encontrar ? `<div><button class="row-action" style="margin-top:3px" data-perm-btn="inventario_ajustar_divergencia" onclick="encontreiIven('${escJs(s.id)}','${escJs(s.numero_serie)}')"><svg class=ic aria-hidden=true><use href=#i-check></use></svg> Encontrei</button></div>` : ''}`;
+    } else if (!(s.acoes || []).length) {
+      acao = `<span style="color:var(--yellow);font-size:11px"><svg class=ic aria-hidden=true><use href=#i-lock></use></svg> ${escHtml(s.bloqueio || 'Sem correção possível por aqui')}</span>`;
+    } else {
+      const atual = _ivenCor.escolha[s.id] || '';
+      acao = `<select class="form-input" style="font-size:11px;padding:4px 6px" ${pode ? '' : 'disabled'} onchange="ivenCorEscolher('${escJs(s.id)}', this.value)">
+          <option value="">Escolha...</option>
+          ${s.acoes.map(a => `<option value="${a}" ${atual === a ? 'selected' : ''}>${escHtml(ivenRotuloAcao(a, s.situacao))}</option>`).join('')}
+        </select>${s.aviso ? `<div style="font-size:10px;color:var(--text-3);margin-top:2px">${escHtml(s.aviso)}</div>` : ''}`;
+    }
+    const marcavel = !s.correcao && (s.acoes || []).length && pode;
+    return `<tr>
+      <td><input type="checkbox" ${_ivenCor.marcSer.has(s.id) ? 'checked' : ''} ${marcavel ? '' : 'disabled'} onchange="ivenCorMarcarUmSer('${escJs(s.id)}', this.checked)"></td>
+      <td style="font-size:11px">${escHtml(s.descricao || '—')}</td>
+      <td style="font-family:var(--font-mono);font-weight:700">${escHtml(s.numero_serie)}</td>
+      <td>${gcaSit(txt, matiz, icone)}</td>
+      <td style="font-size:11px;color:var(--text-2);white-space:normal">${escHtml(s.onde_agora || '—')}</td>
+      <td style="white-space:normal">${acao}</td>
+    </tr>`;
+  }).join('') + (lista.length > LIMITE ? `<tr><td colspan="6" style="font-size:11px;color:var(--text-3);padding:8px">Mostrando ${LIMITE} de ${lista.length}. Use o filtro de material ou a busca.</td></tr>` : '')
+    : '<tr><td colspan="6" style="color:var(--text-3);font-size:12px;padding:12px">Nenhum serial nesta lista.</td></tr>';
+  const marcaveis = mostrar.filter(s => !s.correcao && (s.acoes || []).length);
+  document.getElementById('ivenCorSerTodos').checked = marcaveis.length > 0 && marcaveis.every(s => _ivenCor.marcSer.has(s.id));
+  document.getElementById('ivenCorSerTodos').disabled = !pode || !marcaveis.length;
+  aplicarPermissoesMenu();
+  ivenCorAtualizarBotao();
+}
+
+function ivenCorEscolher(id, acao) {
+  if (acao) _ivenCor.escolha[id] = acao; else delete _ivenCor.escolha[id];
+  ivenCorAtualizarBotao();
+}
+
+function ivenCorMarcarUmSer(id, marcado) {
+  if (marcado) _ivenCor.marcSer.add(id); else _ivenCor.marcSer.delete(id);
+  ivenCorAtualizarBotao();
+}
+
+function ivenCorMarcarSer(marcar) {
+  const visiveis = ivenCorSeriaisFiltrados().slice(0, 600).filter(s => !s.correcao && (s.acoes || []).length);
+  if (marcar) visiveis.forEach(s => _ivenCor.marcSer.add(s.id)); else visiveis.forEach(s => _ivenCor.marcSer.delete(s.id));
+  renderCorrecaoSeriaisIven();
+}
+
+// Escolhe a mesma ação para os marcados — só onde ela vale (ex.: "não encontrado" só para faltando no estoque)
+function ivenCorAplicarLote() {
+  const acao = document.getElementById('ivenCorAcaoLote').value;
+  if (!_ivenCor.marcSer.size) { toast('Marque os seriais na lista primeiro', 'warn'); return; }
+  let aplicou = 0, naoVale = 0;
+  _ivenCor.seriais.forEach(s => {
+    if (!_ivenCor.marcSer.has(s.id)) return;
+    if ((s.acoes || []).includes(acao)) { _ivenCor.escolha[s.id] = acao; aplicou++; } else naoVale++;
+  });
+  renderCorrecaoSeriaisIven();
+  toast(`${aplicou} serial(is) com "${ivenRotuloAcao(acao, acao === 'MANTER' ? '' : 'FALTANDO')}"${naoVale ? ` · ${naoVale} ficaram sem escolha (essa ação não vale para eles)` : ''}`, naoVale ? 'warn' : 'success', 6000);
+}
+
+function ivenCorLimparEscolhas() {
+  _ivenCor.escolha = {};
+  _ivenCor.marcSer = new Set();
+  renderCorrecaoSeriaisIven();
+}
+
+function ivenCorAtualizarBotao() {
+  const btn = document.getElementById('ivenCorBtn');
+  const pode = _ivenCor.pode_corrigir;
+  let n, texto, resumo = '';
+  if (_ivenCor.aba === 'QTD') {
+    n = _ivenCor.marcQtd.size;
+    texto = `Corrigir ${n} material(is)`;
+    const marcados = _ivenCor.quantidade.filter(q => _ivenCor.marcQtd.has(q.id));
+    const entra = marcados.filter(q => q.ajuste > 0).length, sai = marcados.filter(q => q.ajuste < 0).length;
+    resumo = n ? `${entra} com entrada de ajuste · ${sai} com saída de ajuste` : '';
+  } else {
+    const escolhas = Object.entries(_ivenCor.escolha);
+    n = escolhas.length;
+    texto = `Aplicar ${n} correção(ões)`;
+    const porAcao = {};
+    escolhas.forEach(([id, a]) => { const s = _ivenCor.seriais.find(x => x.id === id); const r = ivenRotuloAcao(a, s?.situacao); porAcao[r] = (porAcao[r] || 0) + 1; });
+    resumo = Object.entries(porAcao).map(([r, q]) => `${q} · ${r}`).join(' | ');
+    document.getElementById('ivenCorContSer').textContent = `${_ivenCor.marcSer.size} marcado(s) · ${n} com ação escolhida`;
+  }
+  btn.innerHTML = `<svg class=ic aria-hidden=true><use href=#i-check></use></svg> ${texto}`;
+  btn.disabled = !pode || !n;
+  document.getElementById('ivenCorResumo').textContent = resumo;
+}
+
+async function aplicarCorrecaoIven() {
+  const motivo = document.getElementById('ivenCorMotivo').value.trim();
+  if (motivo.length < 5) { toast('Escreva o motivo da correção (mínimo 5 letras)', 'warn'); return; }
+  const id = _ivenCor.inventario.id;
+  const btn = document.getElementById('ivenCorBtn');
+  let res;
+  if (_ivenCor.aba === 'QTD') {
+    const itens = [..._ivenCor.marcQtd];
+    if (!itens.length) return;
+    if (!confirm(`Corrigir o saldo de ${itens.length} material(is) pelo que a contagem achou?\n\n${document.getElementById('ivenCorResumo').textContent}\n\nFica um lançamento "Ajuste de inventário" em Entrada/Saída para cada um.`)) return;
+    btn.disabled = true;
+    res = await api(`/inventario-enel/${encodeURIComponent(id)}/corrigir-quantidade`, { method: 'POST', body: JSON.stringify({ itens, motivo }) });
+    btn.disabled = false;
+    if (!res?.ok) { toast(res?.erro || 'Erro ao corrigir', 'error'); return; }
+    toast(`${res.corrigidos.length} material(is) corrigido(s)${res.recusados.length ? ` · ${res.recusados.length} não: ${res.recusados.slice(0, 3).map(r => `${r.descricao} (${r.motivo})`).join('; ')}` : ''}`, res.recusados.length ? 'warn' : 'success', 8000);
+  } else {
+    const acoes = Object.entries(_ivenCor.escolha).map(([sid, acao]) => ({ id: sid, acao }));
+    if (!acoes.length) return;
+    if (!confirm(`Aplicar ${acoes.length} correção(ões) de serial?\n\n${document.getElementById('ivenCorResumo').textContent.split(' | ').join('\n')}\n\nO saldo acompanha os seriais e tudo fica no histórico de cada medidor.`)) return;
+    btn.disabled = true;
+    res = await api(`/inventario-enel/${encodeURIComponent(id)}/corrigir-seriais`, { method: 'POST', body: JSON.stringify({ acoes, motivo }) });
+    btn.disabled = false;
+    if (!res?.ok) { toast(res?.erro || 'Erro ao corrigir', 'error'); return; }
+    toast(`${res.aplicados} serial(is) corrigido(s)${res.recusados.length ? ` · ${res.recusados.length} não: ${res.recusados.slice(0, 3).map(r => `${r.serial} (${r.motivo})`).join('; ')}` : ''}`, res.recusados.length ? 'warn' : 'success', 8000);
+  }
+  await abrirCorrecaoIven(_ivenCor.aba);
+  await ivenAbrirDetalhe(id);
+  carregarInventarioEnel();
+}
+
+async function encontreiIven(serId, serial) {
+  if (!confirm(`O medidor ${serial} foi encontrado?\n\nEle volta ao estoque (o saldo sobe 1) e fica um lançamento "Ajuste de inventário" em Entrada/Saída.`)) return;
+  const res = await api(`/inventario-enel/${encodeURIComponent(_ivenCor.inventario.id)}/seriais/${encodeURIComponent(serId)}/encontrei`, { method: 'POST', body: JSON.stringify({}) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao devolver ao estoque', 'error'); return; }
+  toast(`Medidor ${serial} de volta ao estoque`, 'success');
+  await abrirCorrecaoIven('SER');
+  await ivenAbrirDetalhe(_ivenCor.inventario.id);
 }
 
 // ═══════════════════════════════════════════
@@ -18685,9 +19214,9 @@ function abrirPermissoes(id) {
   // Quem não é admin só mexe no que ele mesmo tem, nunca nas administrativas, e não mexe nas próprias
   usrCalcularTravadas();
   const somenteLeitura = !usrSouAdmin() && u.id === GCA.usuario?.id;
-  document.getElementById('permissoesSubtitulo').textContent = somenteLeitura
+  document.getElementById('permissoesSubtitulo').innerHTML = somenteLeitura
     ? 'Suas permissões — só um administrador pode alterar'
-    : `Usuário: ${u.nome} (${u.role})${_usrPermTravadas.size ? ' · <svg class=ic aria-hidden=true><use href=#i-lock></use></svg> = você não tem essa permissão para dar' : ''}`;
+    : `Usuário: ${escHtml(u.nome)} (${escHtml(u.role)})${_usrPermTravadas.size ? ' · <svg class=ic aria-hidden=true><use href=#i-lock></use></svg> = você não tem essa permissão para dar' : ''}`;
   document.querySelectorAll('#permissoesPanel .card-actions button').forEach(b => { b.style.display = somenteLeitura ? 'none' : ''; });
   usrRenderAbasFiliais();
   renderPermissoesGrid();

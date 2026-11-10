@@ -262,6 +262,7 @@ let _filtro = 'todos';
 let _itemAtual = null;
 let _previa = null;
 let _pollTimer = null;
+let _rodadaRecontagem = null; // recontagem: número da contagem (2ª, 3ª...)
 
 async function api(path, opts = {}) {
   try {
@@ -303,7 +304,9 @@ async function iniciar() {
     document.getElementById('loginBtn').disabled = true;
     return;
   }
-  document.getElementById('loginSub').textContent = `Materiais do cliente — ${mesBR(info.ano_mes)}`;
+  // Recontagem (10/11/2026): só os materiais escolhidos voltam a ser contados
+  _rodadaRecontagem = info.recontagem ? info.rodada : null;
+  document.getElementById('loginSub').textContent = `Materiais do cliente — ${mesBR(info.ano_mes)}${_rodadaRecontagem ? ` · recontagem (${_rodadaRecontagem}ª contagem)` : ''}`;
   const nomeConc = info.nome_concessionaria || 'Concessionária';
   document.querySelectorAll('.nome-conc').forEach(el => { el.textContent = nomeConc; });
   document.title = `GCA — Inventário ${nomeConc}`;
@@ -322,6 +325,7 @@ async function fazerLogin() {
   btn.disabled = false; btn.textContent = 'Entrar';
   if (!res.ok) { erroBox.textContent = res.erro || 'Erro ao entrar'; erroBox.classList.remove('hidden'); return; }
   TOKEN_SESSAO = res.token; NOME_SESSAO = res.nome;
+  if (res.recontagem) _rodadaRecontagem = res.rodada;
   sessionStorage.setItem('invenel_sessao_' + TOKEN_LINK, TOKEN_SESSAO);
   sessionStorage.setItem('invenel_nome_' + TOKEN_LINK, NOME_SESSAO);
   mostrarApp(res.ano_mes, res.nome);
@@ -330,7 +334,7 @@ async function fazerLogin() {
 function mostrarApp(anoMes, nome) {
   document.getElementById('telaLogin').classList.add('hidden');
   document.getElementById('telaApp').classList.add('ativo');
-  document.getElementById('appSub').textContent = `Inventário ${mesBR(anoMes)}`;
+  document.getElementById('appSub').textContent = `Inventário ${mesBR(anoMes)}${_rodadaRecontagem ? ` · recontagem (${_rodadaRecontagem}ª contagem)` : ''}`;
   document.getElementById('appNome').textContent = '' + (nome || '');
   carregarItens();
   restaurarFila();
@@ -816,7 +820,9 @@ function mostrarTelaFinal(mensagem, r) {
   document.getElementById('telaLogin').classList.add('hidden');
   document.getElementById('telaFinal').classList.add('ativo');
   document.getElementById('telaFinalResumo').textContent = mensagem
-    || `Acurácia: ${Number(r.acuracia_pct).toFixed(1)}% — ${r.divergencias} de ${r.total} material(is) com divergência.`;
+    || (r.recontagem
+      ? `Recontagem finalizada (${r.rodada}ª contagem): ${r.recontados} material(is) recontado(s), ${r.divergencias_recontados} com divergência. Acurácia do inventário: ${Number(r.acuracia_pct).toFixed(1)}%.`
+      : `Acurácia: ${Number(r.acuracia_pct).toFixed(1)}% — ${r.divergencias} de ${r.total} material(is) com divergência.`);
   if (r) {
     const box = document.getElementById('telaFinalSeriais');
     box.innerHTML = `
