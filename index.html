@@ -1268,6 +1268,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           <button class="nav-item" data-view="enel-tdc" data-perm="enel_consulta_tdc|ver_enel" onclick="showView('enel-tdc',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-receipt-text></use></svg></span> Consulta TdC</button>
           <div class="nav-sub" style="font-size:9px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.8px;padding:10px 10px 4px">Estoque / Config</div>
           <button class="nav-item" data-view="enel-controle" data-perm="enel_controle_materiais|ver_enel" onclick="showView('enel-controle',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg></span> Controle De Materiais</button>
+          <button class="nav-item" data-view="enel-ajuste-saldo" data-perm="ajuste_saldo_equipe|enel_controle_materiais|ver_enel" onclick="showView('enel-ajuste-saldo',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg></span> Ponta de Cabo e Saldos</button>
           <button class="nav-item" data-view="enel-estoque" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-estoque',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-search></use></svg></span> Consulta Estoque</button>
           <button class="nav-item" data-view="enel-inventario" data-perm="enel_inventario|ver_enel" onclick="showView('enel-inventario',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-check></use></svg></span> <span>Inventário <span class="nome-conc">Concessionária</span></span></button>
           <button class="nav-item" data-view="enel-consulta-saidas" data-perm="enel_consulta_estoque|ver_enel" onclick="showView('enel-consulta-saidas',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-send></use></svg></span> Consulta Saídas</button>
@@ -5126,6 +5127,113 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         </div>
         <div id="sumControleEquipe" style="margin-top:12px;padding:10px 12px;background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-3)"></div>
       </div>
+
+      <!-- ── PONTA DE CABO E SALDOS DAS EQUIPES (10/11/2026): baixa do saldo da equipe sem voltar ao estoque ── -->
+      <div class="view h-ceu" id="view-enel-ajuste-saldo">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div>
+            <div class="page-title">Ponta de Cabo e Saldos das Equipes</div>
+            <div class="page-sub">Tira do saldo da equipe o que ela não tem mais (material sem serial). O material não volta ao estoque; para isso existe a devolução no Controle de Materiais. Tudo fica registrado: quem, quando, quanto e por quê.</div>
+          </div>
+          <button class="btn btn-ghost" onclick="asCarregar()">↻ Recarregar</button>
+        </div>
+        <div class="atend-tabs" id="asAbas" style="flex-wrap:wrap">
+          <button class="atend-tab active" data-aba="pontas" onclick="asAba('pontas')"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg> Pontas de cabo <span id="asContaPontas" style="display:none;margin-left:4px;background:var(--yellow);color:#000;border-radius:999px;padding:0 7px;font-size:10px;font-weight:800"></span></button>
+          <button class="atend-tab" data-aba="saldos" onclick="asAba('saldos')"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg> Saldos altos</button>
+          <button class="atend-tab" data-aba="historico" onclick="asAba('historico')"><svg class=ic aria-hidden=true><use href=#i-scroll-text></use></svg> Histórico</button>
+        </div>
+
+        <!-- Pontas de cabo -->
+        <div id="asAba-pontas" style="display:flex;flex-direction:column;gap:12px">
+          <div id="asPontasInfo" style="font-size:12px;color:var(--text-2);line-height:1.5"></div>
+          <div id="asPontasResumo" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          <input class="search-box" id="asPontasBusca" placeholder="Buscar equipe ou cabo..." oninput="asRenderPontas()" style="width:100%">
+          <div class="card" style="min-width:0;contain:inline-size;padding:0;overflow:auto">
+            <table>
+              <thead><tr>
+                <th style="width:28px"><input type="checkbox" id="asPontasTodos" onchange="asMarcarPontas(this.checked)" title="Marcar todas as pontas sugeridas"></th>
+                <th>Equipe</th><th>Cabo</th><th style="text-align:right">Saldo da equipe</th><th>Entregas</th>
+                <th style="text-align:right">Sugerido</th><th style="width:150px">Baixar</th>
+              </tr></thead>
+              <tbody id="asPontasBody"><tr><td colspan="7"><div class="spinner" style="margin:16px auto"></div></td></tr></tbody>
+            </table>
+          </div>
+          <div class="card" style="min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div>
+              <label class="form-label">Motivo *</label>
+              <textarea class="form-input" id="asPontasMotivo" rows="2"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+              <span id="asPontasSel" style="font-size:12px;color:var(--text-3);margin-right:auto"></span>
+              <button class="btn btn-primary" id="asPontasBtn" data-perm-btn="ajuste_saldo_equipe" onclick="asBaixarPontas()"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg> Baixar pontas</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Saldos altos -->
+        <div id="asAba-saldos" style="display:none;flex-direction:column;gap:12px">
+          <div style="font-size:12px;color:var(--text-2);line-height:1.5">
+            Saldo de cada equipe em cada material sem serial, do maior para o menor. "Dura" é quantos dias o saldo dura no ritmo de consumo dos últimos 30 dias (pelas OS baixadas).
+            Material com serial (medidor) sai pela devolução por serial ou pela sucata.
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="search-box" id="asSaldosBusca" placeholder="Buscar equipe ou material..." oninput="asRenderSaldos()" style="flex:1;min-width:200px">
+            <select class="form-input" id="asSaldosTipo" style="width:auto;font-size:12px" onchange="asRenderSaldos()">
+              <option value="">Todos os materiais</option><option value="cabos">Só cabos</option><option value="outros">Sem os cabos</option>
+            </select>
+            <label style="font-size:12px;color:var(--text-3);display:flex;align-items:center;gap:6px">Saldo a partir de
+              <input class="form-input" id="asSaldosMin" type="number" min="0" step="any" style="width:100px;font-size:12px" oninput="asRenderSaldos()"></label>
+          </div>
+          <div class="card" style="min-width:0;contain:inline-size;padding:0;overflow:auto;max-height:520px">
+            <table>
+              <thead><tr>
+                <th style="width:28px"><input type="checkbox" id="asSaldosTodos" onchange="asMarcarSaldos(this.checked)" title="Marcar os da lista"></th>
+                <th>Equipe</th><th>Material</th><th style="text-align:right">Saldo</th><th style="text-align:right">Consumo 30 dias</th>
+                <th style="text-align:right">Dura</th><th>Última entrega</th><th>Último consumo</th><th></th>
+              </tr></thead>
+              <tbody id="asSaldosBody"></tbody>
+            </table>
+          </div>
+          <div class="card" style="min-width:0;display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--text-2)">
+              <span>Para os marcados, o saldo passa a ser</span>
+              <input class="form-input" id="asSaldosNovo" type="number" min="0" step="any" value="0" style="width:110px;font-size:12px" oninput="asAtualizarSelSaldos()">
+              <span style="color:var(--text-3)">(0 = zera)</span>
+            </div>
+            <div>
+              <label class="form-label">Motivo *</label>
+              <textarea class="form-input" id="asSaldosMotivo" rows="2" placeholder="Ex.: saldo acumulado de consumo que não veio pelo eOrder — conferido com a equipe"></textarea>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:wrap">
+              <span id="asSaldosSel" style="font-size:12px;color:var(--text-3);margin-right:auto"></span>
+              <button class="btn btn-primary" id="asSaldosBtn" data-perm-btn="ajuste_saldo_equipe" onclick="asBaixarSaldosMarcados()"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg> Baixar os marcados</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Histórico -->
+        <div id="asAba-historico" style="display:none;flex-direction:column;gap:12px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="search-box" id="asHistEquipe" placeholder="Equipe..." style="width:170px" onchange="asCarregarHist()">
+            <select class="form-input" id="asHistTipo" style="width:auto;font-size:12px" onchange="asCarregarHist()">
+              <option value="">Pontas e ajustes</option><option value="PONTA_CABO">Só pontas de cabo</option><option value="AJUSTE_SALDO">Só saldos altos</option>
+            </select>
+            <input type="date" class="form-input" id="asHistDe" style="width:150px;font-size:11px" onchange="asCarregarHist()" title="De">
+            <input type="date" class="form-input" id="asHistAte" style="width:150px;font-size:11px" onchange="asCarregarHist()" title="Até">
+            <button class="btn btn-ghost" onclick="asExcelHist()"><svg class=ic aria-hidden=true><use href=#i-download></use></svg> Excel</button>
+          </div>
+          <div id="asHistResumo" style="font-size:12px;color:var(--text-3)"></div>
+          <div class="card" style="min-width:0;contain:inline-size;padding:0;overflow:auto;max-height:560px">
+            <table>
+              <thead><tr>
+                <th>Quando</th><th>Equipe</th><th>Material</th><th>Tipo</th><th style="text-align:right">Baixado</th>
+                <th style="text-align:right">Saldo antes → depois</th><th>Motivo</th><th>Quem</th><th></th>
+              </tr></thead>
+              <tbody id="asHistBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <!-- ── FICHA EPI ── -->
       <div class="view h-violeta" id="view-ficha-epi">
 
@@ -8277,6 +8385,7 @@ const VIEW_TITLES = {
   'enel-baixa-manual':['Materiais Cliente','/ Baixa Manual'],
   'enel-baixas':['Materiais Cliente','/ Baixas por TdC'],
   'enel-controle':['Materiais Cliente','/ Controle De Materiais'],
+  'enel-ajuste-saldo':['Materiais Cliente','/ Ponta de Cabo e Saldos'],
   'carga-viatura':['Atendimento','/ Viatura'], 'consulta-viaturas':['Consulta','/ Viaturas'],
   'enel-estoque':['Materiais Cliente','/ Consulta Estoque'],
   'enel-inventario':['Materiais Cliente','/ Inventário ENEL'],
@@ -8395,6 +8504,7 @@ function onViewLoad(nome) {
   if (nome === 'enel-sucata')         { initSucata(); }
   if (nome === 'enel-baixa-auto')    { initBaixaAuto(); }
   if (nome === 'enel-controle')      carregarControleMateriaisEquipe();
+  if (nome === 'enel-ajuste-saldo')  asIniciar();
   if (nome === 'consulta-viaturas')  carregarFrota();
   if (nome === 'carga-viatura')      { cvIniciar(); cvAba('iniciar', document.querySelector('#view-carga-viatura .atend-tab')); }
   if (nome === 'enel-estoque')       carregarEstoqueEnel();
@@ -19549,7 +19659,7 @@ const PERMISSOES_SCHEMA = {
     cadastrar_viatura:'Cadastrar viatura', entregar_viatura:'Entregar e devolver material de viatura'
   } },
   enel: { label:'Materiais Cliente (concessionária)', icon:'<svg class=ic aria-hidden=true><use href=#i-zap></use></svg>', itens:{
-    ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio, Baixa Manual e Cancelar entrada)',
+    ver_enel:'Acesso completo (todas as telas abaixo, menos Atendimento, Desbloqueio, Baixa Manual, Cancelar entrada e Baixar saldo da equipe)',
     atendimento_enel:'Atendimento Material, transferência e devolução de seriais',
     liberar_limite_equipe:'Entregar acima do teto do tipo de equipe (com motivo)',
     desbloqueio:'Desbloqueio de equipamento',
@@ -19559,6 +19669,7 @@ const PERMISSOES_SCHEMA = {
     enel_medidores:'Controle de Medidores (consultar)',
     enel_alerta_medidores:'E-mail diário de medidores bloqueados (escolher quem recebe)',
     enel_controle_materiais:'Controle de Materiais por equipe (consultar)',
+    ajuste_saldo_equipe:'Baixar saldo da equipe sem voltar ao estoque: ponta de cabo e saldos altos (com motivo; também estornar)',
     enel_consulta_tdc:'Consulta TdC e Baixas por TdC (consultar)',
     enel_consulta_estoque:'Consulta Estoque e Consulta Saídas (consultar)',
     enel_inventario:'Inventário do material do cliente (ver; gerar link, liberar e ajustar pedem as caixas do grupo Inventário)',
@@ -30321,7 +30432,7 @@ function exportarControleEquipes() {
         material: it.materialDesc || '',
         codigo: it.materialCod || '',
         p_entregue: it.periodo?.entregue ?? '', p_devolvido: it.periodo?.devolvido ?? '', p_consumido: it.periodo?.baixado ?? '',
-        entregue: it.entregue || 0, devolvido: it.devolvido || 0, consumido: it.baixado || 0,
+        entregue: it.entregue || 0, devolvido: it.devolvido || 0, consumido: it.baixado || 0, ajustado: it.ajustado || 0,
         saldo: it.saldoReal ?? 0,
       });
     });
@@ -30339,6 +30450,7 @@ function exportarControleEquipes() {
     { key:'entregue',  label:'Entregue (total)' },
     { key:'devolvido', label:'Devolvido (total)' },
     { key:'consumido', label:'Consumido (total)' },
+    { key:'ajustado', label:'Ponta / ajuste (total)' },
     { key:'saldo',    label:'Saldo Atual' },
   ]);
 }
@@ -32271,6 +32383,7 @@ function filtrarControleEquipe() {
                 ${caixa('Entregue', pe.entregue||0, 'var(--text)', 'entregue', 'periodo')}
                 ${caixa('Devolvido', pe.devolvido||0, pe.devolvido ? '#f59e0b' : 'var(--text-3)', 'devolvido', 'periodo')}
                 ${caixa('Consumido (OS)', pe.baixado||0, 'var(--text)', 'consumido', 'periodo')}
+                ${pe.ajustado ? caixa('Ponta / ajuste', pe.ajustado, '#f59e0b', 'ajustado', 'periodo') : ''}
               </div>
               <div id="${did}_periodo" class="ceq-linhas" hidden></div>
               <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.4px;margin:10px 0 6px">Desde o início</div>` : ''}
@@ -32278,6 +32391,7 @@ function filtrarControleEquipe() {
                 ${caixa('Entregue', it.entregue||0, 'var(--text)', 'entregue', 'total')}
                 ${caixa('Devolvido', it.devolvido||0, it.devolvido ? '#f59e0b' : 'var(--text-3)', 'devolvido', 'total')}
                 ${caixa('Consumido (OS)', it.baixado||0, 'var(--text)', 'consumido', 'total')}
+                ${it.ajustado ? caixa('Ponta / ajuste', it.ajustado, '#f59e0b', 'ajustado', 'total') : ''}
                 ${caixa('Saldo atual', it.saldoReal||0, (it.saldoReal||0)===0 ? 'var(--red)' : '#22c55e')}
               </div>
               <div id="${did}_total" class="ceq-linhas" hidden></div>
@@ -32336,6 +32450,15 @@ async function ceqVerLinhas(equipe, materialId, tipo, escopo, did, botao) {
     box.innerHTML = titulo(`<span>Consumido por TdC</span><span style="font-weight:400;color:var(--text-3)">${num(total)} em ${lista.length} TdC(s)</span>`)
       + (lista.length ? tabela('<th>TdC</th><th>Data</th><th class="num">Quantidade</th>',
           lista.map(g => `<tr><td style="font-family:var(--font-mono)">${escHtml(g.tdc)}</td><td>${formatarData(g.data)}</td><td class="num">${num(g.quantidade)}</td></tr>`).join('')) : vazio);
+    return;
+  }
+  if (tipo === 'ajustado') {
+    // Ponta de cabo e baixa de saldo alto (tela Ponta de Cabo e Saldos): saiu da equipe sem voltar ao estoque
+    const lista = (d.ajustes || []).filter(noPeriodo);
+    const total = lista.reduce((t, x) => t + Number(x.quantidade || 0), 0);
+    box.innerHTML = titulo(`<span>Ponta de cabo e baixas de saldo</span><span style="font-weight:400;color:var(--text-3)">${num(total)} em ${lista.length} baixa(s)</span>`)
+      + (lista.length ? tabela('<th>Data</th><th class="num">Quantidade</th><th>Tipo</th><th>Motivo</th><th>Quem</th>',
+          lista.map(x => `<tr><td>${formatarData(x.data)} <span style="color:var(--text-3)">${hora(x.hora)}</span></td><td class="num">${num(x.quantidade)}</td><td>${x.tipo === 'PONTA_CABO' ? 'Ponta de cabo' : 'Saldo alto'}</td><td>${escHtml(x.motivo || '—')}</td><td>${escHtml(x.usuario || '—')}</td></tr>`).join('')) : vazio);
     return;
   }
   if (tipo === 'devolvido') {
@@ -32415,6 +32538,424 @@ async function confirmarDevolucaoEquipe(equipe, materialId, saldo) {
     toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${quantidade} devolvido(s) ao estoque. A equipe ficou com ${res.saldo_equipe}.`, 'success');
     await carregarControleMateriaisEquipe();
   } else erro.textContent = res?.erro || 'Erro na devolução';
+}
+
+// ═══════════════════════════════════════════
+// PONTA DE CABO E SALDOS DAS EQUIPES (10/11/2026)
+// Baixa do saldo da equipe (material sem serial) sem voltar ao estoque. Ponta de cabo: quando a
+// equipe recebe o mesmo cabo de novo, a sobra da entrega anterior (até 20% dela) é sugerida; a
+// pessoa aumenta, diminui ou zera (não era ponta). Saldos altos: baixa manual, uma ou várias.
+// ═══════════════════════════════════════════
+let _as = { aba: 'pontas', pontas: null, saldos: null, hist: null, marcP: new Set(), qtdP: {}, marcS: new Set(), abertos: new Set() };
+const asChave = (equipe, materialId) => `${equipe}|${materialId}`;
+const asNum = (v) => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+const asUn = (u) => u ? ` ${escHtml(String(u).toLowerCase())}` : '';
+const AS_SIT = {
+  PENDENTE: ['Ponta sugerida', 'ambar', 'cable'],
+  AGUARDANDO: ['Aguardando o consumo das OS', 'cinza', 'hourglass'],
+  BAIXADA: ['Já avaliada', 'verde', 'check'],
+  SOBRA_GRANDE: ['Sobra grande: não é ponta', 'vermelho', 'triangle-alert'],
+  SEM_SOBRA: ['Sem sobra', 'cinza', 'circle-check'],
+};
+const AS_MOTIVO_PONTA = 'Ponta de cabo: sobra da entrega anterior (até 20% da entrega)';
+
+function asIniciar() {
+  _as.pontas = null; _as.saldos = null; _as.hist = null;
+  if (!document.getElementById('asPontasMotivo').value) document.getElementById('asPontasMotivo').value = AS_MOTIVO_PONTA;
+  asAba(_as.aba);
+  if (_as.aba !== 'pontas') asCarregarPontas(true);   // o número da aba de pontas
+}
+
+function asCarregar() {
+  _as.pontas = null; _as.saldos = null; _as.hist = null;
+  asAba(_as.aba);
+}
+
+function asAba(aba) {
+  _as.aba = aba;
+  document.querySelectorAll('#asAbas .atend-tab').forEach(b => b.classList.toggle('active', b.dataset.aba === aba));
+  ['pontas', 'saldos', 'historico'].forEach(a => { document.getElementById('asAba-' + a).style.display = a === aba ? 'flex' : 'none'; });
+  if (aba === 'pontas' && !_as.pontas) asCarregarPontas();
+  if (aba === 'saldos' && !_as.saldos) asCarregarSaldos();
+  if (aba === 'historico' && !_as.hist) asCarregarHist();
+}
+
+// ── Pontas de cabo ──
+async function asCarregarPontas(soContar) {
+  if (!soContar) document.getElementById('asPontasBody').innerHTML = '<tr><td colspan="7"><div class="spinner" style="margin:16px auto"></div></td></tr>';
+  const res = await api('/ajuste-equipes/pontas');
+  if (!res?.ok) {
+    if (!soContar) document.getElementById('asPontasBody').innerHTML = `<tr><td colspan="7" style="color:var(--red);font-size:12px;padding:12px">${escHtml(res?.erro || 'Erro ao carregar')}</td></tr>`;
+    return;
+  }
+  _as.pontas = res;
+  // Valor de cada ponta: o sugerido, até a pessoa mudar
+  const atuais = new Set(res.data.map(p => asChave(p.equipe, p.material_id)));
+  Object.keys(_as.qtdP).forEach(k => { if (!atuais.has(k)) delete _as.qtdP[k]; });
+  _as.marcP = new Set([..._as.marcP].filter(k => atuais.has(k)));
+  res.data.forEach(p => { const k = asChave(p.equipe, p.material_id); if (!(k in _as.qtdP)) _as.qtdP[k] = p.sugerido; });
+  const n = res.data.filter(p => p.pendentes).length;
+  const badge = document.getElementById('asContaPontas');
+  badge.style.display = n ? '' : 'none'; badge.textContent = n;
+  document.getElementById('asPontasInfo').innerHTML =
+    `Quando a equipe recebe o mesmo cabo de novo, o que sobrou da entrega anterior vira sugestão de ponta, se a sobra for até <b>${res.limite_pct}%</b> daquela entrega. Sobra maior não é ponta e fica na aba Saldos altos.
+     A sugestão só aparece ${res.espera_dias} dias depois da entrega nova, quando o consumo das OS daquele período já entrou. Ponta não baixada fica pendente e soma com a da entrega seguinte.
+     Ajuste o valor se precisar; <b>0</b> quer dizer que não era ponta (a sugestão some e fica registrado).`;
+  if (!soContar) asRenderPontas();
+}
+
+function asRenderPontas() {
+  const res = _as.pontas;
+  if (!res) return;
+  const q = (document.getElementById('asPontasBusca').value || '').trim().toLowerCase();
+  const lista = res.data.filter(p => !q || p.equipe.toLowerCase().includes(q) || (p.descricao || '').toLowerCase().includes(q) || (p.codigo || '').toLowerCase().includes(q));
+  const pode = res.pode_baixar;
+  const pend = res.data.filter(p => p.pendentes);
+  document.getElementById('asPontasResumo').innerHTML = [
+    `<span class="row-action" style="cursor:default;color:#f59e0b;border-color:#f59e0b"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg> ${pend.length} cabo(s) de equipe com ponta sugerida</span>`,
+    `<span class="row-action" style="cursor:default">${asNum(res.total_sugerido)} sugerido(s) no total</span>`,
+    res.data.some(p => p.aguardando) ? `<span class="row-action" style="cursor:default;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> ${res.data.filter(p => p.aguardando).length} aguardando o consumo das OS</span>` : '',
+  ].join('');
+  const body = document.getElementById('asPontasBody');
+  if (!lista.length) {
+    body.innerHTML = `<tr><td colspan="7" style="color:var(--text-3);font-size:12px;padding:14px">${res.data.length ? 'Nada com essa busca.' : 'Nenhuma ponta de cabo para avaliar agora.'}</td></tr>`;
+  } else {
+    body.innerHTML = lista.map(p => {
+      const k = asChave(p.equipe, p.material_id);
+      const kj = escJs(k);
+      const aberto = _as.abertos.has(k);
+      const marcavel = pode && p.pendentes > 0;
+      const entregas = p.ciclos.filter(c => c.situacao === 'PENDENTE').length;
+      const aguard = p.ciclos.filter(c => c.situacao === 'AGUARDANDO').length;
+      const valor = _as.qtdP[k];
+      const mudou = p.pendentes && Number(valor) !== Number(p.sugerido);
+      const ciclos = [...p.ciclos].reverse();
+      return `<tr style="border-bottom:${aberto ? 'none' : '1px solid var(--border)'}">
+        <td><input type="checkbox" ${_as.marcP.has(k) ? 'checked' : ''} ${marcavel ? '' : 'disabled'} onchange="asMarcarPonta('${kj}', this.checked)"></td>
+        <td class="td-main">${escHtml(p.equipe)}</td>
+        <td style="white-space:normal;font-size:12px">${escHtml(p.descricao || p.material_id)}${p.codigo ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(p.codigo)}</div>` : ''}</td>
+        <td style="text-align:right">${asNum(p.saldo)}${asUn(p.unidade_med)}</td>
+        <td><button class="row-action" data-no-guard="1" onclick="asAbrirPonta('${kj}')">${aberto ? '▾' : '▸'} ${entregas ? `${entregas} entrega(s) com ponta` : ''}${entregas && aguard ? ' · ' : ''}${aguard ? `${aguard} aguardando` : ''}</button></td>
+        <td style="text-align:right;font-weight:700;color:#f59e0b">${p.pendentes ? `${asNum(p.sugerido)}${asUn(p.unidade_med)}` : '—'}${p.pendentes && p.soma_pendente > p.sugerido ? `<div style="font-size:10px;color:var(--text-3);font-weight:400">pontas somam ${asNum(p.soma_pendente)}; a equipe só tem ${asNum(p.saldo)}</div>` : ''}</td>
+        <td>${p.pendentes ? `<input class="form-input" type="number" min="0" step="any" max="${p.saldo}" value="${valor}" style="width:110px;font-size:12px;${mudou ? 'border-color:#f59e0b' : ''}" ${pode ? '' : 'disabled'}
+              oninput="asValorPonta('${kj}', this.value)" title="Aumente ou diminua; 0 = não era ponta">${mudou ? `<div style="font-size:10px;color:#f59e0b">sugerido ${asNum(p.sugerido)}</div>` : ''}`
+            : `<span style="font-size:11px;color:var(--text-3)">a partir de ${formatarData(asProximaLiberacao(p))}</span>`}</td>
+      </tr>
+      ${aberto ? `<tr style="border-bottom:1px solid var(--border);background:var(--bg-hover)"><td colspan="7" style="padding:8px 12px">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">Cada entrega deste cabo para a equipe, da mais nova para a mais antiga (a última ainda está em uso e não entra). Sobra = o que veio da anterior + entregue − consumido nas OS − devolvido − baixado até a entrega seguinte.</div>
+        <div style="overflow:auto;max-height:300px"><table>
+          <thead><tr><th>Entrega</th><th style="text-align:right">Veio da anterior</th><th style="text-align:right">Entregue</th><th style="text-align:right">Consumido (OS)</th><th style="text-align:right">Devolvido / baixado</th><th style="text-align:right">Sobra</th><th style="text-align:right">Limite (20%)</th><th>Entrega seguinte</th><th>Situação</th></tr></thead>
+          <tbody>${ciclos.map(c => {
+            const [txt, matiz, icone] = AS_SIT[c.situacao] || [c.situacao, 'cinza', 'info'];
+            return `<tr>
+              <td>${formatarData(c.data)}</td>
+              <td style="text-align:right;color:var(--text-3)">${c.anterior ? asNum(c.anterior) : '—'}</td>
+              <td style="text-align:right">${asNum(c.entregue)}</td>
+              <td style="text-align:right">${asNum(c.consumido)}</td>
+              <td style="text-align:right;color:var(--text-3)">${c.devolvido || c.ajustado ? asNum(c.devolvido + c.ajustado) : '—'}</td>
+              <td style="text-align:right;font-weight:700;${c.situacao === 'PENDENTE' ? 'color:#f59e0b' : ''}">${asNum(c.sobra)}</td>
+              <td style="text-align:right;color:var(--text-3)">${asNum(c.limite)}</td>
+              <td>${formatarData(c.proxima)}</td>
+              <td>${gcaSit(txt, matiz, icone)}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </td></tr>` : ''}`;
+    }).join('');
+  }
+  const marcaveis = res.data.filter(p => p.pendentes);
+  const todos = document.getElementById('asPontasTodos');
+  todos.checked = marcaveis.length > 0 && marcaveis.every(p => _as.marcP.has(asChave(p.equipe, p.material_id)));
+  todos.disabled = !pode || !marcaveis.length;
+  aplicarPermissoesMenu();
+  asAtualizarSelPontas();
+}
+
+// Dia em que a ponta "aguardando" passa a ser sugerida (entrega seguinte + espera do consumo)
+function asProximaLiberacao(p) {
+  const c = p.ciclos.find(x => x.situacao === 'AGUARDANDO');
+  if (!c) return '';
+  const d = new Date(c.proxima + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + (_as.pontas?.espera_dias || 3));
+  return d.toISOString().slice(0, 10);
+}
+
+function asAbrirPonta(k) {
+  if (_as.abertos.has(k)) _as.abertos.delete(k); else _as.abertos.add(k);
+  asRenderPontas();
+}
+function asMarcarPonta(k, marcado) { if (marcado) _as.marcP.add(k); else _as.marcP.delete(k); asAtualizarSelPontas(); }
+function asMarcarPontas(marcar) {
+  _as.marcP = new Set(marcar ? _as.pontas.data.filter(p => p.pendentes).map(p => asChave(p.equipe, p.material_id)) : []);
+  asRenderPontas();
+}
+function asValorPonta(k, v) { _as.qtdP[k] = v === '' ? '' : Number(v); asAtualizarSelPontas(); }
+
+function asAtualizarSelPontas() {
+  const marcadas = (_as.pontas?.data || []).filter(p => _as.marcP.has(asChave(p.equipe, p.material_id)));
+  const total = marcadas.reduce((t, p) => t + Number(_as.qtdP[asChave(p.equipe, p.material_id)] || 0), 0);
+  const zeradas = marcadas.filter(p => Number(_as.qtdP[asChave(p.equipe, p.material_id)]) === 0).length;
+  document.getElementById('asPontasSel').textContent = marcadas.length
+    ? `${marcadas.length} ponta(s) marcada(s) · ${asNum(total)} sai(em) do saldo das equipes${zeradas ? ` · ${zeradas} como "não era ponta"` : ''}` : 'Marque as pontas que quer baixar.';
+  const btn = document.getElementById('asPontasBtn');
+  btn.disabled = !_as.pontas?.pode_baixar || !marcadas.length;
+  btn.innerHTML = `<svg class=ic aria-hidden=true><use href=#i-cable></use></svg> Baixar ${marcadas.length || ''} ponta(s)`;
+}
+
+async function asBaixarPontas() {
+  const marcadas = _as.pontas.data.filter(p => _as.marcP.has(asChave(p.equipe, p.material_id)));
+  if (!marcadas.length) return;
+  const motivo = document.getElementById('asPontasMotivo').value.trim();
+  if (motivo.length < 5) { toast('Escreva o motivo (mínimo 5 letras)', 'warn'); return; }
+  const itens = [];
+  for (const p of marcadas) {
+    const v = _as.qtdP[asChave(p.equipe, p.material_id)];
+    if (v === '' || !(Number(v) >= 0)) { toast(`${p.equipe} · ${p.descricao}: informe quanto baixar (0 = não era ponta)`, 'warn'); return; }
+    if (Number(v) > p.saldo) { toast(`${p.equipe} · ${p.descricao}: a equipe só tem ${asNum(p.saldo)}`, 'warn'); return; }
+    itens.push({ equipe: p.equipe, material_id: p.material_id, quantidade: Number(v) });
+  }
+  const total = itens.reduce((t, i) => t + i.quantidade, 0);
+  if (!confirm(`Baixar ${itens.length} ponta(s) de cabo?\n\n${asNum(total)} sai(em) do saldo das equipes e não volta(m) ao estoque.\nFica registrado com o motivo e a sobra de cada entrega.`)) return;
+  const btn = document.getElementById('asPontasBtn');
+  btn.disabled = true;
+  const res = await api('/ajuste-equipes/pontas/baixar', { method: 'POST', body: JSON.stringify({ itens, motivo }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao baixar as pontas', 'error'); return; }
+  const rec = res.recusados || [];
+  toast(`${res.baixados.length} ponta(s) baixada(s): ${asNum(res.total)} saiu(íram) do saldo${rec.length ? ` · ${rec.length} não: ${rec.slice(0, 3).map(r => r.motivo).join('; ')}` : ''}`, rec.length ? 'warn' : 'success', 8000);
+  _as.marcP.clear();
+  _as.saldos = null; _as.hist = null;
+  await asCarregarPontas();
+}
+
+// ── Saldos altos ──
+async function asCarregarSaldos() {
+  document.getElementById('asSaldosBody').innerHTML = '<tr><td colspan="9"><div class="spinner" style="margin:16px auto"></div></td></tr>';
+  const res = await api('/ajuste-equipes/saldos');
+  if (!res?.ok) { document.getElementById('asSaldosBody').innerHTML = `<tr><td colspan="9" style="color:var(--red);font-size:12px;padding:12px">${escHtml(res?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  _as.saldos = res;
+  const atuais = new Set(res.data.map(s => asChave(s.equipe, s.material_id)));
+  _as.marcS = new Set([..._as.marcS].filter(k => atuais.has(k)));
+  asRenderSaldos();
+}
+
+function asSaldosFiltrados() {
+  const q = (document.getElementById('asSaldosBusca').value || '').trim().toLowerCase();
+  const tipo = document.getElementById('asSaldosTipo').value;
+  const min = Number(document.getElementById('asSaldosMin').value || 0);
+  return (_as.saldos?.data || []).filter(s => (!q || s.equipe.toLowerCase().includes(q) || (s.descricao || '').toLowerCase().includes(q) || (s.codigo || '').toLowerCase().includes(q))
+    && (!tipo || (tipo === 'cabos' ? s.cabo : !s.cabo)) && s.saldo >= min);
+}
+
+function asRenderSaldos() {
+  const res = _as.saldos;
+  if (!res) return;
+  const lista = asSaldosFiltrados();
+  const pode = res.pode_baixar;
+  const LIMITE = 800;
+  document.getElementById('asSaldosBody').innerHTML = lista.length ? lista.slice(0, LIMITE).map(s => {
+    const k = asChave(s.equipe, s.material_id), kj = escJs(k);
+    const dura = s.dura_dias == null
+      ? '<span style="color:var(--red)" title="Nenhum consumo nas OS dos últimos 30 dias">sem consumo</span>'
+      : `<span style="${s.dura_dias > 90 ? 'color:var(--red);font-weight:700' : s.dura_dias > 30 ? 'color:#f59e0b' : ''}">${s.dura_dias} dia(s)</span>`;
+    return `<tr>
+      <td><input type="checkbox" ${_as.marcS.has(k) ? 'checked' : ''} ${pode ? '' : 'disabled'} onchange="asMarcarSaldo('${kj}', this.checked)"></td>
+      <td class="td-main">${escHtml(s.equipe)}</td>
+      <td style="white-space:normal;font-size:12px">${escHtml(s.descricao || s.material_id)}${s.codigo ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(s.codigo)}</div>` : ''}
+        ${s.ponta_pendente ? `<div style="font-size:10px;color:#f59e0b"><svg class=ic aria-hidden=true><use href=#i-cable></use></svg> ${asNum(s.ponta_pendente)} de ponta sugerida (aba Pontas)</div>` : ''}</td>
+      <td style="text-align:right;font-weight:700">${asNum(s.saldo)}${asUn(s.unidade_med)}</td>
+      <td style="text-align:right">${asNum(s.consumo_30d)}</td>
+      <td style="text-align:right;white-space:nowrap">${dura}</td>
+      <td>${s.ultima_entrega ? formatarData(s.ultima_entrega) : '—'}</td>
+      <td>${s.ultimo_consumo ? formatarData(s.ultimo_consumo) : '—'}</td>
+      <td>${pode ? `<button class="row-action" data-perm-btn="ajuste_saldo_equipe" onclick="asAbrirBaixa('${kj}')"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg> Baixar</button>` : ''}</td>
+    </tr>`;
+  }).join('') + (lista.length > LIMITE ? `<tr><td colspan="9" style="font-size:11px;color:var(--text-3);padding:8px">Mostrando ${LIMITE} de ${lista.length}. Use a busca ou o saldo mínimo.</td></tr>` : '')
+    : `<tr><td colspan="9" style="color:var(--text-3);font-size:12px;padding:14px">Nenhum saldo com esse filtro.</td></tr>`;
+  const vis = lista.slice(0, LIMITE);
+  const todos = document.getElementById('asSaldosTodos');
+  todos.checked = vis.length > 0 && vis.every(s => _as.marcS.has(asChave(s.equipe, s.material_id)));
+  todos.disabled = !pode || !vis.length;
+  aplicarPermissoesMenu();
+  asAtualizarSelSaldos();
+}
+
+function asMarcarSaldo(k, marcado) { if (marcado) _as.marcS.add(k); else _as.marcS.delete(k); asAtualizarSelSaldos(); }
+function asMarcarSaldos(marcar) {
+  asSaldosFiltrados().slice(0, 800).forEach(s => { const k = asChave(s.equipe, s.material_id); if (marcar) _as.marcS.add(k); else _as.marcS.delete(k); });
+  asRenderSaldos();
+}
+
+function asAtualizarSelSaldos() {
+  const novo = Number(document.getElementById('asSaldosNovo').value || 0);
+  const marcados = (_as.saldos?.data || []).filter(s => _as.marcS.has(asChave(s.equipe, s.material_id)));
+  const afetados = marcados.filter(s => s.saldo > novo);
+  const total = afetados.reduce((t, s) => t + (s.saldo - novo), 0);
+  document.getElementById('asSaldosSel').textContent = marcados.length
+    ? `${marcados.length} marcado(s) · ${afetados.length} com saldo acima de ${asNum(novo)} · ${asNum(total)} sai(em) do saldo` : 'Marque os saldos na lista.';
+  const btn = document.getElementById('asSaldosBtn');
+  btn.disabled = !_as.saldos?.pode_baixar || !afetados.length;
+}
+
+async function asBaixarSaldosMarcados() {
+  const novo = Number(document.getElementById('asSaldosNovo').value);
+  if (!(novo >= 0)) { toast('Informe o novo saldo (0 ou mais)', 'warn'); return; }
+  const motivo = document.getElementById('asSaldosMotivo').value.trim();
+  if (motivo.length < 5) { toast('Escreva o motivo (mínimo 5 letras)', 'warn'); return; }
+  const afetados = _as.saldos.data.filter(s => _as.marcS.has(asChave(s.equipe, s.material_id)) && s.saldo > novo);
+  if (!afetados.length) return;
+  const total = afetados.reduce((t, s) => t + (s.saldo - novo), 0);
+  if (!confirm(`Baixar o saldo de ${afetados.length} equipe/material para ${asNum(novo)}?\n\n${asNum(total)} sai(em) do saldo das equipes e não volta(m) ao estoque. Fica registrado com o motivo.`)) return;
+  await asEnviarBaixaSaldos(afetados.map(s => ({ equipe: s.equipe, material_id: s.material_id, novo_saldo: novo })), motivo, document.getElementById('asSaldosBtn'));
+}
+
+async function asEnviarBaixaSaldos(itens, motivo, btn, aoConcluir) {
+  if (btn) btn.disabled = true;
+  const res = await api('/ajuste-equipes/saldos/baixar', { method: 'POST', body: JSON.stringify({ itens, motivo }) });
+  if (btn) btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao baixar o saldo', 'error'); return false; }
+  const rec = res.recusados || [];
+  const total = res.baixados.reduce((t, b) => t + Number(b.quantidade || 0), 0);
+  toast(`${res.baixados.length} saldo(s) baixado(s): ${asNum(total)} saiu(íram) das equipes${rec.length ? ` · ${rec.length} não: ${rec.slice(0, 3).map(r => r.motivo).join('; ')}` : ''}`, rec.length ? 'warn' : 'success', 8000);
+  if (aoConcluir && res.baixados.length) aoConcluir();   // fecha a janela antes de recarregar a lista
+  _as.marcS.clear();
+  _as.pontas = null; _as.hist = null;
+  await asCarregarSaldos();
+  asCarregarPontas(true);
+  return true;
+}
+
+// Baixa de um saldo: quanto tirar ou o novo saldo
+function asAbrirBaixa(k) {
+  const s = _as.saldos.data.find(x => asChave(x.equipe, x.material_id) === k);
+  if (!s) return;
+  document.getElementById('modalAsBaixa')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalAsBaixa';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:460px">
+      <div class="modal-header">
+        <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg> Baixar saldo da equipe</div><div style="font-size:11px;color:var(--text-3)">Sai do saldo da equipe e não volta ao estoque</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalAsBaixa').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-hover);font-size:12px;line-height:1.6">
+          <div><strong>Equipe:</strong> ${escHtml(s.equipe)}</div>
+          <div><strong>Material:</strong> ${escHtml(s.descricao || s.material_id)}${s.codigo ? ` <span style="color:var(--text-3)">(${escHtml(s.codigo)})</span>` : ''}</div>
+          <div><strong>Saldo da equipe:</strong> <b>${asNum(s.saldo)}</b>${asUn(s.unidade_med)} · consumo nos últimos 30 dias: ${asNum(s.consumo_30d)}</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="form-group" style="margin:0;flex:1"><label class="form-label">Quanto baixar</label>
+            <input id="asBxQtd" class="form-input" type="number" min="0" step="any" max="${s.saldo}" oninput="asBxSync('qtd', ${s.saldo})"></div>
+          <div class="form-group" style="margin:0;flex:1"><label class="form-label">Ou o novo saldo</label>
+            <input id="asBxNovo" class="form-input" type="number" min="0" step="any" oninput="asBxSync('novo', ${s.saldo})"></div>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">Motivo *</label>
+          <textarea id="asBxMotivo" class="form-input" rows="3" placeholder="Ex.: equipe conferida: tem 150 m, o resto foi usado em serviço que não veio pelo eOrder"></textarea></div>
+        <div id="asBxErro" style="font-size:12px;color:var(--red);min-height:16px"></div>
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:flex-end;gap:8px">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalAsBaixa').remove()">Cancelar</button>
+        <button class="btn btn-primary" id="asBxBtn" onclick="asConfirmarBaixa('${escJs(k)}')"><svg class=ic aria-hidden=true><use href=#i-trending-down></use></svg> Baixar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  setTimeout(() => document.getElementById('asBxQtd')?.focus(), 50);
+}
+
+function asBxSync(origem, saldo) {
+  const qtd = document.getElementById('asBxQtd'), novo = document.getElementById('asBxNovo');
+  document.getElementById('asBxErro').textContent = '';
+  if (origem === 'qtd') novo.value = qtd.value === '' ? '' : +(saldo - Number(qtd.value)).toFixed(4);
+  else qtd.value = novo.value === '' ? '' : +(saldo - Number(novo.value)).toFixed(4);
+}
+
+async function asConfirmarBaixa(k) {
+  const s = _as.saldos.data.find(x => asChave(x.equipe, x.material_id) === k);
+  const erro = document.getElementById('asBxErro');
+  const q = Number(document.getElementById('asBxQtd').value);
+  const motivo = document.getElementById('asBxMotivo').value.trim();
+  if (!(q > 0)) { erro.textContent = 'Informe quanto baixar (ou o novo saldo).'; return; }
+  if (q > s.saldo) { erro.textContent = `A equipe só tem ${asNum(s.saldo)}.`; return; }
+  if (motivo.length < 5) { erro.textContent = 'Informe o motivo (mínimo 5 letras).'; return; }
+  await asEnviarBaixaSaldos([{ equipe: s.equipe, material_id: s.material_id, quantidade: q }], motivo, document.getElementById('asBxBtn'),
+    () => document.getElementById('modalAsBaixa')?.remove());
+}
+
+// ── Histórico ──
+async function asCarregarHist() {
+  const qs = new URLSearchParams();
+  const de = document.getElementById('asHistDe').value, ate = document.getElementById('asHistAte').value;
+  const eq = document.getElementById('asHistEquipe').value.trim(), tipo = document.getElementById('asHistTipo').value;
+  if (de) qs.set('de', de); if (ate) qs.set('ate', ate); if (eq) qs.set('equipe', eq); if (tipo) qs.set('tipo', tipo);
+  document.getElementById('asHistBody').innerHTML = '<tr><td colspan="9"><div class="spinner" style="margin:16px auto"></div></td></tr>';
+  const res = await api('/ajuste-equipes/historico' + (qs.toString() ? '?' + qs : ''));
+  if (!res?.ok) { document.getElementById('asHistBody').innerHTML = `<tr><td colspan="9" style="color:var(--red);font-size:12px;padding:12px">${escHtml(res?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  _as.hist = res;
+  asRenderHist();
+}
+
+function asQuando(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? '—' : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function asRenderHist() {
+  const lista = _as.hist?.data || [];
+  const pode = _as.hist?.pode_baixar;
+  const valendo = lista.filter(a => !a.estornado_em);
+  const pontas = valendo.filter(a => a.tipo === 'PONTA_CABO'), ajustes = valendo.filter(a => a.tipo === 'AJUSTE_SALDO');
+  document.getElementById('asHistResumo').textContent = lista.length
+    ? `${lista.length} registro(s) · pontas de cabo: ${asNum(pontas.reduce((t, a) => t + Number(a.quantidade || 0), 0))} em ${pontas.length} · saldos altos: ${asNum(ajustes.reduce((t, a) => t + Number(a.quantidade || 0), 0))} em ${ajustes.length}${lista.length - valendo.length ? ` · ${lista.length - valendo.length} estornado(s)` : ''}` : '';
+  document.getElementById('asHistBody').innerHTML = lista.length ? lista.map(a => {
+    const estornado = !!a.estornado_em;
+    const ponta = a.tipo === 'PONTA_CABO';
+    const entregas = (a.entregas || []);
+    const tipo = ponta ? `${gcaSit('Ponta de cabo', 'ambar', 'cable')}${entregas.length ? `<div style="font-size:10px;color:var(--text-3);margin-top:3px;line-height:1.4">${entregas.map(e => `entrega ${formatarData(e.data)}: ${asNum(e.entregue)} − ${asNum(e.consumido)} consumido → sobra ${asNum(e.sobra)}`).join('<br>')}</div>` : ''}`
+      : gcaSit('Saldo alto', 'azul', 'trending-down');
+    return `<tr style="${estornado ? 'opacity:.55' : ''}">
+      <td style="white-space:nowrap;font-size:12px">${asQuando(a.criado_em)}</td>
+      <td class="td-main">${escHtml(a.equipe)}</td>
+      <td style="white-space:normal;font-size:12px">${escHtml(a.material_descricao || a.material_id)}</td>
+      <td style="white-space:normal">${tipo}</td>
+      <td style="text-align:right;font-weight:700;${estornado ? 'text-decoration:line-through' : ''}">${asNum(a.quantidade)}${ponta && a.sugerido != null && Number(a.sugerido) !== Number(a.quantidade) ? `<div style="font-size:10px;color:var(--text-3);font-weight:400">sugerido ${asNum(a.sugerido)}</div>` : ''}${ponta && Number(a.quantidade) === 0 ? '<div style="font-size:10px;color:var(--text-3);font-weight:400">não era ponta</div>' : ''}</td>
+      <td style="text-align:right;white-space:nowrap;font-size:12px">${asNum(a.saldo_antes)} → ${asNum(a.saldo_depois)}</td>
+      <td style="white-space:normal;font-size:12px">${escHtml(a.motivo || '')}${estornado ? `<div style="font-size:10px;color:var(--red);margin-top:2px">Estornado por ${escHtml(a.estornado_por || '—')} em ${asQuando(a.estornado_em)}: ${escHtml(a.estorno_motivo || '')}</div>` : ''}</td>
+      <td style="font-size:12px">${escHtml(a.usuario || '—')}</td>
+      <td>${!estornado && pode ? `<button class="row-action" style="color:var(--red)" data-perm-btn="ajuste_saldo_equipe" onclick="asEstornar('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-undo-2></use></svg> Estornar</button>` : ''}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="9" style="color:var(--text-3);font-size:12px;padding:14px">Nenhuma baixa registrada com esse filtro.</td></tr>';
+  aplicarPermissoesMenu();
+}
+
+async function asEstornar(id) {
+  const a = _as.hist.data.find(x => x.id === id);
+  if (!a) return;
+  const motivo = (prompt(`Estornar a baixa de ${asNum(a.quantidade)} de ${a.material_descricao} da equipe ${a.equipe}?\n\nO saldo volta para a equipe${a.tipo === 'PONTA_CABO' ? ' e a ponta volta a aparecer como sugestão' : ''}. Qual o motivo?`) || '').trim();
+  if (!motivo) return;
+  if (motivo.length < 5) { toast('Explique com pelo menos 5 letras', 'warn'); return; }
+  const res = await api(`/ajuste-equipes/${encodeURIComponent(id)}/estornar`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao estornar', 'error'); return; }
+  toast(`Baixa estornada${res.saldo_depois != null ? `: a equipe voltou a ter ${asNum(res.saldo_depois)}` : ''}`, 'success');
+  _as.pontas = null; _as.saldos = null;
+  await asCarregarHist();
+  asCarregarPontas(true);
+}
+
+function asExcelHist() {
+  const lista = _as.hist?.data || [];
+  gcaExportarExcel('Ponta_de_cabo_e_saldos_das_equipes', lista.map(a => ({
+    quando: asQuando(a.criado_em), equipe: a.equipe, material: a.material_descricao || a.material_id, codigo: a.codigo || '',
+    tipo: a.tipo === 'PONTA_CABO' ? 'Ponta de cabo' : 'Saldo alto', quantidade: Number(a.quantidade || 0), sugerido: a.sugerido ?? '',
+    antes: a.saldo_antes ?? '', depois: a.saldo_depois ?? '', motivo: a.motivo || '', quem: a.usuario || '',
+    entregas: (a.entregas || []).map(e => `${formatarData(e.data)}: entregue ${e.entregue}, consumido ${e.consumido}, sobra ${e.sobra}`).join(' | '),
+    estorno: a.estornado_em ? `${asQuando(a.estornado_em)} · ${a.estornado_por || ''} · ${a.estorno_motivo || ''}` : '',
+  })), [
+    { key: 'quando', label: 'Quando' }, { key: 'equipe', label: 'Equipe' }, { key: 'material', label: 'Material' }, { key: 'codigo', label: 'Código' },
+    { key: 'tipo', label: 'Tipo' }, { key: 'quantidade', label: 'Baixado' }, { key: 'sugerido', label: 'Sugerido' },
+    { key: 'antes', label: 'Saldo antes' }, { key: 'depois', label: 'Saldo depois' }, { key: 'motivo', label: 'Motivo' }, { key: 'quem', label: 'Quem' },
+    { key: 'entregas', label: 'Sobra de cada entrega (ponta)' }, { key: 'estorno', label: 'Estorno' },
+  ]);
 }
 
 // ═══════════════════════════════════════════
