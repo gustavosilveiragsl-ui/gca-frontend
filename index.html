@@ -2053,11 +2053,16 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
     <div class="modal-body">
       <div id="logTranspModalAviso" class="hidden" style="font-size:11px;color:var(--blue);background:var(--blue-soft);border-radius:8px;padding:8px 10px;margin-bottom:12px">Este grupo já foi coletado — o novo transportador vai precisar assinar o aceite pelo novo link antes de continuar.</div>
       <label class="form-label">Novo transportador</label>
-      <div style="position:relative">
+      <select id="logTranspModalTipo" class="form-input" style="margin-bottom:8px" onchange="logTipoTranspMudou('modal')">
+        <option value="COLABORADOR">Colaborador</option>
+        <option value="EMPRESA">Empresa de transporte</option>
+      </select>
+      <div id="logTranspModalColabBox" style="position:relative">
         <input type="hidden" id="logTranspModalId">
         <input id="logTranspModalBusca" class="form-input" placeholder="Nome ou matrícula..." oninput="filtrarTransportador(this.value,'logTranspModalSugestoes','logTranspModalId','logTranspModalBusca')" autocomplete="off">
         <div id="logTranspModalSugestoes" class="autocomplete-list hidden"></div>
       </div>
+      <select id="logTranspModalEmpresa" class="form-input hidden"></select>
       <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="confirmarTrocaTransportador()">Confirmar</button>
     </div>
   </div>
@@ -6193,6 +6198,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       <!-- ── LOGÍSTICA ── -->
       <div class="view h-laranja" id="view-logistica">
         <div class="view-header" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalEmpresasTransporte()"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> Empresas de Transporte</button>
           <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalDestinos()"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Destinos de Entrega</button>
         </div>
 
@@ -6237,11 +6243,17 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           </div>
           <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
-            <div style="position:relative;width:220px">
+            <!-- Quem leva: um colaborador ou uma empresa de transporte (10/11/2026) -->
+            <select id="logTranspTipo" class="form-input" style="width:auto;font-size:11px" onchange="logTipoTranspMudou('barra')" title="Quem vai levar a carga">
+              <option value="COLABORADOR">Colaborador</option>
+              <option value="EMPRESA">Empresa de transporte</option>
+            </select>
+            <div id="logTranspColabBox" style="position:relative;width:220px">
               <input type="hidden" id="logTransportadorSelect">
               <input id="logTransportadorBusca" class="form-input" style="font-size:11px" placeholder="Nome ou matrícula..." oninput="filtrarTransportador(this.value,'logTransportadorSugestoes','logTransportadorSelect','logTransportadorBusca')" autocomplete="off">
               <div id="logTransportadorSugestoes" class="autocomplete-list hidden"></div>
             </div>
+            <select id="logTranspEmpresa" class="form-input hidden" style="width:240px;font-size:11px"></select>
             <button class="btn btn-primary" style="font-size:11px" onclick="criarViagemLogistica()"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Criar Viagem</button>
             <button class="btn btn-ghost" style="font-size:11px" onclick="logLimparSelecao()">Limpar seleção</button>
           </div>
@@ -8486,7 +8498,7 @@ function onViewLoad(nome) {
   if (nome === 'inventario')         { (async () => { if (!_armazens.length) await carregarArmazens(); carregarInventarioHistorico(); })(); }
   if (nome === 'enel-inventario')    carregarInventarioEnel();
   if (nome === 'enel-cadastro')      carregarMateriaisEnel();
-  if (nome === 'logistica')          { carregarDestinosEntrega(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
+  if (nome === 'logistica')          { carregarDestinosEntrega(); carregarEmpresasTransporte(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
@@ -9707,10 +9719,14 @@ function renderEstadoLogisticaLink(token, data) {
   if (estado === 'aguardando_assinatura') {
     if (_logLinkPoll) clearInterval(_logLinkPoll);
     const ehTransferencia = tipoPendente === 'TRANSFERENCIA';
+    // Empresa de transporte: quem assina é o motorista — nome obrigatório, documento e placa opcionais
+    const ehEmpresa = grupo.transportador_tipo === 'EMPRESA';
+    const campoLink = (id, rotulo, ph, extra = '', estilo = '') => `<label style="display:block;font-size:11px;color:#94a3b8;margin:10px 0 4px">${rotulo}</label>
+      <input id="${id}" placeholder="${ph}" ${extra} style="width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #475569;background:#0f172a;color:#f1f5f9;font-size:15px;${estilo}">`;
     card.innerHTML = `
       <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;background:#1e293b">
         <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
-          <div style="font-size:16px;font-weight:600;color:#f1f5f9">Olá, ${escHtml(grupo.nome_transportador_atual||'')}!</div>
+          <div style="font-size:16px;font-weight:600;color:#f1f5f9">${ehEmpresa ? `Olá, motorista da ${escHtml(grupo.nome_transportador_atual||'transportadora')}!` : `Olá, ${escHtml(grupo.nome_transportador_atual||'')}!`}</div>
           <div style="font-size:12px;color:#94a3b8;margin-top:4px"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Destino: ${escHtml(grupo.destino)}</div>
           <div style="font-size:11px;color:#64748b;margin-top:2px">Viagem criada por ${escHtml(viagem.criado_por||'—')}</div>
         </div>
@@ -9720,6 +9736,12 @@ function renderEstadoLogisticaLink(token, data) {
         </div>
       </div>
 
+      ${ehEmpresa ? `<div style="border:1px solid #334155;border-radius:16px;padding:16px 20px 20px;margin-bottom:20px;background:#1e293b">
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9">Seus dados</div>
+        ${campoLink('logLinkMotorista', 'Nome do motorista *', 'Nome completo', 'autocomplete="name"')}
+        ${campoLink('logLinkDocumento', 'CPF ou RG (opcional)', 'Documento', 'inputmode="numeric"')}
+        ${campoLink('logLinkPlaca', 'Placa do veículo (opcional)', 'ABC1D23', 'maxlength="8"', 'text-transform:uppercase')}
+      </div>` : ''}
       <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
         <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">Assine abaixo para confirmar:</div>
         <canvas id="canvasAssinatura" width="520" height="260"
@@ -9745,7 +9767,7 @@ function renderEstadoLogisticaLink(token, data) {
         <div style="width:72px;height:72px;border-radius:50%;background:rgba(56,189,248,.15);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:32px;animation:logPulseLink 1.6s ease-in-out infinite"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div>
         <div style="font-size:20px;font-weight:700;color:#38bdf8;margin-bottom:8px">Em trânsito</div>
         <div style="font-size:13px;color:#e2e8f0;margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(grupo.destino)}</div>
-        <div style="font-size:12px;color:#94a3b8">Com ${escHtml(grupo.nome_transportador_atual||'—')}</div>
+        <div style="font-size:12px;color:#94a3b8">Com ${escHtml(grupo.nome_transportador_atual||'—')}${grupo.motorista_nome ? ` · motorista ${escHtml(grupo.motorista_nome)}` : ''}</div>
         <div style="font-size:11px;color:#64748b;margin-top:16px">Assinado — aguardando a confirmação de entrega no destino.</div>
       </div>`;
     // Fica de olho sozinho — assim que a entrega for confirmada (automaticamente, quando o
@@ -9779,6 +9801,16 @@ function renderEstadoLogisticaLink(token, data) {
 async function confirmarAssinaturaLogistica(token) {
   if (!_assinCanvas) return;
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
+  // Empresa de transporte: o motorista se identifica (nome obrigatório)
+  const campoMotorista = document.getElementById('logLinkMotorista');
+  const dadosMotorista = {};
+  if (campoMotorista) {
+    const nome = campoMotorista.value.trim();
+    if (nome.length < 3) { alert('Informe o seu nome (motorista) antes de assinar.'); campoMotorista.focus(); return; }
+    dadosMotorista.motorista_nome = nome;
+    dadosMotorista.motorista_documento = document.getElementById('logLinkDocumento')?.value.trim() || '';
+    dadosMotorista.placa_veiculo = document.getElementById('logLinkPlaca')?.value.trim().toUpperCase() || '';
+  }
   if (vazio) { alert('Por favor, assine no campo acima antes de confirmar.'); return; }
 
   const assinaturaBase64 = _assinCanvas.toDataURL('image/png');
@@ -9789,7 +9821,7 @@ async function confirmarAssinaturaLogistica(token) {
   try {
     const res = await fetch(`${API}/logistica/link/${token}/assinar`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ assinatura_base64: assinaturaBase64 }),
+      body: JSON.stringify({ assinatura_base64: assinaturaBase64, ...dadosMotorista }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -18264,17 +18296,36 @@ function logLimparSelecao() {
   });
   document.getElementById('logTransportadorSelect').value = '';
   document.getElementById('logTransportadorBusca').value = '';
+  document.getElementById('logTranspEmpresa').value = '';
   logAtualizarBarraSelecao();
 }
 
+// Quem leva a carga, conforme a escolha "Colaborador / Empresa de transporte" (barra ou janela)
+function logTranspEscolhido(ctx) {
+  const ids = ctx === 'modal'
+    ? { tipo: 'logTranspModalTipo', colab: 'logTranspModalId', emp: 'logTranspModalEmpresa' }
+    : { tipo: 'logTranspTipo', colab: 'logTransportadorSelect', emp: 'logTranspEmpresa' };
+  if (document.getElementById(ids.tipo).value === 'EMPRESA') {
+    const id = document.getElementById(ids.emp).value;
+    return id ? { transportadora_id: id } : { erro: 'Escolha a empresa de transporte' };
+  }
+  const id = document.getElementById(ids.colab).value;
+  return id ? { transportador_id: id } : { erro: 'Selecione o transportador' };
+}
+
 async function criarViagemLogistica() {
-  const transportadorId = document.getElementById('logTransportadorSelect').value;
-  if (!transportadorId) { toast('Selecione o transportador', 'warn'); return; }
+  const quem = logTranspEscolhido('barra');
+  if (quem.erro) { toast(quem.erro, 'warn'); return; }
   if (!_logSelecionados.size) { toast('Selecione ao menos um atendimento', 'warn'); return; }
 
-  const res = await api('/logistica/viagens', { method: 'POST', body: JSON.stringify({ atendimento_ids: Array.from(_logSelecionados), transportador_id: transportadorId }) });
+  // O romaneio (documento que vai junto com a carga) abre sozinho numa aba nova para imprimir.
+  // A aba é aberta já no clique — depois da resposta do servidor o navegador bloquearia.
+  const janela = window.open('', '_blank');
+  if (janela) janela.document.write('<p style="font-family:sans-serif;padding:24px;color:#475569">Gerando o romaneio da carga...</p>');
+  const res = await api('/logistica/viagens', { method: 'POST', body: JSON.stringify({ atendimento_ids: Array.from(_logSelecionados), ...quem }) });
   if (res?.ok) {
-    toast(`Viagem criada! ${res.grupos_criados} grupo(s) por destino.`, 'success');
+    toast(`Viagem criada! ${res.grupos_criados} grupo(s) por destino. O romaneio abriu numa aba nova para imprimir.`, 'success', 6000);
+    logAbrirRomaneio(res.id, null, janela);
     logLimparSelecao();
     await carregarLogisticaPendentes();
     await carregarLogisticaViagens();
@@ -18282,7 +18333,172 @@ async function criarViagemLogistica() {
     // ficam disponíveis pelo botão "Ver link" no card de cada grupo.
     const primeiro = (res.grupos || [])[0];
     if (primeiro?.token) abrirLinkLogistica(primeiro.token, `<svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${primeiro.destino}`, res.grupos.length > 1 ? `1 de ${res.grupos.length} destinos — os outros estão na lista de viagens` : '');
-  } else toast(res?.erro || 'Erro ao criar viagem', 'error');
+  } else {
+    if (janela) janela.close();
+    toast(res?.erro || 'Erro ao criar viagem', 'error');
+  }
+}
+
+// ── Romaneio de carga (10/11/2026): PDF com uma folha por destino, para imprimir e ir junto da
+// carga. grupoId = só aquele destino. janela = aba já aberta no clique (senão abre uma agora). ──
+async function logAbrirRomaneio(viagemId, grupoId, janela) {
+  const aba = janela || window.open('', '_blank');
+  try {
+    const r = await fetch(`${API}/logistica/viagens/${encodeURIComponent(viagemId)}/romaneio${grupoId ? `?grupo=${encodeURIComponent(grupoId)}` : ''}`,
+      { headers: { Authorization: `Bearer ${GCA.token}` } });
+    if (!r.ok) {
+      let erro = ''; try { erro = (await r.json()).erro; } catch {}
+      if (aba) aba.close();
+      toast(erro || 'Erro ao gerar o romaneio', 'error');
+      return;
+    }
+    const url = URL.createObjectURL(await r.blob());
+    if (aba) aba.location.href = url; else window.open(url, '_blank');
+  } catch {
+    if (aba) aba.close();
+    toast('Erro ao gerar o romaneio', 'error');
+  }
+}
+
+// ── Empresas de transporte (10/11/2026): no lugar de um colaborador, para as unidades que
+// contratam transportadora. A empresa assina pelo mesmo link; o motorista informa o nome. ──
+let _logEmpresas = [];
+const fmtCnpj = (c) => { const n = String(c || '').replace(/\D/g, ''); return n.length === 14 ? n.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5') : String(c || ''); };
+
+async function carregarEmpresasTransporte() {
+  const res = await api('/logistica/transportadoras');
+  _logEmpresas = res?.ok ? (res.data || []) : [];
+  logPreencherEmpresas();
+}
+
+function logPreencherEmpresas() {
+  const ativas = _logEmpresas.filter(e => e.ativo !== false);
+  const opcoes = `<option value="">${ativas.length ? 'Escolha a empresa...' : 'Nenhuma empresa cadastrada'}</option>` +
+    ativas.map(e => `<option value="${escHtml(e.id)}">${escHtml(e.nome)} · ${escHtml(fmtCnpj(e.cnpj))}</option>`).join('');
+  ['logTranspEmpresa', 'logTranspModalEmpresa'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const atual = sel.value;
+    sel.innerHTML = opcoes;
+    if (ativas.some(e => e.id === atual)) sel.value = atual;
+  });
+}
+
+function logTipoTranspMudou(ctx) {
+  const modal = ctx === 'modal';
+  const empresa = document.getElementById(modal ? 'logTranspModalTipo' : 'logTranspTipo').value === 'EMPRESA';
+  document.getElementById(modal ? 'logTranspModalColabBox' : 'logTranspColabBox').classList.toggle('hidden', empresa);
+  document.getElementById(modal ? 'logTranspModalEmpresa' : 'logTranspEmpresa').classList.toggle('hidden', !empresa);
+  if (empresa && !_logEmpresas.some(e => e.ativo !== false)) toast('Nenhuma empresa de transporte cadastrada — use o botão "Empresas de Transporte" no topo da tela', 'warn', 6000);
+}
+
+function abrirModalEmpresasTransporte() {
+  document.getElementById('modalLogEmpresas')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalLogEmpresas';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:820px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> Empresas de Transporte</div>
+          <div style="font-size:11px;color:var(--text-3)">Transportadoras que levam a carga no lugar de um colaborador. O motorista assina a coleta pelo mesmo link, informando o nome.</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalLogEmpresas').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div class="card" style="display:flex;flex-direction:column;gap:10px">
+          <div style="font-size:12px;font-weight:700;color:var(--text-1)" id="logEmpFormTitulo">Nova empresa</div>
+          <input type="hidden" id="logEmpId">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+            <div class="form-group" style="margin:0"><label class="form-label">Nome *</label><input id="logEmpNome" class="form-input" placeholder="Razão social ou nome fantasia" style="text-transform:uppercase"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">CNPJ *</label><input id="logEmpCnpj" class="form-input" placeholder="00.000.000/0000-00" oninput="this.value=fmtCnpj(this.value)" inputmode="numeric" maxlength="18"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Telefone</label><input id="logEmpTelefone" class="form-input" placeholder="(21) 99999-9999"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">E-mail</label><input id="logEmpEmail" class="form-input" placeholder="contato@empresa.com.br"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Contato</label><input id="logEmpContato" class="form-input" placeholder="Nome de quem atende"></div>
+          </div>
+          <div id="logEmpErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-ghost" id="logEmpCancelar" style="display:none" onclick="logEmpLimparForm()">Cancelar edição</button>
+            <button class="btn btn-primary" id="logEmpSalvar" onclick="logEmpSalvar()"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar empresa</button>
+          </div>
+        </div>
+        <div style="overflow:auto"><table>
+          <thead><tr><th>Empresa</th><th>CNPJ</th><th>Telefone</th><th>Contato</th><th>Situação</th><th></th></tr></thead>
+          <tbody id="logEmpBody"></tbody>
+        </table></div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  logEmpRender();
+  carregarEmpresasTransporte().then(logEmpRender);
+}
+
+function logEmpRender() {
+  const body = document.getElementById('logEmpBody');
+  if (!body) return;
+  body.innerHTML = _logEmpresas.length ? _logEmpresas.map(e => {
+    const ativa = e.ativo !== false;
+    return `<tr style="${ativa ? '' : 'opacity:.55'}">
+      <td class="td-main" style="white-space:normal">${escHtml(e.nome)}${e.email ? `<div style="font-size:10px;color:var(--text-3)">${escHtml(e.email)}</div>` : ''}</td>
+      <td style="font-family:var(--font-mono);font-size:12px">${escHtml(fmtCnpj(e.cnpj))}</td>
+      <td style="font-size:12px">${escHtml(e.telefone || '—')}</td>
+      <td style="font-size:12px">${escHtml(e.contato || '—')}</td>
+      <td>${ativa ? gcaSit('Ativa', 'verde', 'check') : gcaSit('Desativada', 'cinza', 'ban')}</td>
+      <td style="white-space:nowrap">
+        <button class="row-action" onclick="logEmpEditar('${escJs(e.id)}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>
+        <button class="row-action" style="${ativa ? 'color:var(--red);border-color:var(--red)' : ''}" onclick="logEmpAtivar('${escJs(e.id)}', ${!ativa})">${ativa ? 'Desativar' : 'Reativar'}</button>
+      </td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="color:var(--text-3);font-size:12px;padding:14px">Nenhuma empresa cadastrada nesta filial.</td></tr>';
+}
+
+function logEmpLimparForm() {
+  ['logEmpId', 'logEmpNome', 'logEmpCnpj', 'logEmpTelefone', 'logEmpEmail', 'logEmpContato'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('logEmpFormTitulo').textContent = 'Nova empresa';
+  document.getElementById('logEmpCancelar').style.display = 'none';
+  document.getElementById('logEmpErro').textContent = '';
+}
+
+function logEmpEditar(id) {
+  const e = _logEmpresas.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('logEmpId').value = e.id;
+  document.getElementById('logEmpNome').value = e.nome || '';
+  document.getElementById('logEmpCnpj').value = fmtCnpj(e.cnpj);
+  document.getElementById('logEmpTelefone').value = e.telefone || '';
+  document.getElementById('logEmpEmail').value = e.email || '';
+  document.getElementById('logEmpContato').value = e.contato || '';
+  document.getElementById('logEmpFormTitulo').textContent = `Editando ${e.nome}`;
+  document.getElementById('logEmpCancelar').style.display = '';
+  document.getElementById('logEmpErro').textContent = '';
+  document.getElementById('logEmpNome').focus();
+}
+
+async function logEmpSalvar() {
+  const id = document.getElementById('logEmpId').value;
+  const corpo = {
+    nome: document.getElementById('logEmpNome').value.trim(), cnpj: document.getElementById('logEmpCnpj').value,
+    telefone: document.getElementById('logEmpTelefone').value.trim(), email: document.getElementById('logEmpEmail').value.trim(),
+    contato: document.getElementById('logEmpContato').value.trim(),
+  };
+  const erro = document.getElementById('logEmpErro');
+  if (corpo.nome.length < 2) { erro.textContent = 'Informe o nome da empresa.'; return; }
+  if (String(corpo.cnpj).replace(/\D/g, '').length !== 14) { erro.textContent = 'Informe o CNPJ com os 14 números.'; return; }
+  const res = await api(id ? `/logistica/transportadoras/${encodeURIComponent(id)}` : '/logistica/transportadoras', { method: id ? 'PUT' : 'POST', body: JSON.stringify(corpo) });
+  if (!res?.ok) { erro.textContent = res?.erro || 'Erro ao salvar'; return; }
+  toast(id ? 'Empresa atualizada' : 'Empresa cadastrada', 'success');
+  logEmpLimparForm();
+  await carregarEmpresasTransporte();
+  logEmpRender();
+}
+
+async function logEmpAtivar(id, ativar) {
+  const e = _logEmpresas.find(x => x.id === id);
+  if (!ativar && !confirm(`Desativar ${e?.nome || 'a empresa'}?\n\nEla deixa de aparecer para montar viagens. As viagens já feitas continuam com o nome dela.`)) return;
+  const res = await api(`/logistica/transportadoras/${encodeURIComponent(id)}`, { method: 'PUT', body: JSON.stringify({ ativo: ativar }) });
+  if (!res?.ok) { toast(res?.erro || 'Erro ao alterar', 'error'); return; }
+  toast(ativar ? 'Empresa reativada' : 'Empresa desativada', 'success');
+  await carregarEmpresasTransporte();
+  logEmpRender();
 }
 
 // ── Autocomplete de transportador (nome/matrícula) — reaproveitado na barra de criar viagem
@@ -18442,13 +18658,16 @@ function abrirModalTrocarTransportador(grupoId, modo) {
   document.getElementById('logTranspModalAviso').classList.toggle('hidden', modo !== 'transferir');
   document.getElementById('logTranspModalId').value = '';
   document.getElementById('logTranspModalBusca').value = '';
+  document.getElementById('logTranspModalTipo').value = 'COLABORADOR';
+  document.getElementById('logTranspModalEmpresa').value = '';
+  logTipoTranspMudou('modal');
   document.getElementById('modalLogisticaTransportador').classList.remove('hidden');
   setTimeout(() => document.getElementById('logTranspModalBusca').focus(), 50);
 }
 
 async function confirmarTrocaTransportador() {
-  const transportadorId = document.getElementById('logTranspModalId').value;
-  if (!transportadorId) { toast('Selecione o transportador', 'warn'); return; }
+  const quem = logTranspEscolhido('modal');
+  if (quem.erro) { toast(quem.erro, 'warn'); return; }
   if (!_logGrupoAlvo) return;
 
   const rota = _logGrupoAlvo.modo === 'transferir'
@@ -18456,7 +18675,7 @@ async function confirmarTrocaTransportador() {
     : `/logistica/grupos/${_logGrupoAlvo.id}/transportador`;
   const metodo = _logGrupoAlvo.modo === 'transferir' ? 'POST' : 'PUT';
 
-  const res = await api(rota, { method: metodo, body: JSON.stringify({ transportador_id: transportadorId }) });
+  const res = await api(rota, { method: metodo, body: JSON.stringify(quem) });
   if (res?.ok) {
     toast(_logGrupoAlvo.modo === 'transferir' ? `Transferência criada — aguardando ${res.para} assinar.` : 'Transportador trocado.', 'success');
     document.getElementById('modalLogisticaTransportador').classList.add('hidden');
@@ -18615,6 +18834,9 @@ function renderLogViagens() {
 
   const acoesGrupo = (g) => {
     const btns = [];
+    if (g.status !== 'CANCELADO') {
+      btns.push(`<button class="row-action" onclick="logAbrirRomaneio('${escJs(g.viagem_id)}','${escJs(g.id)}')" title="Romaneio só deste destino"><svg class=ic aria-hidden=true><use href=#i-printer></use></svg> Romaneio</button>`);
+    }
     if (g.status !== 'ENTREGUE' && g.status !== 'CANCELADO' && g.token) {
       btns.push(`<button class="row-action" onclick="abrirLinkLogistica('${g.token}','<svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escJs(g.destino)}')"><svg class=ic aria-hidden=true><use href=#i-link></use></svg> Link</button>`);
     }
@@ -18635,7 +18857,10 @@ function renderLogViagens() {
     <div class="log-viagem-card" style="animation-delay:${Math.min(i*0.04,0.3)}s">
       <div class="log-viagem-top">
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
-        ${viagemBadge(v)}
+        <div style="display:flex;align-items:center;gap:6px">
+          ${(v.grupos||[]).some(g => g.status !== 'CANCELADO') ? `<button class="row-action" onclick="logAbrirRomaneio('${escJs(v.id)}')" title="Romaneio de carga: uma folha por destino, para imprimir e ir junto da carga"><svg class=ic aria-hidden=true><use href=#i-printer></use></svg> Imprimir romaneio</button>` : ''}
+          ${viagemBadge(v)}
+        </div>
       </div>
       ${(v.grupos||[]).map(g => `
         <div class="log-grupo">
@@ -18646,7 +18871,8 @@ function renderLogViagens() {
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
               ${grupoBadge(g)}
-              <span style="font-size:10px;color:var(--text-3)">${escHtml(g.nome_transportador_atual||'—')}</span>
+              <span style="font-size:10px;color:var(--text-3)">${g.transportador_tipo === 'EMPRESA' ? '<svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> ' : ''}${escHtml(g.nome_transportador_atual||'—')}${g.transportador_tipo === 'EMPRESA' ? ' <span style="font-size:9px;font-weight:700;color:#f59e0b;border:1px solid #f59e0b;border-radius:4px;padding:0 4px">EMPRESA</span>' : ''}</span>
+              ${g.motorista_nome || g.placa_veiculo ? `<span style="font-size:10px;color:var(--text-3)">${g.motorista_nome ? `Motorista ${escHtml(g.motorista_nome)}` : ''}${g.motorista_nome && g.placa_veiculo ? ' · ' : ''}${g.placa_veiculo ? `Placa ${escHtml(g.placa_veiculo)}` : ''}</span>` : ''}
             </div>
           </div>
           ${renderTrilhaGrupo(g)}
@@ -19041,12 +19267,14 @@ function renderTrilhaGrupo(g) {
   const repasses = trechos.filter(t => t.tipo === 'TRANSFERENCIA');
   const entrega = trechos.find(t => t.tipo === 'ENTREGA');
 
+  // Empresa de transporte: quem assinou foi o motorista dela
+  const motoristaDe = (t) => t.tipo_destino === 'EMPRESA' && t.assinado_por_nome ? ` (motorista ${escHtml(t.assinado_por_nome)})` : '';
   const steps = [
     { icone: '<svg class=ic aria-hidden=true><use href=#i-package></use></svg>', label: 'Coleta', feito: !!coleta,
-      sub: coleta ? `${escHtml(coleta.nome_destino||'—')} · ${fmtDataHoraCurta(coleta.data_hora)}` : 'Aguardando transportador' },
+      sub: coleta ? `${escHtml(coleta.nome_destino||'—')}${motoristaDe(coleta)} · ${fmtDataHoraCurta(coleta.data_hora)}` : 'Aguardando transportador' },
     ...repasses.map((t, i) => ({
       icone: '<svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg>', label: repasses.length > 1 ? `Repasse ${i+1}` : 'Repasse', feito: true,
-      sub: `${escHtml(t.nome_origem||'—')} → ${escHtml(t.nome_destino||'—')} · ${fmtDataHoraCurta(t.data_hora)}`,
+      sub: `${escHtml(t.nome_origem||'—')} → ${escHtml(t.nome_destino||'—')}${motoristaDe(t)} · ${fmtDataHoraCurta(t.data_hora)}`,
     })),
     { icone: '<svg class=ic aria-hidden=true><use href=#i-flag></use></svg>', label: 'Entrega', feito: !!entrega,
       sub: entrega ? `${escHtml(entrega.nome_origem||'—')} · ${fmtDataHoraCurta(entrega.data_hora)}` : (g.status === 'EM_TRANSITO' ? 'A caminho do destino' : 'Aguardando coleta') },
