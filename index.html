@@ -18636,15 +18636,29 @@ async function carregarAvisosViagem() {
   logRenderResumoBases();
 }
 
+// Cancelados e já montados não pedem mais nada: saem da lista na hora e ficam em "Ver cancelados
+// e já montados" (pedido do usuário, 12/11/2026 — o histórico atrapalhava os avisos novos). A viagem
+// montada continua no quadro "Viagens", abaixo.
+let _logAvisosVerHistorico = false;
+const logAvisoEhHistorico = (a) => ['CANCELADA', 'VIAGEM_MONTADA'].includes(a.situacao_agora);
+function logAlternarHistoricoAvisos() { _logAvisosVerHistorico = !_logAvisosVerHistorico; renderAvisosViagem(); }
+
 function renderAvisosViagem() {
   const body = document.getElementById('logAvisosBody');
   if (!body) return;
   const hoje = _logAvisosHoje;
   const amanha = hoje ? new Date(new Date(hoje + 'T12:00:00Z').getTime() + 864e5).toISOString().slice(0, 10) : null;
-  // Cancelado só aparece no dia; o que passou da data aparece no fim, para conferir
-  const lista = _logAvisos.filter(a => a.situacao_agora !== 'CANCELADA' || a.data_saida >= hoje);
+  const historico = _logAvisos.filter(logAvisoEhHistorico);
+  const pendentes = _logAvisos.filter(a => !logAvisoEhHistorico(a));
+  const lista = _logAvisosVerHistorico ? _logAvisos : pendentes;
+  const rodape = historico.length
+    ? `<div style="padding:10px 20px 14px;display:flex;justify-content:flex-end"><button class="row-action" id="logBtnHistoricoAvisos" data-no-guard="1" onclick="logAlternarHistoricoAvisos()">${_logAvisosVerHistorico ? 'Esconder' : 'Ver'} cancelados e já montados (${historico.length})</button></div>`
+    : '';
   if (!lista.length) {
-    body.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div><div class="es-title">Ninguém avisou viagem ainda</div><div class="es-sub">Quem tem a marca "Pode avisar viagem" no portal avisa pela aba "Vou viajar". Pelo botão acima, você registra por quem não tem login.</div></div>`;
+    body.innerHTML = (_logAvisos.length
+      ? `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div><div class="es-title">Nenhum aviso de viagem pendente</div><div class="es-sub">Os avisos novos aparecem aqui assim que chegarem.</div></div>`
+      : `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div><div class="es-title">Ninguém avisou viagem ainda</div><div class="es-sub">Quem tem a marca "Pode avisar viagem" no portal avisa pela aba "Vou viajar"; qualquer pessoa avisa pelo "Vou para lá" do quadro de cargas. Pelo botão acima, você registra por alguém.</div></div>`)
+      + rodape;
     return;
   }
   const grupos = [
@@ -18652,13 +18666,14 @@ function renderAvisosViagem() {
     ['Amanhã', lista.filter(a => a.data_saida === amanha)],
     ['Próximos dias', lista.filter(a => a.data_saida > amanha)],
     ['Passou da data', lista.filter(a => a.situacao_agora === 'PASSOU_DA_DATA')],
+    ['Ontem', lista.filter(a => a.data_saida < hoje && a.situacao_agora !== 'PASSOU_DA_DATA')],
   ].filter(([, l]) => l.length);
   body.innerHTML = grupos.map(([titulo, l]) => `
     <div class="log-avisos-dia">${titulo}</div>
     <div style="overflow-x:auto"><table class="log-avisos-tabela">
       <thead><tr><th>Quem</th><th>Para</th><th>Quando</th><th>Placa</th><th>Cargas</th><th>Situação</th><th></th></tr></thead>
       <tbody>${l.map(logLinhaAviso).join('')}</tbody>
-    </table></div>`).join('');
+    </table></div>`).join('') + rodape;
 }
 
 function logLinhaAviso(a) {
