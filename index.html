@@ -1387,6 +1387,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <span class="topbar-crumb" id="topbarCrumb"></span>
       </div>
       <div class="topbar-right">
+        <span class="sidebar-unit-badge" id="sidebarUnit" onclick="trocarUnidade()" title="Clique para trocar de unidade" style="margin-right:4px">—</span>
         <div class="notif-wrap" id="notifWrap" style="display:none">
           <button type="button" class="notif-sino" id="notifSino" data-no-guard="1" onclick="notifAlternarPainel(event)" title="Avisos e pendências" aria-label="Avisos e pendências" aria-expanded="false" aria-controls="notifPainel">
             <svg class=ic aria-hidden=true><use href=#i-bell></use></svg>
@@ -1405,7 +1406,6 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             </div>
           </div>
         </div>
-        <span class="sidebar-unit-badge" id="sidebarUnit" onclick="trocarUnidade()" title="Clique para trocar de unidade" style="margin-right:4px">—</span>
         <button class="theme-btn" onclick="toggleTheme()"><span id="themeIconApp"><svg class=ic aria-hidden=true><use href=#i-sun></use></svg></span></button>
       </div>
     </div>
@@ -35443,7 +35443,7 @@ async function notifVerificar() {
     if (NOTIF.vistos.size > 500) NOTIF.vistos = new Set([...NOTIF.vistos].slice(-200));
     NOTIF.naoLidas = Number(r.nao_lidas) || 0;
     if (chegaram.length) {
-      const somOk = notifTocarSom();
+      const somOk = notifTocarSom(chegaram.some(n => /urgente/i.test(n.titulo || '')) ? 'urgente' : 'comum');
       chegaram.forEach((n, i) => notifMostrarCartao(n, i === chegaram.length - 1 && !somOk && notifPref('som', true)));
       notifAvisoWindows(chegaram);
       notifCarregarAtencao();
@@ -35477,6 +35477,7 @@ function notifAtualizarSino() {
   const p = document.getElementById('notifPonto');
   if (p) p.style.display = n === 0 && pend > 0 ? '' : 'none';
   document.title = (n > 0 ? `(${txt}) ` : '') + NOTIF.tituloBase;
+  if (NOTIF.numeroIcone !== n) { NOTIF.numeroIcone = n; notifNumeroNoIcone(n); }
   const qa = document.getElementById('notifQtdAvisos');
   if (qa) { qa.textContent = txt; qa.style.display = n > 0 ? '' : 'none'; qa.classList.toggle('vermelho', n > 0); }
   const qt = document.getElementById('notifQtdAtencao');
@@ -35527,7 +35528,17 @@ function notifMostrarCartao(n, dicaSom) {
   while (pilha.children.length > 4) pilha.lastElementChild.remove();
 }
 
-// ── Som (gerado na hora: dois toques curtos, sem arquivo de áudio) ──
+// ── Som (gerado na hora, sem arquivo de áudio) ──
+// Escolha do usuário em 12/11/2026 (página "Sons dos Avisos"): "Dois toques" mais longo para o
+// aviso comum e "Alerta" repetido duas vezes para a solicitação urgente.
+// Nota: f = frequência (Hz), t = início (s), d = duração (s), g = volume relativo, onda.
+const NOTIF_SONS = {
+  comum: [
+    { f: 880, t: 0, d: 1.1, ataque: .02 }, { f: 1760, t: 0, d: .45, g: .14, ataque: .02 },
+    { f: 1318.5, t: .22, d: 1.2, ataque: .02 }, { f: 2637, t: .22, d: .45, g: .12, ataque: .02 },
+  ],
+  urgente: [0, 1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13].map(i => ({ f: i % 2 ? 1760 : 1318.5, t: i * .11, d: .1, g: .65, onda: 'triangle', ataque: .004 })),
+};
 function notifPrepararAudio() {
   try {
     if (!NOTIF.audio) { const C = window.AudioContext || window.webkitAudioContext; if (C) NOTIF.audio = new C(); }
@@ -35535,7 +35546,7 @@ function notifPrepararAudio() {
   } catch {}
 }
 // Devolve false quando o navegador ainda não liberou o som (ninguém clicou na página)
-function notifTocarSom() {
+function notifTocarSom(qual = 'comum') {
   const sino = document.getElementById('notifSino');
   if (sino) { sino.classList.remove('tocando'); void sino.offsetWidth; sino.classList.add('tocando'); }
   if (!notifPref('som', true)) return true;
@@ -35543,18 +35554,29 @@ function notifTocarSom() {
     notifPrepararAudio();
     const ctx = NOTIF.audio;
     if (!ctx || ctx.state !== 'running') return false;
-    const t0 = ctx.currentTime + 0.02;
-    [[880, 0], [1318.5, 0.16]].forEach(([freq, atraso]) => {
+    const t0 = ctx.currentTime + 0.03;
+    (NOTIF_SONS[qual] || NOTIF_SONS.comum).forEach(x => {
       const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t0 + atraso);
-      g.gain.exponentialRampToValueAtTime(0.25, t0 + atraso + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + atraso + 0.38);
+      o.type = x.onda || 'sine';
+      o.frequency.setValueAtTime(x.f, t0 + x.t);
+      const pico = (x.g ?? 1) * 0.25, ataque = x.ataque ?? 0.012;
+      g.gain.setValueAtTime(0.0001, t0 + x.t);
+      g.gain.exponentialRampToValueAtTime(pico, t0 + x.t + ataque);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + x.t + x.d);
       o.connect(g); g.connect(ctx.destination);
-      o.start(t0 + atraso); o.stop(t0 + atraso + 0.42);
+      o.start(t0 + x.t); o.stop(t0 + x.t + x.d + 0.05);
     });
     return true;
   } catch { return false; }
+}
+
+// Número no ícone do GCA na barra de tarefas (só quando o GCA está instalado como aplicativo)
+function notifNumeroNoIcone(n) {
+  try {
+    if (!('setAppBadge' in navigator)) return;
+    const p = n > 0 ? navigator.setAppBadge(n) : navigator.clearAppBadge();
+    if (p && p.catch) p.catch(() => {});
+  } catch {}
 }
 
 // ── Aviso do Windows (só com o GCA minimizado ou atrás de outra janela) ──
