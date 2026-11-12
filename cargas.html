@@ -16,8 +16,7 @@
   "Vou para lá" (ajuste de 12/11/2026): qualquer pessoa avisa a viagem aqui mesmo, sem login.
   Colaborador se identifica pela matrícula (o quadro confirma só o nome curto); terceiro ou
   motorista de empresa informa nome, empresa e telefone. A pessoa marca as bases e fica com todas
-  as cargas delas que estão esperando; o almoxarifado confere e monta a viagem. Quem tem login no
-  portal também pode avisar por lá (aba "Vou viajar").
+  as cargas delas que estão esperando; o almoxarifado confere e monta a viagem.
 -->
 <style>
 :root{
@@ -79,8 +78,6 @@ input.ent{width:100%;background:var(--bg-campo);border:1px solid var(--border-mi
 .msg.info{background:var(--yellow-soft);color:var(--yellow)}
 .ok-final{text-align:center;display:grid;gap:10px;padding:24px 8px}
 .ok-final .grande{font-size:20px;font-weight:700;color:var(--green)}
-.link-portal{font-size:12px;color:var(--text-3);text-align:center}
-.link-portal a{color:var(--accent-text)}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:no-preference){.base{animation:entra .25s ease both}}
 @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
@@ -150,7 +147,6 @@ input.ent{width:100%;background:var(--bg-campo);border:1px solid var(--border-mi
 
     <div class="msg erro" id="fErro" hidden role="alert"></div>
     <button type="button" class="btn" id="btnEnviar" onclick="enviar()">Enviar aviso</button>
-    <p class="link-portal">Tem login no portal de solicitação? <a id="linkPortal" href="#">Avisar pelo portal</a></p>
   </div>
   <div class="painel-in" id="painelOk" hidden>
     <div class="ok-final">
@@ -176,7 +172,6 @@ function tempo(iso) {
   const d = Math.floor(h / 24);
   return d === 1 ? 'há 1 dia' : `há ${d} dias`;
 }
-const linkPortal = (destinoId) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}solicitacao.html#viajar=${encodeURIComponent(destinoId)}`;
 // Este aparelho lembra quem é (para não digitar tudo de novo na próxima viagem)
 const lembrar = { ler() { try { return JSON.parse(localStorage.getItem('gca_quadro_quem') || '{}'); } catch { return {}; } },
   gravar(v) { try { localStorage.setItem('gca_quadro_quem', JSON.stringify(v)); } catch {} } };
@@ -232,7 +227,6 @@ function abrirPainel(destinoId) {
   data.min = hojeBR(); data.value = hojeBR();
   document.getElementById('fHora').value = '';
   document.getElementById('fObs').value = '';
-  document.getElementById('linkPortal').href = linkPortal(destinoId || '');
   _confirmado = null;
   mostrarConfirmado();
   renderBases();

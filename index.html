@@ -6110,11 +6110,6 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px" class="so-viatura">Poderá bipar o QR colado na viatura e conferir a carga pelo celular.</div>
               <div style="display:flex;align-items:center;gap:8px">
-                <input type="checkbox" id="lsPodeTransporte" style="accent-color:var(--primary)">
-                <label for="lsPodeTransporte" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Pode avisar viagem (Transporte)</label>
-              </div>
-              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Vou viajar" no portal: a pessoa avisa que vai para uma base e marca as cargas que leva.</div>
-              <div style="display:flex;align-items:center;gap:8px">
                 <input type="checkbox" id="lsPodeMobilizacao" style="accent-color:var(--primary)">
                 <label for="lsPodeMobilizacao" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Pode pedir mobilização</label>
               </div>
@@ -6363,7 +6358,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
              registrados aqui pelo almoxarife; "Montar viagem" preenche a barra de seleção acima -->
         <div class="card" style="margin-bottom:16px;min-width:0;contain:inline-size" id="logCardAvisos">
           <div class="card-header">
-            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Quem vai viajar</div><div class="card-sub">Avisos do "Vou viajar" (pelo portal ou registrados aqui) · de hoje em diante</div></div>
+            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Quem vai viajar</div><div class="card-sub">Avisos do "Vou para lá" (pelo quadro de cargas ou registrados aqui) · de hoje em diante</div></div>
             <div style="display:flex;align-items:center;gap:8px">
               <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalRegistrarViagem()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Registrar por alguém</button>
               <button class="btn btn-ghost" onclick="carregarAvisosViagem()">↻</button>
@@ -16930,7 +16925,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_logistica ? ' <span title="Pode avisar viagem (Transporte)"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ativo' : '<svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Inativo'}</span></td>
@@ -16989,7 +16984,6 @@ async function salvarLS() {
   const ativo  = document.getElementById('lsAtivo').checked;
   const podeInventario = document.getElementById('lsPodeInventario').checked;
   const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
-  const podeTransporte = document.getElementById('lsPodeTransporte')?.checked || false;
   const podeMobilizacao = document.getElementById('lsPodeMobilizacao')?.checked || false;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
@@ -17001,13 +16995,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte, pode_mobilizacao: podeMobilizacao };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte, pode_mobilizacao: podeMobilizacao }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -17024,7 +17018,6 @@ function editarLS(id) {
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = !!u.pode_conferir_viatura;
-  if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = !!u.pode_logistica;
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = !!u.pode_mobilizacao;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
@@ -17055,7 +17048,6 @@ function limparLS() {
   document.getElementById('lsAtivo').checked  = true;
   document.getElementById('lsPodeInventario').checked = false;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
-  if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = false;
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = false;
   carregarArmazensLS();
 }
@@ -18769,7 +18761,7 @@ function renderAvisosViagem() {
   if (!lista.length) {
     body.innerHTML = (_logAvisos.length
       ? `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div><div class="es-title">Nenhum aviso de viagem pendente</div><div class="es-sub">Os avisos novos aparecem aqui assim que chegarem.</div></div>`
-      : `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div><div class="es-title">Ninguém avisou viagem ainda</div><div class="es-sub">Quem tem a marca "Pode avisar viagem" no portal avisa pela aba "Vou viajar"; qualquer pessoa avisa pelo "Vou para lá" do quadro de cargas. Pelo botão acima, você registra por alguém.</div></div>`)
+      : `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div><div class="es-title">Ninguém avisou viagem ainda</div><div class="es-sub">Qualquer pessoa avisa pelo "Vou para lá" do quadro de cargas. Pelo botão acima, você registra por alguém.</div></div>`)
       + rodape;
     return;
   }
