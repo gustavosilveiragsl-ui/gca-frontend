@@ -532,7 +532,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
               <div class="form-group"><label class="form-label" for="vjData">Data *</label><input id="vjData" type="date" class="form-input"></div>
               <div class="form-group"><label class="form-label" for="vjHora">Hora</label><input id="vjHora" type="time" class="form-input"></div>
             </div>
-            <div class="form-group"><label class="form-label" for="vjPlaca">Placa *</label><input id="vjPlaca" class="form-input" placeholder="ABC1D23" maxlength="8" autocomplete="off" style="text-transform:uppercase"></div>
+            <div class="form-group"><label class="form-label" for="vjPlaca">Placa (se já souber)</label><input id="vjPlaca" class="form-input" placeholder="ABC1D23" maxlength="8" autocomplete="off" style="text-transform:uppercase"></div>
             <div class="form-group"><label class="form-label" for="vjObs">Observação</label><input id="vjObs" class="form-input" maxlength="200" placeholder="Ex.: volto no mesmo dia"></div>
             <div id="vjErro1" class="login-error hidden" style="margin:0 0 12px"></div>
             <button class="btn btn-primary" id="vjBtnVerCargas" onclick="vjVerCargas()"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Ver cargas para esses destinos</button>
@@ -1099,7 +1099,6 @@ async function vjVerCargas() {
   if (!ids.length) return vjErro(1, 'Escolha pelo menos um destino.');
   if (new Set(ids).size !== ids.length) return vjErro(1, 'O mesmo destino está repetido.');
   if (!document.getElementById('vjData').value) return vjErro(1, 'Informe a data da viagem.');
-  if (!document.getElementById('vjPlaca').value.trim()) return vjErro(1, 'Informe a placa do veículo.');
   await vjCarregarCargas(ids, null);
 }
 
@@ -1112,8 +1111,8 @@ async function vjCarregarCargas(ids, marcadas) {
   _vjCargas = r.cargas || [];
   const nomes = ids.map(id => (_vjOpcoes.destinos || []).find(d => d.id === id)?.nome || id);
   document.getElementById('vjResumo').innerHTML = _vjEditando
-    ? `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(_vjEditando.data_saida)}${_vjEditando.hora_saida ? ' ' + escHtml(_vjEditando.hora_saida) : ''} · placa ${escHtml(_vjEditando.placa || '—')}`
-    : `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(document.getElementById('vjData').value)}${document.getElementById('vjHora').value ? ' ' + escHtml(document.getElementById('vjHora').value) : ''} · placa ${escHtml(document.getElementById('vjPlaca').value.trim().toUpperCase())}`;
+    ? `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(_vjEditando.data_saida)}${_vjEditando.hora_saida ? ' ' + escHtml(_vjEditando.hora_saida) : ''} · ${_vjEditando.placa ? 'placa ' + escHtml(_vjEditando.placa) : 'placa a definir'}`
+    : `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(document.getElementById('vjData').value)}${document.getElementById('vjHora').value ? ' ' + escHtml(document.getElementById('vjHora').value) : ''} · ${document.getElementById('vjPlaca').value.trim() ? 'placa ' + escHtml(document.getElementById('vjPlaca').value.trim().toUpperCase()) : 'placa a definir'}`;
   // Marcadas por padrão: as que ninguém avisou que vai levar (ou as que o aviso já tinha)
   const pre = marcadas ? new Set(marcadas) : new Set(_vjCargas.filter(c => !(c.ja_levando || []).length).map(c => c.id));
   const box = document.getElementById('vjCargas');

@@ -144,7 +144,7 @@ input.ent{width:100%;background:var(--bg-campo);border:1px solid var(--border-mi
         <label class="campo">Data *<input class="ent" type="date" id="fData"></label>
         <label class="campo">Hora<input class="ent" type="time" id="fHora"></label>
       </div>
-      <label class="campo">Placa *<input class="ent" id="fPlaca" maxlength="8" autocomplete="off" placeholder="ABC1D23" style="text-transform:uppercase"></label>
+      <label class="campo"><span id="rotPlaca">Placa (se já souber)</span><input class="ent" id="fPlaca" maxlength="8" autocomplete="off" placeholder="ABC1D23" style="text-transform:uppercase"></label>
       <label class="campo">Observação<input class="ent" id="fObs" maxlength="200" placeholder="Ex.: volto no mesmo dia"></label>
     </div>
 
@@ -254,6 +254,8 @@ function escolherTipo(tipo) {
   document.getElementById('segTerc').setAttribute('aria-pressed', tipo === 'TERCEIRO');
   document.getElementById('boxColab').hidden = tipo !== 'COLABORADOR';
   document.getElementById('boxTerc').hidden = tipo !== 'TERCEIRO';
+  // Placa: obrigatória só para terceiro/empresa; o colaborador às vezes ainda não sabe o veículo
+  document.getElementById('rotPlaca').textContent = tipo === 'TERCEIRO' ? 'Placa *' : 'Placa (se já souber)';
   erro('');
 }
 
@@ -315,7 +317,7 @@ async function enviar() {
     if (corpo.telefone.replace(/\D/g, '').length < 10) return erro('Informe um telefone com DDD.');
   }
   if (!_escolhidas.length) return erro('Marque pelo menos uma base.');
-  if (!corpo.placa.trim()) return erro('Informe a placa do veículo.');
+  if (_tipo === 'TERCEIRO' && !corpo.placa.trim()) return erro('Informe a placa do veículo.');
   const btn = document.getElementById('btnEnviar');
   btn.disabled = true; btn.textContent = 'Enviando...';
   const r = await api('/vou', corpo);
