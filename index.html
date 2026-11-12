@@ -18535,7 +18535,8 @@ function selecionarTransportador(id, nome, hiddenId, buscaId, listaId) {
 // ── Link/QR de um grupo (mostrado ao criar viagem, ou pelo botão "Ver link" no card) ──
 function abrirLinkLogistica(token, titulo, sub) {
   const url = `${window.location.origin}${window.location.pathname}#/logistica-link?token=${token}`;
-  document.getElementById('logLinkModalTitulo').textContent = titulo || 'Link do transportador';
+  // O título vem com o ícone do sprite (ex.: pino + destino): textoComIcone escapa o resto e desenha o ícone.
+  document.getElementById('logLinkModalTitulo').innerHTML = textoComIcone(titulo || 'Link do transportador');
   document.getElementById('logLinkModalSub').textContent = sub || 'Compartilhe esse link ou QR com o transportador';
   gcaMostrarQr('logLinkModalQR', url, 160);
   document.getElementById('logLinkModalUrl').value = url;
