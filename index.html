@@ -359,6 +359,8 @@ input,select,textarea{font-family:var(--font-main);}
 .notif-cartao .fechar:hover{color:var(--text-1)}
 @keyframes notifEntra{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
 tr.notif-destaque>td{animation:notifDestaque 2.6s ease}
+.card.notif-destaque{animation:notifDestaqueCard 2.6s ease}
+@keyframes notifDestaqueCard{0%,55%{box-shadow:0 0 0 3px var(--accent)}100%{box-shadow:none}}
 @keyframes notifDestaque{0%,55%{background:var(--accent-soft)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){.notif-sino.tocando,.notif-cartao,tr.notif-destaque>td{animation:none}}
 @keyframes themeSpin{0%{transform:scale(1) rotate(0deg)}40%{transform:scale(1.35) rotate(200deg)}100%{transform:scale(1) rotate(360deg)}}
@@ -470,6 +472,29 @@ tbody tr:hover td{background:var(--bg-hover);}
 .log-pend-destino{font-size:11px;color:var(--accent-text);margin-top:4px;display:flex;align-items:center;gap:4px;}
 .log-pend-meta{font-size:10px;color:var(--text-3);margin-top:6px;}
 .log-pend-acoes{margin-top:8px;display:flex;justify-content:flex-end;}
+/* Item 7, parte 1 (12/11/2026): urgência, resumo por base, aviso de viagem */
+.log-pend-card.urgente{border-color:color-mix(in srgb,#ef4444 70%,transparent);}
+.log-pend-card.urgente.selecionado{border-color:var(--accent);}
+.log-tag-urgente{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--red-soft);color:var(--red);vertical-align:1px;margin-left:4px}
+.log-faixa-urgente{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--yellow-soft);color:var(--yellow);font-size:12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.log-faixa-urgente .btn{margin-left:auto}
+.log-resumo-bases{display:flex;gap:8px;flex-wrap:wrap;padding:12px 20px 4px}
+.log-resumo-base{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);cursor:pointer;font:inherit;color:inherit;text-align:left;min-width:170px;max-width:100%}
+.log-resumo-base:hover{border-color:var(--accent)}
+.log-resumo-base.ativa{border-color:var(--accent);background:var(--accent-soft)}
+.log-resumo-base.urgente:not(.ativa){border-color:color-mix(in srgb,#ef4444 60%,transparent)}
+.log-resumo-base b{font-size:12px;color:var(--text-1);display:flex;align-items:center;gap:5px}
+.log-resumo-base span{font-size:11px;color:var(--text-3)}
+.log-resumo-base .vao{color:var(--accent-text)}
+.log-aviso-montando{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--blue-soft);color:var(--blue);font-size:12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.log-aviso-montando .row-action{margin-left:auto}
+.log-avisos-dia{padding:10px 20px 4px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.log-avisos-tabela td{vertical-align:middle}
+.log-avisos-tabela tr.apagado td{opacity:.55}
+.reg-via-destino{display:flex;gap:6px;align-items:center}
+.reg-via-destino .ordem{font-family:var(--font-mono);font-size:11px;color:var(--text-3);width:16px;text-align:right}
+.reg-via-carga{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:12px}
+.reg-via-carga input{margin-top:2px;accent-color:var(--accent)}
 @media (max-width:900px){.log-kpi-grid{grid-template-columns:repeat(2,1fr)!important;}}
 
 .log-viagem-card{border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;animation:fadeUp .25s ease both;}
@@ -6083,6 +6108,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <label for="lsPodeConferirViatura" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Pode conferir viatura</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px" class="so-viatura">Poderá bipar o QR colado na viatura e conferir a carga pelo celular.</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsPodeTransporte" style="accent-color:var(--primary)">
+                <label for="lsPodeTransporte" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Pode avisar viagem (Transporte)</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Vou viajar" no portal: a pessoa avisa que vai para uma base e marca as cargas que leva.</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -6256,6 +6286,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       <!-- ── LOGÍSTICA ── -->
       <div class="view h-laranja" id="view-logistica">
         <div class="view-header" style="display:flex;align-items:center;justify-content:flex-end;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="logBtnWhats" style="width:auto;font-size:12px;color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,transparent)" onclick="logAvisarWhatsApp()" title="Mensagem pronta com as cargas por base e o link do quadro"><svg class=ic aria-hidden=true><use href=#i-message-square></use></svg> Avisar no WhatsApp</button>
+          <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalQuadroCargas()" title="Link fixo da filial: os transportadores veem as cargas por base no celular"><svg class=ic aria-hidden=true><use href=#i-qr-code></use></svg> Quadro de cargas</button>
           <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalEmpresasTransporte()"><svg class=ic aria-hidden=true><use href=#i-building-2></use></svg> Empresas de Transporte</button>
           <button class="btn btn-ghost" style="width:auto;font-size:12px" onclick="abrirModalDestinos()"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> Destinos de Entrega</button>
         </div>
@@ -6299,6 +6331,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <button class="btn btn-ghost" onclick="carregarLogisticaPendentes()">↻</button>
             </div>
           </div>
+          <div id="logFaixaUrgente" class="log-faixa-urgente hidden"></div>
+          <div id="logResumoBases" class="log-resumo-bases hidden"></div>
+          <div id="logAvisoMontando" class="log-aviso-montando hidden"></div>
           <div id="logBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--accent-soft);border-bottom:1px solid var(--border);flex-wrap:wrap">
             <span style="font-size:12px;color:var(--text-2)"><strong id="logQtdSelecionados">0</strong> atendimento(s) selecionado(s)</span>
             <!-- Quem leva: um colaborador ou uma empresa de transporte (10/11/2026) -->
@@ -6316,6 +6351,19 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <button class="btn btn-ghost" style="font-size:11px" onclick="logLimparSelecao()">Limpar seleção</button>
           </div>
           <div class="log-grid-pendentes" id="logPendentesBody"><div class="spinner" style="margin:20px auto"></div></div>
+        </div>
+
+        <!-- Quem vai viajar (12/11/2026, item 7 parte 1): avisos do "Vou viajar" do portal e os
+             registrados aqui pelo almoxarife; "Montar viagem" preenche a barra de seleção acima -->
+        <div class="card" style="margin-bottom:16px;min-width:0;contain:inline-size" id="logCardAvisos">
+          <div class="card-header">
+            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Quem vai viajar</div><div class="card-sub">Avisos do "Vou viajar" (pelo portal ou registrados aqui) · de hoje em diante</div></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn btn-ghost" style="font-size:11px" onclick="abrirModalRegistrarViagem()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Registrar por alguém</button>
+              <button class="btn btn-ghost" onclick="carregarAvisosViagem()">↻</button>
+            </div>
+          </div>
+          <div id="logAvisosBody"><div class="spinner" style="margin:20px auto"></div></div>
         </div>
 
         <div class="card">
@@ -8556,7 +8604,7 @@ function onViewLoad(nome) {
   if (nome === 'inventario')         { (async () => { if (!_armazens.length) await carregarArmazens(); carregarInventarioHistorico(); })(); }
   if (nome === 'enel-inventario')    carregarInventarioEnel();
   if (nome === 'enel-cadastro')      carregarMateriaisEnel();
-  if (nome === 'logistica')          { carregarDestinosEntrega(); carregarEmpresasTransporte(); carregarLogisticaPendentes(); carregarLogisticaViagens(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
+  if (nome === 'logistica')          { carregarDestinosEntrega(); carregarEmpresasTransporte(); carregarLogisticaPendentes(); carregarLogisticaViagens(); carregarAvisosViagem(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); }
   if (nome === 'armazens')           carregarArmazensView();
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
@@ -16773,7 +16821,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_logistica ? ' <span title="Pode avisar viagem (Transporte)"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ativo' : '<svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Inativo'}</span></td>
@@ -16832,6 +16880,7 @@ async function salvarLS() {
   const ativo  = document.getElementById('lsAtivo').checked;
   const podeInventario = document.getElementById('lsPodeInventario').checked;
   const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
+  const podeTransporte = document.getElementById('lsPodeTransporte')?.checked || false;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -16842,13 +16891,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -16865,6 +16914,7 @@ function editarLS(id) {
   document.getElementById('lsAtivo').checked   = u.ativo !== false;
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = !!u.pode_conferir_viatura;
+  if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = !!u.pode_logistica;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -16894,6 +16944,7 @@ function limparLS() {
   document.getElementById('lsAtivo').checked  = true;
   document.getElementById('lsPodeInventario').checked = false;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
+  if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = false;
   carregarArmazensLS();
 }
 
@@ -18233,7 +18284,8 @@ function renderLogPendentes() {
   const cont = document.getElementById('logPendentesBody');
   if (!cont) return;
 
-  const lista = logFiltrarPendentesPorBase(_logPendentesData, _logBasesPend);
+  const lista = logOrdenarFila(logFiltrarPendentesPorBase(_logPendentesData, _logBasesPend));
+  logRenderResumoBases();
 
   // A seleção fica enquanto o atendimento continua na tela: dá para juntar várias bases
   // marcando-as no filtro (ex.: Maricá + Angra). Desmarcar uma base tira da seleção os
@@ -18253,11 +18305,11 @@ function renderLogPendentes() {
   cont.innerHTML = lista.map((a, i) => {
     const marcado = _logSelecionados.has(a.id);
     return `
-    <div class="log-pend-card${marcado ? ' selecionado' : ''}" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${escJs(a.id)}', this)">
+    <div class="log-pend-card${marcado ? ' selecionado' : ''}${a.urgente ? ' urgente' : ''}" style="animation-delay:${Math.min(i*0.03,0.3)}s" onclick="logToggleSelecaoCard('${escJs(a.id)}', this)">
       <input type="checkbox" ${marcado ? 'checked' : ''} onclick="event.stopPropagation()" onchange="logToggleSelecao('${escJs(a.id)}',this.checked,this.closest('.log-pend-card'))">
       <div class="log-pend-nome">${a.destinatario_tipo === 'VIATURA' ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> ${escHtml(a.placa || '')} · ${escHtml(a.nome_colaborador || '')}` : escHtml(a.nome_colaborador||'—')}</div>
       <div class="log-pend-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(a.destino_entrega||'—')}</div>
-      <div class="log-pend-meta"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${a.qtd_itens ?? '—'} item(ns) · ${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}</div>
+      <div class="log-pend-meta"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${a.qtd_itens ?? '—'} item(ns) · ${a.criado_em ? formatarData(a.criado_em.slice(0,10)) : '—'}${a.armazem_nome ? ` · ${escHtml(a.armazem_nome)}` : ''}${a.urgente ? '<span class="log-tag-urgente">urgente</span>' : ''}</div>
       <div class="log-pend-acoes"><button class="row-action" onclick="event.stopPropagation();logAbrirAlterarDestino('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Alterar destino</button></div>
     </div>`;
   }).join('');
@@ -18355,6 +18407,8 @@ function logLimparSelecao() {
   document.getElementById('logTransportadorSelect').value = '';
   document.getElementById('logTransportadorBusca').value = '';
   document.getElementById('logTranspEmpresa').value = '';
+  _logAvisoMontando = null;
+  logMostrarAvisoMontando();
   logAtualizarBarraSelecao();
 }
 
@@ -18380,13 +18434,14 @@ async function criarViagemLogistica() {
   // A aba é aberta já no clique — depois da resposta do servidor o navegador bloquearia.
   const janela = window.open('', '_blank');
   if (janela) janela.document.write('<p style="font-family:sans-serif;padding:24px;color:#475569">Gerando o romaneio da carga...</p>');
-  const res = await api('/logistica/viagens', { method: 'POST', body: JSON.stringify({ atendimento_ids: Array.from(_logSelecionados), ...quem }) });
+  const res = await api('/logistica/viagens', { method: 'POST', body: JSON.stringify({ atendimento_ids: Array.from(_logSelecionados), ...quem, ...(_logAvisoMontando ? { aviso_id: _logAvisoMontando.id } : {}) }) });
   if (res?.ok) {
     toast(`Viagem criada! ${res.grupos_criados} grupo(s) por destino. O romaneio abriu numa aba nova para imprimir.`, 'success', 6000);
     logAbrirRomaneio(res.id, null, janela);
     logLimparSelecao();
     await carregarLogisticaPendentes();
     await carregarLogisticaViagens();
+    carregarAvisosViagem();
     // Já mostra o link/QR do primeiro grupo criado — os outros (se for mais de 1 destino)
     // ficam disponíveis pelo botão "Ver link" no card de cada grupo.
     const primeiro = (res.grupos || [])[0];
@@ -18416,6 +18471,377 @@ async function logAbrirRomaneio(viagemId, grupoId, janela) {
     if (aba) aba.close();
     toast('Erro ao gerar o romaneio', 'error');
   }
+}
+
+// ═══════════════════════════════════════════
+// ITEM 7, PARTE 1 (12/11/2026) — aviso de carga para o transporte
+//   • fila com urgentes primeiro, marca de urgente e resumo por base (clique filtra a base)
+//   • "Avisar no WhatsApp": mensagem pronta com as cargas por base e o link do quadro
+//   • quadro de cargas: link fixo da filial (cargas.html), sem nomes, para o grupo de WhatsApp
+//   • "Quem vai viajar": avisos do portal ("Vou viajar") e os registrados aqui; "Montar viagem"
+//     preenche a barra de seleção (cargas + quem leva) e a viagem sai ligada ao aviso
+// ═══════════════════════════════════════════
+let _logAvisos = [];
+let _logAvisosHoje = null;
+let _logAvisoMontando = null;
+
+// Urgentes primeiro; depois a mais antiga (a que espera há mais tempo)
+function logOrdenarFila(lista) {
+  return [...(lista || [])].sort((a, b) => (Number(!!b.urgente) - Number(!!a.urgente)) || String(a.criado_em || '').localeCompare(String(b.criado_em || '')));
+}
+
+function logResumoBases(lista) {
+  const porBase = new Map();
+  (lista || []).forEach(a => {
+    const nome = a.destino_entrega || 'Sem destino informado';
+    const b = porBase.get(nome) || { destino: nome, destino_id: a.destino_entrega_id || null, qtd: 0, urgentes: 0, mais_antiga: null };
+    b.qtd++;
+    if (a.urgente) b.urgentes++;
+    if (a.criado_em && (!b.mais_antiga || a.criado_em < b.mais_antiga)) b.mais_antiga = a.criado_em;
+    porBase.set(nome, b);
+  });
+  return [...porBase.values()].sort((a, b) => (b.urgentes - a.urgentes) || String(a.mais_antiga).localeCompare(String(b.mais_antiga)));
+}
+
+// Quantos avisos ativos (de hoje em diante) passam por este destino
+function logVaoLevar(destinoId) {
+  if (!destinoId) return 0;
+  return _logAvisos.filter(a => ['AVISADA', 'VAI_LEVAR'].includes(a.situacao_agora) && (a.destinos || []).some(d => d.id === destinoId)).length;
+}
+
+function logRenderResumoBases() {
+  const el = document.getElementById('logResumoBases');
+  const faixa = document.getElementById('logFaixaUrgente');
+  if (!el || !faixa) return;
+  const bases = logResumoBases(_logPendentesData);
+  el.classList.toggle('hidden', !bases.length);
+  el.innerHTML = bases.map(b => {
+    const vao = logVaoLevar(b.destino_id);
+    return `<button type="button" class="log-resumo-base${_logBasesPend.size === 1 && _logBasesPend.has(b.destino) ? ' ativa' : ''}${b.urgentes ? ' urgente' : ''}" onclick="logFiltrarUmaBase('${escJs(b.destino)}')" title="Mostrar só esta base">
+      <b><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(b.destino)}${b.urgentes ? '<span class="log-tag-urgente">' + b.urgentes + ' urgente' + (b.urgentes > 1 ? 's' : '') + '</span>' : ''}</b>
+      <span>${b.qtd} ${b.qtd === 1 ? 'carga' : 'cargas'} · a mais antiga ${b.mais_antiga ? notifTempo(b.mais_antiga) : '—'}</span>
+      ${vao ? `<span class="vao"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> ${vao} ${vao === 1 ? 'pessoa vai' : 'pessoas vão'} levar</span>` : ''}
+    </button>`;
+  }).join('');
+  const urgentes = (_logPendentesData || []).filter(a => a.urgente).length;
+  faixa.classList.toggle('hidden', !urgentes);
+  faixa.innerHTML = urgentes
+    ? `<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg><span><b>${urgentes} ${urgentes === 1 ? 'carga urgente aguardando' : 'cargas urgentes aguardando'} transporte.</b> Avise os transportadores para não ficar parada.</span>
+       <button class="btn btn-ghost" style="font-size:11px;color:var(--green)" onclick="logAvisarWhatsApp()"><svg class=ic aria-hidden=true><use href=#i-message-square></use></svg> Avisar no WhatsApp</button>`
+    : '';
+}
+
+// Clique numa base do resumo: mostra só ela (clicar de novo volta para todas)
+function logFiltrarUmaBase(base) {
+  const soEla = _logBasesPend.size === 1 && _logBasesPend.has(base);
+  _logBasesPend = soEla ? new Set() : new Set([base]);
+  logMontarFiltroBasesPend();
+  renderLogPendentes();
+}
+
+// ── Quadro de cargas (link fixo da filial) e "Avisar no WhatsApp" ──
+function logQuadroUrl(token) {
+  return `${location.origin}${location.pathname.replace(/[^/]*$/, '')}cargas.html?t=${encodeURIComponent(token)}`;
+}
+async function logQuadroToken(trocar) {
+  const r = await api(trocar ? '/logistica/quadro-link/trocar' : '/logistica/quadro-link', trocar ? { method: 'POST' } : {});
+  if (!r?.ok) { toast(r?.erro || 'Não foi possível gerar o link do quadro.', 'error'); return null; }
+  return r.token;
+}
+
+async function logAvisarWhatsApp() {
+  const bases = logResumoBases(_logPendentesData);
+  if (!bases.length) { toast('Não há carga aguardando transporte agora.', 'info'); return; }
+  // A aba é aberta já no clique (depois da resposta do servidor o navegador bloquearia)
+  const janela = window.open('', '_blank');
+  const token = await logQuadroToken();
+  if (!token) { if (janela) janela.close(); return; }
+  const filial = document.getElementById('sidebarUnit')?.textContent?.trim() || '';
+  const agora = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const armazens = [...new Set((_logPendentesData || []).map(a => a.armazem_nome).filter(Boolean))];
+  const linhas = bases.map(b => `• ${b.destino}: ${b.qtd} ${b.qtd === 1 ? 'carga' : 'cargas'}${b.urgentes ? ` (${b.urgentes} ${b.urgentes === 1 ? 'urgente' : 'urgentes'})` : ''}, a mais antiga ${b.mais_antiga ? notifTempo(b.mais_antiga) : ''}`.trim());
+  const texto = `*GCA · Cargas aguardando transporte*\n${filial} · ${agora}\n\n${linhas.join('\n')}\n\n`
+    + (armazens.length ? `Retirada: ${armazens.join(', ')}\n` : '')
+    + `Vai para alguma dessas bases? Avise aqui:\n${logQuadroUrl(token)}`;
+  const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+  if (janela) janela.location.href = url; else window.open(url, '_blank');
+}
+
+async function abrirModalQuadroCargas() {
+  const token = await logQuadroToken();
+  if (!token) return;
+  document.getElementById('modalQuadroCargas')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalQuadroCargas';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:460px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-qr-code></use></svg> Quadro de cargas</div>
+          <div style="font-size:11px;color:var(--text-3)">Link fixo da filial. Abre no celular, sem login, e mostra só quantas cargas esperam por base (sem nomes e sem itens).</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalQuadroCargas').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;align-items:center">
+        <div id="logQuadroQR" style="background:#fff;padding:10px;border-radius:10px"></div>
+        <div style="display:flex;gap:6px;width:100%">
+          <input id="logQuadroUrl" class="form-input" readonly style="font-size:11px" onclick="this.select()">
+          <button class="btn btn-ghost" data-no-guard="1" title="Copiar o link" onclick="logCopiarQuadro()"><svg class=ic aria-hidden=true><use href=#i-copy></use></svg></button>
+        </div>
+        <div style="display:flex;gap:8px;width:100%;flex-wrap:wrap">
+          <a class="btn btn-ghost" id="logQuadroAbrir" target="_blank" rel="noopener" style="flex:1;justify-content:center;text-decoration:none"><svg class=ic aria-hidden=true><use href=#i-external-link></use></svg> Abrir o quadro</a>
+          <button class="btn btn-ghost" id="logQuadroTrocar" style="flex:1;justify-content:center;color:var(--red)" onclick="logTrocarQuadro()">Trocar o link</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-3);text-align:center">Trocar o link faz o link antigo parar de funcionar. Use se ele foi parar onde não devia.</div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  logMostrarQuadro(token);
+}
+function logMostrarQuadro(token) {
+  const url = logQuadroUrl(token);
+  document.getElementById('logQuadroUrl').value = url;
+  document.getElementById('logQuadroAbrir').href = url;
+  document.getElementById('logQuadroQR').innerHTML = '';
+  gcaMostrarQr('logQuadroQR', url, 180);
+}
+async function logCopiarQuadro() {
+  const campo = document.getElementById('logQuadroUrl');
+  try { await navigator.clipboard.writeText(campo.value); toast('Link do quadro copiado.', 'success'); }
+  catch { campo.select(); toast('Selecione e copie o link (Ctrl+C).', 'info'); }
+}
+async function logTrocarQuadro() {
+  if (!confirm('Trocar o link do quadro de cargas? O link antigo (e o QR antigo) param de funcionar na hora.')) return;
+  const token = await logQuadroToken(true);
+  if (!token) return;
+  logMostrarQuadro(token);
+  toast('Link trocado. Mande o novo no grupo.', 'success');
+}
+
+// ── Quem vai viajar ──
+const LOG_SIT_AVISO = {
+  AVISADA:        ['Sem carga marcada', 'ardosia', 'clock-3'],
+  VAI_LEVAR:      ['Vai levar', 'ceu', 'truck'],
+  VIAGEM_MONTADA: ['Viagem montada', 'verde', 'check'],
+  CANCELADA:      ['Cancelado', 'vermelho', 'x'],
+  PASSOU_DA_DATA: ['Passou da data', 'ambar', 'clock'],
+};
+function logDataCurta(dia) { return dia ? `${String(dia).slice(8, 10)}/${String(dia).slice(5, 7)}` : '—'; }
+
+async function carregarAvisosViagem() {
+  const r = await api('/logistica/avisos-viagem');
+  if (!r?.ok) { const b = document.getElementById('logAvisosBody'); if (b) b.innerHTML = `<div style="padding:16px 20px;font-size:12px;color:var(--red)">${escHtml(r?.erro || 'Não foi possível carregar os avisos de viagem.')}</div>`; return; }
+  _logAvisos = r.data || [];
+  _logAvisosHoje = r.hoje || null;
+  renderAvisosViagem();
+  logRenderResumoBases();
+}
+
+function renderAvisosViagem() {
+  const body = document.getElementById('logAvisosBody');
+  if (!body) return;
+  const hoje = _logAvisosHoje;
+  const amanha = hoje ? new Date(new Date(hoje + 'T12:00:00Z').getTime() + 864e5).toISOString().slice(0, 10) : null;
+  // Cancelado só aparece no dia; o que passou da data aparece no fim, para conferir
+  const lista = _logAvisos.filter(a => a.situacao_agora !== 'CANCELADA' || a.data_saida >= hoje);
+  if (!lista.length) {
+    body.innerHTML = `<div class="empty-state" style="padding:20px"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></div><div class="es-title">Ninguém avisou viagem ainda</div><div class="es-sub">Quem tem a marca "Pode avisar viagem" no portal avisa pela aba "Vou viajar". Pelo botão acima, você registra por quem não tem login.</div></div>`;
+    return;
+  }
+  const grupos = [
+    ['Hoje', lista.filter(a => a.data_saida === hoje && a.situacao_agora !== 'PASSOU_DA_DATA')],
+    ['Amanhã', lista.filter(a => a.data_saida === amanha)],
+    ['Próximos dias', lista.filter(a => a.data_saida > amanha)],
+    ['Passou da data', lista.filter(a => a.situacao_agora === 'PASSOU_DA_DATA')],
+  ].filter(([, l]) => l.length);
+  body.innerHTML = grupos.map(([titulo, l]) => `
+    <div class="log-avisos-dia">${titulo}</div>
+    <div style="overflow-x:auto"><table class="log-avisos-tabela">
+      <thead><tr><th>Quem</th><th>Para</th><th>Quando</th><th>Placa</th><th>Cargas</th><th>Situação</th><th></th></tr></thead>
+      <tbody>${l.map(logLinhaAviso).join('')}</tbody>
+    </table></div>`).join('');
+}
+
+function logLinhaAviso(a) {
+  const ativo = ['AVISADA', 'VAI_LEVAR'].includes(a.situacao_agora);
+  const quemSub = a.quem_tipo === 'EMPRESA' ? `empresa · registrado por ${escHtml(a.registrado_por || '—')}`
+    : a.origem === 'GCA' ? `registrado por ${escHtml(a.registrado_por || '—')}` : 'pelo portal';
+  const destinos = (a.destinos || []).map(d => escHtml(d.nome)).join(' <span style="color:var(--text-3)">→</span> ');
+  const total = (a.cargas || []).length;
+  const cargas = !total ? '<span style="color:var(--text-3)">nenhuma marcada</span>'
+    : `${a.situacao_agora === 'VIAGEM_MONTADA' ? `${total} ${total === 1 ? 'carga na viagem' : 'cargas na viagem'}` : `${a.cargas_pendentes} de ${total} aguardando`}<div style="font-size:10px;color:var(--text-3)">${(a.cargas || []).slice(0, 3).map(c => escHtml(c.nome)).join(', ')}${total > 3 ? ` e mais ${total - 3}` : ''}</div>`;
+  const sit = LOG_SIT_AVISO[a.situacao_agora] || [a.situacao_agora, 'ardosia', 'clock'];
+  const acoes = ativo
+    ? `<button class="row-action" style="color:var(--accent-text)" onclick="logMontarDoAviso('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Montar viagem</button>
+       <button class="row-action" style="color:var(--red)" onclick="logCancelarAviso('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-x></use></svg> Cancelar</button>`
+    : (a.situacao_agora === 'PASSOU_DA_DATA'
+      ? `<button class="row-action" style="color:var(--red)" onclick="logCancelarAviso('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-x></use></svg> Cancelar</button>` : '');
+  return `<tr data-aviso-id="${escHtml(a.id)}" class="${ativo ? '' : 'apagado'}">
+    <td><div class="td-main">${escHtml(a.quem_nome)}</div><div style="font-size:10px;color:var(--text-3)">${quemSub}</div></td>
+    <td>${destinos}${a.saindo_armazem_nome ? `<div style="font-size:10px;color:var(--text-3)">saindo de ${escHtml(a.saindo_armazem_nome)}</div>` : ''}</td>
+    <td style="white-space:nowrap">${logDataCurta(a.data_saida)}${a.hora_saida ? ' ' + escHtml(a.hora_saida) : ''}</td>
+    <td style="font-family:var(--font-mono);font-size:11px">${escHtml(a.placa || '—')}</td>
+    <td style="font-size:12px">${cargas}${a.obs ? `<div style="font-size:10px;color:var(--text-3)">Obs.: ${escHtml(a.obs)}</div>` : ''}</td>
+    <td>${gcaSit(...sit)}</td>
+    <td>${acoes ? `<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;min-width:110px">${acoes}</div>` : ''}</td>
+  </tr>`;
+}
+
+async function logCancelarAviso(id) {
+  const a = _logAvisos.find(x => x.id === id);
+  if (!a) return;
+  const motivo = prompt(`Cancelar o aviso de viagem de ${a.quem_nome}? Se quiser, escreva o motivo:`, '');
+  if (motivo === null) return;
+  const r = await api(`/logistica/avisos-viagem/${encodeURIComponent(id)}/cancelar`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  if (r?.ok) { toast('Aviso de viagem cancelado.', 'success'); if (_logAvisoMontando?.id === id) logLimparSelecao(); carregarAvisosViagem(); }
+  else toast(r?.erro || 'Não foi possível cancelar.', 'error');
+}
+
+// Montar viagem a partir do aviso: marca na fila as cargas do aviso que ainda esperam
+// transporte e coloca quem vai levar na barra; o almoxarife confere e clica em "Criar Viagem"
+function logMontarDoAviso(id) {
+  const a = _logAvisos.find(x => x.id === id);
+  if (!a) return;
+  const naFila = new Set((_logPendentesData || []).map(p => p.id));
+  const ids = (a.cargas || []).filter(c => c.pendente && naFila.has(c.id)).map(c => c.id);
+  _logBasesPend = new Set();
+  logMontarFiltroBasesPend();
+  _logSelecionados = new Set(ids);
+  renderLogPendentes();
+  const tipo = document.getElementById('logTranspTipo');
+  tipo.value = a.quem_tipo === 'EMPRESA' ? 'EMPRESA' : 'COLABORADOR';
+  logTipoTranspMudou('barra');
+  if (a.quem_tipo === 'EMPRESA') {
+    document.getElementById('logTranspEmpresa').value = a.transportadora_id || '';
+  } else {
+    document.getElementById('logTransportadorSelect').value = a.colaborador_id || '';
+    document.getElementById('logTransportadorBusca').value = a.quem_nome || '';
+  }
+  _logAvisoMontando = a;
+  logMostrarAvisoMontando();
+  logAtualizarBarraSelecao();
+  if (!ids.length) toast('Esse aviso ainda não tem carga aguardando. Marque as cargas na fila e clique em "Criar Viagem".', 'info', 6000);
+  document.getElementById('logAvisoMontando')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function logMostrarAvisoMontando() {
+  const el = document.getElementById('logAvisoMontando');
+  if (!el) return;
+  const a = _logAvisoMontando;
+  el.classList.toggle('hidden', !a);
+  el.innerHTML = a
+    ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg><span>Montando a viagem avisada por <b>${escHtml(a.quem_nome)}</b> · ${(a.destinos || []).map(d => escHtml(d.nome)).join(' → ')} · ${logDataCurta(a.data_saida)}${a.hora_saida ? ' ' + escHtml(a.hora_saida) : ''}${a.placa ? ' · placa ' + escHtml(a.placa) : ''}</span>
+       <button class="row-action" onclick="_logAvisoMontando=null;logMostrarAvisoMontando()">Não usar o aviso</button>`
+    : '';
+}
+
+// ── Registrar por alguém (motorista sem login ou empresa de transporte) ──
+let _regViaDestinos = [''];
+function abrirModalRegistrarViagem() {
+  document.getElementById('modalRegViagem')?.remove();
+  _regViaDestinos = [''];
+  const hoje = _logAvisosHoje || new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+  const empresas = (_logEmpresas || []).filter(e => e.ativo !== false);
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalRegViagem';
+  modal.innerHTML = `
+    <div class="modal-box modal-alto" style="max-width:620px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Registrar viagem por alguém</div>
+          <div style="font-size:11px;color:var(--text-3)">Para quem não tem login no portal: motorista avulso ou empresa de transporte.</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalRegViagem').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:end">
+          <div class="form-group" style="margin:0"><label class="form-label">Quem vai</label>
+            <select id="regViaTipo" class="form-input" onchange="regViaTipoMudou()"><option value="COLABORADOR">Colaborador</option><option value="EMPRESA">Empresa de transporte</option></select></div>
+          <div class="form-group" style="margin:0;position:relative" id="regViaColabBox"><label class="form-label">Colaborador *</label>
+            <input type="hidden" id="regViaColabId">
+            <input id="regViaColabBusca" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off" oninput="filtrarTransportador(this.value,'regViaColabLista','regViaColabId','regViaColabBusca')">
+            <div id="regViaColabLista" class="autocomplete-list hidden"></div></div>
+          <div class="form-group hidden" style="margin:0" id="regViaEmpresaBox"><label class="form-label">Empresa *</label>
+            <select id="regViaEmpresa" class="form-input"><option value="">${empresas.length ? 'Escolha a empresa...' : 'Nenhuma empresa cadastrada'}</option>${empresas.map(e => `<option value="${escHtml(e.id)}">${escHtml(e.nome)}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">Indo para * (em ordem)</label>
+          <div id="regViaDestinos" style="display:flex;flex-direction:column;gap:6px"></div>
+          <button type="button" class="btn btn-ghost" style="font-size:11px;margin-top:6px" onclick="regViaAddDestino()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Adicionar outro destino</button></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+          <div class="form-group" style="margin:0"><label class="form-label">Data *</label><input id="regViaData" type="date" class="form-input" min="${hoje}" value="${hoje}"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Hora</label><input id="regViaHora" type="time" class="form-input"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Placa</label><input id="regViaPlaca" class="form-input" placeholder="ABC1D23" maxlength="8" style="text-transform:uppercase"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Saindo de</label><select id="regViaArmazem" class="form-input"><option value="">—</option>${(_armazens || []).map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">Observação</label><input id="regViaObs" class="form-input" maxlength="200" placeholder="Ex.: volta no mesmo dia"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Cargas que vai levar</label>
+          <div id="regViaCargas" style="display:flex;flex-direction:column;gap:6px"></div></div>
+        <div id="regViaErro" style="font-size:12px;color:var(--red);min-height:14px"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="document.getElementById('modalRegViagem').remove()">Cancelar</button>
+          <button class="btn btn-primary" id="regViaSalvar" onclick="regViaSalvar()"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Registrar viagem</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  regViaRenderDestinos();
+}
+function regViaTipoMudou() {
+  const empresa = document.getElementById('regViaTipo').value === 'EMPRESA';
+  document.getElementById('regViaColabBox').classList.toggle('hidden', empresa);
+  document.getElementById('regViaEmpresaBox').classList.toggle('hidden', !empresa);
+}
+function regViaRenderDestinos() {
+  const box = document.getElementById('regViaDestinos');
+  if (!box) return;
+  const ativos = (_destinos || []).filter(d => d.ativo !== false);
+  box.innerHTML = _regViaDestinos.map((id, i) => `
+    <div class="reg-via-destino"><span class="ordem">${i + 1}.</span>
+      <select class="form-input" data-i="${i}" onchange="_regViaDestinos[${i}]=this.value;regViaRenderCargas()">
+        <option value="">Escolha o destino...</option>${ativos.map(d => `<option value="${escHtml(d.id)}"${d.id === id ? ' selected' : ''}>${escHtml(d.nome)}</option>`).join('')}
+      </select>
+      ${_regViaDestinos.length > 1 ? `<button type="button" class="row-action" title="Tirar este destino" onclick="_regViaDestinos.splice(${i},1);regViaRenderDestinos()"><svg class=ic aria-hidden=true><use href=#i-x></use></svg></button>` : ''}
+    </div>`).join('');
+  regViaRenderCargas();
+}
+function regViaAddDestino() {
+  if (_regViaDestinos.length >= 6) { toast('No máximo 6 destinos na mesma viagem.', 'warn'); return; }
+  _regViaDestinos.push('');
+  regViaRenderDestinos();
+}
+function regViaRenderCargas() {
+  const box = document.getElementById('regViaCargas');
+  if (!box) return;
+  const marcadas = new Set([...box.querySelectorAll('input:checked')].map(i => i.value));
+  const ids = _regViaDestinos.filter(Boolean);
+  const cargas = logOrdenarFila((_logPendentesData || []).filter(c => ids.includes(c.destino_entrega_id)));
+  box.innerHTML = !ids.length ? '<div style="font-size:12px;color:var(--text-3)">Escolha o destino para ver as cargas que esperam transporte.</div>'
+    : !cargas.length ? '<div style="font-size:12px;color:var(--text-3)">Nenhuma carga aguardando para esse(s) destino(s) agora. Dá para registrar a viagem assim mesmo.</div>'
+    : cargas.map(c => `<label class="reg-via-carga"><input type="checkbox" value="${escHtml(c.id)}"${marcadas.has(c.id) ? ' checked' : ''}>
+        <span><b>${escHtml(c.destinatario_tipo === 'VIATURA' ? 'Viatura ' + (c.placa || '') : c.nome_colaborador || '—')}</b>${c.urgente ? '<span class="log-tag-urgente">urgente</span>' : ''}
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(c.destino_entrega || '—')} · ${c.qtd_itens ?? '—'} item(ns)${c.armazem_nome ? ' · ' + escHtml(c.armazem_nome) : ''} · ${c.criado_em ? notifTempo(c.criado_em) : ''}</div></span></label>`).join('');
+}
+async function regViaSalvar() {
+  const erro = document.getElementById('regViaErro');
+  erro.textContent = '';
+  const empresa = document.getElementById('regViaTipo').value === 'EMPRESA';
+  const body = {
+    quem_tipo: empresa ? 'EMPRESA' : 'COLABORADOR',
+    colaborador_id: empresa ? null : document.getElementById('regViaColabId').value,
+    transportadora_id: empresa ? document.getElementById('regViaEmpresa').value : null,
+    destinos: _regViaDestinos.filter(Boolean),
+    data_saida: document.getElementById('regViaData').value,
+    hora_saida: document.getElementById('regViaHora').value,
+    placa: document.getElementById('regViaPlaca').value,
+    saindo_armazem_id: document.getElementById('regViaArmazem').value || null,
+    obs: document.getElementById('regViaObs').value,
+    atendimento_ids: [...document.querySelectorAll('#regViaCargas input:checked')].map(i => i.value),
+  };
+  if (empresa ? !body.transportadora_id : !body.colaborador_id) { erro.textContent = empresa ? 'Escolha a empresa de transporte.' : 'Escolha o colaborador na lista.'; return; }
+  if (!body.destinos.length) { erro.textContent = 'Escolha pelo menos um destino.'; return; }
+  const r = await api('/logistica/avisos-viagem', { method: 'POST', body: JSON.stringify(body) });
+  if (!r?.ok) { erro.textContent = r?.erro || 'Não foi possível registrar.'; return; }
+  document.getElementById('modalRegViagem')?.remove();
+  toast('Viagem registrada em "Quem vai viajar".', 'success');
+  carregarAvisosViagem();
 }
 
 // ── Empresas de transporte (10/11/2026): no lugar de um colaborador, para as unidades que
@@ -35381,9 +35807,13 @@ async function _iniciarRealtime() {
 // Som e aviso do Windows são preferência deste computador (localStorage).
 const NOTIF = { ligado: false, desde: null, vistos: new Set(), naoLidas: 0, atencao: [], historico: [], aba: 'atencao', timer: null, timerAtencao: null, buscando: false, tituloBase: document.title, audio: null };
 const NOTIF_TIPOS = {
-  SOLICITACAO_NOVA:     { icone: 'inbox',          cor: 'acc' },
-  SOLICITACOES_ABERTAS: { icone: 'clipboard-list', cor: 'acc' },
+  SOLICITACAO_NOVA:      { icone: 'inbox',          cor: 'acc' },
+  SOLICITACOES_ABERTAS:  { icone: 'clipboard-list', cor: 'acc' },
+  VOU_VIAJAR:            { icone: 'truck',          cor: 'blu' },   // item 7, parte 1
+  VIAGENS_AVISADAS_HOJE: { icone: 'truck',          cor: 'yel' },
+  CARGAS_AGUARDANDO:     { icone: 'package',        cor: 'acc' },
 };
+const NOTIF_DA_LOGISTICA = ['VOU_VIAJAR', 'VIAGENS_AVISADAS_HOJE', 'CARGAS_AGUARDANDO'];
 const notifIcone = (nome) => `<svg class=ic aria-hidden=true><use href=#i-${nome}></use></svg>`;
 function notifPref(chave, padrao) { try { const v = localStorage.getItem('gca_notif_' + chave); return v === null ? padrao : v === '1'; } catch { return padrao; } }
 function notifSalvarPref(chave, valor) { try { localStorage.setItem('gca_notif_' + chave, valor ? '1' : '0'); } catch {} }
@@ -35448,6 +35878,8 @@ async function notifVerificar() {
       notifAvisoWindows(chegaram);
       notifCarregarAtencao();
       if (notifPainelAberto() && NOTIF.aba === 'avisos') notifMudarAba('avisos');
+      // Chegou "Vou viajar" com a Logística aberta: atualiza "Quem vai viajar"
+      if (chegaram.some(n => n.tipo === 'VOU_VIAJAR') && _viewAtiva('logistica')) carregarAvisosViagem();
     }
     notifAtualizarSino();
   } finally {
@@ -35664,7 +36096,7 @@ function notifRender() {
     if (!NOTIF.atencao.length) { lista.innerHTML = '<div class="notif-vazio">Nada pendente agora.</div>'; return; }
     lista.innerHTML = NOTIF.atencao.map((a, i) => {
       const t = NOTIF_TIPOS[a.tipo] || { icone: 'bell', cor: 'acc' };
-      const sub = [a.armazem, a.mais_antiga ? 'a mais antiga ' + notifTempo(a.mais_antiga) : '',
+      const sub = [a.armazem || a.texto, a.mais_antiga ? 'a mais antiga ' + notifTempo(a.mais_antiga) : '',
         a.urgentes ? `${a.urgentes} ${a.urgentes === 1 ? 'urgente' : 'urgentes'}` : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="notif-item" data-no-guard="1" onclick="notifAbrirAtencao(${i})">`
         + `<span class="ic-n n-cor-${a.urgentes ? 'red' : t.cor}">${notifIcone(t.icone)}</span>`
@@ -35693,7 +36125,24 @@ function notifAbrir(n) {
     showView('solicitacoes', document.querySelector('.nav-item[data-view="solicitacoes"]'));
     if (_solAbaAtual !== 'ativas' && typeof mudarAbaSol === 'function') mudarAbaSol('ativas');
     if (n.ref_id) notifDestacarSolicitacao(n.ref_id);
+  } else if (NOTIF_DA_LOGISTICA.includes(n.tipo)) {
+    if (!temPermissao('logistica_gerenciar_viagens')) return;
+    showView('logistica', document.querySelector('.nav-item[data-view="logistica"]'));
+    if (n.tipo === 'VOU_VIAJAR' && n.ref_id) notifDestacarLinha('#logAvisosBody tr[data-aviso-id="' + CSS.escape(n.ref_id) + '"]');
+    else if (n.tipo === 'VIAGENS_AVISADAS_HOJE') notifDestacarLinha('#logCardAvisos');
   }
+}
+async function notifDestacarLinha(seletor) {
+  for (let i = 0; i < 40; i++) {
+    const el = document.querySelector(seletor);
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.remove('notif-destaque'); void el.offsetWidth; el.classList.add('notif-destaque');
+      return true;
+    }
+    await new Promise(r => setTimeout(r, 250));
+  }
+  return false;
 }
 async function notifDestacarSolicitacao(id) {
   for (let i = 0; i < 40; i++) {

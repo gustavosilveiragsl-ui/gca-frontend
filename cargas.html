@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>GCA — Cargas aguardando transporte</title>
+<link rel="icon" type="image/png" href="./logo-gca.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!--
+  Quadro de cargas (12/11/2026, item 7 parte 1). Link fixo da filial, sem login, que o
+  almoxarifado manda no grupo de WhatsApp dos transportadores (Logística → "Quadro de cargas").
+  Mostra só o volume por base: quantas cargas, de qual armazém, há quanto tempo, se tem urgente e
+  quantos já avisaram que vão levar. Sem nome de colaborador e sem itens. "Vou para lá" abre o
+  portal de solicitação na aba "Vou viajar" com o destino escolhido.
+-->
+<style>
+:root{
+  --accent:#6366f1;--accent-soft:#1e1b4b;--accent-text:#a5b4fc;
+  --red:#f87171;--red-soft:#2a0f0f;--yellow:#fbbf24;
+  --bg:#0a0a0f;--bg-card:#0f0f17;--border:#1e1e2e;--border-mid:#2a2a3e;
+  --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
+  --font:'DM Sans',-apple-system,'Segoe UI',Roboto,sans-serif;--mono:'DM Mono',ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.45}
+.topo{position:sticky;top:0;z-index:5;background:var(--bg-card);border-bottom:1px solid var(--border);padding:12px max(16px,env(safe-area-inset-left,0px)) 12px max(16px,env(safe-area-inset-right,0px));padding-top:max(12px,env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px}
+.topo img{height:26px}
+.topo .tit{font-weight:700;font-size:15px}
+.topo .sub{font-size:11px;color:var(--text-3)}
+.topo button{margin-left:auto;background:transparent;border:1px solid var(--border-mid);color:var(--text-2);border-radius:8px;padding:7px 10px;font:inherit;font-size:12px;cursor:pointer}
+.topo button:focus-visible,.ir:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{max-width:560px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-left,0px)) 32px max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px}
+.resumo{font-size:13px;color:var(--text-2)}
+.resumo b{color:var(--text-1)}
+.base{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:grid;gap:6px}
+.base.urgente{border-color:#7f1d1d}
+.base .nome{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:700;font-size:15px}
+.base .nome span{display:flex;align-items:center;gap:6px;min-width:0}
+.tag{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap}
+.tag.red{background:var(--red-soft);color:var(--red)}
+.tag.cinza{background:#1f2937;color:var(--text-2)}
+.linha{font-size:13px;color:var(--text-2)}
+.vao{font-size:12px;color:var(--accent-text)}
+.ir{display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;border-radius:9px;padding:10px;font-weight:600;font-size:14px;margin-top:4px}
+.ir.leve{background:transparent;border:1px solid var(--border-mid);color:var(--text-1)}
+.vazio,.erro{text-align:center;padding:36px 12px;color:var(--text-2);font-size:14px}
+.erro{color:var(--red)}
+.rodape{font-size:11px;color:var(--text-3);text-align:center;margin-top:8px}
+svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+@media (prefers-reduced-motion:no-preference){.base{animation:entra .25s ease both}}
+@keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+</svg>
+
+<header class="topo">
+  <img src="./logo-gca.png" alt="GCA">
+  <div><div class="tit">Cargas aguardando transporte</div><div class="sub" id="sub">Carregando...</div></div>
+  <button type="button" id="btnAtualizar" onclick="carregar()">Atualizar</button>
+</header>
+
+<main id="conteudo">
+  <div class="vazio">Carregando o quadro...</div>
+</main>
+
+<script>
+const API = 'https://gca-backend-production.up.railway.app';
+const TOKEN = new URLSearchParams(location.search).get('t') || '';
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function tempo(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!(ms >= 0)) return '';
+  const h = Math.floor(ms / 3600000);
+  if (h < 1) return 'há menos de 1 h';
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'há 1 dia' : `há ${d} dias`;
+}
+// Link do portal na aba "Vou viajar" com o destino escolhido (o portal pede o login antes)
+const linkPortal = (destinoId) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}solicitacao.html#viajar=${encodeURIComponent(destinoId)}`;
+
+async function carregar() {
+  const conteudo = document.getElementById('conteudo');
+  const sub = document.getElementById('sub');
+  if (!TOKEN) { conteudo.innerHTML = '<div class="erro">Link incompleto. Peça o link do quadro ao almoxarifado.</div>'; sub.textContent = ''; return; }
+  let r;
+  try {
+    const resp = await fetch(`${API}/logistica/quadro/${encodeURIComponent(TOKEN)}`, { cache: 'no-store' });
+    r = await resp.json();
+  } catch { r = { ok: false, erro: 'Sem conexão. Confira a internet e toque em Atualizar.' }; }
+  if (!r?.ok) { conteudo.innerHTML = `<div class="erro">${esc(r?.erro || 'Não foi possível carregar o quadro.')}</div>`; sub.textContent = ''; return; }
+  const hora = new Date(r.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  sub.textContent = `${r.filial} · atualizado às ${hora}`;
+  const bases = r.bases || [];
+  if (!bases.length) {
+    conteudo.innerHTML = '<div class="vazio">Nenhuma carga aguardando transporte agora.</div><p class="rodape">O quadro se atualiza sozinho a cada minuto.</p>';
+    return;
+  }
+  const urgentes = bases.reduce((s, b) => s + (b.urgentes || 0), 0);
+  conteudo.innerHTML = `<p class="resumo"><b>${r.total} ${r.total === 1 ? 'carga' : 'cargas'}</b> em ${bases.length} ${bases.length === 1 ? 'base' : 'bases'}${urgentes ? ` · <b style="color:var(--red)">${urgentes} ${urgentes === 1 ? 'urgente' : 'urgentes'}</b>` : ''}</p>`
+    + bases.map((b, i) => `
+      <section class="base${b.urgentes ? ' urgente' : ''}" style="animation-delay:${Math.min(i * 0.04, 0.3)}s">
+        <div class="nome"><span><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg> ${esc(b.destino)}</span>${b.urgentes ? `<span class="tag red">${b.urgentes} ${b.urgentes === 1 ? 'urgente' : 'urgentes'}</span>` : `<span class="tag cinza">${esc(tempo(b.mais_antiga))}</span>`}</div>
+        <div class="linha">${b.qtd} ${b.qtd === 1 ? 'carga' : 'cargas'}${(b.armazens || []).length ? ' · ' + b.armazens.map(esc).join(', ') : ''}</div>
+        ${b.urgentes ? `<div class="linha">A mais antiga ${esc(tempo(b.mais_antiga))}</div>` : ''}
+        ${b.vao_levar ? `<div class="vao"><svg class="i" aria-hidden="true" style="vertical-align:-2px"><use href="#i-truck"/></svg> ${b.vao_levar} ${b.vao_levar === 1 ? 'pessoa já avisou que vai' : 'pessoas já avisaram que vão'}</div>` : ''}
+        ${b.destino_id ? `<a class="ir${i === 0 || b.urgentes ? '' : ' leve'}" href="${esc(linkPortal(b.destino_id))}">Vou para lá</a>` : ''}
+      </section>`).join('')
+    + '<p class="rodape">Sem nomes e sem itens: só o volume por base. Quem vai levar entra no portal com a matrícula e marca as cargas. O quadro se atualiza sozinho a cada minuto.</p>';
+}
+
+carregar();
+setInterval(() => { if (!document.hidden) carregar(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) carregar(); });
+</script>
+</body>
+</html>

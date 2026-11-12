@@ -295,6 +295,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
   <nav class="app-tabs">
     <button class="tab-btn active" id="tbNova" onclick="aba('nova')"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Nova Solicitação</button>
     <button class="tab-btn" id="tbAcomp" onclick="aba('acomp')"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Acompanhar</button>
+    <button class="tab-btn hidden" id="tbViajar" onclick="aba('viajar')"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Vou viajar</button>
   </nav>
 
   <!-- ABA: NOVA SOLICITAÇÃO -->
@@ -499,6 +500,55 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     </div>
     <div id="listaSols">
       <div style="text-align:center;padding:40px;color:var(--text-3);font-size:12px">Clique em Buscar para ver suas solicitações.</div>
+    </div>
+  </div>
+
+  <!-- ABA: VOU VIAJAR (12/11/2026, item 7 parte 1) — só aparece para quem tem a marca
+       "Pode avisar viagem" (Transporte) no login do portal -->
+  <div id="pgViajar" class="page hidden">
+    <div id="vjInicio">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Minhas viagens</div>
+            <div class="card-sub">Vai a alguma base? Avise e leve as cargas que estão esperando.</div></div>
+          <button class="btn btn-ghost" id="vjBtnNovo" style="font-size:11px" onclick="vjNovo()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Avisar uma viagem</button>
+        </div>
+        <div class="card-body" id="vjLista"></div>
+      </div>
+    </div>
+    <div id="vjForm" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <div><div class="card-title" id="vjFormTitulo">Avisar uma viagem</div><div class="card-sub">O almoxarifado vê na hora e monta a viagem com você.</div></div>
+          <button class="btn btn-ghost" onclick="vjCarregarMinhas()">Voltar</button>
+        </div>
+        <div class="card-body">
+          <div id="vjPasso1">
+            <div class="form-group"><label class="form-label" for="vjArmazem">Saindo de</label><select id="vjArmazem" class="form-input"></select></div>
+            <div class="form-group"><label class="form-label">Indo para * (em ordem)</label>
+              <div id="vjDestinos" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button type="button" class="btn btn-ghost" style="margin-top:8px;width:100%;justify-content:center;border-style:dashed" onclick="vjAddDestino()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Adicionar outro destino</button></div>
+            <div class="grid-2">
+              <div class="form-group"><label class="form-label" for="vjData">Data *</label><input id="vjData" type="date" class="form-input"></div>
+              <div class="form-group"><label class="form-label" for="vjHora">Hora</label><input id="vjHora" type="time" class="form-input"></div>
+            </div>
+            <div class="form-group"><label class="form-label" for="vjPlaca">Placa *</label><input id="vjPlaca" class="form-input" placeholder="ABC1D23" maxlength="8" autocomplete="off" style="text-transform:uppercase"></div>
+            <div class="form-group"><label class="form-label" for="vjObs">Observação</label><input id="vjObs" class="form-input" maxlength="200" placeholder="Ex.: volto no mesmo dia"></div>
+            <div id="vjErro1" class="login-error hidden" style="margin:0 0 12px"></div>
+            <button class="btn btn-primary" id="vjBtnVerCargas" onclick="vjVerCargas()"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Ver cargas para esses destinos</button>
+          </div>
+          <div id="vjPasso2" class="hidden">
+            <div id="vjResumo" class="alerta-box alerta-accent" style="font-size:12px;line-height:1.5"></div>
+            <div id="vjCargas"></div>
+            <div id="vjErro2" class="login-error hidden" style="margin:10px 0 0"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px">
+              <button class="btn btn-primary" id="vjBtnLevar" onclick="vjEnviar(true)">Vou levar as marcadas</button>
+              <button class="btn btn-ghost" style="justify-content:center" id="vjBtnSem" onclick="vjEnviar(false)">Avisar sem levar carga agora</button>
+              <button class="btn btn-ghost" style="justify-content:center" id="vjBtnVoltar1" onclick="vjMostrarPasso(1)">Voltar e mudar os dados</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -865,10 +915,14 @@ async function login(unidade) {
   document.getElementById('hdrNome').textContent   = _usr.nome;
   document.getElementById('hdrSub').textContent    = (_usr.filial_nome || getNomeFilial(_usr.unidade)) + ' · Ceneged';
   carregarDados();
+  vjIniciar();   // aba "Vou viajar", só para quem tem a marca Transporte
 }
 
 function sair() {
   _usr=_solToken=_arm=_dados=null; _itens=[]; _imgs=[];
+  _vjOpcoes = null; _vjMinhas = []; _vjEditando = null;
+  document.getElementById('tbViajar').classList.add('hidden');
+  aba('nova');
   document.getElementById('pgLogin').classList.remove('hidden');
   document.getElementById('pgApp').classList.add('hidden');
   document.getElementById('lSen').value='';
@@ -901,9 +955,236 @@ async function carregarDados() {
 function aba(a) {
   document.getElementById('pgNova').classList.toggle('hidden', a!=='nova');
   document.getElementById('pgAcomp').classList.toggle('hidden', a!=='acomp');
+  document.getElementById('pgViajar').classList.toggle('hidden', a!=='viajar');
   document.getElementById('tbNova').classList.toggle('active', a==='nova');
   document.getElementById('tbAcomp').classList.toggle('active', a==='acomp');
+  document.getElementById('tbViajar').classList.toggle('active', a==='viajar');
   if (a==='acomp') carregarSols();
+  if (a==='viajar') vjCarregarMinhas();
+}
+
+// ══════════════════════════════════════════
+// VOU VIAJAR (12/11/2026, item 7 parte 1)
+// ══════════════════════════════════════════
+// Quem tem a marca "Pode avisar viagem" avisa que vai para uma ou mais bases (em ordem), quando e
+// com qual placa, e marca as cargas que leva. O almoxarifado recebe o aviso na hora e monta a
+// viagem; quando montar, o link de coleta (assinatura na retirada) aparece em "Minhas viagens".
+// O quadro de cargas (cargas.html) abre esta aba com o destino escolhido: #viajar=<destino>.
+let _vjOpcoes = null, _vjDestinos = [''], _vjMinhas = [], _vjCargas = [], _vjEditando = null;
+const VJ_SIT = {
+  AVISADA:        ['Sem carga marcada', 'ardosia', 'clock-3'],
+  VAI_LEVAR:      ['Vai levar', 'ceu', 'truck'],
+  VIAGEM_MONTADA: ['Viagem montada', 'verde', 'check'],
+  CANCELADA:      ['Cancelado', 'vermelho', 'x'],
+  PASSOU_DA_DATA: ['Passou da data', 'ambar', 'clock'],
+};
+const vjDataCurta = (d) => d ? `${String(d).slice(8, 10)}/${String(d).slice(5, 7)}` : '—';
+function vjTempo(iso) {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (!(ms >= 0)) return '';
+  const h = Math.floor(ms / 3600000);
+  if (h < 1) return 'há menos de 1 h';
+  if (h < 24) return `há ${h} h`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? 'há 1 dia' : `há ${d} dias`;
+}
+
+async function vjIniciar() {
+  const r = await req('/solicitacao-auth/viagens/opcoes');
+  const veioDoQuadro = /^#viajar/.exec(location.hash || '');
+  const destinoDoQuadro = (/^#viajar=([^&]+)/.exec(location.hash || '') || [])[1];
+  if (veioDoQuadro) history.replaceState(null, '', location.pathname);
+  if (!r?.ok) {
+    document.getElementById('tbViajar').classList.add('hidden');
+    _vjOpcoes = null;
+    if (veioDoQuadro && r?.erro) toast(r.erro, 'warn');
+    return;
+  }
+  _vjOpcoes = r;
+  document.getElementById('tbViajar').classList.remove('hidden');
+  if (veioDoQuadro) { aba('viajar'); vjNovo(destinoDoQuadro ? decodeURIComponent(destinoDoQuadro) : ''); }
+}
+
+function vjMostrar(qual) {
+  document.getElementById('vjInicio').classList.toggle('hidden', qual !== 'inicio');
+  document.getElementById('vjForm').classList.toggle('hidden', qual !== 'form');
+}
+function vjMostrarPasso(n) {
+  document.getElementById('vjPasso1').classList.toggle('hidden', n !== 1);
+  document.getElementById('vjPasso2').classList.toggle('hidden', n !== 2);
+  document.getElementById('vjErro1').classList.add('hidden');
+  document.getElementById('vjErro2').classList.add('hidden');
+}
+function vjErro(n, txt) { const el = document.getElementById('vjErro' + n); el.textContent = txt; el.classList.remove('hidden'); }
+
+async function vjCarregarMinhas() {
+  vjMostrar('inicio');
+  const box = document.getElementById('vjLista');
+  box.innerHTML = '<div style="text-align:center;padding:24px"><span class="spinner"></span></div>';
+  const r = await req('/solicitacao-auth/viagens/minhas');
+  if (!r?.ok) { box.innerHTML = `<div class="login-error">${escHtml(r?.erro || 'Não foi possível carregar suas viagens.')}</div>`; return; }
+  _vjMinhas = r.data || [];
+  box.innerHTML = _vjMinhas.length ? _vjMinhas.map(vjCartao).join('')
+    : '<div style="text-align:center;padding:24px;color:var(--text-3);font-size:12px">Você ainda não avisou nenhuma viagem. Quando for a uma base, toque em "Avisar uma viagem".</div>';
+}
+
+function vjLinkColeta(token) {
+  return `${location.origin}${location.pathname.replace(/[^/]*$/, '')}#/logistica-link?token=${encodeURIComponent(token)}`;
+}
+
+function vjCartao(a) {
+  const ativo = ['AVISADA', 'VAI_LEVAR'].includes(a.situacao_agora);
+  const total = (a.cargas || []).length;
+  const sit = VJ_SIT[a.situacao_agora] || [a.situacao_agora, 'ardosia', 'clock'];
+  const coletas = (a.coletas || []).filter(c => c.token).map(c =>
+    `<a class="btn btn-primary" style="text-decoration:none" href="${escHtml(vjLinkColeta(c.token))}" target="_blank" rel="noopener"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg> Assinar a coleta · ${escHtml(c.destino)}</a>`).join('');
+  const cargas = total
+    ? `${total} ${total === 1 ? 'carga marcada' : 'cargas marcadas'}${a.cargas_pendentes !== total && a.situacao_agora !== 'VIAGEM_MONTADA' ? ` · ${a.cargas_pendentes} ainda aguardando` : ''}`
+    : 'Nenhuma carga marcada';
+  return `<div class="sol-card" style="cursor:default" data-aviso="${escHtml(a.id)}">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+      <div style="font-weight:600;font-size:13px;min-width:0"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${(a.destinos || []).map(d => escHtml(d.nome)).join(' → ')}</div>
+      <div style="flex-shrink:0">${gcaSit(...sit)}</div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:4px">${vjDataCurta(a.data_saida)}${a.hora_saida ? ' ' + escHtml(a.hora_saida) : ''}${a.placa ? ' · placa ' + escHtml(a.placa) : ''}${a.saindo_armazem_nome ? ' · saindo de ' + escHtml(a.saindo_armazem_nome) : ''}</div>
+    <div style="font-size:12px;margin-top:6px;color:var(--text-2)">${cargas}</div>
+    ${a.situacao_agora === 'VIAGEM_MONTADA' && !coletas ? '<div style="font-size:11px;color:var(--text-3);margin-top:6px">A viagem foi montada. O link de coleta está com quem vai levar a carga.</div>' : ''}
+    ${coletas ? `<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px">${coletas}</div>` : ''}
+    ${ativo ? `<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="vjAlterarCargas('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Alterar cargas</button>
+        <button class="btn btn-danger" onclick="vjCancelar('${escJs(a.id)}')">Cancelar aviso</button></div>` : ''}
+  </div>`;
+}
+
+function vjNovo(destinoInicial) {
+  if (!_vjOpcoes) return;
+  _vjEditando = null;
+  _vjDestinos = [(_vjOpcoes.destinos || []).some(d => d.id === destinoInicial) ? destinoInicial : ''];
+  const sel = document.getElementById('vjArmazem');
+  sel.innerHTML = '<option value="">Não informar</option>' + (_vjOpcoes.armazens || []).map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('');
+  if ((_arm || []).length === 1) sel.value = _arm[0].id;
+  const data = document.getElementById('vjData');
+  data.min = _vjOpcoes.hoje; data.value = _vjOpcoes.hoje;
+  document.getElementById('vjHora').value = '';
+  document.getElementById('vjPlaca').value = '';
+  document.getElementById('vjObs').value = '';
+  document.getElementById('vjFormTitulo').textContent = 'Avisar uma viagem';
+  document.getElementById('vjBtnSem').classList.remove('hidden');
+  document.getElementById('vjBtnVoltar1').classList.remove('hidden');
+  vjRenderDestinos();
+  vjMostrarPasso(1);
+  vjMostrar('form');
+}
+
+function vjRenderDestinos() {
+  const box = document.getElementById('vjDestinos');
+  const opcoes = _vjOpcoes?.destinos || [];
+  box.innerHTML = _vjDestinos.map((id, i) => `
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-3);width:16px;text-align:right">${i + 1}.</span>
+      <select class="form-input" aria-label="Destino ${i + 1}" onchange="_vjDestinos[${i}]=this.value">
+        <option value="">Escolha o destino...</option>${opcoes.map(d => `<option value="${escHtml(d.id)}"${d.id === id ? ' selected' : ''}>${escHtml(d.nome)}</option>`).join('')}
+      </select>
+      ${_vjDestinos.length > 1 ? `<button type="button" class="btn btn-ghost" aria-label="Tirar o destino ${i + 1}" onclick="_vjDestinos.splice(${i},1);vjRenderDestinos()"><svg class=ic aria-hidden=true><use href=#i-x></use></svg></button>` : ''}
+    </div>`).join('');
+}
+function vjAddDestino() {
+  if (_vjDestinos.length >= 6) { toast('No máximo 6 destinos na mesma viagem.', 'warn'); return; }
+  _vjDestinos.push('');
+  vjRenderDestinos();
+}
+
+async function vjVerCargas() {
+  const ids = _vjDestinos.filter(Boolean);
+  if (!ids.length) return vjErro(1, 'Escolha pelo menos um destino.');
+  if (new Set(ids).size !== ids.length) return vjErro(1, 'O mesmo destino está repetido.');
+  if (!document.getElementById('vjData').value) return vjErro(1, 'Informe a data da viagem.');
+  if (!document.getElementById('vjPlaca').value.trim()) return vjErro(1, 'Informe a placa do veículo.');
+  await vjCarregarCargas(ids, null);
+}
+
+async function vjCarregarCargas(ids, marcadas) {
+  const btn = document.getElementById('vjBtnVerCargas');
+  btn.disabled = true;
+  const r = await req('/solicitacao-auth/viagens/cargas?destinos=' + ids.map(encodeURIComponent).join(',') + (_vjEditando ? '&aviso_id=' + encodeURIComponent(_vjEditando.id) : ''));
+  btn.disabled = false;
+  if (!r?.ok) return vjErro(_vjEditando ? 2 : 1, r?.erro || 'Não foi possível buscar as cargas.');
+  _vjCargas = r.cargas || [];
+  const nomes = ids.map(id => (_vjOpcoes.destinos || []).find(d => d.id === id)?.nome || id);
+  document.getElementById('vjResumo').innerHTML = _vjEditando
+    ? `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(_vjEditando.data_saida)}${_vjEditando.hora_saida ? ' ' + escHtml(_vjEditando.hora_saida) : ''} · placa ${escHtml(_vjEditando.placa || '—')}`
+    : `<b>${nomes.map(escHtml).join(' → ')}</b><br>${vjDataCurta(document.getElementById('vjData').value)}${document.getElementById('vjHora').value ? ' ' + escHtml(document.getElementById('vjHora').value) : ''} · placa ${escHtml(document.getElementById('vjPlaca').value.trim().toUpperCase())}`;
+  // Marcadas por padrão: as que ninguém avisou que vai levar (ou as que o aviso já tinha)
+  const pre = marcadas ? new Set(marcadas) : new Set(_vjCargas.filter(c => !(c.ja_levando || []).length).map(c => c.id));
+  const box = document.getElementById('vjCargas');
+  if (!_vjCargas.length) {
+    box.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-3);font-size:12px">Nenhuma carga aguardando para esse(s) destino(s) agora. Você pode avisar a viagem assim mesmo: se entrar carga até a saída, ela aparece em "Alterar cargas".</div>';
+  } else {
+    box.innerHTML = ids.map(id => {
+      const doDestino = _vjCargas.filter(c => c.destino_id === id).sort((a, b) => (Number(!!b.urgente) - Number(!!a.urgente)) || String(a.desde).localeCompare(String(b.desde)));
+      if (!doDestino.length) return '';
+      return `<div class="form-label" style="margin:12px 0 6px"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(doDestino[0].destino)}</div>`
+        + doDestino.map(c => `<label class="item-row" style="cursor:pointer;align-items:flex-start">
+            <input type="checkbox" value="${escHtml(c.id)}" ${pre.has(c.id) ? 'checked' : ''} onchange="vjContarMarcadas()" style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
+            <div style="min-width:0"><div class="item-row-nome">${escHtml(c.nome || '—')}${c.urgente ? ' <span class="tag tag-red">URGENTE</span>' : ''}</div>
+              <div class="item-row-meta">${c.qtd_itens ?? '—'} ${c.qtd_itens === 1 ? 'item' : 'itens'}${c.armazem ? ' · ' + escHtml(c.armazem) : ''} · ${vjTempo(c.desde)}</div>
+              ${(c.ja_levando || []).length ? `<div class="item-row-meta" style="color:var(--yellow)">${c.ja_levando.map(j => `${escHtml(j.quem)} já avisou que leva (${escHtml(j.quando)})`).join('; ')}</div>` : ''}</div>
+          </label>`).join('');
+    }).join('');
+  }
+  vjContarMarcadas();
+  vjMostrarPasso(2);
+}
+
+function vjMarcadas() { return [...document.querySelectorAll('#vjCargas input[type=checkbox]:checked')].map(i => i.value); }
+function vjContarMarcadas() {
+  const n = vjMarcadas().length;
+  document.getElementById('vjBtnLevar').textContent = _vjEditando ? `Salvar as cargas marcadas (${n})` : `Vou levar as marcadas (${n})`;
+}
+
+async function vjEnviar(comCargas) {
+  const ids = comCargas ? vjMarcadas() : [];
+  if (comCargas && !ids.length && !_vjEditando) return vjErro(2, 'Marque pelo menos uma carga, ou use "Avisar sem levar carga agora".');
+  const btns = ['vjBtnLevar', 'vjBtnSem'].map(id => document.getElementById(id));
+  btns.forEach(b => { b.disabled = true; });
+  let r;
+  if (_vjEditando) {
+    r = await req(`/solicitacao-auth/viagens/${encodeURIComponent(_vjEditando.id)}/cargas`, { method: 'PUT', body: { atendimento_ids: ids } });
+  } else {
+    r = await req('/solicitacao-auth/viagens', { method: 'POST', body: {
+      destinos: _vjDestinos.filter(Boolean), data_saida: document.getElementById('vjData').value,
+      hora_saida: document.getElementById('vjHora').value, placa: document.getElementById('vjPlaca').value,
+      obs: document.getElementById('vjObs').value, saindo_armazem_id: document.getElementById('vjArmazem').value || null,
+      atendimento_ids: ids,
+    } });
+  }
+  btns.forEach(b => { b.disabled = false; });
+  if (!r?.ok) {
+    vjErro(2, r?.erro || 'Não foi possível salvar.');
+    // Alguma carga saiu enquanto a pessoa escolhia: atualiza a lista mantendo o que ainda dá
+    if (/Atualize a lista/.test(r?.erro || '')) await vjCarregarCargas(_vjEditando ? (_vjEditando.destinos || []).map(d => d.id) : _vjDestinos.filter(Boolean), ids);
+    return;
+  }
+  toast(_vjEditando ? 'Cargas atualizadas.' : 'Viagem avisada. O almoxarifado já recebeu o aviso.', 'success');
+  vjCarregarMinhas();
+}
+
+async function vjAlterarCargas(id) {
+  const a = _vjMinhas.find(x => x.id === id);
+  if (!a) return;
+  _vjEditando = a;
+  document.getElementById('vjFormTitulo').textContent = 'Alterar as cargas';
+  document.getElementById('vjBtnSem').classList.add('hidden');
+  document.getElementById('vjBtnVoltar1').classList.add('hidden');
+  vjMostrar('form');
+  await vjCarregarCargas((a.destinos || []).map(d => d.id), a.atendimento_ids || []);
+}
+
+async function vjCancelar(id) {
+  if (!confirm('Cancelar este aviso de viagem? O almoxarifado deixa de contar com você para essas cargas.')) return;
+  const r = await req(`/solicitacao-auth/viagens/${encodeURIComponent(id)}/cancelar`, { method: 'POST' });
+  if (r?.ok) { toast('Aviso cancelado.', 'success'); vjCarregarMinhas(); }
+  else toast(r?.erro || 'Não foi possível cancelar.', 'error');
 }
 
 // ══════════════════════════════════════════
