@@ -216,6 +216,16 @@ input,select,textarea{font-family:var(--font-main);}
 .item-det-just{font-size:11px;color:var(--yellow);margin-top:3px;}
 .item-det-prazo{margin-top:6px;padding:6px 8px;border-radius:var(--radius-sm);background:var(--yellow-soft);border:1px solid rgba(251,191,36,.15);font-size:11px;}
 
+/* ── MOBILIZAÇÃO (12/11/2026) ── */
+.mb-seg{display:flex;gap:8px;margin-bottom:14px}
+.mb-seg button{flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-3);font-size:12px;font-weight:500}
+.mb-seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text)}
+.mb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-hover);margin-bottom:8px}
+.mb-item select{width:96px;flex-shrink:0}
+.mb-colab{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text-1);font-size:12px}
+.mb-colab:hover{border-color:var(--accent)}
+.tag-mob{background:#2e1065;color:#d8b4fe}
+
 @media(max-width:600px){
   .grid-2{grid-template-columns:1fr;}
   .det-grid{grid-template-columns:1fr;}
@@ -248,7 +258,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
   <path d="M3.29 7 12 12l8.71-5" />
   <path d="m7.5 4.27 8.997 5.148" /></symbol><symbol id="i-map-pin-check" viewBox="0 0 24 24"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728" />
   <circle cx="12" cy="10" r="3" />
-  <path d="m16 18 2 2 4-4" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" />
+  <path d="m16 18 2 2 4-4" /></symbol><symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" /></symbol><symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol><symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18" />
   <path d="m6 6 12 12" /></symbol></svg>
 
 <div id="toastWrap"></div>
@@ -296,6 +306,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     <button class="tab-btn active" id="tbNova" onclick="aba('nova')"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Nova Solicitação</button>
     <button class="tab-btn" id="tbAcomp" onclick="aba('acomp')"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Acompanhar</button>
     <button class="tab-btn hidden" id="tbViajar" onclick="aba('viajar')"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Vou viajar</button>
+    <button class="tab-btn hidden" id="tbMob" onclick="aba('mob')"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Mobilização</button>
   </nav>
 
   <!-- ABA: NOVA SOLICITAÇÃO -->
@@ -500,6 +511,63 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     </div>
     <div id="listaSols">
       <div style="text-align:center;padding:40px;color:var(--text-3);font-size:12px">Clique em Buscar para ver suas solicitações.</div>
+    </div>
+  </div>
+
+  <!-- ABA: MOBILIZAÇÃO (12/11/2026, item 7 parte 2) — só para quem tem a marca "Pode pedir mobilização" -->
+  <div id="pgMob" class="page hidden">
+    <div class="card" id="mbPasso1">
+      <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Pedir mobilização</div>
+        <div class="card-sub">O kit da função, com os tamanhos, para quem vai começar. O almoxarifado separa antes da data de início.</div></div></div>
+      <div class="card-body">
+        <div class="mb-seg" role="group" aria-label="Para quem é a mobilização">
+          <button type="button" id="mbBtnNovato" class="on" onclick="mbTipo('NOVATO')">Novato (sem cadastro)</button>
+          <button type="button" id="mbBtnCad" onclick="mbTipo('CADASTRADO')">Já cadastrado</button>
+        </div>
+        <div id="mbNovato">
+          <div class="form-group"><label class="form-label" for="mbNome">Nome completo *</label><input id="mbNome" class="form-input" style="text-transform:uppercase" autocomplete="off"></div>
+          <div class="grid-2">
+            <div class="form-group"><label class="form-label" for="mbMatricula">Matrícula</label><input id="mbMatricula" class="form-input" placeholder="Se já tiver" autocomplete="off"></div>
+            <div class="form-group"><label class="form-label" for="mbTelefone">Telefone *</label><input id="mbTelefone" class="form-input" inputmode="tel" placeholder="(22) 99999-9999"></div>
+          </div>
+          <div class="form-group"><label class="form-label" for="mbFuncao">Função *</label><select id="mbFuncao" class="form-input"></select></div>
+          <div class="form-group"><label class="form-label" for="mbSetor">Setor / base *</label><input id="mbSetor" class="form-input" list="mbSetores" style="text-transform:uppercase" placeholder="Ex.: OPERACIONAL CABO FRIO"><datalist id="mbSetores"></datalist></div>
+        </div>
+        <div id="mbCad" class="hidden">
+          <div class="form-group"><label class="form-label" for="mbColabBusca">Colaborador *</label>
+            <input id="mbColabBusca" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off" oninput="mbFiltrarColab()">
+            <div id="mbColabLista" style="display:flex;flex-direction:column;gap:4px;margin-top:6px"></div></div>
+          <div id="mbColabSel" class="sel-card"></div>
+        </div>
+        <div class="grid-2">
+          <div class="form-group"><label class="form-label" for="mbInicio">Data de início *</label><input id="mbInicio" type="date" class="form-input"></div>
+          <div class="form-group"><label class="form-label" for="mbArmazem">Armazém *</label><select id="mbArmazem" class="form-input"></select></div>
+        </div>
+        <div id="mbErro1" class="login-error hidden" style="margin:0 0 12px"></div>
+        <button class="btn btn-primary" id="mbBtnKit" onclick="mbVerKit()"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Continuar: kit e tamanhos</button>
+      </div>
+    </div>
+    <div class="card hidden" id="mbPasso2">
+      <div class="card-header"><div><div class="card-title" id="mbKitTitulo">Kit</div><div class="card-sub" id="mbKitSub"></div></div>
+        <button class="btn btn-ghost" onclick="mbMostrar(1)">Voltar</button></div>
+      <div class="card-body">
+        <div class="alerta-box alerta-accent" style="font-size:12px">O kit é a dotação da função. Escolha o tamanho de cada item que tem tamanho.</div>
+        <div id="mbKit"></div>
+        <div class="form-group" style="margin-top:6px"><label class="form-label" for="mbObs">Observação</label><input id="mbObs" class="form-input" maxlength="500" placeholder="Opcional"></div>
+        <div id="mbErro2" class="login-error hidden" style="margin:0 0 12px"></div>
+        <button class="btn btn-primary" id="mbBtnEnviar" onclick="mbEnviar()"><svg class=ic aria-hidden=true><use href=#i-send></use></svg> Enviar mobilização</button>
+      </div>
+    </div>
+    <div class="hidden" id="mbOk">
+      <div class="sucesso-wrap">
+        <div class="sucesso-title">Mobilização enviada!</div>
+        <div class="sucesso-id" id="mbOkId"></div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:20px" id="mbOkTxt"></div>
+        <div class="sucesso-actions">
+          <button class="btn btn-primary" onclick="aba('acomp')"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Acompanhar</button>
+          <button class="btn btn-ghost" style="justify-content:center" onclick="mbNovo()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Pedir outra mobilização</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -916,12 +984,15 @@ async function login(unidade) {
   document.getElementById('hdrSub').textContent    = (_usr.filial_nome || getNomeFilial(_usr.unidade)) + ' · Ceneged';
   carregarDados();
   vjIniciar();   // aba "Vou viajar", só para quem tem a marca Transporte
+  mbIniciar();   // aba "Mobilização", só para quem tem a marca Pode pedir mobilização
 }
 
 function sair() {
   _usr=_solToken=_arm=_dados=null; _itens=[]; _imgs=[];
   _vjOpcoes = null; _vjMinhas = []; _vjEditando = null;
   document.getElementById('tbViajar').classList.add('hidden');
+  document.getElementById('tbMob').classList.add('hidden');
+  _mbOpcoes = null; _mbChave = null;
   aba('nova');
   document.getElementById('pgLogin').classList.remove('hidden');
   document.getElementById('pgApp').classList.add('hidden');
@@ -956,11 +1027,14 @@ function aba(a) {
   document.getElementById('pgNova').classList.toggle('hidden', a!=='nova');
   document.getElementById('pgAcomp').classList.toggle('hidden', a!=='acomp');
   document.getElementById('pgViajar').classList.toggle('hidden', a!=='viajar');
+  document.getElementById('pgMob').classList.toggle('hidden', a!=='mob');
   document.getElementById('tbNova').classList.toggle('active', a==='nova');
   document.getElementById('tbAcomp').classList.toggle('active', a==='acomp');
   document.getElementById('tbViajar').classList.toggle('active', a==='viajar');
+  document.getElementById('tbMob').classList.toggle('active', a==='mob');
   if (a==='acomp') carregarSols();
   if (a==='viajar') vjCarregarMinhas();
+  if (a==='mob' && (!_mbChave || !document.getElementById('mbOk').classList.contains('hidden'))) mbNovo();
 }
 
 // ══════════════════════════════════════════
@@ -1184,6 +1258,141 @@ async function vjCancelar(id) {
   const r = await req(`/solicitacao-auth/viagens/${encodeURIComponent(id)}/cancelar`, { method: 'POST' });
   if (r?.ok) { toast('Aviso cancelado.', 'success'); vjCarregarMinhas(); }
   else toast(r?.erro || 'Não foi possível cancelar.', 'error');
+}
+
+// ══════════════════════════════════════════
+// MOBILIZAÇÃO (12/11/2026, item 7 parte 2)
+// ══════════════════════════════════════════
+// Quem tem a marca "Pode pedir mobilização" pede o kit da função (a dotação, com os tamanhos) para
+// um novato sem cadastro ou para um colaborador já cadastrado. O almoxarifado confere o cadastro do
+// novato (a matrícula é obrigatória lá) e atende como uma solicitação normal.
+let _mbOpcoes = null, _mbTipo = 'NOVATO', _mbColab = null, _mbKit = null, _mbChave = null;
+
+async function mbIniciar() {
+  const r = await req('/solicitacao-auth/mobilizacao/opcoes');
+  const tb = document.getElementById('tbMob');
+  if (!r?.ok) { tb.classList.add('hidden'); _mbOpcoes = null; return; }
+  _mbOpcoes = r;
+  tb.classList.remove('hidden');
+}
+function mbErro(n, txt) { const el = document.getElementById('mbErro' + n); el.textContent = txt; el.classList.toggle('hidden', !txt); }
+function mbMostrar(passo) {
+  document.getElementById('mbPasso1').classList.toggle('hidden', passo !== 1);
+  document.getElementById('mbPasso2').classList.toggle('hidden', passo !== 2);
+  document.getElementById('mbOk').classList.toggle('hidden', passo !== 3);
+  mbErro(1, ''); mbErro(2, '');
+}
+
+function mbNovo() {
+  if (!_mbOpcoes) return;
+  _mbChave = 'mob_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  _mbColab = null; _mbKit = null;
+  ['mbNome', 'mbMatricula', 'mbTelefone', 'mbSetor', 'mbColabBusca', 'mbObs'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('mbColabLista').innerHTML = '';
+  document.getElementById('mbColabSel').classList.remove('show');
+  document.getElementById('mbFuncao').innerHTML = '<option value="">Escolha a função...</option>'
+    + (_mbOpcoes.funcoes || []).map(f => `<option value="${escHtml(f.nome)}">${escHtml(f.nome)}${f.tem_dotacao ? '' : ' (sem dotação)'}</option>`).join('');
+  document.getElementById('mbSetores').innerHTML = (_mbOpcoes.setores || []).map(s => `<option value="${escHtml(s)}">`).join('');
+  const arm = document.getElementById('mbArmazem');
+  arm.innerHTML = (_arm || []).length === 1 ? '' : '<option value="">Escolha...</option>';
+  arm.innerHTML += (_arm || []).map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('');
+  const inicio = document.getElementById('mbInicio');
+  inicio.min = _mbOpcoes.hoje; inicio.value = '';
+  mbTipo('NOVATO');
+  mbMostrar(1);
+}
+
+function mbTipo(tipo) {
+  _mbTipo = tipo;
+  document.getElementById('mbBtnNovato').classList.toggle('on', tipo === 'NOVATO');
+  document.getElementById('mbBtnCad').classList.toggle('on', tipo === 'CADASTRADO');
+  document.getElementById('mbBtnNovato').setAttribute('aria-pressed', tipo === 'NOVATO');
+  document.getElementById('mbBtnCad').setAttribute('aria-pressed', tipo === 'CADASTRADO');
+  document.getElementById('mbNovato').classList.toggle('hidden', tipo !== 'NOVATO');
+  document.getElementById('mbCad').classList.toggle('hidden', tipo !== 'CADASTRADO');
+  mbErro(1, '');
+}
+
+function mbFiltrarColab() {
+  const q = document.getElementById('mbColabBusca').value.trim().toLowerCase();
+  const lista = document.getElementById('mbColabLista');
+  if (q.length < 2) { lista.innerHTML = ''; return; }
+  const achados = (_dados?.colaboradores || []).filter(c => (c.nome || '').toLowerCase().includes(q) || String(c.matricula || '').toLowerCase().includes(q)).slice(0, 8);
+  lista.innerHTML = achados.length
+    ? achados.map(c => `<button type="button" class="mb-colab" onclick="mbEscolherColab('${escJs(c.id)}')"><b>${escHtml(c.nome)}</b> <span style="color:var(--text-3)">· ${escHtml(c.matricula || '—')} · ${escHtml(c.funcao || '—')}</span></button>`).join('')
+    : '<div style="font-size:12px;color:var(--text-3)">Ninguém encontrado. Se ainda não tem cadastro, use "Novato".</div>';
+}
+function mbEscolherColab(id) {
+  _mbColab = (_dados?.colaboradores || []).find(c => c.id === id) || null;
+  document.getElementById('mbColabLista').innerHTML = '';
+  document.getElementById('mbColabBusca').value = _mbColab ? _mbColab.nome : '';
+  const sel = document.getElementById('mbColabSel');
+  sel.innerHTML = _mbColab ? `<div class="sel-avatar">${escHtml((_mbColab.nome || '?')[0])}</div><div><div style="font-size:12px;font-weight:600">${escHtml(_mbColab.nome)}</div>
+    <div style="font-size:10px;color:var(--text-3)">${escHtml(_mbColab.matricula || '—')} · ${escHtml(_mbColab.funcao || '—')}</div></div>` : '';
+  sel.classList.toggle('show', !!_mbColab);
+}
+
+async function mbVerKit() {
+  const inicio = document.getElementById('mbInicio').value;
+  const armazem = document.getElementById('mbArmazem').value;
+  let url;
+  if (_mbTipo === 'NOVATO') {
+    const nome = document.getElementById('mbNome').value.trim();
+    if (nome.length < 5 || !nome.includes(' ')) return mbErro(1, 'Informe o nome completo do novato.');
+    if (document.getElementById('mbTelefone').value.replace(/\D/g, '').length < 10) return mbErro(1, 'Informe o telefone do novato, com DDD.');
+    if (!document.getElementById('mbFuncao').value) return mbErro(1, 'Escolha a função.');
+    if (!document.getElementById('mbSetor').value.trim()) return mbErro(1, 'Informe o setor / base.');
+    url = '/solicitacao-auth/mobilizacao/kit?funcao=' + encodeURIComponent(document.getElementById('mbFuncao').value);
+  } else {
+    if (!_mbColab) return mbErro(1, 'Escolha o colaborador na lista.');
+    url = '/solicitacao-auth/mobilizacao/kit?colaborador_id=' + encodeURIComponent(_mbColab.id);
+  }
+  if (!inicio) return mbErro(1, 'Informe a data de início.');
+  if (!armazem) return mbErro(1, 'Escolha o armazém.');
+  const btn = document.getElementById('mbBtnKit');
+  btn.disabled = true;
+  const r = await req(url);
+  btn.disabled = false;
+  if (!r?.ok) return mbErro(1, r?.erro || 'Não foi possível montar o kit.');
+  if (r.sem_dotacao) return mbErro(1, `A função "${r.funcao}" ainda não tem dotação cadastrada. Fale com o almoxarifado.`);
+  if (!(r.itens || []).length) return mbErro(1, 'Esse colaborador já tem todos os itens da dotação.');
+  _mbKit = r;
+  const nome = _mbTipo === 'NOVATO' ? document.getElementById('mbNome').value.trim().toUpperCase() : _mbColab.nome;
+  document.getElementById('mbKitTitulo').textContent = `Kit de ${r.funcao}`;
+  document.getElementById('mbKitSub').textContent = `${nome} · início ${inicio.split('-').reverse().join('/')}`;
+  document.getElementById('mbKit').innerHTML = r.itens.map((k, i) => `
+    <div class="mb-item">
+      <div style="flex:1;min-width:0"><div class="item-row-nome">${escHtml(k.descricao)}</div>
+        <div class="item-row-meta">${k.faltam} ${k.faltam === 1 ? 'unidade' : 'unidades'}${k.com_tamanho ? '' : ' · tamanho único'}</div></div>
+      ${k.com_tamanho ? `<select class="form-input" data-familia="${escHtml(k.familia)}" aria-label="Tamanho de ${escHtml(k.familia)}">
+        <option value="">Tamanho</option>${k.tamanhos.map(t => `<option value="${escHtml(t.tamanho)}"${(r.tamanhos_salvos || {})[k.familia] === t.tamanho ? ' selected' : ''}>${escHtml(t.tamanho)}</option>`).join('')}
+      </select>` : ''}
+    </div>`).join('');
+  mbMostrar(2);
+}
+
+async function mbEnviar() {
+  const tamanhos = {}, faltando = [];
+  document.querySelectorAll('#mbKit select[data-familia]').forEach(sel => {
+    if (sel.value) tamanhos[sel.dataset.familia] = sel.value; else faltando.push(sel.dataset.familia);
+  });
+  if (faltando.length) return mbErro(2, `Escolha o tamanho de: ${faltando.join(', ')}.`);
+  const corpo = {
+    tipo: _mbTipo, data_inicio: document.getElementById('mbInicio').value, armazem_id: document.getElementById('mbArmazem').value,
+    tamanhos, obs: document.getElementById('mbObs').value, chave_envio: _mbChave,
+  };
+  if (_mbTipo === 'NOVATO') {
+    corpo.novato = { nome: document.getElementById('mbNome').value, matricula: document.getElementById('mbMatricula').value,
+      telefone: document.getElementById('mbTelefone').value, funcao: document.getElementById('mbFuncao').value, setor: document.getElementById('mbSetor').value };
+  } else corpo.colaborador_id = _mbColab.id;
+  const btn = document.getElementById('mbBtnEnviar');
+  btn.disabled = true;
+  const r = await req('/solicitacao-auth/mobilizacao', { method: 'POST', body: corpo });
+  btn.disabled = false;
+  if (!r?.ok) return mbErro(2, r?.erro || 'Não foi possível enviar.');
+  document.getElementById('mbOkId').textContent = r.id;
+  document.getElementById('mbOkTxt').textContent = `${_mbKit.itens.length} ${_mbKit.itens.length === 1 ? 'item' : 'itens'} do kit de ${_mbKit.funcao}. O almoxarifado já recebeu o pedido${_mbTipo === 'NOVATO' ? ' e vai conferir o cadastro do novato' : ''}.`;
+  mbMostrar(3);
 }
 
 // ══════════════════════════════════════════
@@ -1798,6 +2007,7 @@ async function carregarSols() {
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
           <span style="font-family:var(--font-mono);font-size:10px;color:var(--accent-text)">${s.id}</span>
           ${isUrg?'<span class="tag tag-red" style="font-size:10px"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgente</span>':''}
+          ${s.tipo_pedido==='MOBILIZACAO'?`<span class="tag tag-mob" style="font-size:10px"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Mobilização · início ${escHtml(String(s.data_inicio||'').split('-').reverse().join('/'))}</span>`:''}
         </div>
         ${tag(s.status)}
       </div>

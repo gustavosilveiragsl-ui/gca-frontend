@@ -2390,6 +2390,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="">Todas prioridades</option>
                 <option value="Urgente">Urgente</option>
                 <option value="Normal">Normal</option>
+                <option value="__mobilizacao">Mobilização</option>
               </select>
               <select class="form-input" id="solFiltroArmazem" style="width:170px;font-size:11px" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os armazéns</option>
@@ -6113,6 +6114,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <label for="lsPodeTransporte" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Pode avisar viagem (Transporte)</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Vou viajar" no portal: a pessoa avisa que vai para uma base e marca as cargas que leva.</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsPodeMobilizacao" style="accent-color:var(--primary)">
+                <label for="lsPodeMobilizacao" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Pode pedir mobilização</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Mobilização" no portal: pede o kit da função (com os tamanhos) para um novato ou para um colaborador já cadastrado.</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -13229,7 +13235,7 @@ function renderSolicitacoes() {
 
   const { status, prioridade, armazem, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
-  if (prioridade) lista = lista.filter(s => s.prioridade === prioridade);
+  if (prioridade) lista = lista.filter(s => prioridade === '__mobilizacao' ? s.tipo_pedido === 'MOBILIZACAO' : s.prioridade === prioridade);
   if (armazem)    lista = lista.filter(s => s.armazem_id === armazem);
   if (busca) {
     const q = busca.toLowerCase();
@@ -13278,6 +13284,7 @@ function renderSolicitacoes() {
     const temForaPrazo = itens.some(i => i.diasDecorridos != null && i.prazoMinDias && i.diasDecorridos < i.prazoMinDias);
     const temAssPend   = (_assinaturas||[]).some(a => a.colaboradorId === s.colaborador_id && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
     const tags = [
+      solTagMobilizacao(s),
       temTroca     ? '<span style="color:#a855f7;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-shirt></use></svg> Troca tamanho</span>' : '',
       temForaPrazo ? '<span style="color:#f59e0b;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Fora do prazo</span>' : '',
       temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg> Ass. pendente</span>' : '',
@@ -13418,6 +13425,7 @@ async function abrirModalSolicitacao(id) {
           </div>
         </div>
 
+        ${solBlocoMobilizacao(s)}
         ${obs ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:12px;font-size:12px;color:var(--text-2)"><span style="font-size:10px;color:var(--text-3);display:block;margin-bottom:4px">OBSERVAÇÃO</span>${obs}</div>` : ''}
 
         <div style="font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Itens Solicitados</div>
@@ -13765,6 +13773,104 @@ async function atenderSolicitacaoViatura(s, btnEl) {
   }
 }
 
+// ═══════════════════════════════════════════
+// MOBILIZAÇÃO PELO PORTAL (12/11/2026, item 7 parte 2) — o supervisor pede o kit da função (com os
+// tamanhos) para um novato ou um colaborador já cadastrado. A solicitação vem com tipo_pedido =
+// MOBILIZACAO e data_inicio. A do novato traz os dados em novato_json: ao iniciar o atendimento, o
+// GCA abre o cadastro já preenchido para conferir (matrícula obrigatória) e só depois segue o fluxo
+// normal. Fila: não é cancelada antes do início e vira prioridade nos 3 dias úteis antes.
+// ═══════════════════════════════════════════
+function solMobDias(s) {
+  if (s.tipo_pedido !== 'MOBILIZACAO' || !s.data_inicio) return null;
+  return Math.round((Date.parse(String(s.data_inicio).slice(0, 10) + 'T12:00:00Z') - Date.parse(hojeBR() + 'T12:00:00Z')) / 864e5);
+}
+function solMobQuando(s) {
+  const d = solMobDias(s);
+  if (d === null) return '';
+  return d > 1 ? `começa em ${d} dias` : d === 1 ? 'começa amanhã' : d === 0 ? 'começa hoje' : `começou há ${-d} ${d === -1 ? 'dia' : 'dias'}`;
+}
+function solTagMobilizacao(s) {
+  if (s.tipo_pedido !== 'MOBILIZACAO') return '';
+  const novato = s.novato_json && !s.colaborador_id;
+  return `<span style="color:#c084fc;font-size:10px;font-weight:700"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> MOBILIZAÇÃO · ${escHtml(solMobQuando(s))}</span>`
+    + (novato ? ' <span style="color:#f59e0b;font-size:10px;font-weight:600">novato sem cadastro</span>' : '');
+}
+function solBlocoMobilizacao(s) {
+  if (s.tipo_pedido !== 'MOBILIZACAO') return '';
+  const n = s.novato_json || null;
+  const tam = n?.tamanhos ? Object.entries(n.tamanhos).map(([f, t]) => `${f}: ${t}`).join(' · ') : '';
+  const tel = n?.telefone ? String(n.telefone).replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '';
+  return `<div style="border:1px solid color-mix(in srgb,#a855f7 45%,transparent);background:color-mix(in srgb,#a855f7 8%,transparent);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;font-size:12px;display:grid;gap:4px">
+    <div style="font-weight:700;color:#c084fc"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> MOBILIZAÇÃO · início ${escHtml(String(s.data_inicio || '').split('-').reverse().join('/'))} (${escHtml(solMobQuando(s))})</div>
+    ${n ? `<div style="color:var(--text-2)">${s.colaborador_id ? 'Novato: cadastro já conferido e salvo.' : '<b style="color:#f59e0b">Novato sem cadastro.</b> Ao iniciar o atendimento, o GCA abre o cadastro preenchido para você conferir e salvar.'}</div>
+      <div style="color:var(--text-3);font-size:11px">${escHtml(n.funcao || '—')} · ${escHtml(n.setor || '—')}${tel ? ' · tel. ' + escHtml(tel) : ''} · ${n.matricula ? 'matrícula ' + escHtml(n.matricula) : 'ainda sem matrícula'}</div>
+      ${tam ? `<div style="color:var(--text-3);font-size:11px">Tamanhos: ${escHtml(tam)}</div>` : ''}` : ''}
+  </div>`;
+}
+
+async function abrirCadastroNovato(s) {
+  if (!temPermissao('cadastrar_colaboradores')) {
+    toast('Este pedido é de um novato sem cadastro. Peça a quem cadastra colaboradores para conferir e salvar o cadastro antes do atendimento.', 'warn', 7000);
+    return;
+  }
+  const n = s.novato_json || {};
+  // O detalhe da solicitação fica por trás e vazava pela janela: fecha antes (o atendimento abre depois de salvar)
+  if (typeof fecharModalSolicitacao === 'function') fecharModalSolicitacao();
+  const rf = await api('/funcoes');
+  const funcoes = [...new Set([...(rf?.ok ? (rf.data || []).map(f => f.nome) : []), n.funcao].filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const setores = [...new Set((_colaboradores || []).map(c => c.setor).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const tel = n.telefone ? String(n.telefone).replace(/^(\d{2})(\d{4,5})(\d{4})$/, '($1) $2-$3') : '';
+  document.getElementById('modalCadNovato')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modalCadNovato';
+  modal.innerHTML = `
+    <div class="modal-box" style="max-width:620px;width:100%">
+      <div class="modal-header">
+        <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Conferir cadastro do novato</div>
+          <div style="font-size:11px;color:var(--text-3)">Mobilização pedida por ${escHtml(s.solicitante_nome || '—')} · início ${escHtml(String(s.data_inicio || '').split('-').reverse().join('/'))}. Confira, complete a matrícula se faltar e salve; depois o atendimento abre com o kit.</div></div>
+        <button class="modal-close" onclick="document.getElementById('modalCadNovato').remove()">×</button>
+      </div>
+      <div class="modal-body" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">Nome completo *</label><input id="cnNome" class="form-input" style="text-transform:uppercase" value="${escHtml(n.nome || '')}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Matrícula *</label><input id="cnMatricula" class="form-input" style="text-transform:uppercase" value="${escHtml(n.matricula || '')}" placeholder="Obrigatória para salvar"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Data de admissão</label><input id="cnAdmissao" type="date" class="form-input" value="${escHtml(s.data_inicio || '')}"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Função *</label><select id="cnFuncao" class="form-input">${funcoes.map(f => `<option value="${escHtml(f)}"${f === n.funcao ? ' selected' : ''}>${escHtml(f)}</option>`).join('')}</select></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Nível</label><select id="cnNivel" class="form-input"><option value="Pleno">Pleno</option><option value="Junior">Junior</option></select></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Setor *</label><input id="cnSetor" class="form-input" list="cnSetores" style="text-transform:uppercase" value="${escHtml(n.setor || '')}"><datalist id="cnSetores">${setores.map(x => `<option value="${escHtml(x)}">`).join('')}</datalist></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Telefone</label><input id="cnTelefone" class="form-input" value="${escHtml(tel)}"></div>
+        <div class="form-group" style="margin:0;grid-column:1/-1"><label class="form-label">E-mail</label><input id="cnEmail" class="form-input" placeholder="Opcional"></div>
+        ${n.tamanhos && Object.keys(n.tamanhos).length ? `<div style="grid-column:1/-1;font-size:11px;color:var(--text-3)">Tamanhos escolhidos no pedido (vão para o cadastro): ${escHtml(Object.entries(n.tamanhos).map(([f, t]) => `${f}: ${t}`).join(' · '))}</div>` : ''}
+        <div id="cnErro" style="grid-column:1/-1;font-size:12px;color:var(--red);min-height:14px"></div>
+        <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn btn-ghost" onclick="document.getElementById('modalCadNovato').remove()">Cancelar</button>
+          <button class="btn btn-primary" id="cnSalvar" onclick="salvarCadastroNovato('${escJs(s.id)}')"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar cadastro e iniciar atendimento</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function salvarCadastroNovato(solId) {
+  const erro = document.getElementById('cnErro');
+  erro.textContent = '';
+  const corpo = {
+    nome: document.getElementById('cnNome').value, matricula: document.getElementById('cnMatricula').value,
+    funcao: document.getElementById('cnFuncao').value, nivel: document.getElementById('cnNivel').value,
+    setor: document.getElementById('cnSetor').value, telefone: document.getElementById('cnTelefone').value,
+    email: document.getElementById('cnEmail').value, data_admissao: document.getElementById('cnAdmissao').value,
+  };
+  if (!corpo.matricula.trim()) { erro.textContent = 'Informe a matrícula. Ela é obrigatória para salvar o cadastro.'; return; }
+  const r = await api(`/solicitacoes/${encodeURIComponent(solId)}/cadastrar-novato`, { method: 'POST', body: JSON.stringify(corpo) });
+  if (!r?.ok) { erro.textContent = r?.erro || 'Não foi possível salvar o cadastro.'; return; }
+  document.getElementById('modalCadNovato')?.remove();
+  const s = _solicitacoes.find(x => x.id === solId);
+  if (s) { s.colaborador_id = r.colaborador.id; s.colaborador_nome = r.colaborador.nome; }
+  toast(`Cadastro de ${escHtml(r.colaborador.nome)} salvo. Abrindo o atendimento com o kit...`, 'success', 4000);
+  await carregarColaboradoresAtendimento();
+  atenderSolicitacao(solId);
+}
+
 async function atenderSolicitacao(id, btnEl) {
   // Evita clique duplo/repetido disparar o fluxo assíncrono duas vezes em paralelo
   // (causava itens duplicados no atendimento, cada execução adicionando os seus).
@@ -13776,6 +13882,8 @@ async function atenderSolicitacao(id, btnEl) {
 
   const colabId = s.colaborador_id || s.colaboradorId;
   if (!colabId) {
+    // Mobilização de novato (item 7, parte 2): confere e salva o cadastro antes de atender
+    if (s.tipo_pedido === 'MOBILIZACAO' && s.novato_json) { abrirCadastroNovato(s); return; }
     toast('Colaborador não identificado na solicitação.', 'error', 4000);
     return;
   }
@@ -13855,6 +13963,7 @@ async function atenderSolicitacao(id, btnEl) {
       'Avariado por mau uso': 'Troca Desgaste',
       'Perdido':              'Perda/Extravio',
       'Roubado':              'Perda/Extravio',
+      'Mobilização':          'Entrega inicial',   // kit pedido pelo portal (item 7, parte 2)
     };
 
     const selecionados = itens.map(it => {
@@ -16821,7 +16930,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_logistica ? ' <span title="Pode avisar viagem (Transporte)"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_logistica ? ' <span title="Pode avisar viagem (Transporte)"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ativo' : '<svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Inativo'}</span></td>
@@ -16881,6 +16990,7 @@ async function salvarLS() {
   const podeInventario = document.getElementById('lsPodeInventario').checked;
   const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
   const podeTransporte = document.getElementById('lsPodeTransporte')?.checked || false;
+  const podeMobilizacao = document.getElementById('lsPodeMobilizacao')?.checked || false;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -16891,13 +17001,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte, pode_mobilizacao: podeMobilizacao };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_logistica: podeTransporte, pode_mobilizacao: podeMobilizacao }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -16915,6 +17025,7 @@ function editarLS(id) {
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = !!u.pode_conferir_viatura;
   if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = !!u.pode_logistica;
+  if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = !!u.pode_mobilizacao;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -16945,6 +17056,7 @@ function limparLS() {
   document.getElementById('lsPodeInventario').checked = false;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
   if (document.getElementById('lsPodeTransporte')) document.getElementById('lsPodeTransporte').checked = false;
+  if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = false;
   carregarArmazensLS();
 }
 
@@ -35838,6 +35950,7 @@ const NOTIF_TIPOS = {
   VOU_VIAJAR:            { icone: 'truck',          cor: 'blu' },   // item 7, parte 1
   VIAGENS_AVISADAS_HOJE: { icone: 'truck',          cor: 'yel' },
   CARGAS_AGUARDANDO:     { icone: 'package',        cor: 'acc' },
+  MOBILIZACOES_PROXIMAS: { icone: 'rocket',         cor: 'yel' },   // item 7, parte 2
 };
 const NOTIF_DA_LOGISTICA = ['VOU_VIAJAR', 'VIAGENS_AVISADAS_HOJE', 'CARGAS_AGUARDANDO'];
 const notifIcone = (nome) => `<svg class=ic aria-hidden=true><use href=#i-${nome}></use></svg>`;
@@ -35927,7 +36040,8 @@ async function notifCarregarAtencao() {
   if (notifPainelAberto() && NOTIF.aba === 'atencao') notifRender();
 }
 
-const notifQtdAtencao = () => NOTIF.atencao.reduce((s, a) => s + (Number(a.qtd) || 1), 0);
+// "nao_somar": o lembrete repete pedidos que já contam em outra linha (ex.: mobilização perto do início)
+const notifQtdAtencao = () => NOTIF.atencao.reduce((s, a) => s + (a.nao_somar ? 0 : (Number(a.qtd) || 1)), 0);
 function notifAtualizarSino() {
   const n = NOTIF.naoLidas, pend = notifQtdAtencao(), txt = n > 99 ? '99+' : String(n);
   const b = document.getElementById('notifBadge');
@@ -36146,11 +36260,13 @@ function notifAbrirHistorico(i) { const n = NOTIF.historico[i]; if (n) notifAbri
 // ── Abrir o que o aviso aponta ──
 function notifAbrir(n) {
   notifFecharPainel();
-  if (n.tipo === 'SOLICITACAO_NOVA' || n.tipo === 'SOLICITACOES_ABERTAS') {
+  if (n.tipo === 'SOLICITACAO_NOVA' || n.tipo === 'SOLICITACOES_ABERTAS' || n.tipo === 'MOBILIZACOES_PROXIMAS') {
     if (!temPermissao('ver_solicitacoes')) return;
     showView('solicitacoes', document.querySelector('.nav-item[data-view="solicitacoes"]'));
     if (_solAbaAtual !== 'ativas' && typeof mudarAbaSol === 'function') mudarAbaSol('ativas');
     if (n.ref_id) notifDestacarSolicitacao(n.ref_id);
+    // Mobilizações perto do início: mostra só elas (filtro "Mobilização")
+    if (n.tipo === 'MOBILIZACOES_PROXIMAS') { const f = document.getElementById('solFiltroPrioridade'); if (f) { f.value = '__mobilizacao'; filtrarSolicitacoes(); } }
   } else if (NOTIF_DA_LOGISTICA.includes(n.tipo)) {
     if (!temPermissao('logistica_gerenciar_viagens')) return;
     showView('logistica', document.querySelector('.nav-item[data-view="logistica"]'));
