@@ -12,14 +12,18 @@
   Quadro de cargas (12/11/2026, item 7 parte 1). Link fixo da filial, sem login, que o
   almoxarifado manda no grupo de WhatsApp dos transportadores (Logística → "Quadro de cargas").
   Mostra só o volume por base: quantas cargas, de qual armazém, há quanto tempo, se tem urgente e
-  quantos já avisaram que vão levar. Sem nome de colaborador e sem itens. "Vou para lá" abre o
-  portal de solicitação na aba "Vou viajar" com o destino escolhido.
+  quantos já avisaram que vão levar. Sem nome de colaborador e sem itens.
+  "Vou para lá" (ajuste de 12/11/2026): qualquer pessoa avisa a viagem aqui mesmo, sem login.
+  Colaborador se identifica pela matrícula (o quadro confirma só o nome curto); terceiro ou
+  motorista de empresa informa nome, empresa e telefone. A pessoa marca as bases e fica com todas
+  as cargas delas que estão esperando; o almoxarifado confere e monta a viagem. Quem tem login no
+  portal também pode avisar por lá (aba "Vou viajar").
 -->
 <style>
 :root{
   --accent:#6366f1;--accent-soft:#1e1b4b;--accent-text:#a5b4fc;
-  --red:#f87171;--red-soft:#2a0f0f;--yellow:#fbbf24;
-  --bg:#0a0a0f;--bg-card:#0f0f17;--border:#1e1e2e;--border-mid:#2a2a3e;
+  --red:#f87171;--red-soft:#2a0f0f;--yellow:#fbbf24;--yellow-soft:#2a1d00;--green:#4ade80;--green-soft:#052e16;
+  --bg:#0a0a0f;--bg-card:#0f0f17;--bg-campo:#0b0b12;--border:#1e1e2e;--border-mid:#2a2a3e;
   --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#64748b;
   --font:'DM Sans',-apple-system,'Segoe UI',Roboto,sans-serif;--mono:'DM Mono',ui-monospace,Consolas,monospace;
   color-scheme:dark;
@@ -31,7 +35,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text-1);min-height
 .topo .tit{font-weight:700;font-size:15px}
 .topo .sub{font-size:11px;color:var(--text-3)}
 .topo button{margin-left:auto;background:transparent;border:1px solid var(--border-mid);color:var(--text-2);border-radius:8px;padding:7px 10px;font:inherit;font-size:12px;cursor:pointer}
-.topo button:focus-visible,.ir:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 main{max-width:560px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-left,0px)) 32px max(16px,env(safe-area-inset-right,0px));display:grid;gap:10px}
 .resumo{font-size:13px;color:var(--text-2)}
 .resumo b{color:var(--text-1)}
@@ -44,12 +48,40 @@ main{max-width:560px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-lef
 .tag.cinza{background:#1f2937;color:var(--text-2)}
 .linha{font-size:13px;color:var(--text-2)}
 .vao{font-size:12px;color:var(--accent-text)}
-.ir{display:block;text-align:center;text-decoration:none;background:var(--accent);color:#fff;border-radius:9px;padding:10px;font-weight:600;font-size:14px;margin-top:4px}
-.ir.leve{background:transparent;border:1px solid var(--border-mid);color:var(--text-1)}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px;font:inherit;font-weight:600;font-size:14px;cursor:pointer}
+.btn.leve{background:transparent;border:1px solid var(--border-mid);color:var(--text-1)}
+.btn:disabled{opacity:.6;cursor:wait}
 .vazio,.erro{text-align:center;padding:36px 12px;color:var(--text-2);font-size:14px}
 .erro{color:var(--red)}
 .rodape{font-size:11px;color:var(--text-3);text-align:center;margin-top:8px}
 svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* Formulário "Vou para lá" (tela inteira por cima do quadro) */
+.painel{position:fixed;inset:0;z-index:20;background:var(--bg);overflow-y:auto;padding:0 0 max(24px,env(safe-area-inset-bottom,0px))}
+.painel-in{max-width:560px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-left,0px)) 0 max(16px,env(safe-area-inset-right,0px));display:grid;gap:14px}
+.painel h2{font-size:18px}
+.bloco{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:13px 14px;display:grid;gap:10px}
+.bloco > .t{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border-mid);border-radius:9px;overflow:hidden}
+.seg button{background:transparent;border:0;color:var(--text-2);font:inherit;font-size:13px;font-weight:600;padding:10px 6px;cursor:pointer}
+.seg button.on{background:var(--accent);color:#fff}
+label.campo{display:grid;gap:5px;font-size:12px;color:var(--text-2);font-weight:500}
+input.ent{width:100%;background:var(--bg-campo);border:1px solid var(--border-mid);border-radius:8px;color:var(--text-1);font:inherit;font-size:15px;padding:10px 11px}
+.dupla{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.confirmado{display:flex;align-items:center;gap:8px;padding:10px 11px;border-radius:8px;background:var(--green-soft);color:var(--green);font-weight:600}
+.confirmado button{margin-left:auto;background:transparent;border:0;color:var(--text-2);font:inherit;font-size:12px;text-decoration:underline;cursor:pointer}
+.opc-base{display:flex;align-items:center;gap:10px;padding:10px 11px;border:1px solid var(--border-mid);border-radius:9px;cursor:pointer}
+.opc-base input{width:18px;height:18px;accent-color:var(--accent);flex-shrink:0}
+.opc-base .ord{font-family:var(--mono);font-size:12px;color:var(--accent-text);min-width:16px}
+.opc-base small{display:block;color:var(--text-3);font-size:12px}
+.msg{font-size:13px;border-radius:8px;padding:10px 11px}
+.msg.erro{background:var(--red-soft);color:var(--red);text-align:left;padding:10px 11px}
+.msg.info{background:var(--yellow-soft);color:var(--yellow)}
+.ok-final{text-align:center;display:grid;gap:10px;padding:24px 8px}
+.ok-final .grande{font-size:20px;font-weight:700;color:var(--green)}
+.link-portal{font-size:12px;color:var(--text-3);text-align:center}
+.link-portal a{color:var(--accent-text)}
+[hidden]{display:none!important}
 @media (prefers-reduced-motion:no-preference){.base{animation:entra .25s ease both}}
 @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
 </style>
@@ -58,6 +90,7 @@ svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-5.54 10.19-7.4 11.8a1 1 0 0 1-1.2 0C9.54 20.19 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
   <symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
 </svg>
 
 <header class="topo">
@@ -70,10 +103,70 @@ svg.i{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke
   <div class="vazio">Carregando o quadro...</div>
 </main>
 
+<!-- "Vou para lá": avisar a viagem sem login -->
+<section class="painel" id="painel" hidden aria-labelledby="painelTit">
+  <div class="painel-in" id="painelForm">
+    <div style="display:flex;align-items:center;gap:10px">
+      <h2 id="painelTit">Vou para lá</h2>
+      <button type="button" class="btn leve" style="width:auto;margin-left:auto;padding:8px 12px" onclick="fecharPainel()">Voltar</button>
+    </div>
+
+    <div class="bloco">
+      <div class="t">Quem é você?</div>
+      <div class="seg" role="group" aria-label="Quem é você">
+        <button type="button" id="segColab" class="on" onclick="escolherTipo('COLABORADOR')">Sou colaborador</button>
+        <button type="button" id="segTerc" onclick="escolherTipo('TERCEIRO')">Sou terceiro / de empresa</button>
+      </div>
+      <div id="boxColab" style="display:grid;gap:10px">
+        <div id="boxMatricula" style="display:grid;gap:8px">
+          <label class="campo">Sua matrícula *<input class="ent" id="fMatricula" inputmode="numeric" autocomplete="off" placeholder="Ex.: 28140"></label>
+          <button type="button" class="btn leve" id="btnConferir" onclick="conferirMatricula()">Conferir matrícula</button>
+        </div>
+        <div class="confirmado" id="boxConfirmado" hidden><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span id="txtConfirmado"></span><button type="button" onclick="trocarMatricula()">Não sou eu</button></div>
+        <label class="campo">Telefone (opcional)<input class="ent" id="fTelColab" inputmode="tel" autocomplete="tel" placeholder="(22) 99999-9999"></label>
+      </div>
+      <div id="boxTerc" hidden style="display:grid;gap:10px">
+        <label class="campo">Seu nome *<input class="ent" id="fNome" autocomplete="name" style="text-transform:uppercase"></label>
+        <label class="campo">Empresa<input class="ent" id="fEmpresa" style="text-transform:uppercase" placeholder="Se for de transportadora"></label>
+        <label class="campo">Telefone com DDD *<input class="ent" id="fTel" inputmode="tel" autocomplete="tel" placeholder="(22) 99999-9999"></label>
+      </div>
+    </div>
+
+    <div class="bloco">
+      <div class="t">Para onde vai (na ordem)</div>
+      <div id="listaBases" style="display:grid;gap:8px"></div>
+      <div class="msg info">Você fica com todas as cargas que estão esperando nas bases marcadas. O almoxarifado confere e monta a viagem; na retirada, você assina a coleta.</div>
+    </div>
+
+    <div class="bloco">
+      <div class="t">Quando e com qual veículo</div>
+      <div class="dupla">
+        <label class="campo">Data *<input class="ent" type="date" id="fData"></label>
+        <label class="campo">Hora<input class="ent" type="time" id="fHora"></label>
+      </div>
+      <label class="campo">Placa *<input class="ent" id="fPlaca" maxlength="8" autocomplete="off" placeholder="ABC1D23" style="text-transform:uppercase"></label>
+      <label class="campo">Observação<input class="ent" id="fObs" maxlength="200" placeholder="Ex.: volto no mesmo dia"></label>
+    </div>
+
+    <div class="msg erro" id="fErro" hidden role="alert"></div>
+    <button type="button" class="btn" id="btnEnviar" onclick="enviar()">Enviar aviso</button>
+    <p class="link-portal">Tem login no portal de solicitação? <a id="linkPortal" href="#">Avisar pelo portal</a></p>
+  </div>
+  <div class="painel-in" id="painelOk" hidden>
+    <div class="ok-final">
+      <div class="grande">Aviso enviado</div>
+      <div id="txtOk" style="color:var(--text-2)"></div>
+      <div style="color:var(--text-3);font-size:13px">O almoxarifado já recebeu e vai montar a viagem. Na retirada, você assina a coleta.</div>
+      <button type="button" class="btn" style="margin-top:8px" onclick="fecharPainel()">Voltar ao quadro</button>
+    </div>
+  </div>
+</section>
+
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
 const TOKEN = new URLSearchParams(location.search).get('t') || '';
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hojeBR = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 function tempo(iso) {
   const ms = Date.now() - new Date(iso).getTime();
   if (!(ms >= 0)) return '';
@@ -83,42 +176,163 @@ function tempo(iso) {
   const d = Math.floor(h / 24);
   return d === 1 ? 'há 1 dia' : `há ${d} dias`;
 }
-// Link do portal na aba "Vou viajar" com o destino escolhido (o portal pede o login antes)
 const linkPortal = (destinoId) => `${location.origin}${location.pathname.replace(/[^/]*$/, '')}solicitacao.html#viajar=${encodeURIComponent(destinoId)}`;
+// Este aparelho lembra quem é (para não digitar tudo de novo na próxima viagem)
+const lembrar = { ler() { try { return JSON.parse(localStorage.getItem('gca_quadro_quem') || '{}'); } catch { return {}; } },
+  gravar(v) { try { localStorage.setItem('gca_quadro_quem', JSON.stringify(v)); } catch {} } };
+
+let _bases = [], _tipo = 'COLABORADOR', _escolhidas = [], _confirmado = null;
+
+async function api(caminho, corpo) {
+  try {
+    const resp = await fetch(`${API}/logistica/quadro/${encodeURIComponent(TOKEN)}${caminho}`, corpo
+      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo), cache: 'no-store' } : { cache: 'no-store' });
+    return await resp.json();
+  } catch { return { ok: false, erro: 'Sem conexão. Confira a internet e tente de novo.' }; }
+}
 
 async function carregar() {
   const conteudo = document.getElementById('conteudo');
   const sub = document.getElementById('sub');
   if (!TOKEN) { conteudo.innerHTML = '<div class="erro">Link incompleto. Peça o link do quadro ao almoxarifado.</div>'; sub.textContent = ''; return; }
-  let r;
-  try {
-    const resp = await fetch(`${API}/logistica/quadro/${encodeURIComponent(TOKEN)}`, { cache: 'no-store' });
-    r = await resp.json();
-  } catch { r = { ok: false, erro: 'Sem conexão. Confira a internet e toque em Atualizar.' }; }
+  const r = await api('');
   if (!r?.ok) { conteudo.innerHTML = `<div class="erro">${esc(r?.erro || 'Não foi possível carregar o quadro.')}</div>`; sub.textContent = ''; return; }
+  _bases = r.bases || [];
   const hora = new Date(r.atualizado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   sub.textContent = `${r.filial} · atualizado às ${hora}`;
-  const bases = r.bases || [];
-  if (!bases.length) {
+  if (!_bases.length) {
     conteudo.innerHTML = '<div class="vazio">Nenhuma carga aguardando transporte agora.</div><p class="rodape">O quadro se atualiza sozinho a cada minuto.</p>';
     return;
   }
-  const urgentes = bases.reduce((s, b) => s + (b.urgentes || 0), 0);
-  conteudo.innerHTML = `<p class="resumo"><b>${r.total} ${r.total === 1 ? 'carga' : 'cargas'}</b> em ${bases.length} ${bases.length === 1 ? 'base' : 'bases'}${urgentes ? ` · <b style="color:var(--red)">${urgentes} ${urgentes === 1 ? 'urgente' : 'urgentes'}</b>` : ''}</p>`
-    + bases.map((b, i) => `
+  const urgentes = _bases.reduce((s, b) => s + (b.urgentes || 0), 0);
+  conteudo.innerHTML = `<p class="resumo"><b>${r.total} ${r.total === 1 ? 'carga' : 'cargas'}</b> em ${_bases.length} ${_bases.length === 1 ? 'base' : 'bases'}${urgentes ? ` · <b style="color:var(--red)">${urgentes} ${urgentes === 1 ? 'urgente' : 'urgentes'}</b>` : ''}</p>`
+    + _bases.map((b, i) => `
       <section class="base${b.urgentes ? ' urgente' : ''}" style="animation-delay:${Math.min(i * 0.04, 0.3)}s">
         <div class="nome"><span><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg> ${esc(b.destino)}</span>${b.urgentes ? `<span class="tag red">${b.urgentes} ${b.urgentes === 1 ? 'urgente' : 'urgentes'}</span>` : `<span class="tag cinza">${esc(tempo(b.mais_antiga))}</span>`}</div>
         <div class="linha">${b.qtd} ${b.qtd === 1 ? 'carga' : 'cargas'}${(b.armazens || []).length ? ' · ' + b.armazens.map(esc).join(', ') : ''}</div>
         ${b.urgentes ? `<div class="linha">A mais antiga ${esc(tempo(b.mais_antiga))}</div>` : ''}
         ${b.vao_levar ? `<div class="vao"><svg class="i" aria-hidden="true" style="vertical-align:-2px"><use href="#i-truck"/></svg> ${b.vao_levar} ${b.vao_levar === 1 ? 'pessoa já avisou que vai' : 'pessoas já avisaram que vão'}</div>` : ''}
-        ${b.destino_id ? `<a class="ir${i === 0 || b.urgentes ? '' : ' leve'}" href="${esc(linkPortal(b.destino_id))}">Vou para lá</a>` : ''}
+        ${b.destino_id ? `<button type="button" class="btn${i === 0 || b.urgentes ? '' : ' leve'}" data-destino="${esc(b.destino_id)}" onclick="abrirPainel(this.dataset.destino)">Vou para lá</button>` : ''}
       </section>`).join('')
-    + '<p class="rodape">Sem nomes e sem itens: só o volume por base. Quem vai levar entra no portal com a matrícula e marca as cargas. O quadro se atualiza sozinho a cada minuto.</p>';
+    + '<p class="rodape">Sem nomes e sem itens: só o volume por base. Vai para alguma delas? Toque em "Vou para lá", sem precisar de login. O quadro se atualiza sozinho a cada minuto.</p>';
+}
+
+// ── Formulário ──
+function abrirPainel(destinoId) {
+  const salvo = lembrar.ler();
+  _escolhidas = destinoId ? [destinoId] : [];
+  escolherTipo(salvo.tipo === 'TERCEIRO' ? 'TERCEIRO' : 'COLABORADOR');
+  document.getElementById('fMatricula').value = salvo.matricula || '';
+  document.getElementById('fTelColab').value = salvo.tipo === 'COLABORADOR' ? (salvo.telefone || '') : '';
+  document.getElementById('fNome').value = salvo.nome || '';
+  document.getElementById('fEmpresa').value = salvo.empresa || '';
+  document.getElementById('fTel').value = salvo.tipo === 'TERCEIRO' ? (salvo.telefone || '') : '';
+  document.getElementById('fPlaca').value = salvo.placa || '';
+  const data = document.getElementById('fData');
+  data.min = hojeBR(); data.value = hojeBR();
+  document.getElementById('fHora').value = '';
+  document.getElementById('fObs').value = '';
+  document.getElementById('linkPortal').href = linkPortal(destinoId || '');
+  _confirmado = null;
+  mostrarConfirmado();
+  renderBases();
+  erro('');
+  document.getElementById('painelForm').hidden = false;
+  document.getElementById('painelOk').hidden = true;
+  document.getElementById('painel').hidden = false;
+  document.getElementById('painel').scrollTop = 0;
+  // Matrícula lembrada: confere sozinho
+  if (_tipo === 'COLABORADOR' && salvo.matricula) conferirMatricula();
+}
+function fecharPainel() { document.getElementById('painel').hidden = true; carregar(); }
+
+function escolherTipo(tipo) {
+  _tipo = tipo;
+  document.getElementById('segColab').classList.toggle('on', tipo === 'COLABORADOR');
+  document.getElementById('segTerc').classList.toggle('on', tipo === 'TERCEIRO');
+  document.getElementById('segColab').setAttribute('aria-pressed', tipo === 'COLABORADOR');
+  document.getElementById('segTerc').setAttribute('aria-pressed', tipo === 'TERCEIRO');
+  document.getElementById('boxColab').hidden = tipo !== 'COLABORADOR';
+  document.getElementById('boxTerc').hidden = tipo !== 'TERCEIRO';
+  erro('');
+}
+
+async function conferirMatricula() {
+  const mat = document.getElementById('fMatricula').value.trim();
+  if (!mat) return erro('Digite a sua matrícula.');
+  const btn = document.getElementById('btnConferir');
+  btn.disabled = true;
+  const r = await api('/identificar', { matricula: mat });
+  btn.disabled = false;
+  if (!r?.ok) { _confirmado = null; mostrarConfirmado(); return erro(r?.erro || 'Matrícula não encontrada.'); }
+  _confirmado = { matricula: mat, nome: r.nome_curto };
+  erro('');
+  mostrarConfirmado();
+}
+function trocarMatricula() {
+  _confirmado = null;
+  document.getElementById('fMatricula').value = '';
+  mostrarConfirmado();
+  document.getElementById('fMatricula').focus();
+}
+function mostrarConfirmado() {
+  document.getElementById('boxMatricula').hidden = !!_confirmado;
+  document.getElementById('boxConfirmado').hidden = !_confirmado;
+  document.getElementById('txtConfirmado').textContent = _confirmado ? `${_confirmado.nome} · matrícula ${_confirmado.matricula}` : '';
+}
+
+function renderBases() {
+  document.getElementById('listaBases').innerHTML = _bases.filter(b => b.destino_id).map(b => {
+    const ordem = _escolhidas.indexOf(b.destino_id);
+    return `<label class="opc-base"><input type="checkbox" data-destino="${esc(b.destino_id)}" ${ordem >= 0 ? 'checked' : ''} onchange="marcarBase(this)">
+      <span class="ord">${ordem >= 0 ? (ordem + 1) + '.' : ''}</span>
+      <span><b>${esc(b.destino)}</b><small>${b.qtd} ${b.qtd === 1 ? 'carga' : 'cargas'}${b.urgentes ? ` · ${b.urgentes} ${b.urgentes === 1 ? 'urgente' : 'urgentes'}` : ''}</small></span></label>`;
+  }).join('');
+}
+function marcarBase(cb) {
+  const id = cb.dataset.destino;
+  _escolhidas = cb.checked ? [..._escolhidas.filter(x => x !== id), id] : _escolhidas.filter(x => x !== id);
+  renderBases();
+}
+
+function erro(txt) { const el = document.getElementById('fErro'); el.textContent = txt; el.hidden = !txt; if (txt) el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+
+async function enviar() {
+  const corpo = {
+    tipo: _tipo, destinos: _escolhidas,
+    data_saida: document.getElementById('fData').value, hora_saida: document.getElementById('fHora').value,
+    placa: document.getElementById('fPlaca').value, obs: document.getElementById('fObs').value,
+  };
+  if (_tipo === 'COLABORADOR') {
+    if (!_confirmado) return erro('Confira a sua matrícula antes de enviar.');
+    corpo.matricula = _confirmado.matricula;
+    corpo.telefone = document.getElementById('fTelColab').value;
+  } else {
+    corpo.nome = document.getElementById('fNome').value;
+    corpo.empresa = document.getElementById('fEmpresa').value;
+    corpo.telefone = document.getElementById('fTel').value;
+    if (corpo.nome.trim().length < 3) return erro('Informe o seu nome.');
+    if (corpo.telefone.replace(/\D/g, '').length < 10) return erro('Informe um telefone com DDD.');
+  }
+  if (!_escolhidas.length) return erro('Marque pelo menos uma base.');
+  if (!corpo.placa.trim()) return erro('Informe a placa do veículo.');
+  const btn = document.getElementById('btnEnviar');
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  const r = await api('/vou', corpo);
+  btn.disabled = false; btn.textContent = 'Enviar aviso';
+  if (!r?.ok) return erro(r?.erro || 'Não foi possível enviar.');
+  lembrar.gravar({ tipo: _tipo, matricula: corpo.matricula || '', nome: corpo.nome || '', empresa: corpo.empresa || '', telefone: corpo.telefone || '', placa: corpo.placa });
+  const nomes = _escolhidas.map(id => (_bases.find(b => b.destino_id === id) || {}).destino || '').filter(Boolean);
+  document.getElementById('txtOk').innerHTML = `<b style="color:var(--text-1)">${esc(r.quem)}</b> · ${nomes.map(esc).join(' → ')}<br>`
+    + `${r.cargas} ${r.cargas === 1 ? 'carga' : 'cargas'} esperando nessas bases`;
+  document.getElementById('painelForm').hidden = true;
+  document.getElementById('painelOk').hidden = false;
+  document.getElementById('painel').scrollTop = 0;
 }
 
 carregar();
-setInterval(() => { if (!document.hidden) carregar(); }, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) carregar(); });
+setInterval(() => { if (!document.hidden && document.getElementById('painel').hidden) carregar(); }, 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && document.getElementById('painel').hidden) carregar(); });
 </script>
 </body>
 </html>

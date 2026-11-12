@@ -18663,7 +18663,10 @@ function renderAvisosViagem() {
 
 function logLinhaAviso(a) {
   const ativo = ['AVISADA', 'VAI_LEVAR'].includes(a.situacao_agora);
-  const quemSub = a.quem_tipo === 'EMPRESA' ? `empresa · registrado por ${escHtml(a.registrado_por || '—')}`
+  // Pelo quadro não tem login: vem marcado para o almoxarife conferir a pessoa (12/11/2026)
+  const quemSub = a.origem === 'QUADRO'
+    ? `<span style="color:var(--yellow)">pelo quadro (sem login)</span>${a.quem_tipo === 'TERCEIRO' ? ' · terceiro' : ''}${a.empresa_texto ? ' · ' + escHtml(a.empresa_texto) : ''}${a.telefone ? ' · ' + escHtml(a.telefone) : ''}`
+    : a.quem_tipo === 'EMPRESA' ? `empresa · registrado por ${escHtml(a.registrado_por || '—')}`
     : a.origem === 'GCA' ? `registrado por ${escHtml(a.registrado_por || '—')}` : 'pelo portal';
   const destinos = (a.destinos || []).map(d => escHtml(d.nome)).join(' <span style="color:var(--text-3)">→</span> ');
   const total = (a.cargas || []).length;
@@ -18708,10 +18711,18 @@ function logMontarDoAviso(id) {
   _logSelecionados = new Set(ids);
   renderLogPendentes();
   const tipo = document.getElementById('logTranspTipo');
-  tipo.value = a.quem_tipo === 'EMPRESA' ? 'EMPRESA' : 'COLABORADOR';
+  // Terceiro pelo quadro (sem cadastro): se a empresa digitada é uma das cadastradas, já escolhe;
+  // senão o almoxarife escolhe quem leva (colaborador ou empresa) na barra
+  const empTerceiro = a.quem_tipo === 'TERCEIRO' && a.empresa_texto
+    ? (_logEmpresas || []).find(e => e.ativo !== false && String(e.nome || '').toUpperCase() === String(a.empresa_texto).toUpperCase()) : null;
+  tipo.value = a.quem_tipo === 'EMPRESA' || empTerceiro ? 'EMPRESA' : 'COLABORADOR';
   logTipoTranspMudou('barra');
-  if (a.quem_tipo === 'EMPRESA') {
-    document.getElementById('logTranspEmpresa').value = a.transportadora_id || '';
+  if (a.quem_tipo === 'EMPRESA' || empTerceiro) {
+    document.getElementById('logTranspEmpresa').value = empTerceiro ? empTerceiro.id : (a.transportadora_id || '');
+  } else if (a.quem_tipo === 'TERCEIRO') {
+    document.getElementById('logTransportadorSelect').value = '';
+    document.getElementById('logTransportadorBusca').value = '';
+    toast(`${a.quem_nome}${a.empresa_texto ? ' (' + a.empresa_texto + ')' : ''} avisou pelo quadro e não tem cadastro${a.telefone ? ' · tel. ' + a.telefone : ''}. Escolha na barra quem leva: um colaborador ou uma empresa de transporte.`, 'info', 9000);
   } else {
     document.getElementById('logTransportadorSelect').value = a.colaborador_id || '';
     document.getElementById('logTransportadorBusca').value = a.quem_nome || '';
@@ -18729,7 +18740,7 @@ function logMostrarAvisoMontando() {
   const a = _logAvisoMontando;
   el.classList.toggle('hidden', !a);
   el.innerHTML = a
-    ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg><span>Montando a viagem avisada por <b>${escHtml(a.quem_nome)}</b> · ${(a.destinos || []).map(d => escHtml(d.nome)).join(' → ')} · ${logDataCurta(a.data_saida)}${a.hora_saida ? ' ' + escHtml(a.hora_saida) : ''}${a.placa ? ' · placa ' + escHtml(a.placa) : ''}</span>
+    ? `<svg class=ic aria-hidden=true><use href=#i-truck></use></svg><span>Montando a viagem avisada por <b>${escHtml(a.quem_nome)}</b>${a.origem === 'QUADRO' ? ' (pelo quadro' + (a.telefone ? ', tel. ' + escHtml(a.telefone) : '') + ')' : ''} · ${(a.destinos || []).map(d => escHtml(d.nome)).join(' → ')} · ${logDataCurta(a.data_saida)}${a.hora_saida ? ' ' + escHtml(a.hora_saida) : ''}${a.placa ? ' · placa ' + escHtml(a.placa) : ''}</span>
        <button class="row-action" onclick="_logAvisoMontando=null;logMostrarAvisoMontando()">Não usar o aviso</button>`
     : '';
 }
