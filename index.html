@@ -347,6 +347,30 @@ input,select,textarea{font-family:var(--font-main);}
 .notif-rodape{display:flex;gap:6px;padding:9px 10px;border-top:1px solid var(--border);flex-wrap:wrap}
 .notif-op{flex:1;min-width:140px;background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);padding:7px 8px;font-size:11px;color:var(--text-2);cursor:pointer;display:flex;gap:6px;align-items:center;justify-content:center}
 .notif-op:hover{color:var(--text-1);border-color:var(--border-mid)}
+/* ── Desligamentos (12/11/2026, item 7 parte 3) ── */
+.dsl-sec{font-size:12px;font-weight:700;color:var(--text-1);margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.dsl-item{border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;background:var(--bg-hover)}
+.dsl-item-top{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap}
+.dsl-tag{display:inline-block;font-size:10px;font-weight:600;padding:1px 6px;border-radius:999px;border:1px solid var(--border)}
+.dsl-tag.ficha{color:var(--accent-text)}.dsl-tag.dot{color:#f59e0b;border-color:color-mix(in srgb,#f59e0b 45%,transparent)}.dsl-tag.fora{color:var(--red);border-color:color-mix(in srgb,var(--red) 45%,transparent)}
+.dsl-fotos{display:flex;gap:6px;flex-wrap:wrap}.dsl-fotos img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+.dsl-campos{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;font-size:11px;color:var(--text-2)}
+.dsl-campos label{display:flex;flex-direction:column;gap:4px}.dsl-campos .form-input{min-width:150px}
+.dsl-seriais{font-size:11px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.dsl-seriais label{flex-direction:row;align-items:center;gap:4px}
+.dsl-seg{display:flex;gap:6px;flex-wrap:wrap}.dsl-seg button{flex:1;min-width:96px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:12px;cursor:pointer}
+.dsl-seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);font-weight:600}
+.dsl-fotos-ed{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.dsl-foto{position:relative}.dsl-foto img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block}
+.dsl-foto button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.dsl-btn-foto{cursor:pointer;font-size:12px}.dsl-check{display:flex !important;flex-direction:row !important;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
+.dsl-valor{font-size:12px;color:var(--text-2);align-self:center}
+.dsl-total{position:sticky;bottom:0;z-index:2;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card,var(--bg));font-size:13px;display:flex;gap:6px;align-items:center}
+.dsl-total.tem{border-color:var(--red);color:var(--red)}
+.dsl-canvas{width:100%;max-width:560px;height:170px;background:#fff;border:1px dashed var(--border);border-radius:var(--radius-sm);touch-action:none;display:block}
+.dsl-ass-img{max-width:320px;width:100%;height:auto;background:#fff;border-radius:6px;border:1px solid var(--border)}
+.dsl-aviso{border:1px solid color-mix(in srgb,#f59e0b 50%,transparent);background:color-mix(in srgb,#f59e0b 10%,transparent);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;color:var(--text-1)}
+.dsl-erro{border:1px solid var(--red);background:var(--red-soft);color:var(--red);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px}
+.dsl-vazio{font-size:12px;color:var(--text-3)}
+.dsl-colab{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text-1);font-size:12px;cursor:pointer}.dsl-colab:hover{border-color:var(--accent)}
 .n-cor-acc{background:var(--accent-soft);color:var(--accent-text)}.n-cor-red{background:var(--red-soft);color:var(--red)}.n-cor-yel{background:var(--yellow-soft);color:var(--yellow)}.n-cor-blu{background:var(--blue-soft);color:var(--blue)}.n-cor-grn{background:var(--green-soft);color:var(--green)}
 #notifPilha{position:fixed;top:60px;right:18px;z-index:99998;display:flex;flex-direction:column;gap:8px;width:340px;max-width:calc(100vw - 24px);pointer-events:none}
 .notif-cartao{pointer-events:all;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:2px 10px;background:var(--bg-card);border:1px solid var(--accent);border-radius:var(--radius-md);padding:11px 12px;box-shadow:0 12px 30px rgba(0,0,0,.35);cursor:pointer;animation:notifEntra .3s ease}
@@ -1367,6 +1391,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         </div>
         <div class="nav-group-items">
           <button class="nav-item" data-view="colaboradores" data-perm="cadastrar_colaboradores" onclick="showView('colaboradores',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></span> Colaboradores</button>
+          <button class="nav-item" data-view="desligamentos" data-perm="desligamentos" onclick="showView('desligamentos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg></span> Desligamentos</button>
           <button class="nav-item" data-view="itens" data-perm="cadastrar_itens" onclick="showView('itens',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></span> Itens</button>
           <button class="nav-item" data-view="armazens" data-perm="cadastrar_armazens" onclick="showView('armazens',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg></span> Armazéns</button>
           <button class="nav-item" data-view="catalogo-armazem" data-perm="catalogo_armazem" onclick="showView('catalogo-armazem',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-notebook-tabs></use></svg></span> Catálogo por Armazém</button>
@@ -1515,6 +1540,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                   <select id="colabStatus" class="form-input">
                     <option value="ativo">Ativo</option>
                     <option value="ferias">Férias</option>
+                    <option value="em_desligamento">Em desligamento</option>
                     <option value="desligado">Desligado</option>
                   </select>
                 </div>
@@ -6073,6 +6099,31 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         </div>
       </div>
       <!-- ── USUÁRIOS DE SOLICITAÇÃO ── -->
+      <!-- DESLIGAMENTOS (12/11/2026, item 7 parte 3) -->
+      <div class="view h-teal" id="view-desligamentos">
+        <div class="card">
+          <div class="card-header" style="flex-wrap:wrap;gap:10px">
+            <div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg> Desligamentos</div>
+              <div class="card-sub">Comunicados pelo portal (supervisor) ou feitos aqui, quando o colaborador vem ao armazém. Confira o material que chega e finalize.</div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-ghost" onclick="dslCarregar()" aria-label="Atualizar">↻</button>
+              <button class="btn btn-primary" onclick="dslNovo()"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Novo desligamento</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;padding:10px 16px 0;flex-wrap:wrap" role="tablist" aria-label="Situação">
+            <button class="btn btn-primary dsl-aba" data-aba="ABERTOS" role="tab" aria-selected="true" onclick="dslMudarAba('ABERTOS')">Em aberto</button>
+            <button class="btn btn-ghost dsl-aba" data-aba="FINALIZADO" role="tab" aria-selected="false" onclick="dslMudarAba('FINALIZADO')">Finalizados</button>
+            <button class="btn btn-ghost dsl-aba" data-aba="CANCELADO" role="tab" aria-selected="false" onclick="dslMudarAba('CANCELADO')">Cancelados</button>
+          </div>
+          <div style="overflow-x:auto;padding:10px 0 4px">
+            <table style="min-width:760px">
+              <thead><tr><th>Colaborador</th><th>Desligamento</th><th>Feito por</th><th>Material</th><th>Desconto</th><th>Situação</th><th></th></tr></thead>
+              <tbody id="dslBody"><tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       <div class="view h-ambar" id="view-logins-solicitacao">
         <div style="display:grid;grid-template-columns:minmax(320px,420px) 1fr;gap:20px;align-items:start">
           <!-- FORMULÁRIO -->
@@ -6114,6 +6165,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <label for="lsPodeMobilizacao" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg> Pode pedir mobilização</label>
               </div>
               <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Mobilização" no portal: pede o kit da função (com os tamanhos) para um novato ou para um colaborador já cadastrado.</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="checkbox" id="lsPodeDesligamento" style="accent-color:var(--primary)">
+                <label for="lsPodeDesligamento" class="form-label" style="margin:0"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg> Pode comunicar desligamento</label>
+              </div>
+              <div style="font-size:10px;color:var(--text-3);margin-top:-6px">Aparece a aba "Desligamento" no portal: registra o que o colaborador devolve (com foto) e o que não devolve (vai para Descontos), com a assinatura dele.</div>
               <div style="display:flex;gap:8px">
                 <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="salvarLS()">Salvar</button>
                 <button class="btn btn-ghost" onclick="limparLS()">Limpar</button>
@@ -8477,7 +8533,7 @@ const VIEW_TITLES = {
   assinaturas:['Assinaturas','/ Pendentes'], solicitacoes:['Solicitações','/ Gestão'],
   entrada:['Entrada','/ Recebimento'], saida:['Saída','/ Registrar'],
   transferencia:['Transferência','/ Entre armazéns'], estoque:['Estoque','/ Consulta'],
-  movimentacoes:['Movimentações','/ Histórico'], descontos:['Descontos','/ Materiais'],
+  movimentacoes:['Movimentações','/ Histórico'], descontos:['Descontos','/ Materiais'], desligamentos:['Desligamentos','/ Colaboradores'],
   inventario:['Inventário','/ Rotativo Mensal'],
   logistica:['Logística','/ Coleta e Entrega'],
   financeiro:['Financeiro','/ Painel'], 'solicitacoes-compra':['Solicitações de Compra',''], protheus:['Protheus','/ Lançamentos'],
@@ -8612,6 +8668,7 @@ function onViewLoad(nome) {
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
   if (nome === 'logins-solicitacao') { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
+  if (nome === 'desligamentos')      { if (!_colaboradores.length) carregarColaboradoresAtendimento(); if (!_armazens.length) carregarArmazens(); dslCarregar(); }
   if (nome === 'solicitacoes-compra') { if (!_itens.length) carregarItensAtendimento(); if (!_armazens.length) carregarArmazens(); carregarSC(); }
   if (nome === 'financeiro')         finIniciar();
   if (nome === 'protheus')           { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarProtheus(); }
@@ -10500,7 +10557,7 @@ function renderColaboradores(lista) {
   tbody.innerHTML = lista.slice(0,100).map(c => {
     const statusTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
       : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-tree-palm></use></svg> Férias</span>'
-      : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+      : (c.status==='em_desligamento' ? '<span style="color:var(--red);font-weight:600;font-size:11px">Em desligamento</span>' : c.status==='desligado' ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Desligado</span>' : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>');
     return `<tr>
       <td class="td-main">${escHtml(c.nome||'—')}${(c.unidade && c.unidade !== GCA.unidade) || (c.filiais_extras || []).length
         ? `<div style="font-size:10px;font-weight:400;color:var(--text-3)">${c.unidade === GCA.unidade ? 'desta filial' : colabTagFilial(c).replace(/^ · /, '')}${(c.filiais_extras || []).length ? ` · também em ${c.filiais_extras.map(u => escHtml(getNomeUnidade(u))).join(', ')}` : ''}</div>` : ''}</td>
@@ -10537,6 +10594,7 @@ function abrirModalColab(id) {
         </div>
       </div>
       <div class="modal-footer">
+        ${temPermissao('desligamentos') && ['ativo', 'ferias'].includes(c.status || 'ativo') ? `<button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="this.closest('.modal-overlay').remove(); dslNovo('${c.id}')"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg> Desligar</button>` : ''}
         <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="gerarTermoDesligamentoColab('${c.id}')"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Termo Desligamento</button>
         <button class="btn btn-ghost" onclick="editarColabForm('${c.id}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>
         <button class="btn btn-ghost" style="color:#ef4444;border-color:#ef4444" onclick="excluirColab('${c.id}','${escJs(c.nome||'')}', true)"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg> Excluir</button>
@@ -11075,8 +11133,11 @@ function confirmarColabAtend(colab) {
       statusEl.style.cssText='color:#22c55e;font-weight:600;font-size:11px'; statusEl.textContent = '✓ Ativo';
     } else if (colab.status === 'ferias') {
       statusEl.style.cssText='color:#f59e0b;font-weight:600;font-size:11px'; statusEl.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-tree-palm></use></svg> Férias';
+    } else if (colab.status === 'em_desligamento') {
+      statusEl.style.cssText='color:var(--red);font-weight:600;font-size:11px'; statusEl.textContent = 'Em desligamento';
+      toast(`${colab.nome} está em desligamento: confira antes de entregar material.`, 'warn', 6000);
     } else {
-      statusEl.style.cssText='color:var(--text-3);font-weight:600;font-size:11px'; statusEl.textContent = '✕ Inativo';
+      statusEl.style.cssText='color:var(--text-3);font-weight:600;font-size:11px'; statusEl.textContent = colab.status === 'desligado' ? '✕ Desligado' : '✕ Inativo';
     }
   }
 
@@ -16925,7 +16986,7 @@ async function carregarLS() {
     let arms = [];
     try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
     return `<tr>
-      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}</td>
+      <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}${u.pode_desligamento ? ' <span title="Pode comunicar desligamento"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg></span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
       <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ativo' : '<svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Inativo'}</span></td>
@@ -16985,6 +17046,7 @@ async function salvarLS() {
   const podeInventario = document.getElementById('lsPodeInventario').checked;
   const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
   const podeMobilizacao = document.getElementById('lsPodeMobilizacao')?.checked || false;
+  const podeDesligamento = document.getElementById('lsPodeDesligamento')?.checked || false;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -16995,13 +17057,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -17019,6 +17081,7 @@ function editarLS(id) {
   document.getElementById('lsPodeInventario').checked = !!u.pode_inventario;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = !!u.pode_conferir_viatura;
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = !!u.pode_mobilizacao;
+  if (document.getElementById('lsPodeDesligamento')) document.getElementById('lsPodeDesligamento').checked = !!u.pode_desligamento;
   carregarArmazensLS();
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
@@ -17049,6 +17112,7 @@ function limparLS() {
   document.getElementById('lsPodeInventario').checked = false;
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = false;
+  if (document.getElementById('lsPodeDesligamento')) document.getElementById('lsPodeDesligamento').checked = false;
   carregarArmazensLS();
 }
 
@@ -20490,6 +20554,9 @@ const PERMISSOES_SCHEMA = {
     consulta_itens:'Consulta de itens', consulta_colaboradores:'Consulta de colaboradores',
     consulta_dotacao:'Consulta de dotação'
   }},
+  desligamentos: { label:'Desligamentos', icon:'<svg class=ic aria-hidden=true><use href=#i-user-x></use></svg>', itens:{
+    desligamentos:'Desligamentos (fazer, conferir o material, finalizar e cancelar; recebe o aviso de desligamento)'
+  }},
   financeiro: { label:'Financeiro', icon:'<svg class=ic aria-hidden=true><use href=#i-wallet></use></svg>', itens:{
     painel_financeiro:'Painel financeiro (gastos, compras, recuperação e custos lançados)', descontos:'Descontos', protheus:'Lançamentos Protheus'
   }},
@@ -22782,7 +22849,7 @@ function renderConsultaColabs() {
   tbody.innerHTML = lista.slice(0,200).map(c => {
     const stTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
       : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-tree-palm></use></svg> Férias</span>'
-      : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+      : (c.status==='em_desligamento' ? '<span style="color:var(--red);font-weight:600;font-size:11px">Em desligamento</span>' : c.status==='desligado' ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Desligado</span>' : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>');
     return `<tr style="cursor:pointer" onclick="abrirConsultaColab('${c.id}')">
       <td class="td-main">${escHtml(c.nome||'—')}</td>
       <td class="td-mono">${escHtml(c.matricula||'—')}</td>
@@ -22831,7 +22898,7 @@ async function abrirConsultaColab(id) {
 
   const stTag = c.status==='ativo' ? '<span style="color:#22c55e;font-weight:600;font-size:11px">✓ Ativo</span>'
     : c.status==='ferias' ? '<span style="color:#f59e0b;font-weight:600;font-size:11px"><svg class=ic aria-hidden=true><use href=#i-tree-palm></use></svg> Férias</span>'
-    : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>';
+    : (c.status==='em_desligamento' ? '<span style="color:var(--red);font-weight:600;font-size:11px">Em desligamento</span>' : c.status==='desligado' ? '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Desligado</span>' : '<span style="color:var(--text-3);font-weight:600;font-size:11px">✕ Inativo</span>');
   document.getElementById('ccStatus').innerHTML = stTag;
 
   // KPIs
@@ -23820,7 +23887,7 @@ async function carregarDescontos() {
   const lista = data?.data || [];
   _descData = lista;
   tbody.innerHTML = lista.length ? lista.map(d=>`<tr>
-    <td class="td-main">${escHtml(d.colaborador_nome||'—')}</td>
+    <td class="td-main">${escHtml(d.colaborador_nome||'—')}${d.desligamento_id ? ' <span style="font-size:10px;font-weight:600;color:var(--red)">· desligamento</span>' : ''}${d.sem_assinatura ? ' <span style="font-size:10px;font-weight:600;color:#f59e0b">· sem assinatura</span>' : ''}${d.status === 'Cancelado' ? ' <span style="font-size:10px;font-weight:600;color:var(--text-3)">· cancelado</span>' : ''}</td>
     <td style="font-size:11px;font-weight:600;color:#22c55e">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
     <td style="font-size:11px;text-align:center">${d.parcelas||1}x</td>
     <td style="font-size:11px;color:var(--text-3)">${d.cidade||'—'}</td>
@@ -23839,9 +23906,19 @@ async function excluirDesconto(id, nome) {
     toast('Erro ao excluir: ' + (res?.erro||'?'), 'error');
   }
 }
-function verDesconto(id) {
+async function verDesconto(id) {
   var d = (_descData||[]).find(function(x){return x.id===id;});
   if (!d) { toast('Desconto não encontrado','error'); return; }
+  // Desconto do desligamento (12/11/2026): a assinatura do colaborador é a mesma do termo
+  var assinaturaHtml = '';
+  if (d.desligamento_id) {
+    if (d.sem_assinatura) {
+      assinaturaHtml = '<div style="border:1px solid #b45309;padding:6px 8px;font-size:11px;margin:0 0 6px;max-width:420px">' + escHtml(d.observacao_assinatura || 'O colaborador não assinou.') + '</div>';
+    } else {
+      var rd = await api('/desligamentos/' + encodeURIComponent(d.desligamento_id));
+      if (rd && rd.ok && rd.data && rd.data.assinatura) assinaturaHtml = '<img src="' + rd.data.assinatura + '" alt="" style="max-width:240px;max-height:90px;display:block;margin:0 0 -4px 10px">';
+    }
+  }
 
   var itens = [];
   try { itens = JSON.parse(d.itens||'[]'); } catch(e) {}
@@ -23933,7 +24010,7 @@ function verDesconto(id) {
     + '► Parágrafo único transformando em § 1º pelo Dec. lei nº 229, de 28.2-1967.</div>'
     + '<p style="margin:10px 0;font-size:12px">Declaro total ciência deste desconto.</p>'
     + '<p style="text-align:right;margin-right:28px;margin-top:14px;font-size:12px">'+escHtml(cid)+' '+diaNum+' de <strong>'+mesExt+'</strong> de <strong>'+anoNum+'</strong></p>'
-    + '<div style="margin-top:48px">'
+    + '<div style="margin-top:' + (assinaturaHtml ? '14px' : '48px') + '">' + assinaturaHtml
     + '<div style="width:260px;border-top:2px solid #000;padding-top:8px">'
     + '<p style="font-size:13px"><strong>NOME: '+escHtml(nome)+'</strong></p>'
     + '<p style="font-size:13px;margin-top:4px"><strong>MATRÍCULA: '+escHtml(matr)+'</strong></p>'
@@ -35510,6 +35587,496 @@ async function imprimirFichaSeparacao(atendimentoId, colabId, itens, linkConfirm
 // ═══════════════════════════════════════════
 // PDF 3 — TERMO DE DESLIGAMENTO
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// DESLIGAMENTOS (12/11/2026, item 7 parte 3)
+// ═══════════════════════════════════════════
+// Painel do almoxarifado: desligamentos comunicados pelo portal (supervisor) ou feitos aqui,
+// quando o colaborador vem ao armazém. O material fica com o supervisor até a entrega; aqui se
+// confere item a item (estoque, laudo ou descarte) e se finaliza: a ficha dá baixa, os seriais
+// saem do nome dele e ele fica "Desligado". O desconto do que não voltou já entrou pronto no
+// módulo Descontos (à vista na rescisão). Regras no servidor: services/desligamento.js.
+const DSL_SIT = { AGUARDANDO_MATERIAL: ['Aguardando o material', '#f59e0b'], FINALIZANDO: ['Finalizando', '#f59e0b'], FINALIZADO: ['Finalizado', '#22c55e'], CANCELADO: ['Cancelado', '#ef4444'] };
+const DSL_ESTADOS = { BOM: 'Bom', DESGASTADO: 'Desgastado', DANIFICADO: 'Danificado' };
+const DSL_MOTIVOS = { PERDIDO: 'Perdido', EXTRAVIADO: 'Extraviado', NAO_TROUXE: 'Não trouxe', DANIFICADO: 'Danificado (não devolvido)', OUTRO: 'Outro' };
+const DSL_DESTINOS = { ESTOQUE: 'Estoque', RECUPERACAO: 'Laudo / recuperação', INUTILIZADO: 'Descarte' };
+const dslIc = (n) => `<svg class=ic aria-hidden=true><use href=#i-${n}></use></svg>`;
+const dslMoeda = (v) => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dslData = (d) => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '—';
+const dslQtd = (n) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 3 });
+let _dslAba = 'ABERTOS', _dslLista = [], _dslAtual = null;
+
+function dslSituacaoTag(s) {
+  const [txt, cor] = DSL_SIT[s] || [s || '—', 'var(--text-3)'];
+  return `<span style="font-size:11px;font-weight:600;color:${cor}">${escHtml(txt)}</span>`;
+}
+function dslOrigem(it) {
+  return it.origem === 'DOTACAO' ? '<span class="dsl-tag dot">Dotação · sem registro de entrega</span>'
+    : it.fora_dotacao ? '<span class="dsl-tag fora">Ficha · fora da dotação</span>' : '<span class="dsl-tag ficha">Ficha</span>';
+}
+
+async function dslCarregar() {
+  const tbody = document.getElementById('dslBody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
+  const r = await api('/desligamentos?situacao=' + _dslAba);
+  if (!r?.ok) { tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-title">${escHtml(r?.erro || 'Não foi possível carregar.')}</div></div></td></tr>`; return; }
+  _dslLista = r.data || [];
+  tbody.innerHTML = _dslLista.length ? _dslLista.map(d => `<tr data-dsl-id="${escHtml(d.id)}">
+    <td class="td-main">${escHtml(d.colaborador_nome || '—')}<div style="font-size:10px;font-weight:400;color:var(--text-3)">${escHtml(d.matricula || '—')} · ${escHtml(d.funcao || '—')}</div></td>
+    <td style="font-size:12px">${dslData(d.data_desligamento)}</td>
+    <td style="font-size:11px">${escHtml(d.solicitante_nome || '—')}<div style="font-size:10px;color:var(--text-3)">${d.origem === 'GCA' ? 'no GCA' : 'pelo portal'} · entrega em ${escHtml(d.nome_armazem || '—')}</div></td>
+    <td style="font-size:11px">${d.a_devolver} a devolver${d.nao_devolvidos ? ` · <span style="color:var(--red)">${d.nao_devolvidos} não devolvido${d.nao_devolvidos > 1 ? 's' : ''}</span>` : ''}${(d.divergencias || []).length ? ` · <span style="color:#f59e0b">${d.divergencias.length} divergência${d.divergencias.length > 1 ? 's' : ''}</span>` : ''}</td>
+    <td style="font-size:12px;font-weight:600;color:${Number(d.valor_desconto) > 0 ? 'var(--red)' : 'var(--text-3)'}">${Number(d.valor_desconto) > 0 ? dslMoeda(d.valor_desconto) : '—'}${d.sem_assinatura ? '<div style="font-size:10px;font-weight:400;color:#f59e0b">sem assinatura</div>' : ''}${d.sem_preco ? `<div style="font-size:10px;font-weight:400;color:#f59e0b">${d.sem_preco} sem preço</div>` : ''}</td>
+    <td>${dslSituacaoTag(d.situacao)}</td>
+    <td><button class="row-action" onclick="dslAbrir('${escJs(d.id)}')">${['AGUARDANDO_MATERIAL', 'FINALIZANDO'].includes(d.situacao) ? 'Conferir' : 'Ver'}</button></td>
+  </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state" style="padding:16px"><div class="es-icon">${dslIc('user-x')}</div><div class="es-title">${_dslAba === 'ABERTOS' ? 'Nenhum desligamento em aberto' : 'Nada por aqui'}</div><div class="es-sub">${_dslAba === 'ABERTOS' ? 'O supervisor comunica pelo portal (marca "Pode comunicar desligamento" no login) ou você faz aqui, em "Novo desligamento".' : ''}</div></div></td></tr>`;
+}
+function dslMudarAba(aba) {
+  _dslAba = aba;
+  document.querySelectorAll('#view-desligamentos .dsl-aba').forEach(b => {
+    const on = b.dataset.aba === aba;
+    b.classList.toggle('btn-primary', on); b.classList.toggle('btn-ghost', !on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  dslCarregar();
+}
+
+// ── Detalhe e conferência do material ──
+async function dslAbrir(id) {
+  const r = await api('/desligamentos/' + encodeURIComponent(id));
+  if (!r?.ok) { toast(r?.erro || 'Não foi possível abrir o desligamento.', 'error'); return; }
+  _dslAtual = { ...r.data, _fotos: r.fotos || {} };
+  if (!_armazens.length) await carregarArmazens();
+  dslRenderDetalhe();
+}
+function dslErro(id, txt) { const e = document.getElementById(id); if (!e) return; e.textContent = txt || ''; e.classList.toggle('hidden', !txt); }
+
+function dslLinhaDevolvido(it, editar) {
+  const fotos = (it.fotos || []).map(c => _dslAtual._fotos[c]).filter(Boolean);
+  const padrao = it.destino || (it.estado === 'BOM' ? 'ESTOQUE' : '');
+  return `<div class="dsl-item"${editar ? ` data-chave="${escHtml(it.chave)}"` : ''}>
+    <div class="dsl-item-top">
+      <div style="min-width:0;flex:1"><div style="font-weight:600;font-size:12px">${escHtml(it.descricao)}</div>
+        <div style="font-size:11px;color:var(--text-3)">${dslOrigem(it)} · devolveu ${dslQtd(it.qtd_devolvida)} de ${dslQtd(it.qtd)} · estado ${escHtml(DSL_ESTADOS[it.estado] || '—')}${(it.seriais_devolvidos || []).length ? ` · seriais ${escHtml(it.seriais_devolvidos.join(', '))}` : ''}</div></div>
+      ${fotos.length ? `<div class="dsl-fotos">${fotos.map((u, i) => `<a href="${escHtml(u)}" target="_blank" rel="noopener"><img src="${escHtml(u)}" alt="Foto ${i + 1} de ${escHtml(it.descricao)}"></a>`).join('')}</div>` : ''}
+    </div>
+    ${editar ? `<div class="dsl-campos">
+      <label>Recebido <input type="number" class="form-input dsl-rec" min="0" max="${it.qtd_devolvida}" step="any" value="${it.qtd_devolvida}" aria-label="Quantidade recebida de ${escHtml(it.descricao)}"></label>
+      <label>Destino <select class="form-input dsl-dest" aria-label="Destino de ${escHtml(it.descricao)}"><option value="">Escolha...</option>${Object.entries(DSL_DESTINOS).map(([v, t]) => `<option value="${v}"${v === padrao ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      ${(it.seriais || []).length ? `<div class="dsl-seriais">Seriais que chegaram: ${it.seriais.map(s => `<label><input type="checkbox" class="dsl-ser" value="${escHtml(s)}"${(it.seriais_devolvidos || []).includes(s) ? ' checked' : ''}> ${escHtml(s)}</label>`).join(' ')}</div>` : ''}
+    </div>` : (it.recebido !== undefined ? `<div style="font-size:11px;color:var(--text-2);margin-top:4px">Recebido ${dslQtd(it.recebido)}${it.destino ? ' → ' + escHtml(DSL_DESTINOS[it.destino] || it.destino) : ''}${it.divergencia > 0 ? ` · <b style="color:#f59e0b">faltou ${dslQtd(it.divergencia)} (fica com o supervisor)</b>` : ''}</div>` : '')}
+  </div>`;
+}
+function dslLinhaNaoDevolvido(it) {
+  return `<div class="dsl-item"><div class="dsl-item-top">
+    <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:12px">${escHtml(it.descricao)}</div>
+      <div style="font-size:11px;color:var(--text-3)">${dslOrigem(it)} · faltou ${dslQtd(it.falta)} de ${dslQtd(it.qtd)} · ${escHtml(DSL_MOTIVOS[it.motivo] || it.motivo || '—')}${it.motivo_texto ? ` — ${escHtml(it.motivo_texto)}` : ''}</div></div>
+    <div style="text-align:right;font-size:12px;font-weight:600;color:${it.isento ? 'var(--text-3)' : 'var(--red)'}">${it.isento ? 'sem desconto' : it.sem_preco ? '<span style="color:#f59e0b">sem preço no cadastro</span>' : dslMoeda(it.valor_desconto)}${it.isento ? `<div style="font-size:10px;font-weight:400;max-width:220px">${escHtml(it.justificativa || '')}</div>` : ''}</div>
+  </div></div>`;
+}
+
+function dslRenderDetalhe() {
+  const d = _dslAtual;
+  const conferir = d.situacao === 'AGUARDANDO_MATERIAL';
+  const itens = d.itens || [];
+  const devolvidos = itens.filter(i => i.qtd_devolvida > 0);
+  const naoDev = itens.filter(i => i.falta > 0);
+  document.getElementById('modalDsl')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay'; m.id = 'modalDsl';
+  m.innerHTML = `<div class="modal-box" style="max-width:920px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dslTitulo">
+    <div class="modal-header">
+      <div style="min-width:0"><div class="modal-title" id="dslTitulo">${dslIc('user-x')} Desligamento · ${escHtml(d.colaborador_nome || '—')}</div>
+        <div style="font-size:11px;color:var(--text-3)">${escHtml(d.matricula || '—')} · ${escHtml(d.funcao || '—')} · desligamento em ${dslData(d.data_desligamento)} · ${d.origem === 'GCA' ? 'feito no GCA' : 'comunicado pelo portal'} por ${escHtml(d.solicitante_nome || '—')} · ${dslSituacaoTag(d.situacao)}</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalDsl').remove()" aria-label="Fechar">×</button>
+    </div>
+    <div class="modal-body" style="display:grid;gap:14px">
+      ${d.situacao === 'CANCELADO' ? `<div class="dsl-aviso">Cancelado por ${escHtml(d.cancelado_por || '—')}: ${escHtml(d.motivo_cancelamento || '')}</div>` : ''}
+      ${d.situacao === 'FINALIZANDO' ? `<div class="dsl-aviso">A finalização parou no meio. Clique em "Finalizar desligamento" para concluir com o que já foi conferido.</div>` : ''}
+      <section><div class="dsl-sec">${dslIc('package-check')} Devolvido (${devolvidos.length})${conferir ? ` · confira o que chegou e escolha o destino` : ''}</div>
+        ${devolvidos.length ? devolvidos.map(it => dslLinhaDevolvido(it, conferir)).join('') : '<div class="dsl-vazio">Nada para devolver.</div>'}</section>
+      <section><div class="dsl-sec">${dslIc('triangle-alert')} Não devolvido (${naoDev.length})${Number(d.valor_desconto) > 0 ? ` · desconto de ${dslMoeda(d.valor_desconto)}, à vista na rescisão` : ''}</div>
+        ${naoDev.length ? naoDev.map(dslLinhaNaoDevolvido).join('') : '<div class="dsl-vazio">Tudo devolvido.</div>'}</section>
+      ${(d.divergencias || []).length ? `<section><div class="dsl-sec" style="color:#f59e0b">${dslIc('triangle-alert')} Divergências (ficam com o supervisor, sem desconto para o colaborador)</div>
+        ${d.divergencias.map(v => `<div class="dsl-item" style="font-size:12px">${escHtml(v.descricao)}: marcado ${dslQtd(v.declarado)}, chegou ${dslQtd(v.recebido)} · faltou ${dslQtd(v.falta)}</div>`).join('')}</section>` : ''}
+      <section><div class="dsl-sec">${dslIc('signature')} Assinatura do colaborador</div>
+        ${d.sem_assinatura ? `<div class="dsl-aviso">Não assinou. Justificativa: ${escHtml(d.justificativa_sem_assinatura || '—')}<br>Testemunha: ${escHtml(d.testemunha_nome || '—')} (matrícula ${escHtml(d.testemunha_matricula || '—')})</div>`
+          : d.assinatura ? `<img src="${d.assinatura}" alt="Assinatura de ${escHtml(d.colaborador_nome || '')}" class="dsl-ass-img">` : '<div class="dsl-vazio">—</div>'}
+        ${d.obs ? `<div style="font-size:11px;color:var(--text-3);margin-top:6px">Observação: ${escHtml(d.obs)}</div>` : ''}</section>
+      ${conferir ? `<div class="form-group" style="margin:0;max-width:380px"><label class="form-label" for="dslArmRec">Armazém que está recebendo *</label>
+        <select id="dslArmRec" class="form-input">${(_armazens || []).map(a => `<option value="${escHtml(a.id)}"${a.id === d.armazem_id ? ' selected' : ''}>${escHtml(a.nome)}</option>`).join('')}</select></div>` : ''}
+      ${d.situacao === 'FINALIZADO' ? `<div style="font-size:11px;color:var(--text-3)">Material conferido em ${escHtml(d.nome_armazem_recebimento || '—')} por ${escHtml(d.finalizado_por || '—')} em ${d.finalizado_em ? new Date(d.finalizado_em).toLocaleString('pt-BR') : '—'}.</div>` : ''}
+      <div id="dslErro" class="dsl-erro hidden" role="alert"></div>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap">
+      <button class="btn btn-ghost" onclick="dslTermoPDF()">${dslIc('file-text')} Termo (PDF)</button>
+      ${d.desconto_id ? `<button class="btn btn-ghost" onclick="dslVerDesconto('${escJs(d.desconto_id)}')">${dslIc('wallet')} Autorização de Descontos</button>` : ''}
+      ${d.situacao === 'AGUARDANDO_MATERIAL' ? `<button class="btn btn-ghost" style="color:var(--red);border-color:var(--red)" onclick="dslCancelar()">Cancelar desligamento</button>` : ''}
+      ${['AGUARDANDO_MATERIAL', 'FINALIZANDO'].includes(d.situacao) ? `<button class="btn btn-primary" id="dslBtnFinalizar" onclick="dslFinalizar()">${dslIc('check')} Finalizar desligamento</button>` : ''}
+      <button class="btn btn-ghost" onclick="document.getElementById('modalDsl').remove()">Fechar</button>
+    </div></div>`;
+  document.body.appendChild(m);
+}
+
+async function dslFinalizar() {
+  const d = _dslAtual;
+  if (!d) return;
+  const itens = [];
+  let armazem_id = '';
+  if (d.situacao === 'AGUARDANDO_MATERIAL') {
+    for (const el of document.querySelectorAll('#modalDsl .dsl-item[data-chave]')) {
+      const it = (d.itens || []).find(x => x.chave === el.dataset.chave);
+      if (!it) continue;
+      const rec = Number(el.querySelector('.dsl-rec')?.value);
+      if (!(rec >= 0 && rec <= it.qtd_devolvida)) return dslErro('dslErro', `${it.descricao}: o recebido vai de 0 a ${dslQtd(it.qtd_devolvida)}.`);
+      const destino = el.querySelector('.dsl-dest')?.value || '';
+      if (rec > 0 && !destino) return dslErro('dslErro', `${it.descricao}: escolha o destino (estoque, laudo ou descarte).`);
+      itens.push({ chave: it.chave, recebido: rec, destino, seriais: [...el.querySelectorAll('.dsl-ser:checked')].map(c => c.value) });
+    }
+    armazem_id = document.getElementById('dslArmRec')?.value || '';
+    if (!armazem_id) return dslErro('dslErro', 'Escolha o armazém que está recebendo.');
+    const faltou = itens.filter(i => i.recebido < ((d.itens || []).find(x => x.chave === i.chave)?.qtd_devolvida || 0));
+    if (faltou.length && !confirm(`${faltou.length} ${faltou.length === 1 ? 'item chegou' : 'itens chegaram'} com menos do que foi marcado como devolvido.\n\nA diferença fica como divergência do supervisor (sem desconto para o colaborador). Finalizar assim?`)) return;
+  }
+  if (!confirm(`Finalizar o desligamento de ${d.colaborador_nome}?\n\nO material conferido vai para o destino escolhido, a ficha dá baixa, os seriais saem do nome dele e ele fica "Desligado".`)) return;
+  dslErro('dslErro', '');
+  const r = await api(`/desligamentos/${encodeURIComponent(d.id)}/finalizar`, { method: 'POST', body: JSON.stringify({ armazem_id, itens }) });
+  if (!r?.ok) return dslErro('dslErro', r?.erro || 'Não foi possível finalizar.');
+  toast(`Desligamento finalizado${r.divergencias?.length ? ` com ${r.divergencias.length} divergência(s)` : ''}.`, 'success');
+  const c = (_colaboradores || []).find(x => x.id === d.colaborador_id);
+  if (c) c.status = 'desligado';
+  await dslAbrir(d.id);
+  dslCarregar();
+}
+
+async function dslCancelar() {
+  const d = _dslAtual;
+  if (!d) return;
+  const motivo = prompt(`Cancelar o desligamento de ${d.colaborador_nome}?\n\nEle volta a ficar ativo e o desconto gerado fica como "Cancelado". Escreva o motivo:`);
+  if (motivo === null) return;
+  if (String(motivo).trim().length < 5) { toast('Escreva o motivo do cancelamento.', 'warn'); return; }
+  const r = await api(`/desligamentos/${encodeURIComponent(d.id)}/cancelar`, { method: 'POST', body: JSON.stringify({ motivo }) });
+  if (!r?.ok) return dslErro('dslErro', r?.erro || 'Não foi possível cancelar.');
+  toast('Desligamento cancelado.', 'success');
+  const c = (_colaboradores || []).find(x => x.id === d.colaborador_id);
+  if (c) c.status = 'ativo';
+  await dslAbrir(d.id);
+  dslCarregar();
+}
+
+async function dslVerDesconto(id) {
+  if (!(_descData || []).some(x => x.id === id)) {
+    const r = await api('/descontos');
+    if (!r?.ok) { toast(r?.erro || 'Sem acesso ao módulo Descontos.', 'warn'); return; }
+    _descData = r.data || [];
+  }
+  verDesconto(id);
+}
+
+// ── Termo de devolução no desligamento (PDF) ──
+function dslTermoPDF() {
+  const d = _dslAtual;
+  if (!d) return;
+  const itens = d.itens || [];
+  const finalizado = d.situacao === 'FINALIZADO';
+  const linhas = itens.map(it => `<tr>
+    <td>${escHtml(it.descricao)}<div style="font-size:9px;color:#6b7280">${it.origem === 'DOTACAO' ? 'Dotação (sem registro de entrega)' : it.fora_dotacao ? 'Ficha (fora da dotação)' : 'Ficha'}${(it.seriais_devolvidos || []).length ? ' · seriais ' + escHtml(it.seriais_devolvidos.join(', ')) : ''}</div></td>
+    <td style="text-align:center">${dslQtd(it.qtd)}</td>
+    <td style="text-align:center">${dslQtd(it.qtd_devolvida)}${it.qtd_devolvida > 0 ? `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_ESTADOS[it.estado] || '')}</div>` : ''}</td>
+    ${finalizado ? `<td style="text-align:center">${it.recebido !== undefined ? dslQtd(it.recebido) + (it.destino ? `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_DESTINOS[it.destino] || '')}</div>` : '') : '—'}</td>` : ''}
+    <td style="text-align:center">${it.falta > 0 ? dslQtd(it.falta) + `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_MOTIVOS[it.motivo] || '')}</div>` : '—'}</td>
+    <td style="text-align:right">${it.falta > 0 ? (it.isento ? 'Isento' : it.sem_preco ? 'sem preço' : dslMoeda(it.valor_desconto)) : '—'}</td>
+  </tr>`).join('');
+  const fotos = itens.flatMap(it => (it.fotos || []).map(c => ({ url: _dslAtual._fotos[c], nome: it.descricao }))).filter(f => f.url);
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <title>Termo de devolução no desligamento — ${escHtml(d.colaborador_nome || '')}</title>
+  <style>${CSS_PDF_BASE}
+    .fotos{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+    .fotos figure{margin:0;border:1px solid #e5e7eb;border-radius:6px;padding:4px;break-inside:avoid}
+    .fotos img{width:100%;height:120px;object-fit:cover;border-radius:4px}
+    .fotos figcaption{font-size:9px;color:#374151;margin-top:3px}
+    .ass{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:30px;break-inside:avoid}
+    .ass img{max-width:260px;max-height:110px;display:block;margin:0 auto -6px}
+    .ass .linha{border-top:1px solid #111;padding-top:6px;text-align:center;font-size:11px}
+    .aviso{border:1px solid #f59e0b;background:#fffbeb;border-radius:6px;padding:8px 10px;font-size:11px;margin-top:10px}
+  </style></head><body>
+  <h1 style="color:#1e3a8a">Termo de devolução no desligamento</h1>
+  <p style="color:#6b7280;font-size:12px;margin:4px 0 16px">${escHtml(d.id)} · ${dslSituacaoTexto(d.situacao)} · emitido em ${new Date().toLocaleString('pt-BR')}</p>
+  <div class="grid3">
+    <div class="card"><div class="lbl">Colaborador</div><div class="val">${escHtml(d.colaborador_nome || '—')}</div></div>
+    <div class="card"><div class="lbl">Matrícula</div><div class="val">${escHtml(d.matricula || '—')}</div></div>
+    <div class="card"><div class="lbl">Função</div><div class="val">${escHtml(d.funcao || '—')}</div></div>
+    <div class="card"><div class="lbl">Data do desligamento</div><div class="val">${dslData(d.data_desligamento)}</div></div>
+    <div class="card"><div class="lbl">Registrado por</div><div class="val">${escHtml(d.solicitante_nome || '—')} (${d.origem === 'GCA' ? 'GCA' : 'portal'})</div></div>
+    <div class="card"><div class="lbl">Entrega do material</div><div class="val">${escHtml(finalizado ? (d.nome_armazem_recebimento || d.nome_armazem || '—') : (d.nome_armazem || '—'))}</div></div>
+  </div>
+  <table>
+    <thead><tr><th>Item</th><th style="text-align:center">Esperado</th><th style="text-align:center">Devolvido</th>${finalizado ? '<th style="text-align:center">Recebido</th>' : ''}<th style="text-align:center">Não devolvido</th><th style="text-align:right">Desconto</th></tr></thead>
+    <tbody>${linhas || `<tr><td colspan="${finalizado ? 6 : 5}">Nenhum material.</td></tr>`}</tbody>
+  </table>
+  <p style="font-size:12px;margin-top:10px"><b>Desconto total: ${dslMoeda(d.valor_desconto)}</b>${Number(d.valor_desconto) > 0 ? ' — à vista, na rescisão (Autorização de Descontos).' : ''}</p>
+  ${(d.divergencias || []).length ? `<div class="aviso"><b>Divergências</b> (marcado como devolvido e não entregue; responsabilidade de quem registrou, sem desconto para o colaborador): ${d.divergencias.map(v => `${escHtml(v.descricao)} — faltou ${dslQtd(v.falta)}`).join('; ')}</div>` : ''}
+  ${!finalizado && d.situacao !== 'CANCELADO' ? '<div class="aviso">Material ainda não entregue no armazém.</div>' : ''}
+  ${fotos.length ? `<h3 style="font-size:13px;margin-top:18px">Fotos do material devolvido</h3><div class="fotos">${fotos.map(f => `<figure><img src="${escHtml(f.url)}" alt=""><figcaption>${escHtml(f.nome)}</figcaption></figure>`).join('')}</div>` : ''}
+  <div class="ass">
+    <div>${d.sem_assinatura ? '' : (d.assinatura ? `<img src="${d.assinatura}" alt="">` : '')}
+      <div class="linha">${escHtml(d.colaborador_nome || '')}<br>Matrícula ${escHtml(d.matricula || '—')}</div>
+      ${d.sem_assinatura ? `<div class="aviso">O colaborador não assinou. Justificativa: ${escHtml(d.justificativa_sem_assinatura || '—')}. Testemunha: ${escHtml(d.testemunha_nome || '—')} (matrícula ${escHtml(d.testemunha_matricula || '—')}).</div>` : ''}</div>
+    <div><div style="height:104px"></div><div class="linha">${escHtml(finalizado ? (d.finalizado_por || '') : '')}<br>Almoxarifado${finalizado && d.finalizado_em ? ' · ' + new Date(d.finalizado_em).toLocaleDateString('pt-BR') : ''}</div></div>
+  </div>
+  <div class="rodape">Documento gerado pelo Sistema GCA</div>
+  </body></html>`;
+  abrirJanelaPDF(html);
+}
+const dslSituacaoTexto = (s) => (DSL_SIT[s] || [s || '—'])[0];
+
+// ── Assinatura na tela (dedo, caneta ou mouse) ──
+function dslAssinatura(canvas) {
+  const ctx = canvas.getContext('2d');
+  let desenhando = false, tracos = 0, ultimo = null;
+  const preparar = () => {
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(r.width * dpr)); canvas.height = Math.max(1, Math.round(r.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#111'; ctx.fillStyle = '#111';
+    tracos = 0;
+  };
+  const pos = (e) => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  canvas.addEventListener('pointerdown', e => { e.preventDefault(); canvas.setPointerCapture?.(e.pointerId); desenhando = true; ultimo = pos(e); ctx.beginPath(); ctx.arc(ultimo.x, ultimo.y, 1.1, 0, Math.PI * 2); ctx.fill(); });
+  canvas.addEventListener('pointermove', e => { if (!desenhando) return; e.preventDefault(); const p = pos(e); ctx.beginPath(); ctx.moveTo(ultimo.x, ultimo.y); ctx.lineTo(p.x, p.y); ctx.stroke(); ultimo = p; tracos++; });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev => canvas.addEventListener(ev, () => { desenhando = false; }));
+  preparar();
+  return { limpar: preparar, vazio: () => tracos < 5, dataUrl: () => canvas.toDataURL('image/png') };
+}
+
+// Foto: reduz para até 1280 px (JPEG) antes de enviar e guarda uma miniatura para a tela
+function dslComprimirFoto(arquivo, max = 1280) {
+  return new Promise((ok, falha) => {
+    const url = URL.createObjectURL(arquivo);
+    const img = new Image();
+    img.onload = () => {
+      const esc = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      const m = document.createElement('canvas'); const e2 = Math.min(1, 160 / Math.max(c.width, c.height));
+      m.width = Math.round(c.width * e2); m.height = Math.round(c.height * e2); m.getContext('2d').drawImage(c, 0, 0, m.width, m.height);
+      URL.revokeObjectURL(url);
+      ok({ dataUrl: c.toDataURL('image/jpeg', 0.8), thumb: m.toDataURL('image/jpeg', 0.7) });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('Não foi possível ler a foto.')); };
+    img.src = url;
+  });
+}
+
+// ── Novo desligamento feito no GCA (o colaborador está no armazém) ──
+let _dn = null;   // { chave, colab, data, armazem_id, material, resp, ass }
+function dslNovo(colabId) {
+  if (!temPermissao('desligamentos')) { toast('Você não tem a permissão de desligamentos.', 'warn'); return; }
+  if (!_colaboradores.length) carregarColaboradoresAtendimento();
+  _dn = { chave: 'dsg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8), colab: null, material: null, resp: {}, ass: null };
+  document.getElementById('modalDslNovo')?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay'; m.id = 'modalDslNovo';
+  m.innerHTML = `<div class="modal-box" style="max-width:880px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dnTitulo">
+    <div class="modal-header"><div><div class="modal-title" id="dnTitulo">${dslIc('user-x')} Novo desligamento</div>
+      <div style="font-size:11px;color:var(--text-3)">O colaborador está no armazém: registre o que ele devolve (com foto) e o que não devolve, ele assina aqui e você confere em seguida.</div></div>
+      <button class="modal-close" onclick="dslNovoFechar()" aria-label="Fechar">×</button></div>
+    <div class="modal-body" id="dnCorpo" style="display:grid;gap:12px"></div>
+    <div class="modal-footer" id="dnRodape" style="flex-wrap:wrap"></div></div>`;
+  document.body.appendChild(m);
+  dnPasso1(colabId);
+}
+function dslNovoFechar() {
+  if (_dn?.material && !confirm('Fechar sem registrar o desligamento?')) return;
+  document.getElementById('modalDslNovo')?.remove();
+  _dn = null;
+}
+async function dnPasso1(colabId) {
+  if (!_armazens.length) await carregarArmazens();
+  document.getElementById('dnCorpo').innerHTML = `
+    <div class="form-group" style="margin:0"><label class="form-label" for="dnColabBusca">Colaborador *</label>
+      <input id="dnColabBusca" class="form-input" placeholder="Nome ou matrícula..." autocomplete="off" oninput="dnFiltrarColab()">
+      <div id="dnColabLista" style="display:flex;flex-direction:column;gap:4px;margin-top:6px"></div>
+      <div id="dnColabSel" style="font-size:12px;margin-top:6px"></div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+      <div class="form-group" style="margin:0"><label class="form-label" for="dnData">Data do desligamento *</label><input id="dnData" type="date" class="form-input" value="${hojeBR()}"></div>
+      <div class="form-group" style="margin:0"><label class="form-label" for="dnArmazem">Armazém *</label><select id="dnArmazem" class="form-input">${(_armazens || []).map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('')}</select></div>
+    </div>
+    <div id="dnErro1" class="dsl-erro hidden" role="alert"></div>`;
+  document.getElementById('dnRodape').innerHTML = `<button class="btn btn-ghost" onclick="dslNovoFechar()">Cancelar</button>
+    <button class="btn btn-primary" id="dnBtnMaterial" onclick="dnVerMaterial()">${dslIc('package')} Ver o material</button>`;
+  if (colabId) dnEscolherColab(colabId);
+}
+function dnFiltrarColab() {
+  const q = document.getElementById('dnColabBusca').value.trim().toLowerCase();
+  const lista = document.getElementById('dnColabLista');
+  if (q.length < 2) { lista.innerHTML = ''; return; }
+  const achados = (_colaboradores || []).filter(c => ['ativo', 'ferias'].includes(c.status || 'ativo')
+    && ((c.nome || '').toLowerCase().includes(q) || String(c.matricula || '').toLowerCase().includes(q))).slice(0, 8);
+  lista.innerHTML = achados.length ? achados.map(c => `<button type="button" class="dsl-colab" onclick="dnEscolherColab('${escJs(c.id)}')"><b>${escHtml(c.nome)}</b> <span style="color:var(--text-3)">· ${escHtml(c.matricula || '—')} · ${escHtml(c.funcao || '—')}</span></button>`).join('')
+    : '<div style="font-size:12px;color:var(--text-3)">Ninguém ativo com esse nome ou matrícula.</div>';
+}
+function dnEscolherColab(id) {
+  const c = (_colaboradores || []).find(x => x.id === id);
+  if (!c) return;
+  _dn.colab = c;
+  document.getElementById('dnColabLista').innerHTML = '';
+  document.getElementById('dnColabBusca').value = c.nome;
+  document.getElementById('dnColabSel').innerHTML = `${dslIc('user')} <b>${escHtml(c.nome)}</b> · ${escHtml(c.matricula || '—')} · ${escHtml(c.funcao || '—')}`;
+}
+async function dnVerMaterial() {
+  if (!_dn.colab) return dslErro('dnErro1', 'Escolha o colaborador na lista.');
+  _dn.data = document.getElementById('dnData').value;
+  _dn.armazem_id = document.getElementById('dnArmazem').value;
+  if (!_dn.data) return dslErro('dnErro1', 'Informe a data do desligamento.');
+  if (!_dn.armazem_id) return dslErro('dnErro1', 'Escolha o armazém.');
+  const r = await api('/desligamentos/material/' + encodeURIComponent(_dn.colab.id));
+  if (!r?.ok) return dslErro('dnErro1', r?.erro || 'Não foi possível carregar o material.');
+  _dn.material = r;
+  _dn.resp = {};
+  (r.itens || []).forEach(m => { _dn.resp[m.chave] = { situacao: '', qtd_devolvida: '', estado: '', seriais: [...(m.seriais || [])], fotos: [], motivo: '', motivo_texto: '', isentar: false, justificativa: '' }; });
+  dnPasso2();
+}
+function dnValor(m, r) {
+  if (!r?.situacao) return { falta: 0, valor: 0 };   // ainda sem resposta: não entra na conta
+  const dev = r.situacao === 'SIM' ? m.qtd : r.situacao === 'NAO' ? 0 : Number(r.qtd_devolvida) || 0;
+  const falta = Math.max(0, m.qtd - dev);
+  return { falta, valor: falta > 0 && !r.isentar ? falta * (m.valor_un || 0) : 0 };
+}
+function dnItemHtml(m) {
+  const r = _dn.resp[m.chave], k = escJs(m.chave);
+  const dev = r.situacao === 'SIM' || r.situacao === 'PARTE', nao = r.situacao === 'PARTE' || r.situacao === 'NAO';
+  const v = dnValor(m, r);
+  return `<div class="dsl-item" data-dn="${escHtml(m.chave)}">
+    <div style="font-weight:600;font-size:12px">${escHtml(m.descricao)}</div>
+    <div style="font-size:11px;color:var(--text-3);margin-bottom:6px">${dslOrigem(m)} · ${dslQtd(m.qtd)} ${escHtml(m.un_med || 'UN')} · ${m.valor_un > 0 ? dslMoeda(m.valor_un) + ' cada' : 'sem preço no cadastro'}${(m.seriais || []).length ? ' · seriais ' + escHtml(m.seriais.join(', ')) : ''}</div>
+    <div class="dsl-seg" role="group" aria-label="${escHtml(m.descricao)} foi devolvido?">
+      ${[['SIM', 'Devolveu'], ['PARTE', 'Parte'], ['NAO', 'Não devolveu']].filter(([s]) => s !== 'PARTE' || m.qtd > 1).map(([s, t]) => `<button type="button" class="${r.situacao === s ? 'on' : ''}" aria-pressed="${r.situacao === s}" onclick="dnCampo('${k}','situacao','${s}',true)">${t}</button>`).join('')}
+    </div>
+    ${dev ? `<div class="dsl-campos">
+      ${r.situacao === 'PARTE' ? `<label>Quantos devolveu * <input type="number" class="form-input" min="0" max="${m.qtd}" step="any" value="${escHtml(r.qtd_devolvida)}" oninput="dnCampo('${k}','qtd_devolvida',this.value)"></label>` : ''}
+      <label>Estado * <select class="form-input" onchange="dnCampo('${k}','estado',this.value)"><option value="">Escolha...</option>${Object.entries(DSL_ESTADOS).map(([s, t]) => `<option value="${s}"${r.estado === s ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      ${(m.seriais || []).length ? `<div class="dsl-seriais">Seriais devolvidos: ${m.seriais.map(s => `<label><input type="checkbox"${r.seriais.includes(s) ? ' checked' : ''} onchange="dnSerial('${k}','${escJs(s)}',this.checked)"> ${escHtml(s)}</label>`).join(' ')}</div>` : ''}
+      <div class="dsl-fotos-ed">${r.fotos.map((f, i) => `<span class="dsl-foto"><img src="${f.thumb}" alt="Foto ${i + 1} de ${escHtml(m.descricao)}"><button type="button" aria-label="Tirar a foto ${i + 1}" onclick="dnFotoTirar('${k}',${i})">${dslIc('x')}</button></span>`).join('')}
+        ${r.fotos.length < 5 ? `<label class="btn btn-ghost dsl-btn-foto" data-no-guard="1">${dslIc('camera')} ${r.fotos.length ? 'Mais uma foto' : 'Foto *'}<input type="file" accept="image/*" capture="environment" hidden onchange="dnFoto('${k}',this)"></label>` : ''}</div>
+    </div>` : ''}
+    ${nao ? `<div class="dsl-campos">
+      <label>Por que não devolveu * <select class="form-input" onchange="dnCampo('${k}','motivo',this.value,true)"><option value="">Escolha...</option>${Object.entries(DSL_MOTIVOS).map(([s, t]) => `<option value="${s}"${r.motivo === s ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      ${r.motivo === 'OUTRO' ? `<label>Qual motivo * <input class="form-input" maxlength="200" value="${escHtml(r.motivo_texto)}" oninput="dnCampo('${k}','motivo_texto',this.value)"></label>` : ''}
+      ${m.origem === 'DOTACAO' ? `<label class="dsl-check"><input type="checkbox"${r.isentar ? ' checked' : ''} onchange="dnCampo('${k}','isentar',this.checked,true)"> Tirar do desconto (não consta na ficha)</label>
+        ${r.isentar ? `<label>Justificativa * <input class="form-input" maxlength="300" value="${escHtml(r.justificativa)}" oninput="dnCampo('${k}','justificativa',this.value)"></label>` : ''}` : ''}
+      <div class="dsl-valor">${r.isentar ? 'Sem desconto' : m.valor_un > 0 ? `Desconto: <b>${dslMoeda(v.valor)}</b>` : '<span style="color:#f59e0b">Sem preço no cadastro do item</span>'}</div>
+    </div>` : ''}
+  </div>`;
+}
+function dnTotal() {
+  const itens = _dn.material?.itens || [];
+  let total = 0, n = 0;
+  itens.forEach(m => { const v = dnValor(m, _dn.resp[m.chave]); if (v.valor > 0) { total += v.valor; n++; } });
+  const el = document.getElementById('dnTotal');
+  if (el) el.innerHTML = total > 0 ? `${dslIc('triangle-alert')} Desconto na rescisão, à vista: <b>${dslMoeda(total)}</b> (${n} ${n === 1 ? 'item' : 'itens'})` : `${dslIc('circle-check')} Sem desconto até agora`;
+  if (el) el.classList.toggle('tem', total > 0);
+}
+function dnRedesenharItem(chave) {
+  const m = (_dn.material?.itens || []).find(x => x.chave === chave);
+  const el = document.querySelector(`#modalDslNovo [data-dn="${CSS.escape(chave)}"]`);
+  if (m && el) el.outerHTML = dnItemHtml(m);
+  dnTotal();
+}
+function dnCampo(chave, campo, valor, redesenhar) {
+  const r = _dn?.resp[chave];
+  if (!r) return;
+  r[campo] = valor;
+  if (campo === 'situacao' && valor === 'NAO') { r.fotos = []; r.estado = ''; }
+  if (redesenhar) dnRedesenharItem(chave);
+  else { if (campo === 'qtd_devolvida') { const m = (_dn.material?.itens || []).find(x => x.chave === chave); const box = document.querySelector(`#modalDslNovo [data-dn="${CSS.escape(chave)}"] .dsl-valor`); if (m && box && !r.isentar && m.valor_un > 0) box.innerHTML = `Desconto: <b>${dslMoeda(dnValor(m, r).valor)}</b>`; } dnTotal(); }
+}
+function dnSerial(chave, serial, marcado) {
+  const r = _dn?.resp[chave];
+  if (!r) return;
+  r.seriais = marcado ? [...new Set([...r.seriais, serial])] : r.seriais.filter(s => s !== serial);
+}
+async function dnFoto(chave, input) {
+  const arq = input.files?.[0];
+  input.value = '';
+  if (!arq || !_dn) return;
+  try {
+    toast('Enviando a foto...', 'info');
+    const f = await dslComprimirFoto(arq);
+    const r = await api('/desligamentos/foto', { method: 'POST', body: JSON.stringify({ chave_envio: _dn.chave, dataUrl: f.dataUrl }) });
+    if (!r?.ok) { toast(r?.erro || 'Não foi possível enviar a foto.', 'error'); return; }
+    _dn.resp[chave].fotos.push({ caminho: r.caminho, thumb: f.thumb });
+    dnRedesenharItem(chave);
+  } catch (e) { toast(e.message || 'Não foi possível ler a foto.', 'error'); }
+}
+function dnFotoTirar(chave, i) { _dn?.resp[chave]?.fotos.splice(i, 1); dnRedesenharItem(chave); }
+
+function dnPasso2() {
+  const mat = _dn.material, c = _dn.colab;
+  document.getElementById('dnCorpo').innerHTML = `
+    <div style="font-size:12px"><b>${escHtml(c.nome)}</b> · ${escHtml(c.matricula || '—')} · ${escHtml(c.funcao || '—')} · desligamento em ${dslData(_dn.data)}</div>
+    ${mat.sem_dotacao ? '<div class="dsl-aviso">A função dele não tem dotação cadastrada: aparece só o que está na ficha.</div>' : ''}
+    ${(mat.outra_filial || []).length ? `<div class="dsl-aviso">Itens entregues em outra filial (devolver lá): ${escHtml(mat.outra_filial.join(', '))}</div>` : ''}
+    <div>${(mat.itens || []).length ? mat.itens.map(dnItemHtml).join('') : '<div class="dsl-vazio">Nada na ficha nem na dotação: só falta a assinatura.</div>'}</div>
+    <div id="dnTotal" class="dsl-total" aria-live="polite"></div>
+    <section><div class="dsl-sec">${dslIc('signature')} Assinatura do colaborador (vale para o termo e para a Autorização de Descontos)</div>
+      <div id="dnAssBox"><canvas id="dnCanvas" class="dsl-canvas" aria-label="Área para o colaborador assinar"></canvas>
+        <button type="button" class="btn btn-ghost" style="margin-top:6px" data-no-guard="1" onclick="_dn.ass && _dn.ass.limpar()">${dslIc('undo-2')} Limpar</button></div>
+      <label class="dsl-check" style="margin-top:8px"><input type="checkbox" id="dnSemAss" onchange="dnSemAssinatura(this.checked)"> O colaborador não vai assinar</label>
+      <div id="dnSemAssBox" class="hidden" style="display:grid;gap:8px;margin-top:8px">
+        <label class="form-label" for="dnJust" style="margin:0">Justificativa *</label><textarea id="dnJust" class="form-input" rows="2" maxlength="500" placeholder="Ex.: recusou-se a assinar"></textarea>
+        <label class="form-label" for="dnTestMat" style="margin:0">Matrícula da testemunha *</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><input id="dnTestMat" class="form-input" style="max-width:200px" onchange="dnConferirTestemunha()"><span id="dnTestInfo" style="font-size:12px;align-self:center"></span></div>
+      </div></section>
+    <div class="form-group" style="margin:0"><label class="form-label" for="dnObs">Observação</label><input id="dnObs" class="form-input" maxlength="500" placeholder="Opcional"></div>
+    <div id="dnErro2" class="dsl-erro hidden" role="alert"></div>`;
+  document.getElementById('dnRodape').innerHTML = `<button class="btn btn-ghost" onclick="dnPasso1('${escJs(c.id)}')">Voltar</button>
+    <button class="btn btn-primary" id="dnBtnEnviar" onclick="dnEnviar()">${dslIc('check')} Registrar e conferir o material</button>`;
+  _dn.ass = dslAssinatura(document.getElementById('dnCanvas'));
+  dnTotal();
+}
+function dnSemAssinatura(sem) {
+  document.getElementById('dnSemAssBox').classList.toggle('hidden', !sem);
+  document.getElementById('dnAssBox').classList.toggle('hidden', sem);
+  if (!sem && _dn.ass) _dn.ass.limpar();
+}
+async function dnConferirTestemunha() {
+  const m = document.getElementById('dnTestMat').value.trim();
+  const info = document.getElementById('dnTestInfo');
+  if (!m) { info.textContent = ''; return; }
+  const r = await api(`/desligamentos/testemunha?m=${encodeURIComponent(m)}&colaborador_id=${encodeURIComponent(_dn.colab.id)}`);
+  info.style.color = r?.ok ? 'var(--green)' : 'var(--red)';
+  info.textContent = r?.ok ? r.testemunha.nome : (r?.erro || 'Matrícula não encontrada.');
+}
+async function dnEnviar() {
+  const itens = [];
+  for (const m of _dn.material.itens || []) {
+    const r = _dn.resp[m.chave];
+    if (!r.situacao) return dslErro('dnErro2', `${m.descricao}: diga se foi devolvido.`);
+    if ((r.situacao === 'SIM' || r.situacao === 'PARTE') && !r.fotos.length) return dslErro('dnErro2', `${m.descricao}: tire a foto do que foi devolvido.`);
+    if ((r.situacao === 'SIM' || r.situacao === 'PARTE') && !r.estado) return dslErro('dnErro2', `${m.descricao}: diga o estado.`);
+    if ((r.situacao === 'PARTE' || r.situacao === 'NAO') && !r.motivo) return dslErro('dnErro2', `${m.descricao}: diga por que não foi devolvido.`);
+    itens.push({ chave: m.chave, situacao: r.situacao, qtd_devolvida: r.qtd_devolvida, estado: r.estado, seriais: r.seriais, fotos: r.fotos.map(f => f.caminho),
+      motivo: r.motivo, motivo_texto: r.motivo_texto, isentar: r.isentar, justificativa: r.justificativa });
+  }
+  const sem = document.getElementById('dnSemAss').checked;
+  const corpo = { colaborador_id: _dn.colab.id, data_desligamento: _dn.data, armazem_id: _dn.armazem_id, itens, chave_envio: _dn.chave, obs: document.getElementById('dnObs').value };
+  if (sem) { corpo.sem_assinatura = true; corpo.justificativa_sem_assinatura = document.getElementById('dnJust').value; corpo.testemunha_matricula = document.getElementById('dnTestMat').value; }
+  else {
+    if (!_dn.ass || _dn.ass.vazio()) return dslErro('dnErro2', 'Falta a assinatura do colaborador (ou marque "O colaborador não vai assinar").');
+    corpo.assinatura = _dn.ass.dataUrl();
+  }
+  dslErro('dnErro2', '');
+  const r = await api('/desligamentos', { method: 'POST', body: JSON.stringify(corpo) });
+  if (!r?.ok) return dslErro('dnErro2', r?.erro || 'Não foi possível registrar.');
+  const c = (_colaboradores || []).find(x => x.id === _dn.colab.id);
+  if (c) c.status = 'em_desligamento';
+  document.getElementById('modalDslNovo')?.remove();
+  _dn = null;
+  toast(`Desligamento registrado${r.valor_desconto > 0 ? ` · desconto de ${dslMoeda(r.valor_desconto)} lançado em Descontos` : ''}. Confira o material e finalize.`, 'success', 6000);
+  if (_viewAtiva('desligamentos')) dslCarregar();
+  dslAbrir(r.id);
+}
+
 function gerarPDFDesligamento() {
   const res = window.dadosHistoricoAtual;
   if (!res) { toast('Nenhum colaborador selecionado','warn'); return; }
@@ -35943,6 +36510,9 @@ const NOTIF_TIPOS = {
   VIAGENS_AVISADAS_HOJE: { icone: 'truck',          cor: 'yel' },
   CARGAS_AGUARDANDO:     { icone: 'package',        cor: 'acc' },
   MOBILIZACOES_PROXIMAS: { icone: 'rocket',         cor: 'yel' },   // item 7, parte 2
+  DESLIGAMENTO_NOVO:     { icone: 'user-x',         cor: 'red' },   // item 7, parte 3
+  DESLIGAMENTOS_AGUARDANDO: { icone: 'user-x',      cor: 'yel' },
+  DESCONTO_GERADO:       { icone: 'wallet',         cor: 'red' },
 };
 const NOTIF_DA_LOGISTICA = ['VOU_VIAJAR', 'VIAGENS_AVISADAS_HOJE', 'CARGAS_AGUARDANDO'];
 const notifIcone = (nome) => `<svg class=ic aria-hidden=true><use href=#i-${nome}></use></svg>`;
@@ -36264,6 +36834,14 @@ function notifAbrir(n) {
     showView('logistica', document.querySelector('.nav-item[data-view="logistica"]'));
     if (n.tipo === 'VOU_VIAJAR' && n.ref_id) notifDestacarLinha('#logAvisosBody tr[data-aviso-id="' + CSS.escape(n.ref_id) + '"]');
     else if (n.tipo === 'VIAGENS_AVISADAS_HOJE') notifDestacarLinha('#logCardAvisos');
+  } else if (n.tipo === 'DESLIGAMENTO_NOVO' || n.tipo === 'DESLIGAMENTOS_AGUARDANDO') {
+    if (!temPermissao('desligamentos')) return;
+    showView('desligamentos', document.querySelector('.nav-item[data-view="desligamentos"]'));
+    if (_dslAba !== 'ABERTOS') dslMudarAba('ABERTOS');
+    if (n.tipo === 'DESLIGAMENTO_NOVO' && n.ref_id) dslAbrir(n.ref_id);
+  } else if (n.tipo === 'DESCONTO_GERADO') {
+    if (!temPermissao('descontos')) return;
+    showView('descontos', document.querySelector('.nav-item[data-view="descontos"]'));
   }
 }
 async function notifDestacarLinha(seletor) {
