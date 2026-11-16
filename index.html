@@ -7359,6 +7359,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 </div>
 
 
+<!-- Carimbo de data e hora nas fotos (16/11/2026) -->
+<script src="carimbo-foto.js"></script>
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
 const GCA = { token:null, usuario:null, unidade:null, tokenTemp:null, unidades:[] };
@@ -27193,7 +27195,25 @@ function recupItensSelecionadosComoLista() {
 // foto de celular chega a 5 MB e não precisa disso para registrar o que foi enviado.
 let _remNovaFotos = [];
 
-function remComprimirImagem(file) {
+// Hora do servidor e nome da filial para o carimbo das fotos (16/11/2026)
+async function prepararCarimbo() {
+  await gcaCarimbo.sincronizar(API);
+  if (!window._filiaisCache) { try { const rf = await api('/filiais'); window._filiaisCache = rf?.data || []; } catch {} }
+}
+function nomeFilialCarimbo() {
+  const f = (window._filiaisCache || []).find(x => x.slug === GCA.unidade);
+  return f?.nome || String(GCA.unidade || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// Foto da remessa: reduzida e com o carimbo de data/hora (16/11/2026). Se o navegador não conseguir
+// desenhar o carimbo, vai como antes (só reduzida).
+async function remComprimirImagem(file, titulo) {
+  try {
+    await prepararCarimbo();
+    return await gcaCarimbo.blob(file, { max: 1600, filial: nomeFilialCarimbo(), titulo: titulo || 'Remessa de laudo' }, 0.82);
+  } catch { return remComprimirImagemSemCarimbo(file); }
+}
+function remComprimirImagemSemCarimbo(file) {
   return new Promise(resolve => {
     const url = URL.createObjectURL(file);
     const img = new Image();
@@ -27216,7 +27236,8 @@ async function remNovaFotosSelecionadas(input) {
   input.value = '';
   for (const f of arquivos) {
     if (_remNovaFotos.length >= 10) { toast('No máximo 10 fotos por remessa', 'warn'); break; }
-    const blob = await remComprimirImagem(f);
+    const empresa = (document.getElementById('remNovaEmpresa')?.value || '').trim();
+    const blob = await remComprimirImagem(f, `Remessa de laudo (nova)${empresa ? ' · ' + empresa : ''}`);
     if (!blob) { toast(`Não foi possível ler a imagem "${f.name}"`, 'warn'); continue; }
     _remNovaFotos.push({ blob, url: URL.createObjectURL(blob) });
   }
@@ -27265,8 +27286,10 @@ async function remAdicionarFotos(input) {
   try {
     const fd = new FormData();
     let n = 0;
+    const rem = (_remessasData || []).find(x => x.id === id);
+    const tituloRem = `Remessa de laudo${rem?.empresa ? ' · ' + rem.empresa : ''}${rem?.data_envio ? ' · enviada ' + formatarData(rem.data_envio) : ''}`;
     for (const f of arquivos) {
-      const blob = await remComprimirImagem(f);
+      const blob = await remComprimirImagem(f, tituloRem);
       if (blob) fd.append('fotos', blob, `foto_${++n}.jpg`);
     }
     if (!n) { toast('Não foi possível ler as imagens', 'warn'); return; }
@@ -36000,22 +36023,13 @@ function dslAssinatura(canvas) {
 }
 
 // Foto: reduz para até 1280 px (JPEG) antes de enviar e guarda uma miniatura para a tela
-function dslComprimirFoto(arquivo, max = 1280) {
-  return new Promise((ok, falha) => {
-    const url = URL.createObjectURL(arquivo);
-    const img = new Image();
-    img.onload = () => {
-      const esc = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement('canvas'); c.width = Math.round(img.width * esc); c.height = Math.round(img.height * esc);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      const m = document.createElement('canvas'); const e2 = Math.min(1, 160 / Math.max(c.width, c.height));
-      m.width = Math.round(c.width * e2); m.height = Math.round(c.height * e2); m.getContext('2d').drawImage(c, 0, 0, m.width, m.height);
-      URL.revokeObjectURL(url);
-      ok({ dataUrl: c.toDataURL('image/jpeg', 0.8), thumb: m.toDataURL('image/jpeg', 0.7) });
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); falha(new Error('Não foi possível ler a foto.')); };
-    img.src = url;
-  });
+// Foto do desligamento feito no GCA: reduzida e com o carimbo de data/hora (16/11/2026)
+async function dslComprimirFoto(arquivo, max = 1280) {
+  await prepararCarimbo();
+  const c = await gcaCarimbo.desenhar(arquivo, { max, filial: nomeFilialCarimbo(), titulo: `Desligamento · ${_dn?.colab?.nome || ''}`.replace(/ · $/, '') });
+  const m = document.createElement('canvas'); const e2 = Math.min(1, 160 / Math.max(c.width, c.height));
+  m.width = Math.round(c.width * e2); m.height = Math.round(c.height * e2); m.getContext('2d').drawImage(c, 0, 0, m.width, m.height);
+  return { dataUrl: c.toDataURL('image/jpeg', 0.8), thumb: m.toDataURL('image/jpeg', 0.7) };
 }
 
 // ── Novo desligamento feito no GCA (o colaborador está no armazém) ──
