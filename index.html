@@ -11134,6 +11134,17 @@ function confirmarColabAtend(colab) {
   document.getElementById('atendMsgResumo').textContent = 'Colaborador identificado';
   document.getElementById('btnAbrirModalItens').disabled = false;
   document.getElementById('btnConcluirAtendimento').disabled = ATEND.itens.length === 0;
+  if (!window._solicitacaoAtendimento) avisarPedidosAbertosAtend(colab);
+}
+
+// Balcão (16/11/2026): a pessoa tem pedidos em aberto — os itens deles só saem pela solicitação
+// (o servidor bloqueia ao concluir; aqui é só o aviso na hora de escolher o colaborador).
+async function avisarPedidosAbertosAtend(colab) {
+  const r = await api(`/solicitacoes/abertos-da-pessoa?colaborador_id=${encodeURIComponent(colab.id)}`);
+  const lista = r?.data || [];
+  if (!lista.length || ATEND.colab?.id !== colab.id || window._solicitacaoAtendimento) return;
+  const txt = lista.map(p => `nº ${escHtml(p.id)} (${escHtml(p.solicitante || '—')}): ${p.itens.map(i => escHtml(i.nome)).join(', ')}`).join(' · ');
+  toast(`${escHtml(colab.nome)} tem ${lista.length === 1 ? 'um pedido' : lista.length + ' pedidos'} em aberto. Esses itens só saem pela solicitação: ${txt}`, 'warn', 12000);
 }
 
 function limparColaboradorAtend() {
@@ -11889,7 +11900,9 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
   if (!res || !res.ok) {
     console.error('[concluirAtendimento] erro:', res);
     document.getElementById('overlayProcessando').style.display = 'none';
-    toast((res?.erro || res?.detalhe || 'Erro ao salvar atendimento') + ' — verifique o console', 'error', 6000);
+    // Item já num pedido aberto da pessoa (16/11/2026): mensagem longa, fica mais tempo na tela
+    if (res?.duplicados?.length) toast(escHtml(res.erro), 'warn', 15000);
+    else toast((res?.erro || res?.detalhe || 'Erro ao salvar atendimento') + ' — verifique o console', 'error', 6000);
     btn.disabled = false;
     btn.textContent = 'Concluir Atendimento';
     clearInterval(ATEND.cronometro);

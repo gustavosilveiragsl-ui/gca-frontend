@@ -2002,6 +2002,13 @@ async function addItemConf() {
   const motivoValid = MOTIVO_MAP[motiv] || motiv;
 
   try {
+    // Item já pedido para a mesma pessoa (ou placa) num pedido não terminado: avisa e não deixa
+    // adicionar (16/11/2026). Outro tamanho do mesmo item também conta. O envio confere de novo.
+    const destDup = _destino === 'VIATURA' ? { viatura_id: document.getElementById('vtrId').value } : (colId ? { colaborador_id: colId } : null);
+    if (destDup && (destDup.viatura_id || destDup.colaborador_id)) {
+      const resDup = await req('/solicitacao-auth/validar-duplicado', { method: 'POST', body: { ...destDup, item_id: it.id, exceto: window._editandoSolId || null } });
+      if (resDup && !resDup.ok) { document.getElementById('confMsg').textContent = '' + (resDup.erro || 'Este item já está num pedido em aberto.'); return; }
+    }
     if (_destino === 'VIATURA') {
       const lista = [..._itens.map(i => ({ itemId: i.itemId, nome: i.nome, quantidade: i.quantidade })),
         { itemId: it.id, nome: it.descricao, quantidade: qtd }];
