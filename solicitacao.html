@@ -2215,8 +2215,16 @@ async function carregarSols() {
       <div style="font-size:13px;font-weight:600;color:var(--text-1);margin-bottom:4px">${s.destinatario_tipo === 'VIATURA' ? '<svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Viatura ' + escHtml(s.placa || '') : '<svg class=ic aria-hidden=true><use href=#i-id-card></use></svg> ' + escHtml(s.colaborador_nome||'—')}</div>
       <div style="font-size:11px;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> ${escHtml(s.nome_armazem||'—')} · <svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${itens.length} item(ns) · <svg class=ic aria-hidden=true><use href=#i-clock></use></svg> ${fmtData(s.data_hora||s.criado_em)}</div>
       ${s.status==='CANCELADO' && s.cancelamento?.motivo ? `<div style="font-size:11px;color:var(--red);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Motivo: ${escHtml(s.cancelamento.motivo)}</div>` : ''}
+      ${(s.ajustes || []).length ? `<div class="sol-ajuste" style="font-size:11px;color:#f59e0b;margin-top:6px">${solAjusteResumo(s.ajustes)}</div>` : ''}
     </div>`;
   }).join('');
+}
+
+// O que o almoxarifado mudou no pedido (16/11/2026): prioridade e armazém, com o motivo
+function solAjusteResumo(aj) {
+  const ult = (t) => [...(aj || [])].reverse().find(a => a.tipo === t);
+  const p = ult('PRIORIDADE'), a = ult('ARMAZEM');
+  return [p ? `Prioridade alterada para ${escHtml(p.para)} pelo almoxarifado` : '', a ? `Transferido para o ${escHtml(a.para)} pelo almoxarifado` : ''].filter(Boolean).join(' · ');
 }
 
 function abrirDetIdx(idx) { abrirDet(_listaSolsCache[idx]); }
@@ -2238,6 +2246,13 @@ function abrirDet(s) {
   const obsW = document.getElementById('detObsW');
   if (s.obs_geral){ obsW.classList.remove('hidden'); document.getElementById('detObs').textContent=s.obs_geral; }
   else obsW.classList.add('hidden');
+  // Ajustes do almoxarifado (prioridade/armazém), com motivo, quem e quando
+  let ajBox = document.getElementById('detAjustes');
+  if (!ajBox) { ajBox = document.createElement('div'); ajBox.id = 'detAjustes'; obsW.parentNode.insertBefore(ajBox, obsW.nextSibling); }
+  ajBox.innerHTML = (s.ajustes || []).map(a => `<div style="margin:8px 0;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid rgba(245,158,11,.35);background:rgba(245,158,11,.08);font-size:12px">
+      <div style="font-weight:600;color:#f59e0b">${a.tipo === 'PRIORIDADE' ? `Prioridade alterada para ${escHtml(a.para)} pelo almoxarifado` : `Pedido transferido do ${escHtml(a.de)} para o ${escHtml(a.para)} pelo almoxarifado`}</div>
+      <div style="color:var(--text-1);margin-top:4px"><strong>Motivo:</strong> ${escHtml(a.motivo)}</div>
+      <div style="color:var(--text-3);font-size:11px;margin-top:2px">${escHtml(a.por)}${a.em ? ' · ' + fmtData(a.em) : ''}</div></div>`).join('');
 
   // Timeline
   const etapas=[

@@ -2417,10 +2417,13 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="Urgente">Urgente</option>
                 <option value="Normal">Normal</option>
                 <option value="__mobilizacao">Mobilização</option>
+                <option value="__rebaixada">Urgência rebaixada</option>
+                <option value="__mais_perto">Tem no armazém mais perto</option>
               </select>
               <select class="form-input" id="solFiltroArmazem" style="width:170px;font-size:11px" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os armazéns</option>
               </select>
+              <button class="btn btn-ghost" id="btnRankingUrgencia" onclick="abrirRankingUrgencia()" title="Pedidos marcados como urgentes e rebaixados pelo almoxarifado, por solicitante"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgentes por solicitante</button>
               <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
               <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
@@ -6145,6 +6148,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <label class="form-label">Armazéns Permitidos</label>
                 <div id="lsArmazensLista" style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);padding:10px;background:var(--bg)"></div>
                 <div style="font-size:10px;color:var(--text-3);margin-top:4px">Deixe todos desmarcados para liberar todos os armazéns.</div>
+              </div>
+              <div>
+                <label class="form-label" for="lsMaisPerto">Armazém mais perto</label>
+                <select id="lsMaisPerto" class="form-input"><option value="">— Nenhum —</option></select>
+                <div style="font-size:10px;color:var(--text-3);margin-top:4px">O GCA avisa quando um pedido deste solicitante, feito a outro armazém, pode ser atendido aqui.</div>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <input type="checkbox" id="lsAtivo" checked style="accent-color:var(--primary)">
@@ -13330,7 +13338,10 @@ function renderSolicitacoes() {
 
   const { status, prioridade, armazem, busca } = _solFiltros;
   if (status)     lista = lista.filter(s => s.status === status);
-  if (prioridade) lista = lista.filter(s => prioridade === '__mobilizacao' ? s.tipo_pedido === 'MOBILIZACAO' : s.prioridade === prioridade);
+  if (prioridade) lista = lista.filter(s => prioridade === '__mobilizacao' ? s.tipo_pedido === 'MOBILIZACAO'
+    : prioridade === '__rebaixada' ? !!s.urgencia_rebaixada
+    : prioridade === '__mais_perto' ? !!s.mais_perto
+    : s.prioridade === prioridade);
   if (armazem)    lista = lista.filter(s => s.armazem_id === armazem);
   if (busca) {
     const q = busca.toLowerCase();
@@ -13385,6 +13396,8 @@ function renderSolicitacoes() {
       temAssPend   ? '<span style="color:#ef4444;font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-signature></use></svg> Ass. pendente</span>' : '',
       itensBatem.length ? `<span style="color:var(--accent-text);font-size:10px;font-weight:600"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> ${escHtml(itensBatem.slice(0, 2).join(', '))}${itensBatem.length > 2 ? ` +${itensBatem.length - 2}` : ''}</span>` : '',
       ...solTagsFila(s),
+      s.urgencia_rebaixada ? gcaSit('Urgência rebaixada', 'laranja', 'arrow-down') : '',
+      s.mais_perto ? `<span class="sol-tag-perto" style="color:#06b6d4;font-size:10px;font-weight:700" title="Armazém mais perto de quem pediu, com saldo livre"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${s.mais_perto.todos ? 'Tem no ' : `${s.mais_perto.tem} de ${s.mais_perto.total} no `}${escHtml(s.mais_perto.nome)}</span>` : '',
     ].filter(Boolean).join(' ');
 
     const _rowBorder = s.status === 'PENDENTE'
@@ -13494,6 +13507,8 @@ async function abrirModalSolicitacao(id) {
     'FINALIZADO':            gcaSit('Finalizado', 'verde', 'check'),
     'CANCELADO':             gcaSit('Cancelado', 'vermelho', 'x'),
     'FILA_PULADA':           gcaSit('Outro pedido foi atendido antes deste', 'laranja', 'arrow-down-up'),
+    'PRIORIDADE_ALTERADA':   gcaSit('Prioridade alterada pelo almoxarifado', 'laranja', 'siren'),
+    'ARMAZEM_ALTERADO':      gcaSit('Pedido mudou de armazém', 'ceu', 'warehouse'),
   };
 
   document.getElementById('solModalBody').innerHTML = `
@@ -13543,6 +13558,7 @@ async function abrirModalSolicitacao(id) {
                 const obsHist = (h.obs||'').trim();
                 return `<div style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card)">
                   <div class="sit-quebra" style="font-size:11px;font-weight:600;color:var(--text-1);margin-bottom:6px">${label}</div>
+                  ${(h.de || h.para) ? `<div style="font-size:11px;color:var(--text-2);margin:-2px 0 6px">${escHtml(h.de || '—')} → <strong>${escHtml(h.para || '—')}</strong></div>` : ''}
                   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                     <span style="font-size:11px;color:var(--text-2)">${h.usuario||'—'}</span>
                     <span style="font-size:10px;color:var(--text-3)">·</span>
@@ -13580,6 +13596,7 @@ async function abrirModalSolicitacao(id) {
   const podeAtender  = ['PENDENTE','VISUALIZADO'].includes(s.status);
   const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('editar_solicitacao');
   const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status) && temPermissao('alterar_status_sol');
+  const podeAjustar  = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('alterar_prioridade_sol');
 
   // Verifica assinatura pendente do colaborador
   const colabIdSol = s.colaborador_id || s.colaboradorId;
@@ -13597,11 +13614,22 @@ async function abrirModalSolicitacao(id) {
       <svg class=ic aria-hidden=true><use href=#i-signature></use></svg> <strong>${escHtml(s.colaborador_nome)}</strong> possui assinatura pendente — não é possível iniciar o atendimento até que seja assinado.
     </div>` : '';
 
+  // Item 8 (16/11/2026): o armazém mais perto de quem pediu tem os itens
+  const mp = podeAtender ? s.mais_perto : null;
+  const alertaPerto = mp ? `<div id="solAlertaPerto" style="width:100%;background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.35);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--text-1);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="color:#06b6d4"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg></span>
+      <span><strong>${escHtml(mp.nome)}</strong> é o armazém mais perto de quem pediu e tem ${mp.todos ? 'todos os itens' : `${mp.tem} de ${mp.total} itens`} com saldo livre.</span>
+      ${podeAjustar ? `<button class="btn btn-ghost" style="margin-left:auto;padding:4px 10px;font-size:11px" onclick="abrirMudarArmazem('${escJs(id)}','${escJs(mp.armazem_id)}')">Ver saldos e mudar</button>` : ''}
+    </div>` : '';
+
   document.getElementById('solModalFooter').innerHTML = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
       ${alertaAss}
+      ${alertaPerto}
       ${podeAtender ? `<button class="btn btn-primary" ${assPendMod?'disabled title="Assinatura pendente"':''} onclick="atenderSolicitacao('${id}', this)"><svg class=ic aria-hidden=true><use href=#i-handshake></use></svg> Iniciar Atendimento</button>` : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>` : ''}
+      ${podeAjustar ? `<button class="btn btn-ghost" id="btnSolPrioridade" onclick="abrirMudarPrioridade('${escJs(id)}')"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> ${s.prioridade === 'Urgente' ? 'Mudar para Normal' : 'Mudar para Urgente'}</button>
+        <button class="btn btn-ghost" id="btnSolArmazem" onclick="abrirMudarArmazem('${escJs(id)}')"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> Mudar armazém</button>` : ''}
       ${statusOpts  ? `
         <select class="form-input" id="solNovoStatus" style="width:220px;font-size:11px">${statusOpts}</select>
         <button class="btn btn-ghost" onclick="alterarStatusSolicitacao('${id}')">Confirmar</button>
@@ -13615,6 +13643,136 @@ async function abrirModalSolicitacao(id) {
 
 function fecharModalSolicitacao() {
   document.getElementById('modalSolicitacao').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════
+// PRIORIDADE E ARMAZÉM DO PEDIDO (16/11/2026, itens 7 e 8) — permissão alterar_prioridade_sol.
+// Motivo obrigatório, visível ao solicitante no portal. O pedido muda INTEIRO de armazém.
+// ═══════════════════════════════════════════
+function solModalSimples(idModal, titulo, sub, corpo, rodape, largura = 520) {
+  document.getElementById(idModal)?.remove();
+  const m = document.createElement('div');
+  m.className = 'modal-overlay'; m.id = idModal; m.style.zIndex = '1200';
+  m.innerHTML = `<div class="modal-box" style="max-width:${largura}px;width:100%">
+    <div class="modal-header"><div style="min-width:0"><div class="modal-title">${titulo}</div>${sub ? `<div style="font-size:11px;color:var(--text-3)">${sub}</div>` : ''}</div>
+      <button class="modal-close" onclick="document.getElementById('${idModal}').remove()">×</button></div>
+    <div class="modal-body">${corpo}</div>
+    <div class="modal-footer">${rodape}</div></div>`;
+  document.body.appendChild(m);
+  return m;
+}
+
+function abrirMudarPrioridade(id) {
+  const s = _solicitacoes.find(x => x.id === id); if (!s) return;
+  const para = s.prioridade === 'Urgente' ? 'Normal' : 'Urgente';
+  solModalSimples('modalSolPrioridade', `<svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Mudar para ${para}`,
+    `${escHtml(s.id)} · ${escHtml(s.colaborador_nome || '')} · pedido por ${escHtml(s.solicitante_nome || '—')}`,
+    `<div style="font-size:12px;color:var(--text-2);margin-bottom:10px">${para === 'Normal'
+        ? 'O pedido sai da frente da fila e entra no lugar dele entre os normais, pela data em que foi feito.'
+        : 'O pedido passa para a frente da fila, junto com os urgentes.'} O solicitante vê o motivo no portal e não consegue voltar a prioridade editando o pedido.</div>
+     <label class="form-label" for="solPrioMotivo">Motivo *</label>
+     <textarea id="solPrioMotivo" class="form-input" rows="3" maxlength="500" placeholder="${para === 'Normal' ? 'Ex.: item de reposição comum, sem risco para o trabalho de hoje' : 'Ex.: colaborador sem EPI para trabalhar'}"></textarea>`,
+    `<button class="btn btn-ghost" onclick="document.getElementById('modalSolPrioridade').remove()">Voltar</button>
+     <button class="btn btn-primary" id="btnSolPrioConfirmar" onclick="confirmarMudarPrioridade('${escJs(id)}','${para}')">Mudar para ${para}</button>`);
+  setTimeout(() => document.getElementById('solPrioMotivo')?.focus(), 50);
+}
+
+async function confirmarMudarPrioridade(id, para) {
+  const motivo = (document.getElementById('solPrioMotivo')?.value || '').trim();
+  if (motivo.length < 5) { toast('Escreva o motivo (ele aparece para o solicitante).', 'warn'); return; }
+  const btn = document.getElementById('btnSolPrioConfirmar'); if (btn) btn.disabled = true;
+  const r = await api(`/solicitacoes/${encodeURIComponent(id)}/prioridade`, { method: 'POST', body: JSON.stringify({ prioridade: para, motivo }) });
+  if (btn) btn.disabled = false;
+  if (!r?.ok) { toast(escHtml(r?.erro || 'Erro ao mudar a prioridade'), 'error', 7000); return; }
+  document.getElementById('modalSolPrioridade')?.remove();
+  fecharModalSolicitacao();
+  toast(`Prioridade mudada para ${para}. O solicitante vê o motivo no portal.`, 'success', 5000);
+  await carregarSolicitacoes(true);
+}
+
+async function abrirMudarArmazem(id, sugerido) {
+  const s = _solicitacoes.find(x => x.id === id); if (!s) return;
+  const m = solModalSimples('modalSolArmazem', '<svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> Mudar o pedido de armazém',
+    `${escHtml(s.id)} · ${escHtml(s.colaborador_nome || '')} · hoje no ${escHtml(s.nome_armazem || '—')}`,
+    '<div style="font-size:12px;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Carregando os saldos…</div>', '', 880);
+  const r = await api(`/solicitacoes/${encodeURIComponent(id)}/armazens`);
+  if (!document.getElementById('modalSolArmazem')) return;
+  if (!r?.ok) { m.querySelector('.modal-body').innerHTML = `<div style="color:var(--red);font-size:12px">${escHtml(r?.erro || 'Não deu para carregar os saldos')}</div>`; return; }
+  window._solArmMatriz = r;
+  const outros = r.armazens.filter(a => a.id !== r.atual);
+  const alvoInicial = (sugerido && outros.some(a => a.id === sugerido)) ? sugerido : (r.mais_perto && r.mais_perto !== r.atual ? r.mais_perto : (outros[0]?.id || ''));
+  const cab = r.armazens.map(a => `<th style="text-align:center;font-size:10px;padding:6px;vertical-align:bottom;${a.id === r.atual ? 'color:var(--text-3)' : ''}">
+      <label style="cursor:${a.id === r.atual ? 'default' : 'pointer'};display:flex;flex-direction:column;align-items:center;gap:3px">
+        ${a.id === r.atual ? '<span>(atual)</span>' : `<input type="radio" name="solArmAlvo" value="${escHtml(a.id)}" ${a.id === alvoInicial ? 'checked' : ''} onchange="solArmAtualizar()">`}
+        <span>${escHtml(a.nome)}</span>
+        ${a.id === r.mais_perto ? '<span style="color:#06b6d4;font-weight:700">mais perto</span>' : ''}
+      </label></th>`).join('');
+  const linhas = r.itens.map(it => `<tr><td style="font-size:11px;padding:6px;border-top:1px solid var(--border)">${escHtml(it.nome)} <span style="color:var(--text-3)">× ${it.quantidade}</span></td>
+      ${r.armazens.map(a => { const c = it.por_armazem[a.id] || { livre: 0, saldo: 0 }; const ok = c.livre >= it.quantidade;
+        return `<td data-arm="${escHtml(a.id)}" style="text-align:center;font-size:11px;padding:6px;font-weight:600;border-top:1px solid var(--border);color:${a.id === r.atual ? 'var(--text-3)' : ok ? '#22c55e' : '#ef4444'}" title="Saldo ${c.saldo} · livre ${c.livre} (o resto está reservado em outros pedidos)">${c.livre}</td>`; }).join('')}</tr>`).join('');
+  m.querySelector('.modal-body').innerHTML = `
+    <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">Saldo livre de cada item em cada armazém (o saldo menos o que já está reservado em outros pedidos). O pedido muda <strong>inteiro</strong>, não é dividido. Na fila do novo armazém ele entra pela data em que foi feito, e o almoxarifado de lá é avisado.</div>
+    <div style="overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm)"><table id="solArmTabela" style="width:100%;border-collapse:collapse">
+      <thead><tr><th style="text-align:left;font-size:10px;padding:6px;vertical-align:bottom">Item</th>${cab}</tr></thead><tbody>${linhas}</tbody></table></div>
+    <div id="solArmFalta" style="font-size:12px;margin-top:8px"></div>
+    <label class="form-label" for="solArmMotivo" style="margin-top:10px">Motivo *</label>
+    <textarea id="solArmMotivo" class="form-input" rows="2" maxlength="500"></textarea>`;
+  m.querySelector('.modal-footer').innerHTML = `<button class="btn btn-ghost" onclick="document.getElementById('modalSolArmazem').remove()">Voltar</button>
+    <button class="btn btn-primary" id="btnSolArmConfirmar" onclick="confirmarMudarArmazem('${escJs(id)}')">Mudar de armazém</button>`;
+  const mot = document.getElementById('solArmMotivo');
+  mot.dataset.auto = '1';
+  mot.addEventListener('input', () => { mot.dataset.auto = '0'; });
+  solArmAtualizar();
+}
+
+function solArmAtualizar() {
+  const r = window._solArmMatriz; if (!r) return;
+  const alvo = document.querySelector('input[name=solArmAlvo]:checked')?.value || '';
+  const nome = r.armazens.find(a => a.id === alvo)?.nome || '';
+  const faltam = alvo ? r.itens.filter(it => (it.por_armazem[alvo]?.livre || 0) < it.quantidade) : [];
+  const box = document.getElementById('solArmFalta');
+  if (box) box.innerHTML = !alvo ? '<span style="color:var(--text-3)">Escolha o armazém de destino (na linha de cima da tabela).</span>'
+    : faltam.length ? `<span style="color:#f59e0b"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> No ${escHtml(nome)} falta saldo livre de: ${faltam.map(it => escHtml(it.nome)).join(', ')}. O pedido muda inteiro, e esses itens vão faltar lá.</span>`
+    : `<span style="color:#22c55e"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> O ${escHtml(nome)} tem todos os itens.</span>`;
+  const mot = document.getElementById('solArmMotivo');
+  if (mot && mot.dataset.auto === '1') mot.value = !alvo ? ''
+    : alvo === r.mais_perto ? (faltam.length ? 'Atendimento pelo armazém mais perto' : 'Itens disponíveis no armazém mais perto')
+    : `Atendimento pelo ${nome}`;
+}
+
+async function confirmarMudarArmazem(id) {
+  const alvo = document.querySelector('input[name=solArmAlvo]:checked')?.value || '';
+  const motivo = (document.getElementById('solArmMotivo')?.value || '').trim();
+  if (!alvo) { toast('Escolha o armazém de destino.', 'warn'); return; }
+  if (motivo.length < 5) { toast('Escreva o motivo (ele aparece para o solicitante).', 'warn'); return; }
+  const btn = document.getElementById('btnSolArmConfirmar'); if (btn) btn.disabled = true;
+  const r = await api(`/solicitacoes/${encodeURIComponent(id)}/armazem`, { method: 'POST', body: JSON.stringify({ armazem_id: alvo, motivo }) });
+  if (btn) btn.disabled = false;
+  if (!r?.ok) { toast(escHtml(r?.erro || 'Erro ao mudar o armazém'), 'error', 7000); return; }
+  document.getElementById('modalSolArmazem')?.remove();
+  fecharModalSolicitacao();
+  toast(`Pedido mudou do ${escHtml(r.de || '')} para o ${escHtml(r.para || '')}. O almoxarifado de lá foi avisado.`, 'success', 6000);
+  await carregarSolicitacoes(true);
+}
+
+// Quem mais marca urgente e quantos o almoxarifado rebaixou (item 7)
+async function abrirRankingUrgencia(dias = 90) {
+  const m = solModalSimples('modalRankingUrg', '<svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgentes por solicitante',
+    'Pedidos que o solicitante marcou como urgentes e quantos o almoxarifado rebaixou para Normal',
+    '<div style="font-size:12px;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Carregando…</div>',
+    `<button class="btn btn-ghost" onclick="document.getElementById('modalRankingUrg').remove()">Fechar</button>`, 660);
+  const r = await api(`/solicitacoes/prioridade/rebaixadas?dias=${dias}`);
+  if (!document.getElementById('modalRankingUrg')) return;
+  const sel = `<select class="form-input" id="rankUrgDias" style="width:150px;font-size:11px" onchange="abrirRankingUrgencia(Number(this.value))">${[30, 90, 180, 365].map(d => `<option value="${d}" ${d === (r?.dias || dias) ? 'selected' : ''}>Últimos ${d} dias</option>`).join('')}</select>`;
+  const lin = r?.data || [];
+  const td = 'font-size:12px;padding:6px;border-top:1px solid var(--border);text-align:center';
+  m.querySelector('.modal-body').innerHTML = `<div style="display:flex;justify-content:flex-end;margin-bottom:8px">${sel}</div>
+    ${lin.length ? `<table style="width:100%;border-collapse:collapse"><thead><tr>
+      <th style="text-align:left;font-size:10px;padding:6px">Solicitante</th><th style="font-size:10px;padding:6px">Pedidos</th><th style="font-size:10px;padding:6px">Marcados urgentes</th><th style="font-size:10px;padding:6px">Rebaixados</th><th style="font-size:10px;padding:6px">% rebaixados</th></tr></thead>
+      <tbody id="rankUrgBody">${lin.map(x => `<tr><td style="${td};text-align:left">${escHtml(x.solicitante)}</td><td style="${td}">${x.pedidos}</td><td style="${td}">${x.urgentes}</td>
+        <td style="${td};font-weight:700;color:${x.rebaixados ? '#f59e0b' : 'var(--text-3)'}">${x.rebaixados}</td>
+        <td style="${td}">${x.urgentes ? Math.round(100 * x.rebaixados / x.urgentes) + '%' : '—'}</td></tr>`).join('')}</tbody></table>`
+      : '<div style="font-size:12px;color:var(--text-3);padding:16px;text-align:center">Nenhum pedido urgente no período.</div>'}`;
 }
 
 async function alterarStatusSolicitacao(id) {
@@ -17027,7 +17185,7 @@ async function carregarLS() {
     return `<tr>
       <td class="td-main">${escHtml(u.nome)}${u.pode_inventario ? ' <span title="Pode contar inventário"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></span>' : ''}${u.pode_mobilizacao ? ' <span title="Pode pedir mobilização"><svg class=ic aria-hidden=true><use href=#i-rocket></use></svg></span>' : ''}${u.pode_desligamento ? ' <span title="Pode comunicar desligamento"><svg class=ic aria-hidden=true><use href=#i-user-x></use></svg></span>' : ''}</td>
       <td style="font-size:11px;color:var(--text-3)">${escHtml(u.matricula)}</td>
-      <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}</td>
+      <td style="font-size:11px;color:var(--text-3)">${arms.length ? arms.length + ' armazém(ns)' : 'Todos'}${u.armazem_mais_perto ? `<div style="font-size:10px;color:#06b6d4">mais perto: ${escHtml((_armazens || []).find(a => a.id === u.armazem_mais_perto)?.nome || '—')}</div>` : ''}</td>
       <td><span style="font-size:11px;font-weight:600;color:${u.ativo ? 'var(--success)' : '#ef4444'}">${u.ativo ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ativo' : '<svg class=ic aria-hidden=true><use href=#i-octagon-x></use></svg> Inativo'}</span></td>
       <td style="display:flex;gap:4px">
         <button class="row-action" onclick="editarLS('${u.colaborador_id}')">Editar</button>
@@ -17073,6 +17231,12 @@ function carregarArmazensLS() {
       <input type="checkbox" value="${a.id}" ${atual.includes(a.id)?'checked':''} style="accent-color:var(--primary)">
       ${escHtml(a.nome)}
     </label>`).join('');
+  const sel = document.getElementById('lsMaisPerto');
+  if (sel) {
+    const v = sel.value;
+    sel.innerHTML = '<option value="">— Nenhum —</option>' + (_armazens || []).map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('');
+    sel.value = v;
+  }
 }
 
 async function salvarLS() {
@@ -17086,6 +17250,7 @@ async function salvarLS() {
   const podeConferirViatura = document.getElementById('lsPodeConferirViatura')?.checked || false;
   const podeMobilizacao = document.getElementById('lsPodeMobilizacao')?.checked || false;
   const podeDesligamento = document.getElementById('lsPodeDesligamento')?.checked || false;
+  const maisPerto = document.getElementById('lsMaisPerto')?.value || null;
 
   if (!editId && !colId) { toast('Selecione o colaborador.', 'warn'); return; }
   if (!editId && !senha) { toast('Informe a senha.', 'warn'); return; }
@@ -17096,13 +17261,13 @@ async function salvarLS() {
   if (editId) {
     // Editar — senha só entra no envio se o admin digitou uma nova (campo fica em
     // branco por padrão); em branco mantém a senha atual sem alterar.
-    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento };
+    const body = { ativo, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento, armazem_mais_perto: maisPerto };
     if (senha) body.senha = senha;
     const res = await api('/logins-solicitacao/' + editId, { method: 'PUT', body: JSON.stringify(body) });
     if (res?.ok) { toast('Usuário atualizado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao atualizar', 'error');
   } else {
-    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento }) });
+    const res = await api('/logins-solicitacao', { method: 'POST', body: JSON.stringify({ colaborador_id: colId, nome, matricula: mat, senha, armazem_mais_perto: maisPerto, armazens_permitidos: arms.length ? arms : null, pode_inventario: podeInventario, pode_conferir_viatura: podeConferirViatura, pode_mobilizacao: podeMobilizacao, pode_desligamento: podeDesligamento }) });
     if (res?.ok) { toast('Usuário criado!', 'success'); limparLS(); carregarLS(); }
     else toast(res?.erro || 'Erro ao criar', 'error');
   }
@@ -17122,6 +17287,7 @@ function editarLS(id) {
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = !!u.pode_mobilizacao;
   if (document.getElementById('lsPodeDesligamento')) document.getElementById('lsPodeDesligamento').checked = !!u.pode_desligamento;
   carregarArmazensLS();
+  if (document.getElementById('lsMaisPerto')) document.getElementById('lsMaisPerto').value = u.armazem_mais_perto || '';
   // Marcar os armazéns já permitidos
   let arms = []; try { arms = JSON.parse(u.armazens_permitidos || '[]'); } catch {}
   if (arms.length) {
@@ -17152,6 +17318,7 @@ function limparLS() {
   if (document.getElementById('lsPodeConferirViatura')) document.getElementById('lsPodeConferirViatura').checked = false;
   if (document.getElementById('lsPodeMobilizacao')) document.getElementById('lsPodeMobilizacao').checked = false;
   if (document.getElementById('lsPodeDesligamento')) document.getElementById('lsPodeDesligamento').checked = false;
+  if (document.getElementById('lsMaisPerto')) document.getElementById('lsMaisPerto').value = '';
   carregarArmazensLS();
 }
 
@@ -20579,7 +20746,8 @@ const PERMISSOES_SCHEMA = {
   solicitacoes: { label:'Solicitações', icon:'<svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg>', itens:{
     ver_solicitacoes:'Ver solicitações',
     editar_solicitacao:'Editar solicitação',
-    alterar_status_sol:'Alterar status (inclui cancelar)'
+    alterar_status_sol:'Alterar status (inclui cancelar)',
+    alterar_prioridade_sol:'Mudar prioridade e armazém da solicitação (com motivo, que o solicitante vê no portal)'
   }},
   estoque: { label:'Estoque', icon:'<svg class=ic aria-hidden=true><use href=#i-package></use></svg>', itens:{
     ver_estoque:'Consulta de estoque', entrada_material:'Registrar entrada',
