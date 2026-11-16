@@ -56,6 +56,14 @@ body{font-family:'DM Sans',-apple-system,sans-serif;background:#0a0a0f;color:#f1
 .erro-icon{font-size:40px;margin-bottom:12px;}
 
 .footer{text-align:center;margin-top:32px;font-size:11px;color:#334155;}
+
+/* Conferir carga (QR único da viatura, 16/11/2026) */
+.btn-conferir{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:16px;margin:4px 0 16px;border-radius:12px;
+  background:#4f46e5;color:#fff;font-size:15px;font-weight:700;text-decoration:none;border:none;font-family:inherit}
+.btn-conferir:active{transform:scale(.98)}
+.btn-conferir-sub{display:block;font-size:11px;font-weight:400;color:#c7d2fe;margin-top:2px}
+.vtr-info{font-size:12px;color:#94a3b8;margin:-16px 0 20px}
+.sem-laudo{background:#0f0f17;border:1px dashed #2a2a3e;border-radius:12px;padding:16px;font-size:12px;color:#94a3b8;text-align:center;margin-bottom:12px}
 </style>
 
 <style id="gcaIconesCss">
@@ -69,7 +77,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 
 <div class="topbar">
   <img src="./logo-gca.png" alt="GCA">
-  <span class="topbar-title">Portal de Viaturas — GCA Ceneged</span>
+  <span class="topbar-title">Portal de Viaturas — GCA</span>
 </div>
 
 <div class="container">
@@ -135,7 +143,14 @@ async function carregar() {
 
   const laudos = data.laudos || [];
   const equips = data.equipamentos || [];
-  const nomes  = { marica:'Maricá', rio_das_ostras:'Rio das Ostras' };
+  const nomeFilial = data.filial || ({ marica:'Maricá', rio_das_ostras:'Rio das Ostras' })[unidade] || unidade;
+  // Botão "Conferir carga": só para placa com carga cadastrada (Carga de Viatura)
+  const linkConferir = `conferencia-viatura.html?placa=${encodeURIComponent(placa)}&unidade=${encodeURIComponent(unidade)}`;
+  const botaoConferir = data.tem_carga ? `<a class="btn-conferir" id="btnConferirCarga" href="${escHtml(linkConferir)}">
+      <svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg>
+      <span>Conferir carga<span class="btn-conferir-sub">Entre com seu crachá (matrícula e senha)</span></span></a>` : '';
+  const v = data.viatura || {};
+  const infoVtr = [v.modelo, v.tipo, v.base].filter(Boolean).map(escHtml).join(' · ');
 
   // Status geral
   const temVencido = laudos.some(l => l.status === 'VENCIDO');
@@ -168,12 +183,22 @@ async function carregar() {
       <span class="equip-status ${eq.tem ? 'equip-tem' : 'equip-nao'}">${eq.tem ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Tem' : '<svg class=ic aria-hidden=true><use href=#i-circle-x></use></svg> Não tem'}</span>
     </div>`).join('') : '<div style="padding:16px;font-size:12px;color:#475569;text-align:center">Sem equipamentos cadastrados</div>';
 
-  el.innerHTML = `
+  // Viatura sem laudo nem equipamento cadastrado: só a placa e o botão de conferir a carga
+  const semLaudo = !laudos.length && !equips.length;
+  const cabecalho = `
     <div style="margin-bottom:4px">
       <div class="placa-badge">${escHtml(placa)}</div>
     </div>
-    <div class="sub">${nomes[unidade] || unidade} · Atualizado em ${new Date().toLocaleDateString('pt-BR')}</div>
+    <div class="sub">${escHtml(nomeFilial)} · Atualizado em ${new Date().toLocaleDateString('pt-BR')}</div>
+    ${infoVtr ? `<div class="vtr-info">${infoVtr}</div>` : ''}
+    ${botaoConferir}`;
+  const rodape = `<div class="footer">GCA — Sistema de Gestão de Almoxarifado</div>`;
+  if (semLaudo) {
+    el.innerHTML = cabecalho + (data.tem_carga ? '' : `<div class="sem-laudo" id="semLaudo">Nenhum laudo cadastrado para esta placa.</div>`) + rodape;
+    return;
+  }
 
+  el.innerHTML = cabecalho + `
     <div class="status-geral ${stClass}">
       <span class="st-icon">${stIcon}</span>
       <div class="st-text">
@@ -192,9 +217,7 @@ async function carregar() {
       ${equipsHtml}
     </div>
 
-    <div class="footer">
-      GCA — Sistema de Gestão de Almoxarifado · Ceneged
-    </div>`;
+    ` + rodape;
 }
 
 carregar();
