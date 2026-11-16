@@ -153,7 +153,7 @@ input,select,textarea{font-family:var(--font-main);}
 .pb-tabela tr:hover td{background:var(--bg-hover)}
 .pb-tabela td.num,.pb-tabela th.num{text-align:right;font-variant-numeric:tabular-nums}
 .pb-td-clica{color:var(--accent-text);text-decoration:underline dotted}
-.pb-sit-zerado{color:var(--red);font-weight:700}.pb-sit-abaixo{color:var(--yellow);font-weight:700}
+.pb-sit-zerado{color:var(--red);font-weight:700}.pb-sit-abaixo{color:var(--yellow);font-weight:700}.pb-sit-acima{color:#a78bfa;font-weight:700}
 .pb-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .pb-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .pb-bloco{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
@@ -1628,6 +1628,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                 <div><label class="form-label">Estoque Mínimo</label><input id="itemEstMin" class="form-input" type="number" min="0" value="1"></div>
+                <div><label class="form-label" title="A compra repõe até aqui. Vazio = sem máximo. Cada armazém pode ter o seu no Catálogo por Armazém">Estoque Máximo</label><input id="itemEstMax" class="form-input" type="number" min="0" placeholder="sem máximo"></div>
                 <div><label class="form-label">Durabilidade (dias)</label><input id="itemDurabilidade" class="form-input" type="number" min="1" placeholder="180"></div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -2827,7 +2828,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       <div class="view h-verde" id="view-estoque">
 
         <!-- KPIs -->
-        <div class="kpi-grid" style="grid-template-columns:repeat(6,1fr);margin-bottom:16px;gap:8px">
+        <div class="kpi-grid" style="grid-template-columns:repeat(7,1fr);margin-bottom:16px;gap:8px">
           <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Críticos</span></div>
             <div class="kpi-value" id="estKpiCritico" style="color:#ef4444;font-size:22px">—</div>
@@ -2847,6 +2848,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <div class="kpi-top"><span class="kpi-label">Zerados</span></div>
             <div class="kpi-value" id="estKpiZerado" style="color:#94a3b8;font-size:22px">—</div>
             <div class="kpi-delta" style="font-size:10px">sem estoque</div>
+          </div>
+          <div class="kpi-card" style="padding:12px;cursor:pointer" onclick="document.getElementById('estFiltroStatus').value='acima';renderEstoque()" title="Saldo acima do estoque máximo: dinheiro parado. Clique para ver a lista">
+            <div class="kpi-top"><span class="kpi-label">Acima do máximo</span></div>
+            <div class="kpi-value" id="estKpiAcima" style="color:#a78bfa;font-size:22px">—</div>
+            <div class="kpi-delta" id="estKpiAcimaValor" style="font-size:10px">—</div>
           </div>
           <div class="kpi-card" style="padding:12px">
             <div class="kpi-top"><span class="kpi-label">Total itens</span></div>
@@ -2875,6 +2881,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="baixo">Baixo</option>
                 <option value="ok">OK</option>
                 <option value="zerado">Zerado</option>
+                <option value="acima">Acima do máximo</option>
               </select>
               <select class="form-input" id="estFiltroCategoria" style="width:160px;font-size:11px" onchange="renderEstoque()" title="Filtrar por categoria">
                 <option value="">Todas as categorias</option>
@@ -2892,6 +2899,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <th id="estThArmazem" style="width:170px;display:none">Armazém</th>
                 <th style="width:80px;text-align:center">Saldo</th>
                 <th style="width:70px;text-align:center">Mínimo</th>
+                <th style="width:70px;text-align:center">Máximo</th>
                 <th style="width:90px;text-align:right">Valor Un.</th>
                 <th style="width:110px;text-align:right">Valor Total</th>
               </tr>
@@ -6717,10 +6725,10 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 </div>
 <!-- MODAL PREVISÃO DE COMPRA -->
 <div class="modal-overlay hidden" id="modalEstMinAuto">
-  <div class="modal-box" style="max-width:1180px;width:96vw;max-height:92vh;display:flex;flex-direction:column">
+  <div class="modal-box" style="max-width:1360px;width:96vw;max-height:92vh;display:flex;flex-direction:column">
     <div class="modal-header">
       <div style="min-width:0">
-        <div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-sparkles></use></svg> Estoque mínimo sugerido</div>
+        <div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-sparkles></use></svg> Estoque mínimo e máximo sugeridos</div>
         <div id="emaSub" style="font-size:11px;color:var(--text-3);margin-top:2px">—</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -6735,6 +6743,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <div><label class="form-label">Segurança (dias de consumo)</label><input id="emaCfgSeguranca" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
         <div><label class="form-label">Prazo padrão de compra (dias)</label><input id="emaCfgPrazo" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
         <div><label class="form-label">Abastecimento das bases (dias)</label><input id="emaCfgBase" type="number" min="0" max="365" class="form-input" style="width:120px"></div>
+        <div><label class="form-label">Máximo: dias de consumo acima do mínimo</label><input id="emaCfgMaximo" type="number" min="0" max="365" class="form-input" style="width:120px" title="O intervalo que se quer entre uma compra e outra. 0 = não sugere máximo"></div>
         <button class="btn btn-primary btn-sm" onclick="emaConfigSalvar()">Salvar e recalcular</button>
       </div>
       <div style="font-size:11px;color:var(--text-3);margin-top:8px">Valem para todos os armazéns desta filial. O prazo padrão é usado quando o item tem menos de 2 compras recebidas nos últimos 12 meses; nas bases, o prazo é o intervalo entre um abastecimento e outro pelo central.</div>
@@ -8012,7 +8021,7 @@ async function pbAbaItens(el) {
       <select class="form-input" style="width:200px" onchange="PBI.categoria=this.value;PBI.limite=100;pbItensTabela()"><option value="">Todas as categorias</option>${d.categorias.map(c => `<option ${PBI.categoria === c ? 'selected' : ''}>${escHtml(c)}</option>`).join('')}</select>
       <select class="form-input" style="width:210px" onchange="PBI.situacao=this.value;PBI.limite=100;pbItensTabela()">
         <option value="">Todas as situações</option><option value="zerado" ${PBI.situacao === 'zerado' ? 'selected' : ''}>Zerado em alguma filial</option>
-        <option value="abaixo" ${PBI.situacao === 'abaixo' ? 'selected' : ''}>Só abaixo do mínimo</option><option value="sem" ${PBI.situacao === 'sem' ? 'selected' : ''}>Sem saldo nenhum</option></select>
+        <option value="abaixo" ${PBI.situacao === 'abaixo' ? 'selected' : ''}>Só abaixo do mínimo</option><option value="acima" ${PBI.situacao === 'acima' ? 'selected' : ''}>Acima do máximo</option><option value="sem" ${PBI.situacao === 'sem' ? 'selected' : ''}>Sem saldo nenhum</option></select>
       <button class="btn btn-ghost" onclick="pbItensExcel()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
     </div>
     <div id="pbItensTabela"></div>`;
@@ -8025,12 +8034,15 @@ function pbItensFiltrados(fs, semSituacao) {
     if (!Object.keys(pf).length) return null;
     const saldo = Object.values(pf).reduce((t, x) => t + x.saldo, 0);
     const valor = Object.values(pf).reduce((t, x) => t + (x.valor ?? Math.max(0, x.saldo) * x.valor_un), 0);
-    const zerado = Object.values(pf).some(x => x.situacao === 'zerado'), abaixo = Object.values(pf).some(x => x.situacao !== 'ok');
-    return { ...l, pf, saldo, valor, zerado, abaixo };
+    const zerado = Object.values(pf).some(x => x.situacao === 'zerado'), abaixo = Object.values(pf).some(x => x.situacao === 'zerado' || x.situacao === 'abaixo');
+    // Acima do máximo (16/11/2026): o que passa do máximo e o dinheiro parado nisso
+    const acima = Object.values(pf).some(x => x.situacao === 'acima');
+    const valorAcima = Object.values(pf).reduce((t, x) => t + (x.situacao === 'acima' ? (x.excesso || 0) * (x.valor_un || 0) : 0), 0);
+    return { ...l, pf, saldo, valor, zerado, abaixo, acima, valorAcima };
   }).filter(l => l
     && (!q || String(l.descricao).toLowerCase().includes(q) || String(l.codigo).toLowerCase().includes(q))
     && (!PBI.categoria || l.categoria === PBI.categoria)
-    && (semSituacao || !PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo && !l.zerado : l.saldo <= 0)));
+    && (semSituacao || !PBI.situacao || (PBI.situacao === 'zerado' ? l.zerado : PBI.situacao === 'abaixo' ? l.abaixo && !l.zerado : PBI.situacao === 'acima' ? l.acima : l.saldo <= 0)));
 }
 function pbItensTabela(fsArg) {
   const fs = fsArg || PB.itens.filiais.filter(f => PB.filial === 'todas' || f.slug === PB.filial);
@@ -8042,13 +8054,15 @@ function pbItensTabela(fsArg) {
     pbKpi('Itens', pbNum(todos.length), `itens diferentes em ${pbNum(fs.length)} filial(is) · o mesmo item em várias filiais conta 1 vez`, '', 'pbItensPorFilial()', 0),
     pbKpi('Valor em estoque', pbDinheiro(todos.reduce((t, l) => t + l.valor, 0)), 'saldo de todos os armazéns × valor do cadastro · por filial e armazém', '', 'pbValorEstoque()', 1),
     pbKpi('Zerados em alguma filial', pbNum(soZer), 'itens diferentes sem saldo em nenhum armazém de pelo menos uma filial', soZer ? 'alerta' : '', "pbItensSituacao('zerado')", 2),
-    pbKpi('Só abaixo do mínimo', pbNum(soAb), 'itens diferentes com saldo, mas abaixo do mínimo (e não zerados em outra filial)', soAb ? 'aviso' : '', "pbItensSituacao('abaixo')", 3)].join('');
+    pbKpi('Só abaixo do mínimo', pbNum(soAb), 'itens diferentes com saldo, mas abaixo do mínimo (e não zerados em outra filial)', soAb ? 'aviso' : '', "pbItensSituacao('abaixo')", 3),
+    pbKpi('Acima do máximo', pbNum(todos.filter(l => l.acima).length), `${pbDinheiro(todos.reduce((t, l) => t + l.valorAcima, 0))} parados acima do máximo`, todos.some(l => l.acima) ? 'aviso' : '', "pbItensSituacao('acima')", 4)].join('');
   // Célula: saldo somado de todos os armazéns da filial; a cor compara com o mínimo do armazém principal
   const cel = (x) => {
     if (!x) return '<td class="num" style="color:var(--text-3)" title="Item não cadastrado nesta filial — não entra na conta">—</td>';
     const dica = (x.minimo ? `Mínimo (armazém principal${x.principal ? ' ' + x.principal : ''}): ${pbNum(x.minimo)}` : 'Sem estoque mínimo')
+      + (x.maximo ? ` · Máximo: ${pbNum(x.maximo)}${x.situacao === 'acima' ? ` (${pbNum(x.excesso)} acima)` : ''}` : '')
       + (x.por_armazem ? ` · onde está: ${x.por_armazem}` : ' · sem saldo em nenhum armazém');
-    return `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : ''}" title="${escHtml(dica)}">${pbNum(x.saldo)}</td>`;
+    return `<td class="num ${x.situacao === 'zerado' ? 'pb-sit-zerado' : x.situacao === 'abaixo' ? 'pb-sit-abaixo' : x.situacao === 'acima' ? 'pb-sit-acima' : ''}" title="${escHtml(dica)}">${pbNum(x.saldo)}</td>`;
   };
   const alvo = document.getElementById('pbItensTabela');
   if (!alvo) return;
@@ -8058,7 +8072,7 @@ function pbItensTabela(fsArg) {
         ${fs.map(f => cel(l.pf[f.slug])).join('')}<td class="num" style="font-weight:700">${pbNum(l.saldo)}</td><td class="num">${pbDinheiro(l.valor)}</td></tr>`).join('')}
     </tbody></table></div>
     ${linhas.length > PBI.limite ? `<div style="text-align:center;margin-top:10px"><button class="btn btn-ghost" onclick="PBI.limite+=200;pbItensTabela()">Mostrar mais (${pbNum(linhas.length - PBI.limite)} restantes)</button></div>` : ''}
-    <div style="font-size:11px;color:var(--text-3);margin-top:8px">Número da filial = saldo somado de todos os armazéns dela, comparado com o mínimo do armazém principal (vermelho: zerado · amarelo: abaixo do mínimo) · <b>—</b> = item não cadastrado na filial (não entra na conta) · passe o mouse para ver o mínimo e onde está o saldo.</div>`;
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px">Número da filial = saldo somado de todos os armazéns dela, comparado com o mínimo do armazém principal (vermelho: zerado · amarelo: abaixo do mínimo · roxo: acima do máximo) · <b>—</b> = item não cadastrado na filial (não entra na conta) · passe o mouse para ver o mínimo e onde está o saldo.</div>`;
 }
 function pbItensSituacao(sit) {
   PBI.situacao = sit; PBI.limite = 100;
@@ -10684,6 +10698,7 @@ function abrirModalItem(id) {
     ['Unidade', item.un_med || '—'],
     ['Valor unitário', Number(item.valor_un || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
     ['Estoque mínimo', item.estoque_min || '—'],
+    ['Estoque máximo', item.estoque_max || '—'],
     ['Durabilidade', item.durabilidade_med ? `${item.durabilidade_med} dias` : '—'],
     ['CA', item.ca || '—'],
     ['Posição no armazém', pos],
@@ -14743,6 +14758,10 @@ async function traRegistrar() {
       meio_transporte: meio, transporte,
       itens: _traItens.map(i => ({ item_id: i.item_id, quantidade: i.quantidade, ...(i.requer_ensaio ? { seriais: i.bipados || [] } : {}) })),
     };
+    // Estoque máximo (16/11/2026): avisa se o armazém de destino vai passar do máximo
+    const chk = await api('/saldos/acima-do-maximo', { method: 'POST', body: JSON.stringify({ armazem_id: destino,
+      itens: _traItens.map(i => ({ item_id: i.item_id, quantidade: Number(i.quantidade) || 0 })) }) });
+    if (chk?.acima?.length && !confirm(`O armazém de destino (${chk.armazem}) vai passar do estoque máximo:\n\n${chk.acima.map(a => `• ${a.descricao}: saldo ${a.saldo} + ${a.quantidade} da transferência = ${a.ficaria} (máximo ${a.maximo})`).join('\n')}\n\nRegistrar mesmo assim?`)) return;
     if (btn) { btn.disabled = true; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Registrando...'; }
     // Mexe no saldo: se algum dos dois armazéns estiver em inventário, passa pelo fluxo de liberação.
     const res = await apiMovimentacao('/transferencias-armazens', corpo);
@@ -15736,9 +15755,11 @@ function selecionarArmazemEst(id) {
 // Status do saldo (a tela e o Excel usam a mesma regra)
 function estStatusDe(s) {
   const min = Number(s.estoque_min || 0); // já vem calculado do backend (respeita minimo por armazem)
+  const max = Number(s.estoque_max || 0); // estoque máximo (16/11/2026): o do armazém ou o do cadastro
   if (s.saldo === 0)                  return 'zerado';
   if (min > 0 && s.saldo < min)       return 'critico';
   if (min > 0 && s.saldo < min * 1.3) return 'baixo';
+  if (max > 0 && s.saldo > max)       return 'acima';
   return 'ok';
 }
 
@@ -15760,7 +15781,7 @@ function exportarEstoqueExcel() {
   if (filtro)    lista = lista.filter(s => estStatusDe(s) === filtro);
   if (!lista.length) { toast('Nenhum item com os filtros escolhidos', 'warn'); return; }
 
-  const STATUS_TXT = { critico: 'Crítico', baixo: 'Baixo', ok: 'OK', zerado: 'Zerado' };
+  const STATUS_TXT = { critico: 'Crítico', baixo: 'Baixo', ok: 'OK', zerado: 'Zerado', acima: 'Acima do máximo' };
   const porNome = (a, b) => (a.nome_item || '').localeCompare(b.nome_item || '', 'pt-BR');
   const valorUn = (s) => Number(itemPorId.get(s.item_id)?.valor_un || 0);
   const unDe = (s) => itemPorId.get(s.item_id)?.un_med || 'UN';
@@ -15768,14 +15789,14 @@ function exportarEstoqueExcel() {
     .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'pt-BR'));
 
   // Uma aba por armazém: o que a tela mostra, com o total em valor no fim
-  const cabArm = ['Status', 'Código', 'Item', 'Categoria', 'Un.', 'Saldo', 'Mínimo', 'Valor un. (R$)', 'Valor total (R$)'];
+  const cabArm = ['Status', 'Código', 'Item', 'Categoria', 'Un.', 'Saldo', 'Mínimo', 'Máximo', 'Valor un. (R$)', 'Valor total (R$)'];
   const abaArmazem = (armId) => {
     const linhas = lista.filter(s => s.armazem_id === armId).sort(porNome).map(s => [
       STATUS_TXT[estStatusDe(s)], s.codigo_item || '', s.nome_item || '', catDe(s), unDe(s),
-      Number(s.saldo) || 0, Number(s.estoque_min || 0) || '', valorUn(s), (Number(s.saldo) || 0) * valorUn(s),
+      Number(s.saldo) || 0, Number(s.estoque_min || 0) || '', Number(s.estoque_max || 0) || '', valorUn(s), (Number(s.saldo) || 0) * valorUn(s),
     ]);
-    const total = linhas.reduce((t, l) => t + l[8], 0);
-    return [cabArm, ...linhas, [], ['', '', 'TOTAL', '', '', '', '', '', total]];
+    const total = linhas.reduce((t, l) => t + l[9], 0);
+    return [cabArm, ...linhas, [], ['', '', 'TOTAL', '', '', '', '', '', '', total]];
   };
 
   // Todos os armazéns lado a lado: uma linha por item
@@ -15885,6 +15906,14 @@ function renderEstoque(manterPagina) {
   document.getElementById('estKpiBaixo').textContent   = all.filter(s => getStatus(s) === 'baixo').length;
   document.getElementById('estKpiOk').textContent      = all.filter(s => getStatus(s) === 'ok').length;
   document.getElementById('estKpiZerado').textContent  = all.filter(s => getStatus(s) === 'zerado').length;
+  // Acima do máximo (16/11/2026): quantos e quanto dinheiro está parado acima do máximo
+  if (document.getElementById('estKpiAcima')) {
+    const acimaLista = all.filter(s => getStatus(s) === 'acima');
+    const vuDe = (id) => Number((_itens || []).find(i => i.id === id)?.valor_un || 0);
+    const parado = acimaLista.reduce((t, s) => t + (Number(s.saldo) - Number(s.estoque_max || 0)) * vuDe(s.item_id), 0);
+    document.getElementById('estKpiAcima').textContent = acimaLista.length;
+    document.getElementById('estKpiAcimaValor').textContent = `${parado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} acima do máximo`;
+  }
   document.getElementById('estKpiTotal').textContent   = all.filter(s => s.saldo > 0).length;
   const valorTotal = all.reduce((acc, s) => {
     const item = (_itens||[]).find(i => i.id === s.item_id);
@@ -15909,6 +15938,7 @@ function renderEstoque(manterPagina) {
     const statusTag = status === 'critico' ? gcaSit('Crítico', 'vermelho', 'triangle-alert')
                     : status === 'baixo'   ? gcaSit('Baixo', 'ambar', 'trending-down')
                     : status === 'zerado'  ? gcaSit('Zerado', 'cinza', 'package-x')
+                    : status === 'acima'   ? gcaSit('Acima', 'violeta', 'trending-up')
                     :                        gcaSit('OK', 'verde', 'check');
     const item     = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn  = Number(item?.valor_un || 0);
@@ -15928,8 +15958,9 @@ function renderEstoque(manterPagina) {
       <td class="td-main" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(s.nome_item||'—')}${scTag}</td>
       <td class="td-mono" style="font-size:11px">${s.codigo_item||'—'}</td>
       <td class="td-armazem-col" style="display:none;font-size:10.5px;color:var(--text-2);line-height:1.3;white-space:normal;word-break:break-word">${escHtml(s.nome_armazem||'—')}</td>
-      <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
+      <td style="text-align:center;font-weight:600;color:${status==='critico'?'#ef4444':status==='baixo'?'#f59e0b':status==='acima'?'#a78bfa':'var(--text-1)'}">${s.saldo} ${item?.un_med||'UN'}</td>
       <td style="text-align:center;color:var(--text-3);font-size:11px">${min||'—'}</td>
+      <td style="text-align:center;color:var(--text-3);font-size:11px">${Number(s.estoque_max || 0) || '—'}</td>
       <td style="text-align:right;font-size:11px;color:var(--text-2)">${vUn}</td>
       <td style="text-align:right;font-size:11px;font-weight:600;color:var(--text-1)">${valorTot}</td>
     </tr>`;
@@ -16183,8 +16214,15 @@ async function abrirPrevisaoCompra() {
   // Busca saídas dos últimos 90 dias
   const d90 = new Date(); d90.setDate(d90.getDate() - 90);
   const dataInicio = hojeBR(d90);
-  const data = await api(`/movimentacoes?tipo=saida&data_inicio=${dataInicio}&limit=2000`);
-  _previsaoSaidas = data?.registros || [];
+  // Em páginas de 1000 (16/11/2026): o banco devolve no máximo 1000 por vez — com mais saídas que
+  // isso em 90 dias, o consumo saía menor do que o real e a sugestão de compra ficava baixa.
+  _previsaoSaidas = [];
+  for (let pagina = 1; pagina <= 60; pagina++) {
+    const data = await api(`/movimentacoes?tipo=saida&data_inicio=${dataInicio}&limit=1000&pagina=${pagina}`);
+    const regs = data?.registros || [];
+    _previsaoSaidas.push(...regs);
+    if (regs.length < 1000) break;
+  }
 
   calcularPrevisao();
 }
@@ -16234,7 +16272,10 @@ async function calcularPrevisao() {
     const mediaMensal = Math.ceil(saidUlt90 / 3);
     const mediaDiaria = saidUlt90 / 90;
     const diasAteZerar = mediaDiaria > 0 ? Math.floor(s.saldo / mediaDiaria) : null;
-    const sugestaoBruta = Math.max(mediaMensal > 0 ? Math.ceil((min + mediaMensal) - s.saldo) : Math.max(min - s.saldo, 0), 0);
+    // Compra até o estoque MÁXIMO quando existe (16/11/2026); sem máximo, mínimo + 1 mês de consumo
+    const max = Number(s.estoque_max || 0);
+    const alvo = max > min ? max : (mediaMensal > 0 ? min + mediaMensal : min);
+    const sugestaoBruta = Math.max(Math.ceil(alvo - s.saldo), 0);
     const jaACaminho  = jaACaminhoMap[`${s.item_id}__${s.armazem_id}`] || 0;
     const sugestao    = Math.max(sugestaoBruta - jaACaminho, 0);
     if (sugestao === 0) return null;
@@ -16242,7 +16283,7 @@ async function calcularPrevisao() {
     const item       = (_itens||[]).find(i => i.id === s.item_id);
     const valorUn    = Number(item?.valor_un || 0);
     return { nome: s.nome_item, codigo: s.codigo_item, armazem: s.nome_armazem,
-             saldo: s.saldo, min, mediaMensal, saidUlt90, diasAteZerar,
+             saldo: s.saldo, min, max, alvo, mediaMensal, saidUlt90, diasAteZerar,
              sugestao, jaACaminho, valorUn, valorTotal: valorUn * sugestao,
              status: s.saldo <= 0 ? 'critico' : 'baixo' };
   }).filter(Boolean).sort((a, b) => a.saldo - b.saldo);
@@ -16274,6 +16315,7 @@ async function calcularPrevisao() {
         <th style="padding:8px;text-align:left;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Item</th>
         <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Saldo</th>
         <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Mín.</th>
+        <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)" title="Estoque máximo: a compra repõe até aqui">Máx.</th>
         <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Saídas 90d</th>
         <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Dias p/ Zerar</th>
         <th style="padding:8px;text-align:center;font-size:10px;font-weight:600;color:var(--text-3);text-transform:uppercase;border-bottom:1px solid var(--border)">Sugestão</th>
@@ -16287,6 +16329,7 @@ async function calcularPrevisao() {
         </td>
         <td style="padding:8px;text-align:center;font-weight:700;color:#ef4444;border-bottom:1px solid var(--border)">${a.saldo}</td>
         <td style="padding:8px;text-align:center;color:var(--text-3);font-size:11px;border-bottom:1px solid var(--border)">${a.min}</td>
+        <td style="padding:8px;text-align:center;color:${a.max ? '#a78bfa' : 'var(--text-3)'};font-size:11px;border-bottom:1px solid var(--border)" title="${a.max ? 'Compra até o máximo' : 'Sem máximo: compra até o mínimo + 1 mês de consumo'}">${a.max || '—'}</td>
         <td style="padding:8px;text-align:center;font-size:11px;color:var(--text-2);border-bottom:1px solid var(--border)">${a.saidUlt90}</td>
         <td style="padding:8px;text-align:center;border-bottom:1px solid var(--border)">${a.diasAteZerar!==null?`<span style="color:${a.diasAteZerar<15?'#ef4444':'#f59e0b'};font-weight:600">~${a.diasAteZerar}d</span>`:'<span style="color:var(--text-3)">—</span>'}</td>
         <td style="padding:8px;text-align:center;font-weight:700;color:#22c55e;border-bottom:1px solid var(--border)">${a.sugestao}</td>
@@ -21155,6 +21198,7 @@ let _catArmazens = [];
 let _catItens    = [];
 let _catAtual    = [];    // item_ids no catálogo do armazém selecionado
 let _catMinimos  = {};    // item_id → estoque_minimo
+let _catMaximos  = {};    // item_id → estoque_maximo (16/11/2026; '' = sem máximo)
 let _catRestrito = false; // se o armazém tem restrição ativa
 
 async function catInit() {
@@ -21183,7 +21227,8 @@ async function catCarregarArmazem() {
   _catRestrito = catalogoIds.size > 0;
   _catAtual    = [...catalogoIds];
   _catMinimos  = {};
-  (rm?.data||[]).forEach(m => { _catMinimos[m.item_id] = m.estoque_minimo; });
+  _catMaximos  = {};
+  (rm?.data||[]).forEach(m => { _catMinimos[m.item_id] = m.estoque_minimo; if (m.estoque_maximo != null) _catMaximos[m.item_id] = m.estoque_maximo; });
 
   document.getElementById('catRestringir').checked = _catRestrito;
   document.getElementById('catGrid').style.display = '';
@@ -21213,6 +21258,7 @@ function catRenderizar(filtro='') {
   grid.innerHTML = itFilt.map(it => {
     const checked = !_catRestrito || _catAtual.includes(it.id);
     const minVal  = _catMinimos[it.id] ?? it.estoque_min ?? 0;
+    const maxVal  = _catMaximos[it.id] ?? it.estoque_max ?? '';
     const disabled = !_catRestrito ? 'disabled' : '';
     return `<div class="card" style="padding:12px;display:flex;gap:10px;align-items:center">
       <input type="checkbox" ${checked?'checked':''} ${disabled}
@@ -21226,6 +21272,12 @@ function catRenderizar(filtro='') {
         <label style="font-size:9px;color:var(--text-3);text-transform:uppercase">Mín.</label>
         <input type="number" min="0" value="${minVal}"
           onchange="catSetMinimo('${it.id}',this.value)"
+          style="width:52px;text-align:center;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 4px;background:var(--bg);color:var(--text-1)">
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0">
+        <label style="font-size:9px;color:var(--text-3);text-transform:uppercase">Máx.</label>
+        <input type="number" min="0" value="${maxVal}" placeholder="—" data-cat-max="${escHtml(it.id)}"
+          onchange="catSetMaximo('${it.id}',this.value)" title="Estoque máximo: a compra repõe até aqui. Vazio = sem máximo"
           style="width:52px;text-align:center;font-size:12px;border:1px solid var(--border);border-radius:6px;padding:3px 4px;background:var(--bg);color:var(--text-1)">
       </div>
     </div>`;
@@ -21242,6 +21294,9 @@ function catToggleItem(itemId, checked) {
 function catSetMinimo(itemId, val) {
   _catMinimos[itemId] = Number(val);
 }
+function catSetMaximo(itemId, val) {
+  _catMaximos[itemId] = String(val).trim() === '' ? '' : Number(val);
+}
 
 async function catSalvar() {
   const armId = document.getElementById('catArmSelect').value;
@@ -21253,9 +21308,21 @@ async function catSalvar() {
   const itemIds = _catRestrito ? _catAtual : [];
 
   // Montar array de mínimos (só itens visíveis no catálogo ou todos se sem restrição)
-  const minimos = Object.entries(_catMinimos)
-    .filter(([id]) => !_catRestrito || _catAtual.includes(id))
-    .map(([item_id, estoque_minimo]) => ({ item_id, estoque_minimo: Number(estoque_minimo) }));
+  // Mínimo e máximo (16/11/2026): o máximo vai junto; vazio = sem máximo
+  const ids = new Set([...Object.keys(_catMinimos), ...Object.keys(_catMaximos)]);
+  const minimos = [...ids].filter(id => !_catRestrito || _catAtual.includes(id)).map(item_id => {
+    const it = _catItens.find(i => i.id === item_id);
+    const mx = _catMaximos[item_id];
+    return { item_id, estoque_minimo: Number(_catMinimos[item_id] ?? it?.estoque_min ?? 0),
+      ...(item_id in _catMaximos ? { estoque_maximo: mx === '' || mx == null || !(Number(mx) > 0) ? null : Number(mx) } : {}) };
+  });
+  const ruins = minimos.filter(m => m.estoque_maximo != null && m.estoque_minimo > 0 && m.estoque_maximo <= m.estoque_minimo);
+  if (ruins.length) {
+    if (btn) { btn.disabled=false; btn.innerHTML='<svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar'; }
+    const nomes = ruins.map(m => _catItens.find(i => i.id === m.item_id)?.descricao || m.item_id).slice(0, 5).join(', ');
+    toast(`O máximo tem que ser maior que o mínimo: ${escHtml(nomes)}${ruins.length > 5 ? '…' : ''}`, 'warning', 8000);
+    return;
+  }
 
   const [rc, rm] = await Promise.all([
     api('/saldos/catalogo', { method:'POST', body: JSON.stringify({ armazem_id:armId, item_ids:itemIds }) }),
@@ -21271,7 +21338,7 @@ async function catSalvar() {
 // ═══ Estoque mínimo automático: sugestão + aprovação (16/10/2026) ═══
 // Mínimo = consumo por dia × (prazo de reposição + dias de segurança). O servidor calcula
 // (/saldos/estoque-minimo/sugestao); aqui o usuário revisa, ajusta, trava e aprova.
-let _ema = { dados: null, filtro: 'mudancas', busca: '', sel: new Map(), historico: false };
+let _ema = { dados: null, filtro: 'mudancas', busca: '', sel: new Map(), selMax: new Map(), historico: false };
 const EMA_SIT = {
   aumenta:     { rot: '↑ aumenta',         cor: '#ea580c', bg: 'rgba(234,88,12,.12)' },
   reduz:       { rot: '↓ reduz',           cor: '#2563eb', bg: 'rgba(37,99,235,.12)' },
@@ -21280,7 +21347,10 @@ const EMA_SIT = {
   travado:     { rot: '<svg class=ic aria-hidden=true><use href=#i-lock></use></svg> travado',        cor: '#7c3aed', bg: 'rgba(124,58,237,.12)' },
   sem_consumo: { rot: 'sem consumo',       cor: '#94a3b8', bg: 'rgba(148,163,184,.14)' },
 };
-const EMA_FILTROS = [['mudancas', 'Com mudança', l => l.situacao === 'aumenta' || l.situacao === 'reduz'], ['sem_minimo', 'Sem mínimo hoje', l => l.situacao === 'sem_minimo'],
+// Máximo (16/11/2026): situação do máximo sugerido
+const EMA_SIT_MAX = { aumenta: { rot: '↑ máx. aumenta', cor: '#ea580c' }, reduz: { rot: '↓ máx. reduz', cor: '#2563eb' },
+  sem_maximo: { rot: 'sem máximo hoje', cor: '#64748b' }, igual: { rot: '= máx. igual', cor: '#16a34a' } };
+const EMA_FILTROS = [['mudancas', 'Com mudança', l => !!l.muda], ['sem_minimo', 'Sem mínimo hoje', l => l.situacao === 'sem_minimo'],
   ['igual', 'Iguais', l => l.situacao === 'igual'], ['travado', 'Travados', l => l.situacao === 'travado'], ['sem_consumo', 'Sem consumo', l => l.situacao === 'sem_consumo'], ['todos', 'Todos', () => true]];
 const emaNum = v => Number(v || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 const emaData = iso => { const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? `${m[3]}/${m[2]}` : '—'; };
@@ -21301,13 +21371,16 @@ async function emaCarregar() {
   if (!r?.ok) { document.getElementById('emaBody').innerHTML = `<div style="padding:24px;color:var(--danger)">Não foi possível calcular: ${escHtml(r?.erro || 'erro')}</div>`; return; }
   _ema.dados = r;
   _ema.sel = new Map(r.itens.filter(i => i.marcado).map(i => [i.item_id, i.sugerido]));
+  _ema.selMax = new Map(r.itens.filter(i => i.marcado && i.sugerido_maximo != null).map(i => [i.item_id, i.sugerido_maximo]));
   const c = r.config;
   document.getElementById('emaCfgJanela').value = c.janela;
   document.getElementById('emaCfgSeguranca').value = c.seguranca;
   document.getElementById('emaCfgPrazo').value = c.prazo_padrao;
   document.getElementById('emaCfgBase').value = c.abastecimento_base;
+  if (document.getElementById('emaCfgMaximo')) document.getElementById('emaCfgMaximo').value = c.dias_maximo ?? 60;
   document.getElementById('emaSub').innerHTML = `${escHtml(r.armazem.nome)}${r.armazem.principal ? ' · <svg class=ic-estrela aria-hidden=true><use href=#i-star></use></svg> principal (inclui o que foi enviado às bases)' : ' · base (prazo = abastecimento a cada ' + c.abastecimento_base + ' dias)'}<br>`
     + `Conta: consumo por dia × (prazo + ${c.seguranca} dias de segurança) · saídas de ${emaData(r.periodo.de)} a ${emaData(r.periodo.ate)} (${c.janela} dias)`;
+  document.getElementById('emaSub').innerHTML += ` · Máximo: mínimo + ${c.dias_maximo ?? 60} dias de consumo`;
   emaRender();
 }
 
@@ -21344,6 +21417,8 @@ function emaRenderTabela() {
     const pode = l.sugerido != null && !l.travado;
     const marcado = _ema.sel.has(l.item_id);
     const valor = marcado ? _ema.sel.get(l.item_id) : l.sugerido;
+    const valorMax = marcado && _ema.selMax.has(l.item_id) ? _ema.selMax.get(l.item_id) : l.sugerido_maximo;
+    const sitMax = EMA_SIT_MAX[l.situacao_maximo];
     const extra = [l.transferido ? `${emaNum(l.transferido)} enviado às bases` : '', l.aparado ? `${emaNum(l.aparado)} aparado (pico)` : ''].filter(Boolean).join(' · ');
     return `<tr style="${l.situacao === 'sem_consumo' ? 'opacity:.6' : ''}">
       <td style="width:28px">${pode ? `<input type="checkbox" ${marcado ? 'checked' : ''} onchange="emaMarcar('${escJs(l.item_id)}',this.checked)" style="width:16px;height:16px;cursor:pointer">` : ''}</td>
@@ -21355,6 +21430,8 @@ function emaRenderTabela() {
       <td style="text-align:right">${emaNum(l.saldo)}</td>
       <td style="text-align:right;font-weight:600">${emaNum(l.minimo_atual)}</td>
       <td style="text-align:right">${pode ? `<input type="number" min="0" value="${valor}" onchange="emaValor('${escJs(l.item_id)}',this.value)" style="width:76px;text-align:right;font-weight:700;border:1px solid var(--border);border-radius:6px;padding:4px 6px;background:var(--bg);color:var(--text-1)">` : (l.sugerido != null ? emaNum(l.sugerido) : '—')}</td>
+      <td style="text-align:right;font-weight:600">${l.maximo_atual ? emaNum(l.maximo_atual) : '—'}</td>
+      <td style="text-align:right">${pode && l.sugerido_maximo != null ? `<input type="number" min="0" value="${valorMax ?? ''}" onchange="emaValorMax('${escJs(l.item_id)}',this.value)" style="width:76px;text-align:right;font-weight:700;border:1px solid var(--border);border-radius:6px;padding:3px 6px;background:var(--bg);color:var(--text-1)">` : '—'}${sitMax ? `<div style="font-size:10px;color:${sitMax.cor}">${sitMax.rot}</div>` : ''}</td>
       <td><span style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;color:${sit.cor};background:${sit.bg}">${sit.rot}</span></td>
       <td style="padding-right:14px"><button class="btn btn-ghost btn-sm" title="${l.travado ? 'Destravar: volta a receber sugestões' : 'Travar: o sistema nunca sugere mudança para este item'}" onclick="emaTravar('${escJs(l.item_id)}',${!l.travado})">${l.travado ? '<svg class=ic aria-hidden=true><use href=#i-lock-open></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-lock></use></svg>'}</button></td>
     </tr>`;
@@ -21362,21 +21439,25 @@ function emaRenderTabela() {
   document.getElementById('emaBody').innerHTML = linhas.length ? `<table style="width:100%;font-size:12px"><thead><tr>
       <th>${marcaveis.length ? `<input type="checkbox" ${todosMarcados ? 'checked' : ''} onchange="emaMarcarTodos(this.checked)" title="Marcar todos desta lista" style="width:16px;height:16px;cursor:pointer">` : ''}</th>
       <th>Item</th><th style="text-align:right">Consumo</th><th>13 semanas</th><th style="text-align:right">Por dia</th><th>Prazo</th><th style="text-align:right">Saldo</th>
-      <th style="text-align:right">Mín. atual</th><th style="text-align:right">Sugerido</th><th></th><th></th></tr></thead><tbody>${corpo}</tbody></table>`
+      <th style="text-align:right">Mín. atual</th><th style="text-align:right">Mín. sugerido</th><th style="text-align:right">Máx. atual</th><th style="text-align:right">Máx. sugerido</th><th></th><th></th></tr></thead><tbody>${corpo}</tbody></table>`
     : '<div style="padding:32px;text-align:center;color:var(--text-3)">Nenhum item nesta lista.</div>';
   const n = _ema.sel.size;
   document.getElementById('emaSel').textContent = n ? `${n} item(ns) marcado(s) para atualizar` : 'Nenhum item marcado';
   const btn = document.getElementById('emaAplicarBtn');
-  btn.disabled = !n; btn.textContent = n ? `Aplicar ${n} mínimo(s)` : 'Aplicar selecionados';
+  btn.disabled = !n; btn.textContent = n ? `Aplicar ${n} item(ns) (mínimo e máximo)` : 'Aplicar selecionados';
 }
 
 function emaMarcar(id, on) {
   const l = _ema.dados.itens.find(x => x.item_id === id);
-  if (on) _ema.sel.set(id, _ema.sel.get(id) ?? l.sugerido); else _ema.sel.delete(id);
+  if (on) { _ema.sel.set(id, _ema.sel.get(id) ?? l.sugerido); if (l.sugerido_maximo != null && !_ema.selMax.has(id)) _ema.selMax.set(id, l.sugerido_maximo); }
+  else { _ema.sel.delete(id); _ema.selMax.delete(id); }
   emaRenderTabela();
 }
 function emaMarcarTodos(on) {
-  emaLinhasFiltradas().filter(l => l.sugerido != null && !l.travado).forEach(l => { if (on) _ema.sel.set(l.item_id, _ema.sel.get(l.item_id) ?? l.sugerido); else _ema.sel.delete(l.item_id); });
+  emaLinhasFiltradas().filter(l => l.sugerido != null && !l.travado).forEach(l => {
+    if (on) { _ema.sel.set(l.item_id, _ema.sel.get(l.item_id) ?? l.sugerido); if (l.sugerido_maximo != null && !_ema.selMax.has(l.item_id)) _ema.selMax.set(l.item_id, l.sugerido_maximo); }
+    else { _ema.sel.delete(l.item_id); _ema.selMax.delete(l.item_id); }
+  });
   emaRenderTabela();
 }
 function emaValor(id, v) {
@@ -21386,15 +21467,26 @@ function emaValor(id, v) {
   emaRenderTabela();
 }
 
+// Máximo sugerido editado (16/11/2026): marca o item; vazio/0 = sem máximo
+function emaValorMax(id, v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n < 0) return toast('Valor inválido', 'warning');
+  if (!_ema.sel.has(id)) { const l = _ema.dados.itens.find(x => x.item_id === id); _ema.sel.set(id, l.sugerido); }
+  _ema.selMax.set(id, n > 0 ? n : null);
+  emaRenderTabela();
+}
+
 async function emaAplicar() {
   const armId = document.getElementById('catArmSelect').value;
-  const itens = [..._ema.sel].map(([item_id, v]) => ({ item_id, estoque_minimo: Number(v) }));
+  const itens = [..._ema.sel].map(([item_id, v]) => ({ item_id, estoque_minimo: Number(v), ...(_ema.selMax.has(item_id) ? { estoque_maximo: _ema.selMax.get(item_id) } : {}) }));
   if (!itens.length) return;
+  const ruins = itens.filter(i => i.estoque_maximo != null && i.estoque_minimo > 0 && i.estoque_maximo <= i.estoque_minimo);
+  if (ruins.length) return toast(`O máximo tem que ser maior que o mínimo (${ruins.length} item(ns)).`, 'warning', 6000);
   const btn = document.getElementById('emaAplicarBtn');
   btn.disabled = true; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Aplicando…';
   const r = await api('/saldos/estoque-minimo/aplicar', { method: 'POST', body: JSON.stringify({ armazem_id: armId, itens }) });
   if (!r?.ok) { btn.disabled = false; return toast('Erro ao aplicar: ' + (r?.erro || '?'), 'error'); }
-  toast(`${r.aplicados} mínimo(s) atualizado(s)${r.pulados?.length ? ` · ${r.pulados.length} pulado(s)` : ''}`, 'success');
+  toast(`${r.aplicados} item(ns) atualizado(s) (mínimo e máximo)${r.pulados?.length ? ` · ${r.pulados.length} pulado(s)` : ''}`, 'success');
   await Promise.all([emaCarregar(), catCarregarArmazem()]);
 }
 
@@ -21408,7 +21500,8 @@ async function emaTravar(id, travado) {
 
 async function emaConfigSalvar() {
   const cfg = { janela: +document.getElementById('emaCfgJanela').value, seguranca: +document.getElementById('emaCfgSeguranca').value,
-    prazo_padrao: +document.getElementById('emaCfgPrazo').value, abastecimento_base: +document.getElementById('emaCfgBase').value };
+    prazo_padrao: +document.getElementById('emaCfgPrazo').value, abastecimento_base: +document.getElementById('emaCfgBase').value,
+    dias_maximo: +(document.getElementById('emaCfgMaximo')?.value ?? 60) };
   const r = await api('/saldos/estoque-minimo/config', { method: 'POST', body: JSON.stringify(cfg) });
   if (!r?.ok) return toast('Erro ao salvar parâmetros: ' + (r?.erro || '?'), 'error');
   toast('Parâmetros salvos — recalculando', 'success');
@@ -21426,7 +21519,7 @@ async function emaHistorico() {
   const nomes = Object.fromEntries((_catItens || []).map(i => [i.id, i.descricao]));
   const ORIGEM = { sugestao: 'Sugestão aprovada', sugestao_ajustada: 'Sugestão ajustada', manual: 'Edição manual', travou: '<svg class=ic aria-hidden=true><use href=#i-lock></use></svg> Travou', destravou: '<svg class=ic aria-hidden=true><use href=#i-lock-open></use></svg> Destravou' };
   const lin = (r?.data || []).map(h => `<tr><td style="white-space:nowrap">${new Date(h.criado_em).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}</td>
-    <td>${escHtml(nomes[h.item_id] || h.item_id)}</td><td style="text-align:right">${h.antes == null ? '—' : emaNum(h.antes)}</td><td style="text-align:right;font-weight:600">${h.depois == null ? '—' : emaNum(h.depois)}</td>
+    <td>${escHtml(nomes[h.item_id] || h.item_id)}${h.campo === 'MAXIMO' ? ' <span style="font-size:10px;font-weight:700;color:#7c3aed">(máximo)</span>' : ''}</td><td style="text-align:right">${h.antes == null ? '—' : emaNum(h.antes)}</td><td style="text-align:right;font-weight:600">${h.depois == null ? '—' : emaNum(h.depois)}</td>
     <td>${ORIGEM[h.origem] || escHtml(h.origem)}${h.base ? `<div style="font-size:10px;color:var(--text-3)">${emaNum(h.base.por_dia)}/dia × (${h.base.prazo} + ${h.base.seguranca} dias)</div>` : ''}</td><td>${escHtml(h.usuario || '')}</td></tr>`).join('');
   document.getElementById('emaBody').innerHTML = lin ? `<table style="width:100%;font-size:12px"><thead><tr><th>Quando</th><th>Item</th><th style="text-align:right">Antes</th><th style="text-align:right">Depois</th><th>Origem</th><th>Quem</th></tr></thead><tbody>${lin}</tbody></table>`
     : '<div style="padding:32px;text-align:center;color:var(--text-3)">Nenhuma mudança registrada ainda.</div>';
@@ -22710,6 +22803,7 @@ async function salvarItem() {
     un_med:          document.getElementById('itemUnMed').value,
     valor_un:        parseFloat(document.getElementById('itemValor').value) || 0,
     estoque_min:     parseInt(document.getElementById('itemEstMin').value) || 0,
+    estoque_max:     (() => { const v = Number(document.getElementById('itemEstMax')?.value); return v > 0 ? v : null; })(),
     durabilidade_med:parseInt(document.getElementById('itemDurabilidade').value) || null,
     corredor:        document.getElementById('itemCorredor').value.trim(),
     prateleira:      document.getElementById('itemPrateleira').value.trim(),
@@ -22740,6 +22834,7 @@ function editarItem(id) {
   document.getElementById('itemUnMed').value        = item.un_med||'UN';
   document.getElementById('itemValor').value        = item.valor_un||0;
   document.getElementById('itemEstMin').value       = item.estoque_min||0;
+  if (document.getElementById('itemEstMax')) document.getElementById('itemEstMax').value = item.estoque_max || '';
   document.getElementById('itemDurabilidade').value = item.durabilidade_med||'';
   document.getElementById('itemCA').value           = item.ca||'';
   document.getElementById('itemCorredor').value     = item.corredor||'';
@@ -22776,6 +22871,7 @@ function limparFormItem() {
   });
   document.getElementById('itemUnMed').value  = 'UN';
   document.getElementById('itemEstMin').value = '1';
+  if (document.getElementById('itemEstMax')) document.getElementById('itemEstMax').value = '';
   document.getElementById('itemRequerEnsaio').checked = false;
   document.getElementById('itemPossuiSerie').checked  = false;
   document.getElementById('itemEntregaPara').value    = 'pessoa';
@@ -24400,6 +24496,12 @@ async function salvarSC() {
   };
   if (!body.numero_sc) { toast('Número da SC obrigatório', 'warn'); return; }
   if (!body.armazem_id) { toast('Selecione o armazém — necessário para calcular a previsão de compras corretamente', 'warn'); return; }
+  // Estoque máximo (16/11/2026): avisa se a SC faz o armazém passar do máximo (conta o que já está a caminho)
+  if (body.status !== 'Cancelado') {
+    const chk = await api('/saldos/acima-do-maximo', { method: 'POST', body: JSON.stringify({ armazem_id: body.armazem_id, a_caminho: true, exceto_sc: id || null,
+      itens: _scItens.map(i => ({ item_id: i.itemId, quantidade: Number(i.qtd || i.qtdSolicitada || 0) - Number(i.qtdRecebida || 0) })) }) });
+    if (chk?.acima?.length && !confirm(`Esta SC faz o ${chk.armazem} passar do estoque máximo:\n\n${chk.acima.map(a => `• ${a.descricao}: saldo ${a.saldo}${a.a_caminho ? ` + ${a.a_caminho} a caminho` : ''} + ${a.quantidade} desta SC = ${a.ficaria} (máximo ${a.maximo})`).join('\n')}\n\nSalvar mesmo assim?`)) return;
+  }
   const res = await api(id ? `/solicitacoes-compra/${id}` : '/solicitacoes-compra', {
     method: id ? 'PUT' : 'POST', body: JSON.stringify(body)
   });
