@@ -9346,8 +9346,8 @@ function onViewLoad(nome) {
     carregarFiliais().then(() => popularSelectsFiliais());
   }
   if (nome === 'itens')              carregarItens();
-  if (nome === 'assinaturas')        { carregarAssinaturas(); _iniciarRealtime(); }
-  if (nome === 'solicitacoes')       { carregarSolicitacoes(); _iniciarRealtime(); }
+  if (nome === 'assinaturas')        { _assPagina = 1; carregarAssinaturas(); _iniciarRealtime(); }
+  if (nome === 'solicitacoes')       { _solPagina = 1; carregarSolicitacoes(); _iniciarRealtime(); }
   if (nome === 'entrada')            { if (!_itens.length) carregarItensAtendimento(); populateArmazens('entArmazem'); carregarUltimasEntradas(); initMovDateFields(); }
   if (nome === 'saida')              { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); populateArmazens('saiArmazem'); carregarUltimasSaidas(); initMovDateFields(); }
   if (nome === 'transferencia')      { if (!_itens.length) carregarItensAtendimento(); populateArmazens('trfOrigem');  populateArmazens('trfDestino'); initMovDateFields(); carregarUltimasTransferencias(); trfPrepararAbas(); if (!document.getElementById('trfTabFil')?.classList.contains('active')) traIniciar(); }
@@ -13237,7 +13237,7 @@ async function carregarAssinaturas(silencioso = false) {
   if (badge) { badge.textContent = pendentes; badge.style.display = pendentes > 0 ? '' : 'none'; }
 
   _popularFiltroSetores();
-  filtrarAssinaturas();
+  filtrarAssinaturas(undefined, true);
 }
 
 let _assPagina = 1;
@@ -13245,7 +13245,7 @@ const _assPorPagina = 20;
 
 let _assListaFiltrada = [];
 
-function filtrarAssinaturas(busca) {
+function filtrarAssinaturas(busca, manterPagina) {
   if (busca !== undefined) _assQuery = busca;
   const filtroStatus = document.getElementById('assFiltroStatus')?.value || '';
   const filtroSetor  = document.getElementById('assFiltroSetor')?.value || '';
@@ -13268,7 +13268,7 @@ function filtrarAssinaturas(busca) {
   if (q) lista = lista.filter(a => (a.nomeColaborador||'').toLowerCase().includes(q));
 
   _assListaFiltrada = lista;
-  _assPagina = 1;
+  if (!manterPagina) _assPagina = 1;   // recarregar a lista mantém a página (17/11/2026); filtro novo volta para a 1
   renderAssinaturas(lista);
 }
 
@@ -13302,7 +13302,7 @@ function renderAssinaturas(lista) {
   }
 
   const total    = lista.length;
-  if (_assPagina > Math.ceil(total / _assPorPagina)) _assPagina = 1;  // a lista encolheu
+  _assPagina = Math.max(1, Math.min(_assPagina, Math.ceil(total / _assPorPagina)));  // a lista encolheu: fica na última página
   const inicio   = (_assPagina - 1) * _assPorPagina;
   const fim      = Math.min(inicio + _assPorPagina, total);
   const pagina   = lista.slice(inicio, fim);
@@ -13851,7 +13851,9 @@ async function carregarSolicitacoes(silencioso = false) {
   if (data.prazo) _solPrazo = data.prazo;
   _solLimiteCarregado = solLimiteDesejado();
   solAtualizarContadorCancelar();
-  _solPagina = 1;
+  // A página atual fica (17/11/2026): antes toda recarga — a automática, quando alguém mexe em um
+  // pedido, ou ao abrir um pedido (vira "Visualizado") — voltava para a página 1. Filtro e aba novos
+  // continuam começando na 1; entrar na tela também.
   solPopularFiltrosExtras();
 
   // Popula filtro de armazém (uma vez só, com os armazéns realmente usados nas solicitações)
@@ -14054,7 +14056,7 @@ function renderSolicitacoes() {
   }
 
   const total  = lista.length;
-  if (_solPagina > Math.ceil(total / _solPorPagina)) _solPagina = 1;  // a lista encolheu
+  _solPagina = Math.max(1, Math.min(_solPagina, Math.ceil(total / _solPorPagina)));  // a lista encolheu: fica na última página
   const inicio = (_solPagina - 1) * _solPorPagina;
   const fim    = Math.min(inicio + _solPorPagina, total);
   const pagina = lista.slice(inicio, fim);
