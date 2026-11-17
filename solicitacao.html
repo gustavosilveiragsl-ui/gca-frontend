@@ -453,7 +453,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
           <div class="grid-2">
             <div class="form-group">
               <label class="form-label">Armazém *</label>
-              <select class="form-input" id="armSel">
+              <select class="form-input" id="armSel" onchange="armMudou()">
                 <option value="">Selecione...</option>
               </select>
             </div>
@@ -2111,6 +2111,25 @@ function chaveDoPedido(payload) {
   return _sessaoEnvio + ':' + h.toString(36);
 }
 
+// Trocar o armazém com itens já escolhidos (17/11/2026): o saldo tinha sido conferido no armazém
+// anterior. Ficam só os que têm saldo no novo; os outros saem do pedido, com aviso.
+function saldoNoArmazem(itemId, armId) {
+  return (_dados?.saldos || []).filter(s => s.item_id === itemId && s.armazem_id === armId).reduce((t, s) => t + (Number(s.saldo) || 0), 0);
+}
+function armMudou() {
+  const sel = document.getElementById('armSel');
+  const armId = sel.value, armNome = sel.selectedOptions[0]?.text || '';
+  if (!armId || !_itens.length) return;
+  const sairam = [];
+  _itens = _itens.filter(it => {
+    if (saldoNoArmazem(it.itemId, armId) <= 0) { sairam.push(it.nome); return false; }
+    it.armId = armId; it.nomeArmazem = armNome;
+    return true;
+  });
+  renderItens();
+  if (sairam.length) toast(`Sem saldo no ${armNome}: ${sairam.join(', ')}. ${sairam.length === 1 ? 'Saiu' : 'Saíram'} do pedido.`, 'warn');
+}
+
 async function enviar() {
   const colId   = document.getElementById('colId').value;
   const colNome = document.getElementById('colNomeD').textContent;
@@ -2127,6 +2146,10 @@ async function enviar() {
   if (paraViatura && !retId) { msg.textContent = 'Informe quem vai retirar o material.'; return; }
   if (!armId)         { msg.textContent='Selecione o armazém.'; return; }
   if (!_itens.length) { msg.textContent='Adicione pelo menos um item.'; return; }
+  // Conferência final: todos os itens com saldo no armazém escolhido (o servidor confere de novo).
+  // Na edição quem decide é o servidor: ele sabe quais itens já estavam no pedido.
+  const semSaldoArm = window._editandoSolId ? [] : _itens.filter(it => saldoNoArmazem(it.itemId, armId) <= 0).map(it => it.nome);
+  if (semSaldoArm.length) { msg.textContent = `Sem saldo no ${armNome}: ${semSaldoArm.join(', ')}. Tire do pedido ou escolha outro armazém.`; return; }
   if (_prio==='Urgente'&&!obs){ msg.innerHTML='<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Solicitação urgente requer observação.'; return; }
   if (_prio==='Urgente'&&!_imgs.length){ msg.innerHTML='<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Solicitação urgente requer ao menos 1 imagem.'; return; }
 
