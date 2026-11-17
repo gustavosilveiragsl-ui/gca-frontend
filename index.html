@@ -516,6 +516,17 @@ tr.notif-destaque>td{animation:notifDestaque 2.6s ease}
 .card-title{font-size:12px;font-weight:600;color:var(--text-1);}
 .card-sub{font-size:10px;color:var(--text-3);margin-top:2px;}
 .card-actions{display:flex;gap:8px;align-items:center;margin-left:auto;}
+/* Cabeçalho das Solicitações (17/11/2026): título com espaço, botões à direita, filtros em grade embaixo */
+.sol-cab{flex-direction:column;align-items:stretch;gap:12px}
+.sol-cab-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sol-cab-tit{flex:1 1 360px;min-width:0}
+.sol-cab-tit .card-title{font-size:14px}
+.sol-cab-tit .card-sub{font-size:11px;line-height:1.45}
+.sol-cab-acoes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.sol-filtros{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(180px,1.2fr) repeat(5,minmax(150px,1fr));gap:8px}
+.sol-filtros .form-input{width:100%;min-width:0;height:36px;padding:0 10px;font-size:12px}
+@media (max-width:1500px){.sol-filtros{grid-template-columns:repeat(5,minmax(0,1fr))}.sol-filtros .sol-f-busca{grid-column:span 2}.sol-filtros .sol-f-busca+.sol-f-busca{grid-column:span 3}}
+@media (max-width:900px){.sol-filtros{grid-template-columns:1fr 1fr}.sol-filtros .sol-f-busca,.sol-filtros .sol-f-busca+.sol-f-busca{grid-column:1/-1}}
 .search-box{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;color:var(--text-1);font-size:11px;outline:none;width:200px;transition:border-color var(--transition);}
 .search-box:focus{border-color:var(--accent);}
 .search-box::placeholder{color:var(--text-3);}
@@ -2483,18 +2494,26 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
         <!-- FILTROS + TABELA -->
         <div class="card">
-          <div class="card-header" style="flex-wrap:wrap">
-            <div><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento · os em aberto na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)</div></div>
-            <div class="card-actions" style="flex-wrap:wrap;justify-content:flex-end;flex:1 1 520px;min-width:0">
-              <input class="search-box" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
-              <input class="search-box" type="text" id="solBuscaItem" placeholder="Item (ex: detector)" oninput="filtrarSolicitacoes()" title="Mostra as solicitações que têm um item com esse nome">
-              <select class="form-input" id="solFiltroSolicitante" style="width:180px;font-size:11px" onchange="filtrarSolicitacoes()">
+          <div class="card-header sol-cab">
+            <div class="sol-cab-topo">
+              <div class="sol-cab-tit"><div class="card-title">Solicitações de Material</div><div class="card-sub" id="solCardSub">Solicitações em andamento · os em aberto na ordem da fila de cada armazém (urgentes primeiro, depois do mais antigo)</div></div>
+              <div class="sol-cab-acoes">
+              <button class="btn btn-ghost" id="btnRankingUrgencia" onclick="abrirRankingUrgencia()" title="Pedidos marcados como urgentes e rebaixados pelo almoxarifado, por solicitante"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgentes por solicitante</button>
+              <button class="btn btn-ghost" onclick="scalAbrir()" title="Por dia: feitas, atendidas, finalizadas, canceladas e a fila no fim do dia"><svg class=ic aria-hidden=true><use href=#i-calendar-days></use></svg> Calendário</button>
+              <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
+              <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
+              </div>
+            </div>
+            <div class="sol-filtros">
+              <input class="form-input sol-f-busca" type="text" id="solBusca" placeholder="Colaborador, solicitante, ID..." oninput="filtrarSolicitacoes()">
+              <input class="form-input sol-f-busca" type="text" id="solBuscaItem" placeholder="Item (ex: detector)" oninput="filtrarSolicitacoes()" title="Mostra as solicitações que têm um item com esse nome">
+              <select class="form-input" id="solFiltroSolicitante" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os solicitantes</option>
               </select>
-              <select class="form-input" id="solFiltroBase" style="width:160px;font-size:11px" onchange="filtrarSolicitacoes()" title="Base pelo setor do solicitante (ou do colaborador atendido, quando o setor do solicitante não tem cidade)">
+              <select class="form-input" id="solFiltroBase" onchange="filtrarSolicitacoes()" title="Base pelo setor do solicitante (ou do colaborador atendido, quando o setor do solicitante não tem cidade)">
                 <option value="">Todas as bases</option>
               </select>
-              <select class="form-input" id="solFiltroStatus" style="width:140px;font-size:11px" onchange="filtrarSolicitacoes()">
+              <select class="form-input" id="solFiltroStatus" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os status</option>
                 <option value="PENDENTE">Pendente</option>
                 <option value="VISUALIZADO">Visualizado</option>
@@ -2503,7 +2522,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="EM TRANSITO">Em Trânsito</option>
                 <option value="NA BASE DESTINO">Na Base Destino</option>
               </select>
-              <select class="form-input" id="solFiltroPrioridade" style="width:120px;font-size:11px" onchange="filtrarSolicitacoes()">
+              <select class="form-input" id="solFiltroPrioridade" onchange="filtrarSolicitacoes()">
                 <option value="">Todas prioridades</option>
                 <option value="Urgente">Urgente</option>
                 <option value="Normal">Normal</option>
@@ -2511,13 +2530,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="__rebaixada">Urgência rebaixada</option>
                 <option value="__mais_perto">Tem no armazém mais perto</option>
               </select>
-              <select class="form-input" id="solFiltroArmazem" style="width:170px;font-size:11px" onchange="filtrarSolicitacoes()">
+              <select class="form-input" id="solFiltroArmazem" onchange="filtrarSolicitacoes()">
                 <option value="">Todos os armazéns</option>
               </select>
-              <button class="btn btn-ghost" id="btnRankingUrgencia" onclick="abrirRankingUrgencia()" title="Pedidos marcados como urgentes e rebaixados pelo almoxarifado, por solicitante"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgentes por solicitante</button>
-              <button class="btn btn-ghost" onclick="scalAbrir()" title="Por dia: feitas, atendidas, finalizadas, canceladas e a fila no fim do dia"><svg class=ic aria-hidden=true><use href=#i-calendar-days></use></svg> Calendário</button>
-              <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
-              <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
           </div>
           <div style="overflow-x:auto">
