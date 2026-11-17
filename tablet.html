@@ -467,9 +467,20 @@ async function confirmarAssinatura() {
     const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: _atual.token, assinatura_base64: assinSvg })
+      // Quantos itens a pessoa viu: um pedido pode ter entrado no atendimento depois (juntar pedidos, 16/11/2026)
+      body: JSON.stringify({ token: _atual.token, assinatura_base64: assinSvg, itens_vistos: contarItens(_atual.itens_json) })
     });
     const data = await res.json();
+
+    if (data.codigo === 'ITENS_MUDARAM') {
+      alert(data.erro);
+      const id = _atual.id;
+      await buscarPendentes();
+      btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
+      limparAssinatura();
+      abrirAssinatura(id);
+      return;
+    }
 
     if (data.ok || data.jaAssinado) {
       const nome = _atual.nome_colaborador;

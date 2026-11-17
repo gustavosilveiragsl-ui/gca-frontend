@@ -10069,6 +10069,7 @@ async function verificarTokenAssinatura() {
     }
 
     const { atendimentoId, nomeColaborador, data: dataAtend, itens } = data;
+    window._assinItensVistos = itens.length;   // juntar pedidos (item 6): conferido ao confirmar
     card.innerHTML = `
       <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;background:#1e293b">
         <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
@@ -10260,10 +10261,12 @@ async function confirmarAssinatura(token, atendimentoId) {
     const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64 })
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, itens_vistos: window._assinItensVistos })
     });
     const data = await res.json();
 
+    // Entraram itens depois que a página abriu (juntar pedidos): mostra a lista nova antes de assinar
+    if (data.codigo === 'ITENS_MUDARAM') { alert(data.erro); verificarTokenAssinatura(); return; }
     if (!data.ok) {
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar recebimento'; }
       alert(data.erro || 'Erro ao confirmar. Tente novamente.');
@@ -11680,6 +11683,9 @@ const ATEND = {
   tokenGerado:   null,
   pendenciaToken: null,
   solicitacaoId: null,   // ID da solicitação vinculada (se vier de uma solicitação)
+  complementoDe: null,   // juntar pedidos (item 6): atendimento pendente que recebe estes itens
+  complementoInfo: null,
+  solicitacoesExtras: [], // juntar pedidos (item 6): outros pedidos atendidos junto
 };
 
 // ═══════════════════════════════════════════
@@ -11733,6 +11739,7 @@ async function iniciarAtendimento() {
 
   // Reseta solicitacao vinculada (será setada por atenderSolicitacao se vier de lá)
   if (!window._solicitacaoAtendimento) ATEND.solicitacaoId = null;
+  ATEND.complementoDe = null; ATEND.complementoInfo = null; ATEND.solicitacoesExtras = [];   // atenderSolicitacao preenche depois
   ATEND.ativo    = true;
   ATEND.id       = 'atd_' + Date.now();
   ATEND.inicio   = Date.now();
@@ -11839,6 +11846,9 @@ async function selecionarColabAtend(id) {
   if (!colab) return;
   document.getElementById('atendColabSugestoes').classList.add('hidden');
   document.getElementById('atendColabBusca').value = colab.nome;
+
+  // Juntar pedidos (item 6): incluindo no atendimento pendente dele, a pendência é a esperada
+  if (ATEND.complementoDe && ATEND.complementoInfo && !ATEND.complementoInfo.placa) { confirmarColabAtend(colab); return; }
 
   // Garante assinaturas carregadas
   await carregarAssinaturasSilencioso();
@@ -12562,6 +12572,11 @@ async function concluirAtendimento() {
     }
   }
 
+  // Juntar pedidos (item 6): o complemento vai junto com o atendimento pendente (mesma carga ou balcão)
+  if (ATEND.complementoDe && ATEND.complementoInfo) {
+    finalizarConclusaoAtendimento(!!ATEND.complementoInfo.logistica, ATEND.complementoInfo.destino_id || null);
+    return;
+  }
   // Antes só um checkbox discreto no resumo (fácil de esquecer) — agora é uma pergunta
   // obrigatória toda vez que conclui, pra não passar batido nenhum atendimento que precise
   // de transporte. finalizarConclusaoAtendimento() continua o fluxo depois da resposta.
@@ -12659,6 +12674,8 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     pularFilaMotivo:  (ATEND.solicitacaoId && _solPuloFila[ATEND.solicitacaoId]) || '',
     necessitaLogistica: necessitaLogistica,
     destinoEntregaId: destinoEntregaId,
+    complementoDe:    ATEND.complementoDe || null,
+    solicitacoesExtras: ATEND.solicitacoesExtras || [],
   };
 
   const res = await apiMovimentacao('/atendimentos', registro);
@@ -12705,7 +12722,10 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     if (btn) { btn.disabled = false; btn.textContent = 'Concluir Atendimento'; }
   }
 
-  if (tokenOk) {
+  if (tokenOk && res.complemento) {
+    abrirModalFinalizado(registro, { complemento: true });
+    toast('Pedido incluído no atendimento pendente — o mesmo link assina tudo.', 'success', 6000);
+  } else if (tokenOk) {
     abrirModalFinalizado(registro);
     toast('Atendimento registrado com sucesso!', 'success');
   } else {
@@ -12750,6 +12770,8 @@ function abrirModalFinalizado(registro, opts = {}) {
         <button class="btn btn-primary" onclick="regerarTokenModalFinalizado('${registro.id}')"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg> Tentar Gerar Link Novamente</button>
       </div>`;
   } else if (ATEND.linkGerado) {
+    document.getElementById('finalizadoTitulo').textContent = opts.complemento ? '✓ Incluído no atendimento pendente' : '✓ Atendimento Registrado';
+    if (opts.complemento) document.getElementById('finalizadoResumo').textContent = `${registro.qtdItens} ${registro.qtdItens === 1 ? 'item incluído' : 'itens incluídos'} • mesmo link de assinatura`;
     gcaMostrarQr(qrDiv, ATEND.linkGerado, 160);
   } else {
     qrDiv.textContent = 'Link não disponível';
@@ -14023,9 +14045,9 @@ function solTagsFila(s) {
 }
 // Ao atender: se há pedidos na frente deste no armazém, mostra quais e deixa pular só com motivo.
 // Devolve true para seguir com este pedido.
-async function solConferirFila(s) {
+async function solConferirFila(s, junto = []) {
   if (!SOL_ABERTOS.includes(s.status)) return true;
-  const r = await api(`/solicitacoes/${encodeURIComponent(s.id)}/fila`);
+  const r = await api(`/solicitacoes/${encodeURIComponent(s.id)}/fila${junto.length ? `?junto=${encodeURIComponent(junto.join(','))}` : ''}`);
   if (!r?.ok) return true;   // sem resposta, o servidor confere de novo ao concluir
   if (!r.na_frente.length) { delete _solPuloFila[s.id]; return true; }
   return new Promise(resolve => {
@@ -14275,6 +14297,7 @@ async function abrirModalSolicitacao(id) {
     'FILA_PULADA':           gcaSit('Outro pedido foi atendido antes deste', 'laranja', 'arrow-down-up'),
     'PRIORIDADE_ALTERADA':   gcaSit('Prioridade alterada pelo almoxarifado', 'laranja', 'siren'),
     'ARMAZEM_ALTERADO':      gcaSit('Pedido mudou de armazém', 'ceu', 'warehouse'),
+    'PEDIDO_JUNTADO':        gcaSit('Outro pedido entrou no mesmo atendimento', 'teal', 'merge'),
   };
 
   document.getElementById('solModalBody').innerHTML = `
@@ -14377,7 +14400,7 @@ async function abrirModalSolicitacao(id) {
 
   const alertaAss = assPendMod ? `
     <div style="width:100%;background:var(--red-soft);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);padding:9px 12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px;margin-bottom:4px">
-      <svg class=ic aria-hidden=true><use href=#i-signature></use></svg> <strong>${escHtml(s.colaborador_nome)}</strong> possui assinatura pendente — não é possível iniciar o atendimento até que seja assinado.
+      <svg class=ic aria-hidden=true><use href=#i-signature></use></svg> <span><strong>${escHtml(s.colaborador_nome)}</strong> possui assinatura pendente. Se o atendimento pendente é do mesmo armazém e a carga ainda não saiu, este pedido pode entrar nele (mesma assinatura); senão, espera a assinatura.</span>
     </div>` : '';
 
   // Item 8 (16/11/2026): o armazém mais perto de quem pediu tem os itens
@@ -14392,7 +14415,9 @@ async function abrirModalSolicitacao(id) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%">
       ${alertaAss}
       ${alertaPerto}
-      ${podeAtender ? `<button class="btn btn-primary" ${assPendMod?'disabled title="Assinatura pendente"':''} onclick="atenderSolicitacao('${id}', this)"><svg class=ic aria-hidden=true><use href=#i-handshake></use></svg> Iniciar Atendimento</button>` : ''}
+      ${podeAtender ? (assPendMod
+        ? `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}', this)" title="Juntar pedidos: os itens entram no atendimento que espera a assinatura"><svg class=ic aria-hidden=true><use href=#i-merge></use></svg> Incluir no atendimento pendente</button>`
+        : `<button class="btn btn-primary" onclick="atenderSolicitacao('${id}', this)"><svg class=ic aria-hidden=true><use href=#i-handshake></use></svg> Iniciar Atendimento</button>`) : ''}
       ${podeEditar  ? `<button class="btn btn-ghost" onclick="editarSolicitacao('${id}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>` : ''}
       ${podeAjustar ? `<button class="btn btn-ghost" id="btnSolPrioridade" onclick="abrirMudarPrioridade('${escJs(id)}')"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> ${s.prioridade === 'Urgente' ? 'Mudar para Normal' : 'Mudar para Urgente'}</button>
         <button class="btn btn-ghost" id="btnSolArmazem" onclick="abrirMudarArmazem('${escJs(id)}')"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> Mudar armazém</button>` : ''}
@@ -14918,16 +14943,20 @@ async function atenderSolicitacaoViatura(s, btnEl) {
   }
   _atendendoSolicitacaoEmAndamento = true;
   try {
-    // Mesma regra do atendimento: placa com entrega pendente de assinatura não recebe outra
+    // Mesma regra do atendimento: placa com entrega pendente de assinatura não recebe outra — a não ser
+    // que o pedido entre nela como complemento (juntar pedidos, item 6)
     await carregarAssinaturasSilencioso();
-    const pendente = (_assinaturas || []).find(a => a.destinatarioTipo === 'VIATURA' && a.placa === s.placa &&
+    const junta = await solJuntarDecidir(s);
+    if (!junta) return;
+    const complemento = junta.modo === 'complemento';
+    const pendente = !complemento && (_assinaturas || []).find(a => a.destinatarioTipo === 'VIATURA' && a.placa === s.placa &&
       (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO'));
     if (pendente) { toast(`<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> A viatura ${escHtml(s.placa)} tem uma entrega pendente de assinatura. Resolva antes de iniciar outra.`, 'error', 6000); return; }
     const idRetira = s.retirado_por_id || s.solicitante_id;
-    const pendPessoa = idRetira && (_assinaturas || []).find(a => a.colaboradorId === idRetira && a.statusCalc !== 'ASSINADO');
+    const pendPessoa = !complemento && idRetira && (_assinaturas || []).find(a => a.colaboradorId === idRetira && a.statusCalc !== 'ASSINADO');
     if (pendPessoa) { toast(`<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(s.retirado_por_nome || 'Quem vai retirar')} tem uma assinatura pendente (de ${formatarData(pendPessoa.data)}). Resolva antes de iniciar o atendimento.`, 'error', 6000); return; }
     if (await bloqueadoPorInventario(s.armazem_id)) return;
-    if (!await solConferirFila(s)) return;
+    if (!await solConferirFila(s, (junta.extras || []).map(x => x.id))) return;
 
     fecharModalSolicitacao();
     showView('carga-viatura');
@@ -14941,12 +14970,16 @@ async function atenderSolicitacaoViatura(s, btnEl) {
     } else {
       cvEscolherViatura(s.viatura_id);
     }
-    // Quem retira: o que veio na solicitação (ou quem pediu, nas antigas) — dá para trocar no balcão
-    const retiraId = s.retirado_por_id || s.solicitante_id;
-    if ((_colaboradores || []).some(c => c.id === retiraId)) cvEscolherColab(retiraId);
+    // Juntar pedidos (item 6)
+    if (complemento) { CV.complementoDe = junta.pendente.id; CV.complementoInfo = junta.pendente; }
+    CV.solicitacoesExtras = (junta.extras || []).map(x => x.id);
+    // Quem retira: o que veio na solicitação (ou quem pediu, nas antigas) — dá para trocar no balcão.
+    // No complemento é quem retirou a entrega pendente (é quem assina tudo).
+    const retiraId = complemento ? junta.pendente.retirado_por_id : (s.retirado_por_id || s.solicitante_id);
+    if ((_colaboradores || []).some(c => c.id === retiraId)) await cvEscolherColab(retiraId);
     CV.solicitacaoId = s.id;
 
-    let itens = []; try { itens = JSON.parse(s.itens_json || '[]'); } catch {}
+    let itens = [s, ...(junta.extras || [])].flatMap(solItensDoPedido);
     const naoEntraram = [];
     if (CV.viatura) {
       for (const it of itens) {
@@ -15077,6 +15110,93 @@ async function salvarCadastroNovato(solId) {
   atenderSolicitacao(solId);
 }
 
+// ═══════════════════════════════════════════
+// JUNTAR PEDIDOS (16/11/2026, item 6 da lista) — antes de atender um pedido:
+//  - a pessoa (ou a placa) tem atendimento esperando assinatura → oferece INCLUIR este pedido nele
+//    (mesmo link, mesma assinatura, mesma carga), se for do mesmo armazém e a carga não saiu;
+//  - senão, se ela tem outros pedidos abertos no mesmo armazém → oferece ATENDER JUNTO.
+// Resolve com { modo: 'complemento', pendente } | { modo: 'junto', extras: [solicitações] } |
+// { modo: 'so', extras: [] } | null (desistiu ou não dá para atender agora).
+// ═══════════════════════════════════════════
+async function solJuntarDecidir(s) {
+  const r = await api(`/solicitacoes/${encodeURIComponent(s.id)}/juntar`);
+  if (!r?.ok) return { modo: 'so', extras: [] };   // sem resposta: segue como antes (o servidor confere ao concluir)
+  const viatura = s.destinatario_tipo === 'VIATURA';
+  const quem = viatura ? `A viatura ${s.placa || ''}` : (s.colaborador_nome || 'O colaborador');
+  if (r.pendente) {
+    const p = r.pendente;
+    if (!p.pode) {
+      toast(`<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> ${escHtml(quem)} tem um atendimento de ${escHtml(p.data_br)} pendente de assinatura. ${escHtml(p.motivo || '')} Resolva a assinatura antes de atender este pedido.`, 'error', 9000);
+      return null;
+    }
+    return solJuntarModal({
+      icone: 'merge', titulo: 'Incluir no atendimento pendente?',
+      sub: `${quem} tem um atendimento de ${p.data_br} esperando a assinatura${p.placa && !viatura ? '' : p.placa ? ` (retirado por ${p.nome})` : ''}.`,
+      corpo: `<div style="font-size:12px;color:var(--text-2);line-height:1.5">Este pedido (<b>${escHtml(s.id)}</b>) pode entrar nele: os itens saem do estoque agora e ${viatura ? 'quem retirou' : 'a pessoa'} assina tudo de uma vez, pelo <b>mesmo link</b>${p.logistica ? ', na <b>mesma carga</b>' : ''}.</div>
+        <div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;background:var(--bg);font-size:12px;display:flex;flex-direction:column;gap:4px">
+          <div style="font-weight:700;color:var(--text-1)">Atendimento pendente · ${escHtml(p.data_br)} · ${p.qtd_itens} ${p.qtd_itens === 1 ? 'item' : 'itens'}</div>
+          <div style="color:var(--text-3)">${p.itens.map(i => `${escHtml(i.descricao)} (${escHtml(String(i.quantidade))})`).join(' · ')}${p.qtd_itens > p.itens.length ? ' …' : ''}</div>
+          <div style="color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-${p.logistica ? 'truck' : 'store'}></use></svg> ${escHtml(p.carga || '')}${p.pedidos.length ? ` · ${p.pedidos.length === 1 ? 'pedido' : 'pedidos'} ${escHtml(p.pedidos.join(', '))}` : ''}</div>
+        </div>`,
+      botoes: [{ rotulo: 'Cancelar', valor: null }, { rotulo: '<svg class=ic aria-hidden=true><use href=#i-merge></use></svg> Incluir no atendimento pendente', valor: { modo: 'complemento', pendente: p }, principal: true }],
+    });
+  }
+  if (!r.outros.length) return { modo: 'so', extras: [] };
+  const fmt = (iso) => (iso ? formatarDataHora(iso).slice(0, 10) : '—');
+  const escolha = await solJuntarModal({
+    icone: 'merge', titulo: `${quem} tem ${r.outros.length === 1 ? 'outro pedido' : `outros ${r.outros.length} pedidos`} em aberto`,
+    sub: `${r.armazem || 'Mesmo armazém'}. Atender junto: os itens de todos entram neste atendimento — uma separação, uma assinatura${viatura ? '' : ' e uma carga'}.`,
+    corpo: `<div style="display:flex;flex-direction:column;gap:6px">${r.outros.map(o => `
+      <label style="display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer">
+        <input type="checkbox" data-junto="${escHtml(o.id)}" checked style="margin-top:3px">
+        <span style="flex:1;min-width:0;font-size:12px">
+          <b style="color:var(--text-1)">${escHtml(o.id)}</b> <span style="color:var(--text-3)">· ${fmt(o.criado_em)} · por ${escHtml(o.solicitante_nome || '—')}</span>
+          ${o.prioridade === 'Urgente' ? gcaSit('Urgente', 'vermelho', 'siren') : ''}${o.mobilizacao ? ' <span style="color:#c084fc;font-size:10px;font-weight:700">MOBILIZAÇÃO</span>' : ''}
+          <span style="display:block;color:var(--text-3);margin-top:2px">${o.itens.map(i => `${escHtml(i.nome)} (${escHtml(String(i.quantidade))})`).join(' · ')}</span>
+        </span>
+      </label>`).join('')}</div>`,
+    botoes: [{ rotulo: 'Só este pedido', valor: 'so' }, { rotulo: '<svg class=ic aria-hidden=true><use href=#i-merge></use></svg> Atender junto', valor: 'junto', principal: true }],
+    lerMarcados: true,
+  });
+  if (!escolha) return null;
+  if (escolha.valor === 'so' || !escolha.marcados.length) return { modo: 'so', extras: [] };
+  return { modo: 'junto', extras: r.outros.filter(o => escolha.marcados.includes(o.id)) };
+}
+
+// Janela simples das perguntas acima (resolve com o valor do botão; lerMarcados devolve também as caixas marcadas)
+function solJuntarModal({ icone, titulo, sub, corpo, botoes, lerMarcados }) {
+  return new Promise(resolve => {
+    document.getElementById('modalSolJuntar')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalSolJuntar'; ov.style.zIndex = '10002';
+    const fechar = (v) => { ov.remove(); document.removeEventListener('keydown', esc); resolve(v); };
+    const esc = (ev) => { if (ev.key === 'Escape') fechar(null); };
+    ov.innerHTML = `<div class="modal-box" style="max-width:620px;width:100%" role="dialog" aria-modal="true" aria-labelledby="solJuntarTitulo">
+      <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="solJuntarTitulo"><svg class=ic aria-hidden=true><use href=#i-${icone}></use></svg> ${escHtml(titulo)}</div>
+        <div class="modal-sub">${escHtml(sub)}</div></div>
+        <button class="modal-close" data-fechar aria-label="Fechar">×</button></div>
+      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;max-height:70vh;overflow-y:auto">${corpo}
+        <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">${botoes.map((b, i) => `<button class="btn ${b.principal ? 'btn-primary' : 'btn-ghost'}" data-botao="${i}">${b.rotulo}</button>`).join('')}</div>
+      </div></div>`;
+    ov.querySelector('[data-fechar]').onclick = () => fechar(null);
+    ov.querySelectorAll('[data-botao]').forEach(el => {
+      el.onclick = () => {
+        const b = botoes[Number(el.dataset.botao)];
+        if (!lerMarcados) return fechar(b.valor);
+        if (b.valor === null) return fechar(null);
+        fechar({ valor: b.valor, marcados: [...ov.querySelectorAll('[data-junto]:checked')].map(c => c.dataset.junto) });
+      };
+    });
+    ov.addEventListener('click', (ev) => { if (ev.target === ov) fechar(null); });
+    document.addEventListener('keydown', esc);
+    document.body.appendChild(ov);
+    ov.querySelector('.btn-primary')?.focus();
+  });
+}
+
+// Itens dos pedidos atendidos junto: as linhas cruas de cada pedido (para montar o atendimento)
+const solItensDoPedido = (s) => { try { const l = JSON.parse(s.itens_json || s.itens || '[]'); return Array.isArray(l) ? l : []; } catch { return []; } };
+
 async function atenderSolicitacao(id, btnEl) {
   // Evita clique duplo/repetido disparar o fluxo assíncrono duas vezes em paralelo
   // (causava itens duplicados no atendimento, cada execução adicionando os seus).
@@ -15108,7 +15228,10 @@ async function atenderSolicitacao(id, btnEl) {
     // "Pendente" — o link vencido não significa que o colaborador assinou, só que não dá
     // mais pra assinar por aquele link (precisa regerar/cancelar na tela de Assinaturas).
     await carregarAssinaturasSilencioso();
-    const assPendente = (_assinaturas||[]).find(a =>
+    // Juntar pedidos (item 6): incluir no atendimento pendente ou atender junto com os outros pedidos dele
+    const junta = await solJuntarDecidir(s);
+    if (!junta) return;
+    const assPendente = junta.modo !== 'complemento' && (_assinaturas||[]).find(a =>
       a.colaboradorId === colabId && (a.statusCalc === 'PENDENTE' || a.statusCalc === 'EXPIRADO')
     );
     if (assPendente) {
@@ -15122,7 +15245,7 @@ async function atenderSolicitacao(id, btnEl) {
     if (await bloqueadoPorInventario(s.armazem_id || s.armazemId)) return;
 
     // ── Fila do armazém (26/10/2026): pedido mais antigo na frente → atende na ordem ou pula com motivo ──
-    if (!await solConferirFila(s)) return;
+    if (!await solConferirFila(s, (junta.extras || []).map(x => x.id))) return;
 
     // ── Vincula a solicitação ao atendimento ──
     window._solicitacaoAtendimento = s;
@@ -15137,6 +15260,9 @@ async function atenderSolicitacao(id, btnEl) {
     // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
     if (!await iniciarAtendimento()) return;
     await new Promise(r => setTimeout(r, 200));
+    // Juntar pedidos (item 6)
+    if (junta.modo === 'complemento') { ATEND.complementoDe = junta.pendente.id; ATEND.complementoInfo = junta.pendente; }
+    ATEND.solicitacoesExtras = (junta.extras || []).map(x => x.id);
 
     // ── 2. Depois seleciona o colaborador ──
     // Garante colaboradores carregados antes (evita race condition com o carregamento da view)
@@ -15148,8 +15274,8 @@ async function atenderSolicitacao(id, btnEl) {
 
     await new Promise(r => setTimeout(r, 400));
 
-    // ── 3. Carrega itens da solicitação automaticamente ──
-    let itens = []; try { itens = JSON.parse(s.itens_json || s.itens || '[]'); } catch {}
+    // ── 3. Carrega itens da solicitação automaticamente (e dos pedidos atendidos junto, item 6) ──
+    let itens = [s, ...(junta.extras || [])].flatMap(solItensDoPedido);
     if (!itens.length) {
       toast('Atendimento iniciado! Adicione os itens manualmente.', 'info', 4000);
       return;
@@ -15205,7 +15331,8 @@ async function atenderSolicitacao(id, btnEl) {
       const aprovados = await validarEPrepararItens(selecionados);
       if (aprovados && aprovados.length) {
         adicionarItensAoAtendimento(aprovados);
-        toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${aprovados.length} item(ns) carregado(s) da solicitação #${s.id}`, 'success', 3000);
+        const pedidosTxt = [s.id, ...(junta.extras || []).map(x => x.id)].map(x => '#' + x).join(', ');
+        toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${aprovados.length} item(ns) carregado(s) ${junta.extras?.length ? 'dos pedidos' : 'da solicitação'} ${pedidosTxt}${junta.modo === 'complemento' ? ' — vão entrar no atendimento pendente' : ''}`, 'success', 4000);
       } else {
         toast('Nenhum item pôde ser incluído automaticamente. Adicione manualmente.', 'warn', 5000);
       }
@@ -36029,6 +36156,7 @@ async function cvCarregarSaldos() {
 
 function cvIniciarAtendimento() {
   CV.itens = []; CV.viatura = null; CV.colab = null; CV.segundos = 0; CV.solicitacaoId = null;
+  CV.complementoDe = null; CV.complementoInfo = null; CV.solicitacoesExtras = [];   // juntar pedidos (item 6)
   document.getElementById('cvEstadoInicial').classList.add('hidden');
   document.getElementById('cvEmAndamento').classList.remove('hidden');
   document.getElementById('cvDataDisplay').textContent = formatarData(hojeBR());
@@ -36105,9 +36233,11 @@ function cvFiltrarColab(q) {
 async function cvEscolherColab(id) {
   const c = (_colaboradores || []).find(x => x.id === id);
   if (!c) return;
-  // Quem retira é quem assina: com uma assinatura pendente (dele ou de outra retirada), não retira
+  // Quem retira é quem assina: com uma assinatura pendente (dele ou de outra retirada), não retira —
+  // a não ser a da entrega pendente que vai receber este pedido (juntar pedidos, item 6)
   await carregarAssinaturasSilencioso();
-  const pend = (_assinaturas || []).find(a => a.colaboradorId === id && a.statusCalc !== 'ASSINADO');
+  const pend = !(CV.complementoDe && CV.complementoInfo?.retirado_por_id === id)
+    && (_assinaturas || []).find(a => a.colaboradorId === id && a.statusCalc !== 'ASSINADO');
   if (pend) {
     document.getElementById('cvColabSug').classList.add('hidden');
     document.getElementById('cvColabBusca').value = '';
@@ -36391,6 +36521,8 @@ async function cvConfirmar() {
   const comAviso = CV.itens.filter(i => i.avisoDurabilidade);
   if (comAviso.length && !confirm(`Atenção:\n\n${comAviso.map(i => `• ${i.descricao}: ${i.avisoDurabilidade}`).join('\n')}\n\nConfirmar a entrega mesmo assim?`)) return;
 
+  // Juntar pedidos (item 6): o complemento vai junto com a entrega pendente (mesma carga ou balcão)
+  if (CV.complementoDe && CV.complementoInfo) { cvFinalizarEntrega(!!CV.complementoInfo.logistica, CV.complementoInfo.destino_id || null); return; }
   // Material que vai para outra base sai daqui pela logística, igual à entrega de EPI
   abrirModalDecisaoLogistica('viatura');
 }
@@ -36412,6 +36544,8 @@ async function cvFinalizarEntrega(necessitaLogistica, destinoEntregaId) {
     destinoEntregaId: necessitaLogistica ? destinoEntregaId : null,
     solicitacaoId: CV.solicitacaoId || null,
     pularFilaMotivo: (CV.solicitacaoId && _solPuloFila[CV.solicitacaoId]) || '',
+    complementoDe: CV.complementoDe || null,
+    solicitacoesExtras: CV.solicitacoesExtras || [],
   };
   const res = await apiMovimentacao('/atendimentos', corpo);
   if (!res || res.ok === false || res.erro) { btn.disabled = false; cvMsg(res?.erro || 'Erro ao registrar a entrega', false); return; }
@@ -36421,7 +36555,9 @@ async function cvFinalizarEntrega(necessitaLogistica, destinoEntregaId) {
   cvLimparAtendimento();
   carregarFrota();
   cvCarregarSaldos();
-  toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entrega registrada para ${placa}! Falta a assinatura de quem retirou.`, 'success');
+  toast(res.complemento
+    ? `<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Pedido incluído na entrega pendente de ${placa} — o mesmo link assina tudo.`
+    : `<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Entrega registrada para ${placa}! Falta a assinatura de quem retirou.`, 'success', 6000);
   if (link) cvMostrarLink(link);
 }
 
