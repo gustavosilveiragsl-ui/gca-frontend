@@ -14010,11 +14010,9 @@ async function solConferirFila(s) {
   });
 }
 
-function renderSolicitacoes() {
-  const tbody = document.getElementById('solBody');
-  if (!tbody) return;
-
-  let lista = _solicitacoes;
+// A lista como aparece na tela: aba, ordem da fila e filtros (a paginação vem depois)
+function solListaVisivel() {
+  let lista = _solicitacoes || [];
 
   // ── Filtra por aba ──
   const abaCfg = SOL_ABAS[_solAbaAtual];
@@ -14048,6 +14046,14 @@ function renderSolicitacoes() {
   if (base) lista = lista.filter(s => base === '__sem__' ? !s.base_solicitante : s.base_solicitante === base);
   const qItem = solNormalizar(item);
   if (qItem) lista = lista.filter(s => solItensQueBatem(s, qItem).length);
+  return lista;
+}
+
+function renderSolicitacoes() {
+  const tbody = document.getElementById('solBody');
+  if (!tbody) return;
+  const lista = solListaVisivel();
+  const qItem = solNormalizar(_solFiltros.item);
 
   if (!lista.length) {
     tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg></div><div class="es-title">Nenhuma solicitação encontrada</div></div></td></tr>`;
@@ -37763,6 +37769,8 @@ function notifAbrir(n) {
   if (n.tipo === 'SOLICITACAO_NOVA' || n.tipo === 'SOLICITACOES_ABERTAS' || n.tipo === 'MOBILIZACOES_PROXIMAS') {
     if (!temPermissao('ver_solicitacoes')) return;
     showView('solicitacoes', document.querySelector('.nav-item[data-view="solicitacoes"]'));
+    // Solicitação nova: abre ela (na página em que estiver), não só a lista
+    if (n.tipo === 'SOLICITACAO_NOVA' && n.ref_id) { solIrParaPedido(n.ref_id); return; }
     if (_solAbaAtual !== 'ativas' && typeof mudarAbaSol === 'function') mudarAbaSol('ativas');
     if (n.ref_id) notifDestacarSolicitacao(n.ref_id);
     // Mobilizações perto do início: mostra só elas (filtro "Mobilização")
@@ -37794,6 +37802,31 @@ async function notifDestacarLinha(seletor) {
   }
   return false;
 }
+// Clique na notificação de solicitação nova (17/11/2026): leva até o pedido — a aba dele, sem filtro
+// que o esconda, a página em que ele está — destaca a linha e abre o pedido.
+function solLimparFiltros() {
+  ['solFiltroStatus', 'solFiltroPrioridade', 'solFiltroArmazem', 'solBusca', 'solFiltroSolicitante', 'solFiltroBase', 'solBuscaItem']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  filtrarSolicitacoes();
+}
+async function solIrParaPedido(id) {
+  for (let i = 0; i < 40 && !(_solicitacoes || []).some(s => s.id === id); i++) await new Promise(r => setTimeout(r, 250));
+  if (!(_solicitacoes || []).some(s => s.id === id)) await carregarSolicitacoes(true);
+  const s = (_solicitacoes || []).find(x => x.id === id);
+  if (!s) { toast('Não encontrei esse pedido nesta filial. Ele pode ter sido cancelado ou ser de outra filial.', 'warn', 6000); return false; }
+  const aba = Object.keys(SOL_ABAS).find(k => k !== 'cancelar' && k !== 'historico' && SOL_ABAS[k].status?.includes(s.status)) || 'historico';
+  if (_solAbaAtual !== aba) mudarAbaSol(aba);
+  if (!solListaVisivel().some(x => x.id === id)) solLimparFiltros();
+  const pos = solListaVisivel().findIndex(x => x.id === id);
+  if (pos >= 0) {
+    _solPagina = Math.floor(pos / _solPorPagina) + 1;
+    renderSolicitacoes();
+    notifDestacarSolicitacao(id);
+  }
+  abrirModalSolicitacao(id);
+  return true;
+}
+
 async function notifDestacarSolicitacao(id) {
   for (let i = 0; i < 40; i++) {
     const tr = document.querySelector(`#solBody tr[data-sol-id="${CSS.escape(id)}"]`);
