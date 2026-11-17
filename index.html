@@ -132,6 +132,42 @@ input,select,textarea{font-family:var(--font-main);}
 .pb-graficos{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .pb-graf{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;height:320px;display:flex;flex-direction:column}
 .pb-graf canvas{flex:1;min-height:0}
+/* Gráficos de estoque (16/11/2026, item 13) */
+.pbg-barra{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 18px}
+.pbg-barra>div:first-child{flex:1;min-width:240px}
+.pbg-barra-t{font-size:15px;font-weight:700}
+.pbg-barra-s{font-size:12px;color:var(--text-3);margin-top:2px;line-height:1.45}
+.pbg-grade{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.pbg-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px 12px;display:flex;flex-direction:column;height:420px;min-width:0;animation:fadeUp .35s ease both}
+.pbg-topo{display:flex;gap:10px;align-items:flex-start}
+.pbg-num{flex:none;width:24px;height:24px;border-radius:7px;background:var(--accent-soft);color:var(--accent-text);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.pbg-tit{flex:1;min-width:0}
+.pbg-tit .t{font-size:14px;font-weight:700;color:var(--text-1)}
+.pbg-tit .s{font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.4}
+.pbg-acoes{display:flex;gap:4px;flex:none}
+.pbg-btn{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:5px 9px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-2);cursor:pointer;white-space:nowrap}
+.pbg-btn:hover{border-color:var(--accent);color:var(--accent-text)}
+.pbg-dest{margin:10px 0 2px;font-size:12px;color:var(--text-3)}
+.pbg-dest b{font-size:20px;font-weight:700;color:var(--text-1);font-variant-numeric:tabular-nums;margin-right:4px}
+.pbg-area{flex:1;min-height:0;position:relative;margin-top:6px}
+.pbg-vazio{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--text-3);padding:0 30px;line-height:1.5}
+.pbg-apres{position:fixed;inset:0;z-index:400;background:var(--bg);display:flex;flex-direction:column;padding:28px 40px 18px;animation:fadeIn .2s ease}
+.pbg-apres-topo{display:flex;gap:24px;align-items:flex-start}
+.pbg-apres-esc{font-size:13px;color:var(--text-3);text-transform:uppercase;letter-spacing:.6px}
+.pbg-apres-t{font-size:30px;font-weight:700;letter-spacing:-.4px;margin-top:4px}
+.pbg-apres-s{font-size:14px;color:var(--text-3);margin-top:6px;max-width:980px;line-height:1.45}
+.pbg-apres-dest{text-align:right;flex:none;max-width:420px}
+.pbg-apres-dest b{display:block;font-size:36px;font-weight:700;font-variant-numeric:tabular-nums}
+.pbg-apres-dest span{font-size:14px;color:var(--text-3)}
+.pbg-apres-area{flex:1;min-height:0;position:relative;margin-top:22px}
+.pbg-apres-rod{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:12px;color:var(--text-3);flex-wrap:wrap}
+.pbg-apres-rod button{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg-card);color:var(--text-1);cursor:pointer}
+.pbg-apres-rod button:disabled{opacity:.35;cursor:default}
+.pbg-pdf{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:301;width:min(480px,94vw);max-height:92vh;overflow:auto;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;display:flex;flex-direction:column;gap:2px;animation:fadeIn .15s ease}
+.pbg-pdf label{display:flex;gap:8px;align-items:center;font-size:13px;padding:5px 0;cursor:pointer}
+.pbg-pdf label.off{color:var(--text-3);cursor:default}
+@media (max-width:1100px){.pbg-grade{grid-template-columns:1fr}}
+@media (max-width:700px){.pbg-card{height:440px;padding:12px}.pbg-topo{flex-wrap:wrap}.pbg-acoes{order:3;width:100%;padding-left:34px}.pbg-apres{padding:16px}.pbg-apres-topo{flex-direction:column;gap:8px}.pbg-apres-dest{text-align:left}.pbg-apres-t{font-size:22px}}
 .pb-carregando{text-align:center;padding:60px;color:var(--text-3)}
 @media (max-width:1100px){.pb-hero{grid-template-columns:1fr}.pb-kpis{grid-template-columns:repeat(2,1fr)}.pb-graficos{grid-template-columns:1fr}}
 .pb-filtros{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -1230,6 +1266,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
     <button data-aba="geral" onclick="pbAba('geral')">Visão geral</button>
     <button data-aba="financeiro" onclick="pbAba('financeiro')">Financeiro</button>
     <button data-aba="itens" onclick="pbAba('itens')">Itens e estoque</button>
+    <button data-aba="graficos" onclick="pbAba('graficos')">Gráficos de estoque</button>
     <button data-aba="operacao" onclick="pbAba('operacao')">Operação</button>
     <button data-aba="logistica" onclick="pbAba('logistica')">Logística</button>
     <button data-aba="inventarios" onclick="pbAba('inventarios')">Inventários</button>
@@ -7629,6 +7666,7 @@ const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
 // O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
 async function pbRecarregar(silencioso) {
   PB.fin = null; PB.pessoas = null; PB.inv = null; PB.log = null; PB.itens = null;   // ↻ refaz tudo, inclusive Itens e estoque
+  PBG.dados = null; if (!silencioso) PBG.forcar = true;   // gráficos de estoque: o ↻ pede ao servidor a conta nova (sem a guardada)
   const corpo = document.getElementById('pbCorpo');
   if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
   const [res] = await Promise.all([api(`/painel-brasil/resumo?${pbQuery()}`), pbGarantirChart()]);
@@ -7713,7 +7751,7 @@ function pbRender() {
       <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${pbTituloEscopo()}</div>
       <div style="font-size:12px;color:var(--text-3)">${pbFiliais().length} filial(is) · atualizado às ${new Date(PB.resumo.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
     </div>`;
-  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, operacao: pbAbaOperacao, logistica: pbAbaLogistica, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
+  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, graficos: pbAbaGraficos, operacao: pbAbaOperacao, logistica: pbAbaLogistica, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
   corpo.innerHTML = cab + '<div id="pbAbaCorpo"></div>';
   (abas[PB.aba] || pbAbaGeral)(document.getElementById('pbAbaCorpo'));
 }
@@ -8124,6 +8162,637 @@ function pbItensExcel() {
     ...Object.fromEntries(fs.map(f => [`s_${f.slug}`, l.pf[f.slug] ? l.pf[f.slug].saldo : ''])), total: l.saldo, valor: Math.round(l.valor * 100) / 100 }));
   gcaExportarExcel('Painel_Brasil_Itens', linhas, [{ key: 'descricao', label: 'Item' }, { key: 'codigo', label: 'Código' }, { key: 'categoria', label: 'Categoria' }, { key: 'un', label: 'UN' },
     ...fs.map(f => ({ key: `s_${f.slug}`, label: f.nome })), { key: 'total', label: 'Total' }, { key: 'valor', label: 'Valor em estoque' }]);
+}
+
+// ── GRÁFICOS DE ESTOQUE (16/11/2026, item 13 da lista) ──
+// Dez gráficos para o gerente e para levar a uma reunião. As contas vêm prontas do servidor
+// (/painel-brasil/estoque-graficos); aqui só desenha. Cada gráfico é uma receita (PBG_LISTA) que monta
+// o Chart.js com as cores de um tema: a mesma receita desenha o cartão da aba, a imagem PNG (fundo
+// branco), o modo apresentação (tela cheia, setas) e o resumo em PDF.
+// Cores conferidas no validador de paleta (tema escuro e claro); o rótulo e a tabela de cada gráfico
+// garantem que nada depende só da cor.
+const PBG = { dados: null, chave: '', forcar: false, apres: null };
+const PBG_TEMA = {
+  escuro: { texto: '#94a3b8', forte: '#e2e8f0', grade: '#1e1e2e', fundo: '#0f0f17', serie: ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181'],
+    ok: '#199e70', aviso: '#fab219', critico: '#d03b3b', acima: '#9085e9', neutro: '#64748b' },
+  claro: { texto: '#475569', forte: '#0f172a', grade: '#e2e8f0', fundo: '#ffffff', serie: ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#d55181'],
+    ok: '#0ca30c', aviso: '#fab219', critico: '#d03b3b', acima: '#9085e9', neutro: '#94a3b8' },
+};
+const PBG_FAIXAS = ['Até 15 dias', '15 a 30 dias', '30 a 60 dias', '60 a 90 dias', 'Mais de 90 dias'];
+const pbgTemaAtual = () => (document.documentElement.getAttribute('data-theme') === 'light' ? 'claro' : 'escuro');
+const pbgFonte = () => getComputedStyle(document.body).fontFamily || 'sans-serif';
+const pbgSoma = (l, fn) => l.reduce((t, x) => t + (Number(fn(x)) || 0), 0);
+const pbgDec = (n, c = 1) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: c });
+const pbgN = (n, um, varios) => `${pbNum(n)} ${Number(n) === 1 ? um : varios}`;   // "1 item", "3 itens"
+function pbgDinCurto(v) {
+  const n = Number(v) || 0, a = Math.abs(n);
+  if (a >= 1e6) return `R$ ${pbgDec(n / 1e6, 2)} mi`;
+  if (a >= 1e4) return `R$ ${pbgDec(n / 1e3, 0)} mil`;
+  if (a >= 1e3) return `R$ ${pbgDec(n / 1e3, 1)} mil`;
+  return `R$ ${pbgDec(n, 0)}`;
+}
+const PBG_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const pbgMes = (ym) => `${PBG_MESES[Number(ym.slice(5, 7)) - 1]}/${ym.slice(2, 4)}`;
+// Filiais que aparecem nos gráficos: as do filtro que têm alguma coisa (saldo ou lançamento)
+const pbgFiliais = (d) => d.filiais.filter(f => f.valor > 0 || f.primeiro_mov);
+// A cor segue a filial (posição dela na lista de todas), nunca a posição no gráfico
+function pbgCorFilial(t, f) {
+  const i = (PB.resumo?.filiais || []).findIndex(x => x.slug === f.slug);
+  return i >= 0 && i < t.serie.length ? t.serie[i] : null;
+}
+function pbgEscopo() {
+  const f = PB.filial === 'todas' ? null : PB.resumo?.filiais.find(x => x.slug === PB.filial);
+  return f ? f.nome : 'Brasil (todas as filiais)';
+}
+
+// Rótulo do valor na ponta da barra (só nos gráficos de barra com poucas barras)
+const PBG_ROTULOS = {
+  id: 'pbgRotulos',
+  afterDatasetsDraw(chart, _args, o) {
+    if (!o || !o.fmt) return;
+    const { ctx } = chart, deitado = chart.options.indexAxis === 'y';
+    const vis = chart.data.datasets.map((_, i) => i).filter(i => chart.isDatasetVisible(i));
+    if (!vis.length) return;
+    ctx.save();
+    ctx.font = `600 ${o.tamanho || 11}px ${o.fonte || 'sans-serif'}`;
+    ctx.fillStyle = o.cor || '#94a3b8';
+    (chart.data.labels || []).forEach((_, i) => {
+      let el = null, total = 0;
+      for (const ds of vis) {
+        const v = Number(chart.data.datasets[ds].data[i]) || 0;
+        total += v;
+        const e = chart.getDatasetMeta(ds).data[i];
+        if (e && v) el = e;
+      }
+      const txt = el ? o.fmt(total, i) : '';
+      if (!txt) return;
+      if (deitado) { ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(txt, el.x + 6, el.y); }
+      else { ctx.textAlign = 'center'; ctx.textBaseline = 'bottom'; ctx.fillText(txt, el.x, el.y - 4); }
+    });
+    ctx.restore();
+  },
+};
+
+// Respiro entre a legenda e o gráfico (sem ele a legenda encosta no rótulo de cima do eixo)
+const PBG_LEGENDA = {
+  id: 'pbgLegenda',
+  afterInit(chart) {
+    const lg = chart.legend;
+    if (!lg) return;
+    const fit = lg.fit;
+    lg.fit = function () { fit.call(this); if (this.options.display) this.height += Math.round((this.options.labels?.font?.size || 11) * 0.9); };
+  },
+};
+// Opções comuns: um eixo só, grade discreta, legenda só com 2 ou mais séries, valor ao passar o mouse
+function pbgOpcoes(t, f, o = {}) {
+  const fonte = { family: pbgFonte(), size: f };
+  const ticksValor = { color: t.texto, font: fonte, precision: 0, maxTicksLimit: 6, maxRotation: 0 };
+  if (o.dinheiro) ticksValor.callback = (v) => pbgDinCurto(v);
+  if (o.pct) ticksValor.callback = (v) => `${v}%`;
+  if (o.vezes) ticksValor.callback = (v) => `${pbgDec(v, 1)}×`;
+  const valor = { beginAtZero: true, stacked: !!o.pilha, grid: { color: t.grade }, border: { display: false }, ticks: ticksValor };
+  if (o.max != null) valor.max = o.max;
+  const ticksCat = { color: t.texto, font: fonte, autoSkip: !o.deitado, maxRotation: 0 };   // meses: pula rótulo se não couber
+  if (o.corte) ticksCat.callback = function (v) { const s = String(this.getLabelForValue(v) || ''); return s.length > o.corte ? `${s.slice(0, o.corte - 1)}…` : s; };
+  const cat = { stacked: !!o.pilha, grid: { display: false }, border: { color: t.grade }, ticks: ticksCat };
+  const tooltip = { titleFont: { ...fonte, weight: '700' }, bodyFont: fonte, footerFont: { ...fonte, weight: '400' }, padding: Math.round(f * 0.8), boxPadding: 4, callbacks: o.tooltip || {} };
+  if (o.filtro) tooltip.filter = o.filtro;
+  const op = {
+    responsive: true, maintainAspectRatio: false, animation: { duration: 650 },
+    indexAxis: o.deitado ? 'y' : 'x',
+    layout: { padding: o.rotulos ? (o.deitado ? { right: Math.round(f * 7) } : { top: f + 8 }) : 0 },
+    interaction: o.indice ? { mode: 'index', intersect: false, axis: o.deitado ? 'y' : 'x' } : { mode: 'nearest', intersect: true },
+    plugins: {
+      legend: { display: !!o.legenda, position: 'top', align: 'start', labels: { color: t.texto, font: fonte, boxWidth: f, boxHeight: f, useBorderRadius: true, borderRadius: 3, padding: Math.round(f * 1.1) } },
+      tooltip,
+      pbgRotulos: o.rotulos ? { fmt: o.rotulos, cor: t.texto, tamanho: f, fonte: pbgFonte() } : false,
+    },
+    scales: o.deitado ? { x: valor, y: cat } : { x: cat, y: valor },
+  };
+  if (o.clique) {
+    op.onClick = (ev, els) => { if (els.length) o.clique(els[0].index, els[0].datasetIndex); };
+    op.onHover = (ev, els) => { if (ev.native?.target) ev.native.target.style.cursor = els.length ? 'pointer' : 'default'; };
+  }
+  return op;
+}
+// Barra: ponta arredondada de 4px presa na base; pedaços de uma pilha separados por 2px da cor do fundo
+const pbgBarra = (t, extra = {}) => ({ borderRadius: 4, borderSkipped: 'start', maxBarThickness: 34, ...extra });
+const pbgPedaco = (t, extra = {}) => ({ borderRadius: 2, borderSkipped: false, borderColor: t.fundo, borderWidth: 1, maxBarThickness: 34, ...extra });
+
+// Colunas das tabelas (gaveta + Excel)
+const PBG_COL = {
+  abc: [{ key: 'posicao', label: 'Posição' }, { key: 'item', label: 'Item (tamanhos somados)' }, { key: 'classe', label: 'Classe' }, { key: 'quantidade', label: 'Quantidade' },
+    { key: 'un', label: 'UN' }, { key: 'valor', label: 'Gasto', tipo: 'din' }, { key: 'pct', label: '% do gasto', tipo: 'pct', num: true }, { key: 'pct_acum', label: '% acumulado', tipo: 'pct', num: true }, { key: 'filiais', label: 'Filiais' }],
+  cobertura: [{ key: 'filial', label: 'Filial' }, { key: 'item', label: 'Item' }, { key: 'codigo', label: 'Código' }, { key: 'un', label: 'UN' }, { key: 'saldo', label: 'Saldo' },
+    { key: 'consumo_dia', label: 'Consumo por dia' }, { key: 'dias', label: 'Dá para (dias)' }, { key: 'faixa', label: 'Faixa' }, { key: 'valor', label: 'Valor em estoque', tipo: 'din' }],
+  parados: [{ key: 'filial', label: 'Filial' }, { key: 'item', label: 'Item' }, { key: 'codigo', label: 'Código' }, { key: 'un', label: 'UN' }, { key: 'saldo', label: 'Saldo' },
+    { key: 'valor', label: 'Valor parado', tipo: 'din' }, { key: 'ultima_saida', label: 'Última saída', tipo: 'data' }, { key: 'sem_saida_dias', label: 'Sem saída há (dias)' }],
+  armazens: [{ key: 'filial', label: 'Filial' }, { key: 'armazem', label: 'Armazém' }, { key: 'tipo', label: 'Tipo' }, { key: 'itens', label: 'Itens com saldo' }, { key: 'pecas', label: 'Peças' }, { key: 'valor', label: 'Valor em estoque', tipo: 'din' }],
+};
+const pbgArmLinhas = (l) => l.map(a => ({ ...a, tipo: a.principal ? 'Principal' : 'Base' }));
+const pbgSemHist = (fs, campo) => fs.filter(f => !f[campo]).map(f => f.nome);
+const pbgNotaHist = (nomes) => (nomes.length ? ` Sem histórico suficiente (menos de 30 dias no GCA): ${nomes.join(', ')}.` : '');
+
+// ── As dez receitas ──
+const PBG_LISTA = [
+  { id: 'valor', titulo: 'Valor em estoque por filial',
+    sub: () => 'Hoje · saldo de todos os armazéns × valor do cadastro do item.', dica: 'Clique na barra para ver por armazém.',
+    destaque: (d) => { const fs = pbgFiliais(d); return { valor: pbgDinCurto(pbgSoma(fs, f => f.valor)), texto: `em ${pbgN(fs.length, 'filial', 'filiais')} e ${pbgN(d.listas.armazens.filter(a => a.valor > 0).length, 'armazém', 'armazéns')} com saldo` }; },
+    vazio: (d) => (pbgSoma(pbgFiliais(d), f => f.valor) > 0 ? null : 'Nenhum saldo com valor nas filiais do filtro.'),
+    config: (d, t, f, clicavel) => {
+      const fs = [...pbgFiliais(d)].sort((a, b) => b.valor - a.valor);
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: fs.map(x => x.nome), datasets: [{ label: 'Valor em estoque', data: fs.map(x => x.valor), backgroundColor: t.serie[0], ...pbgBarra(t) }] },
+        options: pbgOpcoes(t, f, { deitado: true, dinheiro: true, rotulos: (v) => pbgDinCurto(v),
+          tooltip: { label: (c) => ` ${pbDinheiro(c.raw)} · ${pbgN(fs[c.dataIndex].itens_com_saldo, 'item', 'itens')} com saldo` },
+          clique: clicavel ? (i) => pbgPorArmazem(d, fs[i]) : null }) };
+    },
+    tabela: (d) => [
+      { titulo: 'Por filial', colunas: [{ key: 'nome', label: 'Filial' }, { key: 'valor', label: 'Valor em estoque', tipo: 'din' }, { key: 'itens_com_saldo', label: 'Itens com saldo' }, { key: 'armazens', label: 'Armazéns' }],
+        linhas: [...pbgFiliais(d)].sort((a, b) => b.valor - a.valor) },
+      { titulo: 'Por armazém', colunas: PBG_COL.armazens, linhas: pbgArmLinhas(d.listas.armazens) }],
+  },
+  { id: 'saude', titulo: 'Saúde do estoque por filial',
+    sub: () => 'Hoje · dos itens com mínimo ou máximo: OK, abaixo do mínimo, zerado ou acima do máximo.', dica: 'Clique num pedaço para ver a lista.',
+    destaque: (d) => {
+      const fs = pbgFiliais(d), s = (k) => pbgSoma(fs, f => f.saude[k]);
+      const tot = s('ok') + s('abaixo') + s('zerado') + s('acima');
+      return { valor: pbNum(s('abaixo') + s('zerado') + s('acima')), texto: `de ${pbgN(tot, 'item', 'itens')} fora da faixa · ${pbgN(s('zerado'), 'zerado', 'zerados')}` };
+    },
+    vazio: (d) => (pbgSoma(pbgFiliais(d), f => f.saude.ok + f.saude.abaixo + f.saude.zerado + f.saude.acima) ? null : 'Nenhum item com estoque mínimo ou máximo cadastrado.'),
+    config: (d, t, f, clicavel) => {
+      const tot = (x) => x.saude.ok + x.saude.abaixo + x.saude.zerado + x.saude.acima;
+      const fs = pbgFiliais(d).filter(x => tot(x) > 0);
+      const partes = [['ok', 'OK', t.ok], ['abaixo', 'Abaixo do mínimo', t.aviso], ['zerado', 'Zerado', t.critico], ['acima', 'Acima do máximo', t.acima]];
+      return { type: 'bar', plugins: [PBG_LEGENDA],
+        data: { labels: fs.map(x => x.nome), datasets: partes.map(([k, rot, cor]) => ({ label: rot, backgroundColor: cor, ...pbgPedaco(t),
+          data: fs.map(x => Math.round(x.saude[k] / tot(x) * 1000) / 10), qtd: fs.map(x => x.saude[k]) })) },
+        options: pbgOpcoes(t, f, { deitado: true, pilha: true, pct: true, max: 100, legenda: true,
+          tooltip: { label: (c) => ` ${c.dataset.label}: ${pbgN(c.dataset.qtd[c.dataIndex], 'item', 'itens')} (${pbgDec(c.raw)}%)` },
+          clique: clicavel ? (i, ds) => {
+            const k = partes[ds][0];
+            if (k === 'ok') return;
+            const x = fs[i];
+            pbAbrirDetalhe(k === 'acima' ? 'acima_maximo' : 'abaixo_minimo', `${k === 'acima' ? 'Acima do máximo' : 'Abaixo do mínimo e zerados'} · ${x.nome}`, x.slug);
+          } : null }) };
+    },
+    tabela: (d) => [{ titulo: 'Por filial', colunas: [{ key: 'nome', label: 'Filial' }, { key: 'ok', label: 'OK' }, { key: 'abaixo', label: 'Abaixo do mínimo' }, { key: 'zerado', label: 'Zerado' }, { key: 'acima', label: 'Acima do máximo' }, { key: 'total', label: 'Com mínimo ou máximo' }],
+      linhas: pbgFiliais(d).map(f => ({ nome: f.nome, ...f.saude, total: f.saude.ok + f.saude.abaixo + f.saude.zerado + f.saude.acima })) }],
+  },
+  { id: 'acima', titulo: 'Dinheiro parado acima do máximo',
+    sub: () => 'Hoje · (saldo − estoque máximo) × valor do item, só dos itens que têm máximo.', dica: 'Clique na barra para ver os itens.',
+    destaque: (d) => { const fs = pbgFiliais(d); return { valor: pbgDinCurto(pbgSoma(fs, f => f.acima.valor)), texto: `em ${pbgN(pbgSoma(fs, f => f.acima.itens), 'item', 'itens')} acima do máximo` }; },
+    vazio: (d) => (pbgSoma(pbgFiliais(d), f => f.acima.valor) > 0 ? null : 'Nenhum item acima do estoque máximo (o máximo é cadastrado no Catálogo por Armazém ou no item).'),
+    config: (d, t, f, clicavel) => {
+      const fs = pbgFiliais(d).filter(x => x.acima.valor > 0).sort((a, b) => b.acima.valor - a.acima.valor);
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: fs.map(x => x.nome), datasets: [{ label: 'Acima do máximo', data: fs.map(x => x.acima.valor), backgroundColor: t.acima, ...pbgBarra(t) }] },
+        options: pbgOpcoes(t, f, { deitado: true, dinheiro: true, rotulos: (v) => pbgDinCurto(v),
+          tooltip: { label: (c) => ` ${pbDinheiro(c.raw)} · ${pbgN(fs[c.dataIndex].acima.itens, 'item', 'itens')}` },
+          clique: clicavel ? (i) => pbAbrirDetalhe('acima_maximo', `Acima do máximo · ${fs[i].nome}`, fs[i].slug) : null }) };
+    },
+    tabela: (d) => [{ titulo: 'Por filial', colunas: [{ key: 'nome', label: 'Filial' }, { key: 'itens', label: 'Itens acima do máximo' }, { key: 'valor', label: 'Valor acima do máximo', tipo: 'din' }],
+      linhas: pbgFiliais(d).map(f => ({ nome: f.nome, ...f.acima })).sort((a, b) => b.valor - a.valor) }],
+  },
+  { id: 'cobertura', titulo: 'Cobertura: para quantos dias o estoque dá',
+    sub: (d) => {
+      const fs = pbgFiliais(d), sem = pbgSoma(fs, f => f.cobertura?.sem_consumo);
+      return `Hoje · saldo ÷ consumo por dia dos últimos 90 dias. ${pbgN(sem, 'item com saldo e sem consumo fica', 'itens com saldo e sem consumo ficam')} fora (veja o gráfico 7).${pbgNotaHist(pbgSemHist(fs, 'cobertura'))}`;
+    },
+    dica: 'Clique na coluna para ver os itens.',
+    destaque: (d) => { const n = pbgSoma(pbgFiliais(d), f => f.cobertura?.faixas[0].qtd); return { valor: pbgN(n, 'item', 'itens'), texto: `${n === 1 ? 'acaba' : 'acabam'} em até 15 dias no ritmo atual` }; },
+    vazio: (d) => {
+      const fs = pbgFiliais(d);
+      if (!fs.some(f => f.cobertura)) return 'Pouco histórico: a filial precisa de 30 dias de lançamentos no GCA.';
+      return pbgSoma(fs, f => pbgSoma(f.cobertura?.faixas || [], x => x.qtd)) ? null : 'Nenhum item com saldo e consumo nos últimos 90 dias.';
+    },
+    config: (d, t, f, clicavel) => {
+      const fs = pbgFiliais(d).filter(x => x.cobertura);
+      const qtd = PBG_FAIXAS.map((_, i) => pbgSoma(fs, x => x.cobertura.faixas[i].qtd));
+      const val = PBG_FAIXAS.map((_, i) => pbgSoma(fs, x => x.cobertura.faixas[i].valor));
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: PBG_FAIXAS, datasets: [{ label: 'Itens', data: qtd, backgroundColor: [t.critico, t.aviso, t.ok, t.ok, t.acima], ...pbgBarra(t, { maxBarThickness: 64 }) }] },
+        options: pbgOpcoes(t, f, { rotulos: (v) => pbNum(v),
+          tooltip: { label: (c) => ` ${pbgN(c.raw, 'item', 'itens')} · ${pbDinheiro(val[c.dataIndex])} em estoque` },
+          clique: clicavel ? (i) => pbGaveta(`Cobertura: ${PBG_FAIXAS[i].toLowerCase()}`, `${escHtml(pbgEscopo())} · hoje`,
+            [{ titulo: 'Itens', colunas: PBG_COL.cobertura, linhas: d.listas.cobertura.filter(x => x.faixa === PBG_FAIXAS[i]) }]) : null }) };
+    },
+    tabela: (d) => {
+      const fs = pbgFiliais(d).filter(x => x.cobertura);
+      return [{ titulo: 'Por faixa', colunas: [{ key: 'faixa', label: 'Faixa' }, { key: 'qtd', label: 'Itens' }, { key: 'valor', label: 'Valor em estoque', tipo: 'din' }],
+        linhas: PBG_FAIXAS.map((faixa, i) => ({ faixa, qtd: pbgSoma(fs, x => x.cobertura.faixas[i].qtd), valor: pbgSoma(fs, x => x.cobertura.faixas[i].valor) })) },
+      { titulo: 'Itens (do que acaba primeiro)', colunas: PBG_COL.cobertura, linhas: d.listas.cobertura }];
+    },
+  },
+  { id: 'abc', titulo: 'Curva ABC do consumo',
+    sub: () => 'Período escolhido · saídas × valor do item, tamanhos somados. A = itens que somam 80% do gasto, B = até 95%, C = o resto.', dica: 'Clique para ver a lista.',
+    destaque: (d) => { const a = d.abc_classes.A; return { valor: pbgN(a.itens, 'item', 'itens'), texto: `(${pbgDec(a.pct_itens)}% dos itens) ${a.itens === 1 ? 'faz' : 'fazem'} ${pbgDec(a.pct_valor)}% do gasto` }; },
+    vazio: (d) => (d.abc.length ? null : 'Nenhuma saída no período escolhido.'),
+    config: (d, t, f, clicavel) => {
+      const l = d.abc, n = l.length;
+      const pts = [{ x: 0, y: 0, classe: 'A' }].concat(l.map((x, i) => ({ x: Math.round((i + 1) / n * 1000) / 10, y: x.pct_acum, classe: x.classe, item: x.item, pos: x.posicao, valor: x.valor })));
+      const passo = Math.max(1, Math.ceil(n / 300));   // muitos itens: guarda um ponto a cada "passo" (e as viradas de classe)
+      const red = pts.filter((p, i) => i === 0 || i === pts.length - 1 || i % passo === 0 || p.classe !== pts[i - 1].classe || (pts[i + 1] && p.classe !== pts[i + 1].classe));
+      const trecho = (cl) => {
+        const idx = red.map((p, i) => (p.classe === cl ? i : -1)).filter(i => i >= 0);
+        return idx.length ? red.slice(Math.max(0, idx[0] - 1), idx[idx.length - 1] + 1) : [];
+      };
+      const c = d.abc_classes, fonte = { family: pbgFonte(), size: f };
+      const ds = [['A', t.serie[0]], ['B', t.serie[1]], ['C', t.serie[2]]].filter(([k]) => c[k].itens).map(([k, cor]) => ({
+        label: `${k}: ${pbgN(c[k].itens, 'item', 'itens')} · ${pbgDec(c[k].pct_valor)}% do gasto`, data: trecho(k), borderColor: cor, backgroundColor: cor,
+        borderWidth: 2.5, pointRadius: 0, pointHoverRadius: Math.max(5, Math.round(f / 2)), pointHitRadius: 8, tension: 0 }));
+      const eixo = (titulo) => ({ type: 'linear', min: 0, max: 100, grid: { color: t.grade }, border: { display: false },
+        ticks: { color: t.texto, font: fonte, stepSize: 20, callback: (v) => `${v}%` }, title: { display: true, text: titulo, color: t.texto, font: fonte } });
+      const op = pbgOpcoes(t, f, { legenda: true, filtro: (it) => !!it.raw?.pos, tooltip: {
+        title: (it) => it[0]?.raw.item || '',
+        label: (cx) => ` ${cx.raw.pos}º · classe ${cx.raw.classe} · ${pbDinheiro(cx.raw.valor)} · acumulado ${pbgDec(cx.raw.y)}% do gasto` } });
+      op.scales = { x: { ...eixo('% dos itens (do que mais gasta para o que menos gasta)') }, y: eixo('% do gasto acumulado') };
+      op.interaction = { mode: 'nearest', intersect: false, axis: 'x' };
+      if (clicavel) { op.onClick = () => pbgTabela('abc'); op.onHover = (ev) => { if (ev.native?.target) ev.native.target.style.cursor = 'pointer'; }; }
+      return { type: 'line', plugins: [PBG_LEGENDA], data: { datasets: ds }, options: op };
+    },
+    tabela: (d) => [
+      { titulo: 'Classes', colunas: [{ key: 'classe', label: 'Classe' }, { key: 'itens', label: 'Itens' }, { key: 'pct_itens', label: '% dos itens', tipo: 'pct', num: true }, { key: 'valor', label: 'Gasto', tipo: 'din' }, { key: 'pct_valor', label: '% do gasto', tipo: 'pct', num: true }],
+        linhas: ['A', 'B', 'C'].map(k => ({ classe: k, ...d.abc_classes[k] })) },
+      { titulo: 'Itens', colunas: PBG_COL.abc, linhas: d.abc }],
+  },
+  { id: 'top10', titulo: 'Os 10 itens que mais gastam',
+    sub: () => 'Período escolhido · consumo em reais (saídas × valor do item), somando as filiais do filtro. Tamanhos do mesmo item somam juntos.',
+    destaque: (d) => ({ valor: `${pbgDec(d.abc_total ? pbgSoma(d.abc.slice(0, 10), x => x.valor) / d.abc_total * 100 : 0)}%`, texto: `do gasto do período (${pbgDinCurto(d.abc_total)}) está nesses 10 itens` }),
+    vazio: (d) => (d.abc.length ? null : 'Nenhuma saída no período escolhido.'),
+    config: (d, t, f, clicavel) => {
+      const l = d.abc.slice(0, 10);
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: l.map(x => x.item), datasets: [{ label: 'Gasto', data: l.map(x => x.valor), backgroundColor: t.serie[0], ...pbgBarra(t, { maxBarThickness: 26 }) }] },
+        options: pbgOpcoes(t, f, { deitado: true, dinheiro: true, corte: 30, rotulos: (v) => pbgDinCurto(v),
+          tooltip: { title: (it) => l[it[0].dataIndex]?.item || '', label: (c) => { const x = l[c.dataIndex]; return ` ${pbDinheiro(x.valor)} · ${pbgDec(x.quantidade, 2)} ${x.un} · ${x.filiais}`; } },
+          clique: clicavel ? () => pbgTabela('top10') : null }) };
+    },
+    tabela: (d) => [{ titulo: 'Os 10 que mais gastam', colunas: PBG_COL.abc, linhas: d.abc.slice(0, 10) }],
+  },
+  { id: 'parado', titulo: 'Estoque parado há mais de 90 dias',
+    sub: (d) => `Hoje · itens com saldo sem nenhuma saída e sem entrada nova nos últimos 90 dias (filial com menos tempo no GCA: o tempo que tiver). Candidatos a transferir.${pbgNotaHist(pbgSemHist(pbgFiliais(d), 'parado'))}`,
+    dica: 'Clique na barra para ver os itens.',
+    destaque: (d) => { const fs = pbgFiliais(d); return { valor: pbgDinCurto(pbgSoma(fs, f => f.parado?.valor)), texto: `em ${pbgN(pbgSoma(fs, f => f.parado?.itens), 'item', 'itens')} sem saída` }; },
+    vazio: (d) => {
+      const fs = pbgFiliais(d);
+      if (!fs.some(f => f.parado)) return 'Pouco histórico: a filial precisa de 30 dias de lançamentos no GCA.';
+      return pbgSoma(fs, f => f.parado?.itens) ? null : 'Nenhum item parado: tudo o que tem saldo teve saída ou entrada nos últimos 90 dias.';
+    },
+    config: (d, t, f, clicavel) => {
+      const fs = pbgFiliais(d).filter(x => x.parado?.itens).sort((a, b) => b.parado.valor - a.parado.valor);
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: fs.map(x => x.nome), datasets: [{ label: 'Valor parado', data: fs.map(x => x.parado.valor), backgroundColor: t.serie[3], ...pbgBarra(t) }] },
+        options: pbgOpcoes(t, f, { deitado: true, dinheiro: true, rotulos: (v) => pbgDinCurto(v),
+          tooltip: { label: (c) => { const x = fs[c.dataIndex]; return ` ${pbDinheiro(x.parado.valor)} · ${pbgN(x.parado.itens, 'item', 'itens')} sem saída em ${x.parado.janela} dias`; } },
+          clique: clicavel ? (i) => pbGaveta(`Estoque parado · ${fs[i].nome}`, `sem saída nem entrada nova em ${fs[i].parado.janela} dias · hoje`,
+            [{ titulo: 'Itens parados', colunas: PBG_COL.parados, linhas: d.listas.parados.filter(x => x.filial === fs[i].nome) }]) : null }) };
+    },
+    tabela: (d) => [
+      { titulo: 'Por filial', colunas: [{ key: 'nome', label: 'Filial' }, { key: 'itens', label: 'Itens parados' }, { key: 'valor', label: 'Valor parado', tipo: 'din' }, { key: 'janela', label: 'Sem saída há (dias)' }],
+        linhas: pbgFiliais(d).filter(f => f.parado).map(f => ({ nome: f.nome, ...f.parado })) },
+      { titulo: 'Itens parados', colunas: PBG_COL.parados, linhas: d.listas.parados }],
+  },
+  { id: 'evolucao', titulo: 'Evolução do valor em estoque, mês a mês',
+    sub: (d) => `12 meses até ${pbgMes(d.meses[11])} · refeito pelas movimentações: parte do saldo de hoje e desfaz as entradas e saídas de cada mês, com o preço de hoje (aproximado). Antes do primeiro lançamento da filial no GCA fica vazio.`,
+    destaque: (d) => {
+      // Compara a partir do 1º mês em que TODAS as filiais do gráfico já lançavam no GCA (filial que entrou
+      // depois não pode parecer crescimento do estoque)
+      const tot = pbgEvolTotal(d), ult = tot[11], fs = pbgFiliais(d).filter(f => f.evolucao.some(v => v != null));
+      const i0 = d.meses.findIndex((_, i) => fs.length && fs.every(f => f.evolucao[i] != null));
+      if (ult == null || i0 < 0) return null;
+      const var_ = tot[i0] ? (ult - tot[i0]) / tot[i0] * 100 : null;
+      return { valor: pbgDinCurto(ult), texto: var_ == null || i0 === 11 ? (d.ref === d.hoje ? 'hoje' : `em ${formatarData(d.ref)}`) : `${var_ >= 0 ? '+' : ''}${pbgDec(var_)}% desde o fim de ${pbgMes(d.meses[i0])}` };
+    },
+    vazio: (d) => (pbgEvolTotal(d).some(v => v != null) ? null : 'Sem lançamentos no GCA nos últimos 12 meses.'),
+    config: (d, t, f, clicavel) => {
+      const fs = pbgFiliais(d).filter(x => x.evolucao.some(v => v != null));
+      const comCor = fs.filter(x => pbgCorFilial(t, x)), outras = fs.filter(x => !pbgCorFilial(t, x));
+      const ds = comCor.map(x => ({ label: x.nome, data: x.evolucao, backgroundColor: pbgCorFilial(t, x), ...pbgPedaco(t, { maxBarThickness: 40 }) }));
+      if (outras.length) ds.push({ label: 'Outras filiais', backgroundColor: t.neutro, ...pbgPedaco(t, { maxBarThickness: 40 }),
+        data: d.meses.map((_, i) => { const vs = outras.map(x => x.evolucao[i]).filter(v => v != null); return vs.length ? pbgSoma(vs, v => v) : null; }) });
+      if (ds.length === 1) Object.assign(ds[0], pbgBarra(t, { maxBarThickness: 40 }), { borderWidth: 0, backgroundColor: t.serie[0] });
+      return { type: 'bar', plugins: [PBG_LEGENDA],
+        data: { labels: d.meses.map((m, i) => (i === 11 && d.ref === d.hoje ? 'hoje' : pbgMes(m))), datasets: ds },
+        options: pbgOpcoes(t, f, { pilha: true, dinheiro: true, legenda: ds.length > 1, indice: true, filtro: (it) => it.raw != null,
+          tooltip: { title: (it) => { const i = it[0].dataIndex; return i === 11 ? (d.ref === d.hoje ? 'Hoje' : formatarData(d.ref)) : `Fim de ${pbgMes(d.meses[i])}`; },
+            label: (c) => ` ${c.dataset.label}: ${pbDinheiro(c.raw)}`,
+            footer: (it) => (ds.length > 1 ? `Total: ${pbDinheiro(pbgSoma(it, x => x.raw))}` : '') },
+          clique: clicavel ? () => pbgTabela('evolucao') : null }) };
+    },
+    tabela: (d) => {
+      const fs = pbgFiliais(d), tot = pbgEvolTotal(d);
+      return [{ titulo: 'Valor no fim de cada mês', colunas: [{ key: 'mes', label: 'Mês' }, ...fs.map(f => ({ key: `f_${f.slug}`, label: f.nome, tipo: 'din' })), { key: 'total', label: 'Total', tipo: 'din' }],
+        linhas: d.meses.map((m, i) => ({ mes: i === 11 && d.ref === d.hoje ? `${pbgMes(m)} (hoje)` : pbgMes(m), ...Object.fromEntries(fs.map(f => [`f_${f.slug}`, f.evolucao[i]])), total: tot[i] })) }];
+    },
+  },
+  { id: 'fluxo', titulo: 'Entradas × saídas por mês',
+    sub: (d) => `12 meses até ${pbgMes(d.meses[11])} · em reais. Entradas: compras, devoluções e o que veio de outra filial. Saídas: consumo e o que foi para outra filial. Transferência entre armazéns da mesma filial e acerto de inventário não contam.`,
+    destaque: (d) => { const m = pbgFluxo(d); return { valor: pbgDinCurto(pbgSoma(m, x => x.entradas)), texto: `entraram e ${pbgDinCurto(pbgSoma(m, x => x.saidas))} saíram em 12 meses` }; },
+    vazio: (d) => (pbgSoma(pbgFluxo(d), x => x.entradas + x.saidas) ? null : 'Nenhuma entrada ou saída nos últimos 12 meses.'),
+    config: (d, t, f, clicavel) => {
+      const m = pbgFluxo(d);
+      const det = (x, partes) => partes.filter(([k]) => x[k]).map(([k, rot]) => `   ${rot}: ${pbDinheiro(x[k])}`);
+      return { type: 'bar', plugins: [PBG_LEGENDA],
+        data: { labels: d.meses.map(pbgMes), datasets: [
+          { label: 'Entradas', data: m.map(x => x.entradas), backgroundColor: t.serie[0], ...pbgBarra(t, { maxBarThickness: 22 }) },
+          { label: 'Saídas', data: m.map(x => x.saidas), backgroundColor: t.serie[1], ...pbgBarra(t, { maxBarThickness: 22 }) }] },
+        options: pbgOpcoes(t, f, { dinheiro: true, legenda: true, indice: true,
+          tooltip: { label: (c) => ` ${c.dataset.label}: ${pbDinheiro(c.raw)}`,
+            footer: (it) => { const x = m[it[0].dataIndex];
+              return [...det(x, [['compras', 'Compras (SC)'], ['outras_entradas', 'Outras entradas'], ['recebido_filial', 'Veio de outra filial'], ['retorno_transferencia', 'Volta de transferência']]),
+                ...det(x, [['consumo', 'Consumo'], ['enviado_filial', 'Foi para outra filial']])]; } },
+          clique: clicavel ? () => pbgTabela('fluxo') : null }) };
+    },
+    tabela: (d) => [{ titulo: 'Mês a mês (R$)', colunas: [{ key: 'mes', label: 'Mês' }, ...[['compras', 'Compras (SC)'], ['outras_entradas', 'Outras entradas'], ['recebido_filial', 'Veio de outra filial'],
+      ['retorno_transferencia', 'Volta de transferência'], ['entradas', 'Total de entradas'], ['consumo', 'Consumo'], ['enviado_filial', 'Foi para outra filial'], ['saidas', 'Total de saídas']].map(([key, label]) => ({ key, label, tipo: 'din' }))],
+      linhas: pbgFluxo(d).map(x => ({ ...x, mes: pbgMes(x.mes) })) }],
+  },
+  { id: 'giro', titulo: 'Giro e cobertura por filial',
+    sub: () => 'Giro: quantas vezes por ano o estoque é consumido e reposto (mais é melhor) = consumo dos últimos 12 meses ÷ valor em estoque hoje. Cobertura = 365 ÷ giro. Filial com menos de 1 ano no GCA: o consumo é levado para o ano.',
+    destaque: (d) => {
+      const fs = pbgFiliais(d).filter(f => f.giro?.giro != null), v = pbgSoma(fs, f => f.valor), c = pbgSoma(fs, f => f.giro.consumo_ano);
+      if (!v || !c) return null;
+      return { valor: `${pbgDec(c / v, 1)}× por ano`, texto: `o estoque todo dura cerca de ${pbNum(Math.round(365 / (c / v)))} dias` };
+    },
+    vazio: (d) => (pbgFiliais(d).some(f => f.giro?.giro) ? null : 'Pouco histórico ou sem consumo: a filial precisa de 30 dias de lançamentos no GCA.'),
+    config: (d, t, f) => {
+      const fs = pbgFiliais(d).filter(x => x.giro?.giro).sort((a, b) => b.giro.giro - a.giro.giro);
+      return { type: 'bar', plugins: [PBG_ROTULOS],
+        data: { labels: fs.map(x => x.nome), datasets: [{ label: 'Giro por ano', data: fs.map(x => x.giro.giro), backgroundColor: t.serie[2], ...pbgBarra(t) }] },
+        options: pbgOpcoes(t, f, { deitado: true, vezes: true, rotulos: (v, i) => `${pbgDec(v, 1)}× · ${pbNum(fs[i].giro.cobertura_dias)} dias`,
+          tooltip: { label: (c) => { const g = fs[c.dataIndex].giro;
+            return [` Giro ${pbgDec(g.giro, 2)}× por ano · estoque para ${pbNum(g.cobertura_dias)} dias`, ` Consumo por ano ${pbDinheiro(g.consumo_ano)} · em estoque ${pbDinheiro(fs[c.dataIndex].valor)}`,
+              ...(g.base_dias < 365 ? [` (consumo de ${pbNum(g.base_dias)} dias levado para 1 ano)`] : [])]; } } }) };
+    },
+    tabela: (d) => [{ titulo: 'Por filial', colunas: [{ key: 'nome', label: 'Filial' }, { key: 'valor', label: 'Valor em estoque hoje', tipo: 'din' }, { key: 'consumo_12m', label: 'Consumo nos últimos 12 meses', tipo: 'din' },
+      { key: 'base_dias', label: 'Dias de histórico usados' }, { key: 'consumo_ano', label: 'Consumo por ano', tipo: 'din' }, { key: 'giro', label: 'Giro (vezes por ano)' }, { key: 'cobertura_dias', label: 'Cobertura (dias)' }],
+      linhas: pbgFiliais(d).filter(f => f.giro).map(f => ({ nome: f.nome, valor: f.valor, ...f.giro })) }],
+  },
+];
+function pbgEvolTotal(d) {
+  const fs = pbgFiliais(d);
+  return d.meses.map((_, i) => { const vs = fs.map(f => f.evolucao[i]).filter(v => v != null); return vs.length ? Math.round(pbgSoma(vs, v => v) * 100) / 100 : null; });
+}
+function pbgFluxo(d) {
+  const fs = pbgFiliais(d), ks = ['compras', 'outras_entradas', 'recebido_filial', 'retorno_transferencia', 'consumo', 'enviado_filial'];
+  return d.meses.map((mes, i) => {
+    const x = Object.fromEntries(ks.map(k => [k, Math.round(pbgSoma(fs, f => f.fluxo[i][k]) * 100) / 100]));
+    return { mes, ...x, entradas: Math.round((x.compras + x.outras_entradas + x.recebido_filial + x.retorno_transferencia) * 100) / 100, saidas: Math.round((x.consumo + x.enviado_filial) * 100) / 100 };
+  });
+}
+const pbgReceita = (id) => PBG_LISTA.find(r => r.id === id);
+
+// ── A aba ──
+async function pbAbaGraficos(el) {
+  const chave = `${PB.de}|${PB.ate}|${PB.filial}`;
+  if (!PBG.dados || PBG.chave !== chave) {
+    el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Montando os gráficos do estoque…</div>';
+    const res = await api(`/painel-brasil/estoque-graficos?${pbQuery({ filial: PB.filial, ...(PBG.forcar ? { novo: '1' } : {}) })}`);
+    if (chave !== `${PB.de}|${PB.ate}|${PB.filial}` || PB.aba !== 'graficos' || !document.body.contains(el)) return;
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Não foi possível montar os gráficos')}</div>`; return; }
+    PBG.forcar = false;
+    PBG.dados = res; PBG.chave = chave;
+  }
+  await pbGarantirChart();
+  const d = PBG.dados, fs = pbgFiliais(d);
+  const valor = pbgSoma(fs, f => f.valor), acima = pbgSoma(fs, f => f.acima.valor), parado = pbgSoma(fs, f => f.parado?.valor);
+  const giro = PBG_LISTA.find(r => r.id === 'giro').destaque(d);
+  el.innerHTML = `
+    <div class="pbg-barra">
+      <div><div class="pbg-barra-t">Gráficos de estoque</div><div class="pbg-barra-s">Valor, saúde, cobertura, consumo e evolução de ${escHtml(pbgEscopo())}. Cada gráfico tem a tabela (com Excel) e vira imagem para a apresentação.</div></div>
+      <button class="btn btn-ghost" onclick="pbgApresentar(0)"><svg class=ic aria-hidden=true><use href=#i-monitor></use></svg> Modo apresentação</button>
+      <button class="btn btn-primary" onclick="pbgAbrirPdf()"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Resumo em PDF</button>
+    </div>
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">
+      ${pbKpi('Valor em estoque', pbgDinCurto(valor), `${pbgN(pbgSoma(fs, f => f.itens_com_saldo), 'item', 'itens')} com saldo · hoje`, '', '', 0)}
+      ${pbKpi('Acima do estoque máximo', pbgDinCurto(acima), `${pbgN(pbgSoma(fs, f => f.acima.itens), 'item', 'itens')} · dinheiro que podia estar em outra coisa`, acima ? 'aviso' : '', '', 1)}
+      ${pbKpi('Parado há mais de 90 dias', pbgDinCurto(parado), `${pbgN(pbgSoma(fs, f => f.parado?.itens), 'item', 'itens')} sem saída`, parado ? 'aviso' : '', '', 2)}
+      ${pbKpi('Giro do estoque', giro ? giro.valor : '—', giro ? giro.texto : 'pouco histórico para calcular', '', '', 3)}
+    </div>
+    <div class="pbg-grade">${PBG_LISTA.map((r, i) => pbgCartao(r, i, d)).join('')}</div>
+    <div style="font-size:11px;color:var(--text-3)">Hoje = situação de agora. Período = as datas do filtro acima. Os 12 meses terminam no mês do fim do período. Valores com o preço do cadastro (o consumo usa o preço que valia na data da saída, como no Financeiro).</div>`;
+  const t = PBG_TEMA[pbgTemaAtual()];
+  PBG_LISTA.forEach(r => {
+    const cv = document.getElementById(`pbgCv_${r.id}`);
+    if (cv) PB.charts[`g_${r.id}`] = new Chart(cv, r.config(d, t, 11, true));
+  });
+}
+function pbgCartao(r, i, d) {
+  const vazio = r.vazio(d), dest = vazio ? null : r.destaque(d);
+  return `<div class="pbg-card" id="pbgCard_${r.id}" style="animation-delay:${i * 0.04}s">
+    <div class="pbg-topo">
+      <span class="pbg-num">${i + 1}</span>
+      <div class="pbg-tit"><div class="t">${escHtml(r.titulo)}</div><div class="s">${escHtml(r.sub(d))}${r.dica && !vazio ? ` ${escHtml(r.dica)}` : ''}</div></div>
+      <div class="pbg-acoes">
+        <button class="pbg-btn" title="Ver os números em tabela, com Excel" onclick="pbgTabela('${r.id}')"><svg class=ic aria-hidden=true><use href=#i-list-checks></use></svg> Tabela</button>
+        ${vazio ? '' : `<button class="pbg-btn" title="Baixar como imagem PNG de fundo branco, com título, filial, período e data" onclick="pbgBaixarImagem('${r.id}')"><svg class=ic aria-hidden=true><use href=#i-download></use></svg> Imagem</button>`}
+      </div>
+    </div>
+    ${dest ? `<div class="pbg-dest"><b>${escHtml(dest.valor)}</b> ${escHtml(dest.texto)}</div>` : ''}
+    <div class="pbg-area">${vazio ? `<div class="pbg-vazio">${escHtml(vazio)}</div>` : `<canvas id="pbgCv_${r.id}" role="img" aria-label="${escHtml(r.titulo)}"></canvas>`}</div>
+  </div>`;
+}
+function pbgTabela(id) {
+  const r = pbgReceita(id), d = PBG.apres?.dados || PBG.dados;
+  if (!r || !d) return;
+  pbGaveta(r.titulo, `${escHtml(pbgEscopo())} · ${escHtml(r.sub(d))}`, r.tabela(d));
+}
+function pbgPorArmazem(d, f) {
+  pbGaveta(`Valor por armazém · ${f.nome}`, 'Hoje · saldo × valor do cadastro', [{ titulo: 'Armazéns', colunas: PBG_COL.armazens, linhas: pbgArmLinhas(d.listas.armazens.filter(a => a.slug === f.slug)) }]);
+}
+
+// ── A · Imagem: o gráfico desenhado fora da tela, em tamanho grande e com as cores do tema claro ──
+function pbgDesenhar(r, d, { largura, altura, f, tema = 'claro', escala = 2 }) {
+  const t = PBG_TEMA[tema];
+  const caixa = document.createElement('div');
+  caixa.style.cssText = `position:fixed;left:-30000px;top:0;width:${largura}px;height:${altura}px;pointer-events:none`;
+  const cv = document.createElement('canvas');
+  cv.width = largura; cv.height = altura;
+  caixa.appendChild(cv); document.body.appendChild(caixa);
+  const cfg = r.config(d, t, f, false);
+  cfg.options = { ...cfg.options, responsive: false, animation: false, devicePixelRatio: escala };
+  cfg.plugins = [...(cfg.plugins || []), { id: 'pbgFundo', beforeDraw(c) { const x = c.ctx; x.save(); x.fillStyle = t.fundo; x.fillRect(0, 0, c.width, c.height); x.restore(); } }];
+  const ch = new Chart(cv, cfg);
+  return { cv, fim: () => { ch.destroy(); caixa.remove(); } };
+}
+function pbgImagemCompleta(r, d) {
+  const W = 1600, H = 900, E = 2, M = 56;
+  const out = document.createElement('canvas');
+  out.width = W * E; out.height = H * E;
+  const x = out.getContext('2d');
+  x.scale(E, E);
+  x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+  const fonte = pbgFonte();
+  x.fillStyle = '#0f172a'; x.font = `700 40px ${fonte}`; x.textBaseline = 'top';
+  x.fillText(r.titulo, M, 44);
+  x.fillStyle = '#475569'; x.font = `500 22px ${fonte}`;
+  x.fillText(`${pbgEscopo()} · ${pbPeriodoTexto()} · gerado em ${new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}`, M, 98);
+  const dest = r.destaque(d);
+  if (dest) {
+    x.textAlign = 'right';
+    x.fillStyle = '#0f172a'; x.font = `700 40px ${fonte}`; x.fillText(dest.valor, W - M, 40);
+    x.fillStyle = '#475569'; x.font = `500 19px ${fonte}`; x.fillText(dest.texto.length > 62 ? `${dest.texto.slice(0, 61)}…` : dest.texto, W - M, 92);
+    x.textAlign = 'left';
+  }
+  const g = pbgDesenhar(r, d, { largura: W - M * 2, altura: H - 160 - 92, f: 18, escala: E });
+  x.drawImage(g.cv, M, 160, W - M * 2, H - 160 - 92);
+  g.fim();
+  x.fillStyle = '#94a3b8'; x.font = `500 16px ${fonte}`;
+  const linhas = [], largNota = W - M * 2 - 220;
+  let linha = '';
+  for (const p of r.sub(d).split(' ')) {
+    const tenta = linha ? `${linha} ${p}` : p;
+    if (linha && x.measureText(tenta).width > largNota) { linhas.push(linha); linha = p; } else linha = tenta;
+  }
+  if (linha) linhas.push(linha);
+  if (linhas.length > 2) linhas.splice(1, linhas.length, `${linhas[1]}…`);
+  linhas.forEach((l, i) => x.fillText(l, M, H - 70 + i * 22));
+  x.textAlign = 'right'; x.fillText('GCA · Painel Brasil', W - M, H - 48);
+  return out;
+}
+function pbgBaixarImagem(id) {
+  const r = pbgReceita(id), d = PBG.apres?.dados || PBG.dados;
+  if (!r || !d || !window.Chart) return;
+  const cv = pbgImagemCompleta(r, d);
+  cv.toBlob(b => {
+    if (!b) { toast('Não foi possível gerar a imagem', 'error'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b);
+    a.download = `GCA - ${r.titulo} - ${pbgEscopo()}.png`.replace(/[\\/:*?"<>|]+/g, '-');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
+}
+
+// ── B · Modo apresentação: tela cheia, um gráfico por vez, setas do teclado ──
+function pbgApresentar(inicio = 0) {
+  if (!PBG.dados || !window.Chart) return;
+  const d = PBG.dados, lista = PBG_LISTA.filter(r => !r.vazio(d));
+  if (!lista.length) { toast('Nenhum gráfico com dados para apresentar', 'warn'); return; }
+  pbgApresFechar(true);
+  const el = document.createElement('div');
+  el.className = 'pbg-apres'; el.id = 'pbgApres';
+  document.body.appendChild(el);
+  PBG.apres = { dados: d, lista, i: Math.max(0, Math.min(inicio, lista.length - 1)), chart: null };
+  document.addEventListener('keydown', pbgApresTecla);
+  try { document.documentElement.requestFullscreen?.().catch(() => {}); } catch {}
+  pbgApresDesenhar();
+}
+function pbgApresDesenhar() {
+  const a = PBG.apres, el = document.getElementById('pbgApres');
+  if (!a || !el) return;
+  a.chart?.destroy(); a.chart = null;
+  const r = a.lista[a.i], dest = r.destaque(a.dados), num = PBG_LISTA.indexOf(r) + 1;
+  el.innerHTML = `<div class="pbg-apres-topo">
+      <div style="min-width:0;flex:1"><div class="pbg-apres-esc">${escHtml(pbgEscopo())} · ${escHtml(pbPeriodoTexto())}</div>
+        <div class="pbg-apres-t">${num}. ${escHtml(r.titulo)}</div><div class="pbg-apres-s">${escHtml(r.sub(a.dados))}</div></div>
+      ${dest ? `<div class="pbg-apres-dest"><b>${escHtml(dest.valor)}</b><span>${escHtml(dest.texto)}</span></div>` : ''}
+    </div>
+    <div class="pbg-apres-area"><canvas id="pbgApresCv" role="img" aria-label="${escHtml(r.titulo)}"></canvas></div>
+    <div class="pbg-apres-rod">
+      <button onclick="pbgApresPassar(-1)" ${a.i === 0 ? 'disabled' : ''}>← Anterior</button>
+      <span>${a.i + 1} de ${a.lista.length}</span>
+      <button onclick="pbgApresPassar(1)" ${a.i === a.lista.length - 1 ? 'disabled' : ''}>Próximo →</button>
+      <span style="flex:1"></span>
+      <span>Setas do teclado passam · Esc sai</span>
+      <button onclick="pbgBaixarImagem('${r.id}')"><svg class=ic aria-hidden=true><use href=#i-download></use></svg> Imagem</button>
+      <button onclick="pbgApresFechar()">✕ Sair</button>
+    </div>`;
+  a.chart = new Chart(document.getElementById('pbgApresCv'), r.config(a.dados, PBG_TEMA[pbgTemaAtual()], 16, false));
+}
+function pbgApresPassar(n) {
+  const a = PBG.apres;
+  if (!a) return;
+  const i = Math.max(0, Math.min(a.lista.length - 1, a.i + n));
+  if (i !== a.i) { a.i = i; pbgApresDesenhar(); }
+}
+function pbgApresTecla(ev) {
+  if (!PBG.apres) return;
+  if (['ArrowRight', 'PageDown', ' '].includes(ev.key)) { ev.preventDefault(); pbgApresPassar(1); }
+  else if (['ArrowLeft', 'PageUp'].includes(ev.key)) { ev.preventDefault(); pbgApresPassar(-1); }
+  else if (ev.key === 'Home') pbgApresPassar(-99);
+  else if (ev.key === 'End') pbgApresPassar(99);
+  else if (ev.key === 'Escape') pbgApresFechar();
+}
+function pbgApresFechar(semSairTelaCheia) {
+  PBG.apres?.chart?.destroy();
+  PBG.apres = null;
+  document.getElementById('pbgApres')?.remove();
+  document.removeEventListener('keydown', pbgApresTecla);
+  if (!semSairTelaCheia && document.fullscreenElement) { try { document.exitFullscreen?.().catch(() => {}); } catch {} }
+}
+
+// ── C · Resumo em PDF: os números principais e os gráficos escolhidos, para mandar por e-mail ──
+function pbgAbrirPdf() {
+  if (!PBG.dados) return;
+  pbgPdfFechar();
+  const d = PBG.dados;
+  const fundo = document.createElement('div');
+  fundo.className = 'pb-gaveta-fundo'; fundo.id = 'pbgPdfFundo'; fundo.onclick = pbgPdfFechar;
+  const box = document.createElement('div');
+  box.className = 'pbg-pdf'; box.id = 'pbgPdf';
+  box.innerHTML = `<div style="font-size:16px;font-weight:700">Resumo em PDF</div>
+    <div style="font-size:12px;color:var(--text-3);margin-bottom:8px">${escHtml(pbgEscopo())} · ${escHtml(pbPeriodoTexto())}. Escolha os gráficos que entram:</div>
+    ${PBG_LISTA.map((r, i) => { const vazio = r.vazio(d);
+      return `<label class="${vazio ? 'off' : ''}"><input type="checkbox" value="${r.id}" ${vazio ? 'disabled' : 'checked'}> ${i + 1}. ${escHtml(r.titulo)}${vazio ? ' <span style="font-size:11px">(sem dados)</span>' : ''}</label>`; }).join('')}
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+      <button class="btn btn-ghost" onclick="pbgPdfFechar()">Cancelar</button>
+      <button class="btn btn-primary" onclick="pbgGerarPdf()"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Gerar PDF</button>
+    </div>`;
+  document.body.appendChild(fundo); document.body.appendChild(box);
+}
+function pbgPdfFechar() { document.getElementById('pbgPdf')?.remove(); document.getElementById('pbgPdfFundo')?.remove(); }
+function pbgGerarPdf() {
+  const d = PBG.dados;
+  const ids = [...document.querySelectorAll('#pbgPdf input[type=checkbox]:checked')].map(c => c.value);
+  if (!d || !window.Chart) return;
+  if (!ids.length) { toast('Escolha pelo menos um gráfico', 'warn'); return; }
+  pbgPdfFechar();
+  const fs = pbgFiliais(d), giro = pbgReceita('giro').destaque(d);
+  const kpi = (r, v, det) => `<div class="kpi"><div class="r">${escHtml(r)}</div><div class="v">${escHtml(v)}</div><div class="d">${escHtml(det)}</div></div>`;
+  const blocos = ids.map(id => {
+    const r = pbgReceita(id), dest = r.destaque(d);
+    const g = pbgDesenhar(r, d, { largura: 820, altura: 430, f: 17, escala: 2 });
+    const img = g.cv.toDataURL('image/png');
+    g.fim();
+    return `<div class="g"><div class="t">${PBG_LISTA.indexOf(r) + 1}. ${escHtml(r.titulo)}${dest ? ` <span class="dv">· ${escHtml(dest.valor)} ${escHtml(dest.texto)}</span>` : ''}</div>
+      <div class="d">${escHtml(r.sub(d))}</div><img src="${img}" alt="${escHtml(r.titulo)}"></div>`;
+  }).join('');
+  const logo = new URL('./logo-gca.png', location.href).href;
+  const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>GCA - Estoque - ${escHtml(pbgEscopo())}</title><style>
+    @page{size:A4;margin:11mm}
+    *{box-sizing:border-box}
+    body{font-family:'DM Sans',Arial,sans-serif;color:#0f172a;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .topo{display:flex;align-items:center;gap:12px;border-bottom:2px solid #0f172a;padding-bottom:8px;margin-bottom:10px}
+    .topo img{height:26px}
+    h1{font-size:17px;margin:0}
+    .sub{font-size:10.5px;color:#475569;margin-top:2px}
+    .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:10px}
+    .kpi{border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px}
+    .kpi .r{font-size:8px;text-transform:uppercase;color:#64748b;letter-spacing:.3px}
+    .kpi .v{font-size:15px;font-weight:700;margin-top:1px}
+    .kpi .d{font-size:8px;color:#64748b}
+    .grade{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .g{border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;break-inside:avoid;page-break-inside:avoid}
+    .g .t{font-size:10px;font-weight:700}
+    .g .dv{font-weight:400;color:#334155}
+    .g .d{font-size:7.5px;color:#64748b;margin:2px 0 4px;line-height:1.35}
+    .g img{width:100%;display:block}
+    .rod{font-size:7.5px;color:#94a3b8;margin-top:8px}
+  </style></head><body>
+    <div class="topo"><img src="${logo}" alt="GCA"><div><h1>Estoque · ${escHtml(pbgEscopo())}</h1>
+      <div class="sub">Período ${escHtml(pbPeriodoTexto())} · gerado em ${escHtml(new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }))} por ${escHtml(GCA.usuario?.nome || '')}</div></div></div>
+    <div class="kpis">
+      ${kpi('Valor em estoque', pbgDinCurto(pbgSoma(fs, f => f.valor)), `${pbgN(pbgSoma(fs, f => f.itens_com_saldo), 'item', 'itens')} com saldo · hoje`)}
+      ${kpi('Acima do estoque máximo', pbgDinCurto(pbgSoma(fs, f => f.acima.valor)), pbgN(pbgSoma(fs, f => f.acima.itens), 'item', 'itens'))}
+      ${kpi('Parado há mais de 90 dias', pbgDinCurto(pbgSoma(fs, f => f.parado?.valor)), `${pbgN(pbgSoma(fs, f => f.parado?.itens), 'item', 'itens')} sem saída`)}
+      ${kpi('Giro do estoque', giro ? giro.valor : '—', giro ? giro.texto : 'pouco histórico')}
+    </div>
+    <div class="grade">${blocos}</div>
+    <div class="rod">GCA · Painel Brasil. Hoje = situação no momento em que o PDF foi gerado. Os 12 meses terminam no mês do fim do período. A evolução mês a mês é refeita pelas movimentações com o preço de hoje (aproximada).</div>
+  </body></html>`;
+  abrirJanelaPDF(html, `GCA - Estoque - ${pbgEscopo()}`);
 }
 
 // ── LOGÍSTICA ── mapa do Brasil com as cargas de entrega e as transferências entre filiais em andamento
