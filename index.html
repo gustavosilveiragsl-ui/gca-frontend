@@ -229,6 +229,17 @@ input,select,textarea{font-family:var(--font-main);}
 .scal-tab th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
 .scal-tab td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
 .scal-tab tr.clica{cursor:pointer}.scal-tab tr.clica:hover td{background:var(--bg-hover)}
+.scal-det{border-top:1px solid var(--border);margin-top:16px}
+.scal-det-cab{display:flex;align-items:center;gap:8px;margin:14px 0 10px}
+.scal-det-cab .scal-det-tit{margin:0}
+.scal-abas{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.scal-aba{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12px;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--bg);color:var(--text-2);cursor:pointer}
+.scal-aba::before{content:'';width:8px;height:8px;border-radius:2px;background:var(--scal-c)}
+.scal-aba b{color:var(--text-1);font-variant-numeric:tabular-nums}
+.scal-aba.ativa{border-color:var(--scal-c);background:color-mix(in srgb,var(--scal-c) 14%,transparent);color:var(--text-1)}
+.scal-aba:disabled{opacity:.4;cursor:default}
+.scal-lista-barra{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:11px;color:var(--text-3)}
+.scal-lista-barra button{margin-left:auto;flex:none}
 @media (max-width:760px){.scal-semana{display:none}.scal-grade{grid-template-columns:1fr}.scal-dia.vazio,.scal-dia.futuro{display:none}
   .scal-dia{min-height:0;flex-direction:row;flex-wrap:wrap;gap:2px 12px}.scal-dia .n{width:100%}.scal-dia .dow{display:inline}.scal-dia .l.scal-fila{margin-top:0}
   .scal-kpis{grid-template-columns:repeat(2,1fr)}}
@@ -14386,7 +14397,7 @@ async function abrirModalSolicitacao(id) {
 // finalizadas, canceladas e as que ficaram aguardando no fim do dia. Segue o filtro de armazém da
 // tela. As contas são do servidor (/solicitacoes/calendario, services/calendario_solicitacoes.js).
 // ═══════════════════════════════════════════
-const SCAL = { mes: null, dia: null, dados: null, armNome: '' };
+const SCAL = { mes: null, dia: null, dados: null, armNome: '', aba: null };
 const SCAL_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const SCAL_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 const SCAL_SEMANA_LONGA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
@@ -14398,11 +14409,12 @@ function scalAbrir() {
   scalFechar();
   const ov = document.createElement('div');
   ov.className = 'modal-overlay'; ov.id = 'modalSolCalendario';
-  ov.innerHTML = `<div class="modal-box scal-box" style="max-width:1180px;width:100%" role="dialog" aria-modal="true" aria-labelledby="scalTitulo">
+  // A janela cabe na tela e rola por dentro (17/11/2026): num dia com muitos pedidos o topo (título e ×) sumia
+  ov.innerHTML = `<div class="modal-box scal-box" style="max-width:1180px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="scalTitulo">
     <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="scalTitulo"><svg class=ic aria-hidden=true><use href=#i-calendar-days></use></svg> Calendário das solicitações</div>
       <div class="modal-sub" id="scalSub"></div></div>
       <button class="modal-close" onclick="scalFechar()" aria-label="Fechar">×</button></div>
-    <div class="modal-body" id="scalCorpo"></div></div>`;
+    <div class="modal-body" id="scalCorpo" style="overflow-y:auto;flex:1;min-height:0"></div></div>`;
   ov.addEventListener('click', (e) => { if (e.target === ov) scalFechar(); });
   document.body.appendChild(ov);
   document.addEventListener('keydown', scalEsc);
@@ -14487,11 +14499,12 @@ function scalRender() {
 function scalGrupos(dia) {
   const ps = SCAL.dados?.pedidos || [], hoje = SCAL.dados?.hoje;
   return [
-    { cls: 'feitas', rotulo: 'Feitas', linhas: ps.filter(p => p.criado === dia) },
-    { cls: 'atendidas', rotulo: 'Atendidas', linhas: ps.filter(p => p.atendido === dia) },
-    { cls: 'finalizadas', rotulo: 'Finalizadas (assinadas)', linhas: ps.filter(p => p.finalizado === dia) },
-    { cls: 'canceladas', rotulo: 'Canceladas', linhas: ps.filter(p => p.cancelado === dia), cancel: true },
-    { cls: 'fila', rotulo: dia === hoje ? 'Na fila agora' : 'Ficaram aguardando no fim do dia', espera: true,
+    { cls: 'feitas', rotulo: 'Feitas', ajuda: 'Pedidos abertos neste dia.', linhas: ps.filter(p => p.criado === dia) },
+    { cls: 'atendidas', rotulo: 'Atendidas', ajuda: 'Pedidos atendidos neste dia (podem ter sido feitos antes).', linhas: ps.filter(p => p.atendido === dia) },
+    { cls: 'finalizadas', rotulo: 'Finalizadas', ajuda: 'Pedidos cuja assinatura aconteceu neste dia.', linhas: ps.filter(p => p.finalizado === dia) },
+    { cls: 'canceladas', rotulo: 'Canceladas', ajuda: 'Pedidos cancelados neste dia, e como.', linhas: ps.filter(p => p.cancelado === dia), cancel: true },
+    { cls: 'fila', rotulo: dia === hoje ? 'Fila agora' : 'Fila no fim do dia', espera: true,
+      ajuda: dia === hoje ? 'Pedidos esperando atendimento agora (pendentes e visualizados).' : 'Pedidos que ainda esperavam atendimento à meia-noite deste dia.',
       linhas: ps.filter(p => p.criado && p.criado <= dia && (!p.fim_espera || p.fim_espera > dia)).sort((x, y) => String(x.criado).localeCompare(String(y.criado))) },
   ];
 }
@@ -14499,6 +14512,7 @@ const SCAL_CANCEL = { prazo: 'Pelo prazo (automático)', atendimento: 'Atendimen
 const scalComo = (p) => SCAL_CANCEL[p.cancelado_tipo] || `Por ${p.cancelado_por || 'alguém'}`;
 const scalDiasEsperando = (p, dia) => Math.round((Date.parse(`${dia}T12:00:00Z`) - Date.parse(`${p.criado}T12:00:00Z`)) / 864e5);
 
+// Detalhe do dia: uma aba por número (uma lista por vez), com o que a lista significa e o Excel dela
 function scalVerDia(dia, semRolar) {
   SCAL.dia = dia;
   document.querySelectorAll('.scal-dia.sel').forEach(x => x.classList.remove('sel'));
@@ -14506,20 +14520,35 @@ function scalVerDia(dia, semRolar) {
   const el = document.getElementById('scalDetalhe');
   if (!el) return;
   const grupos = scalGrupos(dia);
-  const cab = (g) => ['Pedido', 'Colaborador', 'Solicitante', 'Armazém', 'Prioridade', ...(g.cancel ? ['Como'] : []), ...(g.espera ? ['Aberto em', 'Esperando'] : [])];
-  const cels = (g, p) => [escHtml(p.id), escHtml(p.colaborador || '—'), escHtml(p.solicitante || '—'), escHtml(p.armazem || '—'),
+  if (!grupos[SCAL.aba]?.linhas.length) SCAL.aba = Math.max(0, grupos.findIndex(g => g.linhas.length));
+  el.innerHTML = `<div class="scal-det">
+    <div class="scal-det-cab"><div class="scal-det-tit">${scalMaiuscula(SCAL_SEMANA_LONGA[scalDow(dia)])}, ${formatarData(dia)}</div>
+      <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="document.getElementById('scalCorpo').scrollTo({ top: 0, behavior: 'smooth' })">↑ Calendário</button></div>
+    <div class="scal-abas" role="tablist" aria-label="Pedidos do dia">${grupos.map((g, i) => `<button type="button" role="tab" class="scal-aba scal-${g.cls}${i === SCAL.aba ? ' ativa' : ''}" aria-selected="${i === SCAL.aba}" onclick="scalAba(${i})" ${g.linhas.length ? '' : 'disabled'}>${g.rotulo} <b>${pbNum(g.linhas.length)}</b></button>`).join('')}</div>
+    <div id="scalDetLista"></div></div>`;
+  scalRenderLista();
+  if (!semRolar) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function scalAba(i) {
+  SCAL.aba = i;
+  document.querySelectorAll('.scal-aba').forEach((b, j) => { b.classList.toggle('ativa', j === i); b.setAttribute('aria-selected', String(j === i)); });
+  scalRenderLista();
+}
+function scalRenderLista() {
+  const box = document.getElementById('scalDetLista');
+  if (!box) return;
+  const dia = SCAL.dia, g = scalGrupos(dia)[SCAL.aba];
+  if (!g?.linhas.length) { box.innerHTML = '<div class="pb-vazio">Nenhum pedido neste dia.</div>'; return; }
+  const cab = ['Pedido', 'Colaborador', 'Solicitante', 'Armazém', 'Prioridade', ...(g.cancel ? ['Como'] : []), ...(g.espera ? ['Aberto em', 'Esperando'] : [])];
+  const cels = (p) => [escHtml(p.id), escHtml(p.colaborador || '—'), escHtml(p.solicitante || '—'), escHtml(p.armazem || '—'),
     p.prioridade === 'Urgente' ? gcaSit('Urgente', 'vermelho', 'siren') : escHtml(p.prioridade || 'Normal'),
     ...(g.cancel ? [escHtml(scalComo(p))] : []),
     ...(g.espera ? [formatarData(p.criado), `${scalDiasEsperando(p, dia)} ${scalDiasEsperando(p, dia) === 1 ? 'dia' : 'dias'}`] : [])];
-  const dow = SCAL_SEMANA_LONGA[scalDow(dia)];
-  el.innerHTML = `<div class="scal-det-tit">${scalMaiuscula(dow)}, ${formatarData(dia)}</div>`
-    + (grupos.map((g, i) => !g.linhas.length ? '' : `<div class="scal-sec">
-        <div class="scal-sec-cab"><span class="scal-tag scal-${g.cls}">${g.rotulo}</span><span class="qtd">${pbNum(g.linhas.length)}</span>
-          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="scalExcelDia(${i})"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button></div>
-        <div class="scal-tab-wrap"><table class="scal-tab"><thead><tr>${cab(g).map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>
-          ${g.linhas.map(p => `<tr class="clica" onclick="scalAbrirPedido('${escJs(p.id)}', '${escJs(p.status || '')}')" title="Abrir o pedido">${cels(g, p).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
-        </tbody></table></div></div>`).join('') || '<div class="pb-vazio">Nenhum pedido neste dia.</div>');
-  if (!semRolar) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  box.innerHTML = `<div class="scal-lista-barra"><span>${escHtml(g.ajuda)} Clique num pedido para abrir.</span>
+      <button class="btn btn-ghost" style="font-size:11px;padding:4px 10px" onclick="scalExcelDia(${SCAL.aba})"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button></div>
+    <div class="scal-tab-wrap"><table class="scal-tab"><thead><tr>${cab.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>
+      ${g.linhas.map(p => `<tr class="clica" onclick="scalAbrirPedido('${escJs(p.id)}', '${escJs(p.status || '')}')" title="Abrir o pedido">${cels(p).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div>`;
 }
 
 // Abre o pedido na tela de Solicitações (o calendário fecha). Pedido já terminado pode estar só no histórico.
