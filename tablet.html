@@ -94,6 +94,16 @@ canvas{display:block;}
 .item-desc{font-size:13px;font-weight:600;color:#f1f5f9;line-height:1.3;}
 .item-mot{font-size:11px;color:#475569;margin-top:2px;}
 .item-serial{font-size:12px;color:#93c5fd;margin-top:2px;font-family:monospace;font-weight:700;}
+/* Desconto em folha (item 3, 17/11/2026): termo na mesma assinatura do recebimento */
+.desc-termo{margin-top:16px;border:2px solid #f59e0b;border-radius:14px;padding:14px;background:#0f0f17;}
+.desc-termo-tit{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#fbbf24;}
+.desc-termo p{font-size:12px;color:#cbd5e1;line-height:1.55;margin-top:8px;}
+.desc-termo .desc-it{font-size:11.5px;color:#cbd5e1;margin-top:4px;line-height:1.4;}
+.desc-termo .desc-parc{display:grid;grid-template-columns:1fr 1fr;gap:2px 12px;margin-top:4px;font-size:11.5px;color:#cbd5e1;font-family:monospace;}
+.desc-termo .desc-clt{font-size:10.5px;color:#93c5fd;}
+.desc-autorizo{display:flex;gap:12px;align-items:flex-start;margin-top:12px;padding:12px;border-radius:10px;background:#1e1e2e;cursor:pointer;}
+.desc-autorizo input{width:26px;height:26px;flex-shrink:0;margin:0;}
+.desc-autorizo span{font-size:14px;font-weight:700;color:#f1f5f9;line-height:1.35;}
 
 /* Canvas de assinatura (coluna direita) */
 .ass-canvas-wrap{display:flex;flex-direction:column;padding:20px 28px;}
@@ -124,7 +134,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
 </style>
 </head>
 <body>
-<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-signature" viewBox="0 0 24 24"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/> <path d="M3 21h18"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol></svg>
+<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M5 22h14"/> <path d="M5 2h14"/> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol><symbol id="i-signature" viewBox="0 0 24 24"><path d="m21 17-2.156-1.868A.5.5 0 0 0 18 15.5v.5a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1c0-2.545-3.991-3.97-8.5-4a1 1 0 0 0 0 5c4.153 0 4.745-11.295 5.708-13.5a2.5 2.5 0 1 1 3.31 3.284"/> <path d="M3 21h18"/></symbol><symbol id="i-wallet" viewBox="0 0 24 24"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/></symbol><symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/> <circle cx="12" cy="7" r="4"/></symbol></svg>
 
 <!-- ═══ SETUP (primeira vez) ═══ -->
 <div id="setup">
@@ -179,7 +189,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     <img src="./logo-gca.png" alt="GCA" style="height:22px;opacity:.4;margin-left:4px;">
     <div class="ass-header-info">
       <div class="ass-header-nome" id="assNome">—</div>
-      <div class="ass-header-sub">Confirme o recebimento e assine abaixo</div>
+      <div class="ass-header-sub" id="assSub">Confirme o recebimento e assine abaixo</div>
     </div>
     <button class="ass-back" onclick="voltarIdle()">← Voltar</button>
   </div>
@@ -189,6 +199,7 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     <div class="ass-itens">
       <div class="ass-itens-title">Itens recebidos</div>
       <div id="assItensLista"></div>
+      <div id="assDesconto"></div>
     </div>
 
     <!-- Canvas de assinatura -->
@@ -253,6 +264,8 @@ async function carregarFiliais() {
 let _unidade   = '';
 let _pendentes = [];
 let _atual     = null; // atendimento em assinatura
+let _descAtual = null; // desconto em folha aguardando esta assinatura (item 3)
+let _descCarregando = false;
 let _polling   = null;
 let _desenhou  = false;
 let _ctx       = null;
@@ -364,9 +377,56 @@ function contarItens(json) {
 function seriaisDoItem(it) {
   return [...new Set((Array.isArray(it?.seriais) ? it.seriais : []).map(s => String(s ?? '').trim().toUpperCase()).filter(Boolean))];
 }
+// ── Desconto em folha (item 3, 17/11/2026) ───────────────
+// Perda, dano por mau uso e roubo sem B.O. geram desconto: o termo aparece junto com os itens e a
+// mesma assinatura vale para os dois. Sem o "li e autorizo" não assina; não há botão de recusar.
+const DESC_EMPRESA = 'CENEGED - Cia Eletromecânica e Gerenciamento de Dados S/A';
+function moeda(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function parcelasDoDesconto(d) {
+  const [a, m] = String(d.mes_primeira_parcela || '').split('-').map(Number);
+  const n = Math.max(1, Number(d.parcelas) || 1), valor = (Number(d.valor_total) || 0) / n;
+  return Array.from({ length: n }, (_, i) => { const dt = new Date(a || new Date().getFullYear(), (m || 1) - 1 + i, 1);
+    return `${i + 1}- ${moeda(valor)} (${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()})`; });
+}
+function termoDescontoHtml(d) {
+  return `<div class="desc-termo" id="assDescTermo">
+    <div class="desc-termo-tit"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg> Autorização de desconto em folha</div>
+    <p>Eu, <b>${escHtml(d.colaborador || '')}</b>${d.matricula ? `, matrícula <b>${escHtml(d.matricula)}</b>` : ''}, autorizo a empresa <b>${escHtml(DESC_EMPRESA)}</b> a descontar em folha a importância de <b style="color:#fbbf24">${moeda(d.valor_total)}</b>, referente a:</p>
+    ${(d.itens || []).map(i => `<div class="desc-it">(${escHtml(i.motivo || '')}) ${escHtml(i.nome || '')} — ${escHtml(String(i.quantidade))} un — ${moeda(i.subtotal)}</div>`).join('')}
+    <p>Em <b>${Number(d.parcelas) === 1 ? '1 parcela (à vista)' : `${Number(d.parcelas)} parcelas`}</b>:</p>
+    <div class="desc-parc">${parcelasDoDesconto(d).map(p => `<div>${p}</div>`).join('')}</div>
+    <p>O valor será descontado na folha de pagamento ou, em caso de demissão, na minha rescisão.</p>
+    <p class="desc-clt">Artigo 462 da CLT: ao empregador é vedado efetuar quaisquer descontos nos salários do empregado, salvo quando este resultar de adiantamentos, de dispositivos de lei ou de contrato coletivo. § 1º Em caso de dano causado pelo empregado, o desconto será lícito, desde que esta possibilidade tenha sido acordada ou na ocorrência de dolo do empregado.</p>
+    <label class="desc-autorizo"><input type="checkbox" id="assDescAutorizo"><span>Li e autorizo o desconto em folha descrito acima.</span></label>
+  </div>`;
+}
+// Texto do botão: com desconto, a assinatura também autoriza
+function rotuloConfirmar() {
+  return `<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${_descAtual ? 'Confirmar e autorizar' : 'Confirmar Recebimento'}`;
+}
+async function carregarDescontoTablet(a) {
+  _descAtual = null; _descCarregando = true;
+  document.getElementById('assDesconto').innerHTML = '';
+  document.getElementById('assSub').textContent = 'Confirme o recebimento e assine abaixo';
+  document.getElementById('btnConfirmar').innerHTML = rotuloConfirmar();
+  try {
+    const r = await fetch(`${API}/atendimentos/token/${encodeURIComponent(a.token)}`, { cache: 'no-store' });
+    const d = await r.json();
+    if (_atual !== a) return;
+    if (d?.ok && d.desconto) {
+      _descAtual = d.desconto;
+      document.getElementById('assDesconto').innerHTML = termoDescontoHtml(d.desconto);
+      document.getElementById('assSub').textContent = 'Confira os itens, leia o desconto em folha e assine abaixo';
+      document.getElementById('btnConfirmar').innerHTML = rotuloConfirmar();
+    }
+  } catch {}
+  finally { if (_atual === a) _descCarregando = false; }
+}
+
 function abrirAssinatura(id) {
   _atual = _pendentes.find(a => a.id === id);
   if (!_atual) return;
+  carregarDescontoTablet(_atual);
 
   let itens = [];
   try { itens = JSON.parse(_atual.itens_json || '[]'); } catch {}
@@ -392,7 +452,7 @@ function abrirAssinatura(id) {
 }
 
 function voltarIdle() {
-  _atual = null;
+  _atual = null; _descAtual = null;
   document.getElementById('assinatura').style.display = 'none';
   document.getElementById('idle').style.display = 'flex';
   limparAssinatura();
@@ -457,6 +517,12 @@ function limparAssinatura() {
 // ── CONFIRMAR ─────────────────────────────────────────────
 async function confirmarAssinatura() {
   if (!_atual || !_desenhou) return;
+  if (_descCarregando) { alert('Aguarde um instante: carregando o atendimento.'); return; }
+  if (_descAtual && !document.getElementById('assDescAutorizo')?.checked) {
+    alert('Para receber o material, marque "Li e autorizo o desconto em folha".');
+    document.getElementById('assDescTermo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
   const btn = document.getElementById('btnConfirmar');
   btn.disabled = true; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Enviando...';
 
@@ -468,15 +534,17 @@ async function confirmarAssinatura() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       // Quantos itens a pessoa viu: um pedido pode ter entrado no atendimento depois (juntar pedidos, 16/11/2026)
-      body: JSON.stringify({ token: _atual.token, assinatura_base64: assinSvg, itens_vistos: contarItens(_atual.itens_json) })
+      body: JSON.stringify({ token: _atual.token, assinatura_base64: assinSvg, itens_vistos: contarItens(_atual.itens_json), canal: 'tablet',
+        desconto_visto: _descAtual?.conferencia || '', desconto_autorizado: !!(_descAtual && document.getElementById('assDescAutorizo')?.checked) })
     });
     const data = await res.json();
 
-    if (data.codigo === 'ITENS_MUDARAM') {
+    // Itens incluídos depois (juntar pedidos) ou desconto que mudou (dispensado, recalculado): mostra de novo
+    if (data.codigo === 'ITENS_MUDARAM' || data.codigo === 'DESCONTO_MUDOU') {
       alert(data.erro);
       const id = _atual.id;
       await buscarPendentes();
-      btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
+      btn.disabled = false; btn.innerHTML = rotuloConfirmar();
       limparAssinatura();
       abrirAssinatura(id);
       return;
@@ -489,11 +557,11 @@ async function confirmarAssinatura() {
       mostrarSucesso(nome);
     } else {
       alert('Erro ao confirmar: ' + (data.erro || 'Tente novamente'));
-      btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
+      btn.disabled = false; btn.innerHTML = rotuloConfirmar();
     }
   } catch {
     alert('Erro de conexão. Tente novamente.');
-    btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar Recebimento';
+    btn.disabled = false; btn.innerHTML = rotuloConfirmar();
   }
 }
 

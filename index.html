@@ -516,6 +516,21 @@ tr.notif-destaque>td{animation:notifDestaque 2.6s ease}
 .card-title{font-size:12px;font-weight:600;color:var(--text-1);}
 .card-sub{font-size:10px;color:var(--text-3);margin-top:2px;}
 .card-actions{display:flex;gap:8px;align-items:center;margin-left:auto;}
+/* Desconto em folha no atendimento (item 3, 17/11/2026) */
+.desc-at-tab{width:100%;border-collapse:collapse;font-size:12px}
+.desc-at-tab th{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.desc-at-tab td{padding:8px;border-bottom:1px solid var(--border);vertical-align:top}
+.desc-at-tab .c{text-align:center}.desc-at-tab .d{text-align:right;white-space:nowrap}
+.desc-at-tab tr.desc-fora td{color:var(--text-3);text-decoration:line-through}
+.desc-bo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 10px;border:1px dashed var(--border);border-radius:var(--radius-sm);font-size:11px;color:var(--text-2)}
+.desc-bo-ok{border-style:solid;border-color:var(--green);color:var(--green);font-weight:600}
+.desc-aviso{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;border:1px solid var(--yellow);border-radius:var(--radius-sm);font-size:11px;color:var(--yellow);line-height:1.45}
+.desc-total{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg);border:1px solid var(--border);font-size:13px}
+.desc-total b{font-size:16px;color:var(--yellow)}
+.desc-sit{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.desc-hist{display:flex;flex-direction:column;gap:6px}
+.desc-hist div{font-size:11px;color:var(--text-2);line-height:1.45;padding-left:10px;border-left:2px solid var(--border)}
+#modalDescDetalhe a{color:var(--blue);text-decoration:underline;font-weight:600}
 /* Cabeçalho das Solicitações (17/11/2026): título com espaço, botões à direita, filtros em grade embaixo */
 .sol-cab{flex-direction:column;align-items:stretch;gap:12px}
 .sol-cab-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
@@ -3085,7 +3100,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       </div>
       <!-- ── DESCONTOS ── -->
       <div class="view h-teal" id="view-descontos">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:20px;align-items:start">
 
           <!-- FORMULÁRIO -->
           <div class="card">
@@ -3211,14 +3226,22 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
             <div class="card-header">
               <div><div class="card-title">Histórico de Descontos</div></div>
               <div class="card-actions">
+                <select class="form-input" id="descFiltroSituacao" style="width:180px;height:32px;padding:0 10px;font-size:12px" onchange="renderDescontos()" aria-label="Situação">
+                  <option value="">Todas as situações</option>
+                  <option value="Aguardando assinatura">Aguardando assinatura</option>
+                  <option value="Assinado">Assinado</option>
+                  <option value="Ativo">Ativo (lançado à mão)</option>
+                  <option value="Dispensado">Dispensado</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
                 <input class="search-box" type="text" placeholder="Buscar colaborador..." oninput="filtrarTabela('descBody',this.value,[0])">
                 <button class="btn btn-ghost" onclick="carregarDescontos()">↻</button>
               </div>
             </div>
             <div style="overflow-x:auto">
             <table style="min-width:500px">
-              <thead><tr><th>Colaborador</th><th>Valor</th><th>Parcelas</th><th>Cidade</th><th>Data</th><th></th></tr></thead>
-              <tbody id="descBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+              <thead><tr><th>Colaborador</th><th>Valor</th><th>Situação</th><th>Data</th><th></th></tr></thead>
+              <tbody id="descBody"><tr class="loading-row"><td colspan="5"><div class="spinner"></div></td></tr></tbody>
             </table>
             </div>
           </div>
@@ -10068,8 +10091,9 @@ async function verificarTokenAssinatura() {
       return true;
     }
 
-    const { atendimentoId, nomeColaborador, data: dataAtend, itens } = data;
+    const { atendimentoId, nomeColaborador, data: dataAtend, itens, desconto } = data;
     window._assinItensVistos = itens.length;   // juntar pedidos (item 6): conferido ao confirmar
+    window._assinDesconto = desconto || null;   // desconto em folha (item 3): termo na mesma assinatura
     card.innerHTML = `
       <div style="border:1px solid #334155;border-radius:16px;overflow:hidden;margin-bottom:20px;background:#1e293b">
         <div style="padding:20px;background:#0f172a;border-bottom:1px solid #334155">
@@ -10099,20 +10123,22 @@ async function verificarTokenAssinatura() {
         </div>
       </div>
 
+      ${desconto ? descTermoAssinaturaHtml(desconto) : ''}
+
       <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
-        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">Assine abaixo para confirmar o recebimento:</div>
+        <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">${desconto ? 'Assine abaixo para confirmar o recebimento e autorizar o desconto:' : 'Assine abaixo para confirmar o recebimento:'}</div>
         <canvas id="canvasAssinatura" width="520" height="260"
           style="border:2px dashed #475569;border-radius:10px;width:100%;touch-action:none;cursor:crosshair;background:#ffffff;display:block">
         </canvas>
         <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
           <button onclick="limparAssinatura()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;padding:4px 8px">↺ Limpar</button>
-          <span style="font-size:11px;color:#64748b;flex:1">Ao assinar, declaro que recebi os itens acima em perfeito estado.</span>
+          <span style="font-size:11px;color:#64748b;flex:1">Ao assinar, declaro que recebi os itens acima em perfeito estado${desconto ? ' e autorizo o desconto em folha descrito' : ''}.</span>
         </div>
       </div>
 
       <button onclick="confirmarAssinatura('${token}','${atendimentoId}')"
         style="width:100%;padding:18px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">
-        <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar recebimento
+        <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${desconto ? 'Confirmar recebimento e autorizar' : 'Confirmar recebimento'}
       </button>`;
 
     iniciarCanvasAssinatura();
@@ -10252,6 +10278,14 @@ async function confirmarAssinatura(token, atendimentoId) {
   const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
   if (vazio) { alert('Por favor, assine no campo acima antes de confirmar.'); return; }
 
+  // Desconto em folha (item 3): sem o "li e autorizo" a entrega não é assinada
+  const desc = window._assinDesconto;
+  if (desc && !document.getElementById('assinDescAutorizo')?.checked) {
+    alert('Para receber o material, marque "Li e autorizo o desconto em folha" no quadro do desconto.');
+    document.getElementById('assinDescTermo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
   const assinaturaBase64 = _assinCanvas.toDataURL('image/png');
   const btn = document.querySelector('#assinCardConteudo button[onclick*="confirmarAssinatura"]');
   if (btn) { btn.disabled = true; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-hourglass></use></svg> Salvando...'; }
@@ -10261,12 +10295,14 @@ async function confirmarAssinatura(token, atendimentoId) {
     const res = await fetch(`${API}/atendimentos/confirmar-assinatura`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, itens_vistos: window._assinItensVistos })
+      body: JSON.stringify({ token, assinatura_base64: assinaturaBase64, itens_vistos: window._assinItensVistos, canal: 'link',
+        desconto_visto: desc?.conferencia || '', desconto_autorizado: !!(desc && document.getElementById('assinDescAutorizo')?.checked) })
     });
     const data = await res.json();
 
-    // Entraram itens depois que a página abriu (juntar pedidos): mostra a lista nova antes de assinar
-    if (data.codigo === 'ITENS_MUDARAM') { alert(data.erro); verificarTokenAssinatura(); return; }
+    // Entraram itens depois que a página abriu (juntar pedidos), ou o desconto mudou (dispensado,
+    // recalculado): mostra tudo de novo antes de assinar
+    if (data.codigo === 'ITENS_MUDARAM' || data.codigo === 'DESCONTO_MUDOU') { alert(data.erro); verificarTokenAssinatura(); return; }
     if (!data.ok) {
       if (btn) { btn.disabled = false; btn.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Confirmar recebimento'; }
       alert(data.erro || 'Erro ao confirmar. Tente novamente.');
@@ -11740,6 +11776,7 @@ async function iniciarAtendimento() {
   // Reseta solicitacao vinculada (será setada por atenderSolicitacao se vier de lá)
   if (!window._solicitacaoAtendimento) ATEND.solicitacaoId = null;
   ATEND.complementoDe = null; ATEND.complementoInfo = null; ATEND.solicitacoesExtras = [];   // atenderSolicitacao preenche depois
+  ATEND.descontoPedido = null;   // parcelas do desconto escolhidas no pedido (item 3)
   ATEND.ativo    = true;
   ATEND.id       = 'atd_' + Date.now();
   ATEND.inicio   = Date.now();
@@ -12572,6 +12609,9 @@ async function concluirAtendimento() {
     }
   }
 
+  // Desconto em folha (item 3, 17/11/2026): Troca por dano, Perda e Roubo sem B.O. — valor e parcelas
+  if (!await descAtendDecidir()) return;
+
   // Juntar pedidos (item 6): o complemento vai junto com o atendimento pendente (mesma carga ou balcão)
   if (ATEND.complementoDe && ATEND.complementoInfo) {
     finalizarConclusaoAtendimento(!!ATEND.complementoInfo.logistica, ATEND.complementoInfo.destino_id || null);
@@ -12581,6 +12621,193 @@ async function concluirAtendimento() {
   // obrigatória toda vez que conclui, pra não passar batido nenhum atendimento que precise
   // de transporte. finalizarConclusaoAtendimento() continua o fluxo depois da resposta.
   abrirModalDecisaoLogistica();
+}
+
+// ═══════════════════════════════════════════
+// DESCONTO EM FOLHA NO ATENDIMENTO (item 3 da lista de 16/11/2026, 17/11/2026)
+// Troca por dano (mau uso), Perda e Roubo sem B.O. geram desconto para o colaborador. Valor = preço do
+// cadastro × quantidade entregue (o servidor confere); parcela mínima de R$ 60 (abaixo de R$ 120, só à
+// vista); a 1ª parcela cai no mês de hoje + 30 dias. O almoxarife escolhe as parcelas com o colaborador
+// (até o portal novo). O colaborador autoriza na MESMA assinatura do recebimento (link ou tablet) e a tela
+// de assinatura não tem recusa: quem dispensa é o almoxarifado, na tela Descontos (permissão Descontos).
+// ═══════════════════════════════════════════
+const DESC_PARCELA_MIN = 60;
+const DESC_EMPRESA = 'CENEGED - Cia Eletromecânica e Gerenciamento de Dados S/A';
+const DESC_ROTULO_ATEND = { DANO: 'Dano por mau uso', PERDA: 'Perda', ROUBO: 'Roubo sem B.O.' };
+function descTipoDoMotivo(motivo) {
+  const m = String(motivo || '').split(' — ')[0].normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  if (/recupera|desgaste|tamanho|entrega/.test(m)) return null;
+  if (/dano/.test(m)) return 'DANO';
+  if (/^perda|extravi/.test(m)) return 'PERDA';
+  if (/^roubo|furt/.test(m)) return 'ROUBO';
+  return null;
+}
+function descMaxParcelas(valor) { return Math.max(1, Math.floor(Math.round((Number(valor) || 0) * 100) / 100 / DESC_PARCELA_MIN + 1e-9)); }
+function descMesPrimeira(dataIso) {
+  const d = new Date((/^\d{4}-\d{2}-\d{2}$/.test(dataIso || '') ? dataIso : hojeBR()) + 'T12:00:00Z');
+  d.setUTCDate(d.getUTCDate() + 30);
+  return d.toISOString().slice(0, 7);
+}
+function descMesExtenso(ym) {
+  const [a, m] = String(ym || '').split('-').map(Number);
+  return a && m ? `${['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'][m - 1]} de ${a}` : '—';
+}
+function descMoeda(v) { return Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+// Parcelas iguais a partir do mês da 1ª (o mesmo cálculo do termo impresso)
+function descParcelasLista(total, n, ym) {
+  const [a, m] = String(ym || '').split('-').map(Number);
+  const qtd = Math.max(1, Number(n) || 1), valor = (Number(total) || 0) / qtd;
+  return Array.from({ length: qtd }, (_, i) => {
+    const dt = new Date(a || new Date().getFullYear(), (m || 1) - 1 + i, 1);
+    return { n: i + 1, valor, mes: `${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}` };
+  });
+}
+// B.O. (foto reduzida ou PDF) → armazenamento privado do GCA
+async function descLerAnexo(arquivo) {
+  if (!arquivo) throw new Error('Escolha o arquivo.');
+  if (arquivo.type === 'application/pdf') {
+    if (arquivo.size > 8 * 1024 * 1024) throw new Error('PDF grande demais (até 8 MB).');
+    return await new Promise((ok, falha) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => falha(new Error('Não foi possível ler o arquivo.')); r.readAsDataURL(arquivo); });
+  }
+  if (!/^image\//.test(arquivo.type || '')) throw new Error('Use foto (JPG ou PNG) ou PDF.');
+  const url = URL.createObjectURL(arquivo);
+  try {
+    const img = await new Promise((ok, falha) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => falha(new Error('Não foi possível abrir a foto.')); i.src = url; });
+    const e = Math.min(1, 1800 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.naturalWidth * e); c.height = Math.round(img.naturalHeight * e);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', 0.85);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function descEnviarAnexo(arquivo) {
+  const dataUrl = await descLerAnexo(arquivo);
+  const r = await api('/descontos/anexo', { method: 'POST', body: JSON.stringify({ dataUrl }) });
+  if (!r?.ok) throw new Error(r?.erro || 'Não foi possível enviar o arquivo.');
+  return r.caminho;
+}
+
+// Janela "Desconto em folha" ao concluir o atendimento. Resolve true para seguir, false para voltar.
+async function descAtendDecidir() {
+  ATEND.desconto = null;
+  ATEND.itens.forEach(it => { if (descTipoDoMotivo(it.motivo) !== 'ROUBO') delete it.bo; });
+  const linhas = ATEND.itens.map((it, idx) => ({ it, idx, tipo: descTipoDoMotivo(it.motivo) }))
+    .filter(l => l.tipo && Number(l.it.quantidade) > 0);
+  if (!linhas.length) return true;
+  const preco = (id) => Number((_itens || []).find(i => i.id === id)?.valor_un) || 0;
+  const numeros = {};
+  // Parcelas escolhidas no pedido do portal (item 3): a janela já abre com elas; o almoxarife confere
+  const doPedido = Number(ATEND.descontoPedido) || 0;
+  let enviando = 0, escolha = doPedido ? String(doPedido) : '';
+  return new Promise(resolve => {
+    document.getElementById('modalDescAtend')?.remove();
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalDescAtend'; ov.style.zIndex = '10002';
+    const fechar = (v) => { ov.remove(); document.removeEventListener('keydown', esc); resolve(v); };
+    const esc = (ev) => { if (ev.key === 'Escape' && !enviando) fechar(false); };
+    const calcular = () => {
+      const cobrados = linhas.filter(l => !(l.tipo === 'ROUBO' && l.it.bo?.caminho));
+      const total = Math.round(cobrados.reduce((s, l) => s + preco(l.it.itemId) * Number(l.it.quantidade), 0) * 100) / 100;
+      return { total, semPreco: [...new Set(cobrados.filter(l => !(preco(l.it.itemId) > 0)).map(l => l.it.descricao))] };
+    };
+    const blocoBo = (l) => {
+      const bo = l.it.bo;
+      if (bo?.caminho) return `<div class="desc-bo desc-bo-ok"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>
+          <span>B.O. anexado${bo.numero ? ` nº ${escHtml(bo.numero)}` : ''}: este item não gera desconto.</span>
+          <button class="btn btn-ghost btn-sm" data-tirar-bo="${l.idx}">Tirar o B.O.</button></div>`;
+      return `<div class="desc-bo"><span>Roubo com boletim de ocorrência não gera desconto. Tem o B.O.?</span>
+          <input class="form-input" style="width:170px;height:30px;font-size:11px" maxlength="60" placeholder="Nº do B.O. (opcional)" data-bo-num="${l.idx}" value="${escHtml(numeros[l.idx] || '')}">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-paperclip></use></svg> ${enviando ? 'Enviando…' : 'Anexar o B.O. (foto ou PDF)'}
+            <input type="file" accept="image/*,application/pdf" data-bo-arq="${l.idx}" style="display:none" ${enviando ? 'disabled' : ''}></label></div>`;
+    };
+    const render = () => {
+      const { total, semPreco } = calcular();
+      const max = descMaxParcelas(total);
+      if (escolha && Number(escolha) > max) escolha = '';
+      const mes = descMesExtenso(descMesPrimeira(hojeBR()));
+      const avisoPedido = !doPedido || !(total > 0) ? ''
+        : doPedido > max ? `<div class="desc-aviso"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> No pedido o colaborador escolheu ${doPedido}x, mas com o que está sendo entregue o máximo é ${max}x. Escolha de novo com ele.</div>`
+        : `<div class="desc-aviso" style="border-color:var(--blue);color:var(--blue)"><svg class=ic aria-hidden=true><use href=#i-info></use></svg> Parcelas escolhidas no pedido: ${doPedido === 1 ? 'à vista' : `${doPedido}x`}. Confira com o colaborador.</div>`;
+      ov.querySelector('#descAtCorpo').innerHTML = `
+        <div style="font-size:12px;color:var(--text-2);line-height:1.5">Estes itens geram desconto em folha para <b>${escHtml(ATEND.colab?.nome || 'o colaborador')}</b>. O valor é o preço do cadastro. O colaborador autoriza na mesma assinatura do recebimento (link ou tablet).</div>
+        <div style="overflow-x:auto"><table class="desc-at-tab">
+          <thead><tr><th>Item</th><th>Motivo</th><th class="c">Qtd</th><th class="d">Valor un.</th><th class="d">Subtotal</th></tr></thead>
+          <tbody>${linhas.map(l => {
+            const v = preco(l.it.itemId), comBo = l.tipo === 'ROUBO' && l.it.bo?.caminho;
+            return `<tr class="${comBo ? 'desc-fora' : ''}"><td>${escHtml(l.it.descricao)}</td>
+              <td>${comBo ? 'Roubo com B.O.' : DESC_ROTULO_ATEND[l.tipo]}</td><td class="c">${escHtml(String(l.it.quantidade))}</td>
+              <td class="d">${v > 0 ? descMoeda(v) : '<span style="color:var(--red)">sem preço</span>'}</td>
+              <td class="d">${comBo ? '—' : descMoeda(v * Number(l.it.quantidade))}</td></tr>
+              ${l.tipo === 'ROUBO' ? `<tr><td colspan="5" style="padding-top:0">${blocoBo(l)}</td></tr>` : ''}`;
+          }).join('')}</tbody></table></div>
+        ${semPreco.length ? `<div class="desc-aviso"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Sem preço no cadastro (não entra no valor): ${semPreco.map(escHtml).join(', ')}. Corrija o preço em Cadastrar Material se precisar.</div>` : ''}
+        ${avisoPedido}
+        ${ATEND.complementoDe ? `<div class="desc-aviso" style="border-color:var(--blue);color:var(--blue)"><svg class=ic aria-hidden=true><use href=#i-info></use></svg> Estes itens entram no atendimento pendente: o desconto soma com o que já estava nele, e as parcelas escolhidas aqui valem para o total.</div>` : ''}
+        ${total > 0 ? `
+          <div class="desc-total"><span>Total do desconto</span><b>${descMoeda(total)}</b></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end">
+            <div><label class="form-label" for="descAtParcelas">Parcelas (escolha com o colaborador) *</label>
+              <select class="form-input" id="descAtParcelas"><option value="">Escolha…</option>
+                ${Array.from({ length: max }, (_, i) => i + 1).map(n => `<option value="${n}" ${String(n) === escolha ? 'selected' : ''}>${n === 1 ? `À vista: ${descMoeda(total)}` : `${n}x de ${descMoeda(total / n)}`}</option>`).join('')}
+              </select></div>
+            <div style="font-size:11px;color:var(--text-3);line-height:1.5">1ª parcela em <b style="color:var(--text-2)">${escHtml(mes)}</b>.<br>Parcela mínima de R$ 60${max === 1 ? ': este valor só pode ser à vista' : ''}.</div>
+          </div>` : `<div class="desc-total"><span>Sem valor a descontar</span><b>${descMoeda(0)}</b></div>
+          <div style="font-size:11px;color:var(--text-3)">O atendimento segue sem desconto em folha.</div>`}`;
+      ov.querySelector('#descAtOk').disabled = enviando > 0 || (total > 0 && !escolha);
+      ov.querySelector('#descAtParcelas')?.addEventListener('change', (ev) => { escolha = ev.target.value; render(); });
+      ov.querySelectorAll('[data-bo-num]').forEach(el => el.addEventListener('input', () => { numeros[el.dataset.boNum] = el.value; }));
+      ov.querySelectorAll('[data-tirar-bo]').forEach(el => el.addEventListener('click', () => { delete ATEND.itens[Number(el.dataset.tirarBo)].bo; render(); }));
+      ov.querySelectorAll('[data-bo-arq]').forEach(el => el.addEventListener('change', async () => {
+        const idx = Number(el.dataset.boArq), arq = el.files?.[0];
+        if (!arq) return;
+        enviando++; render();
+        try {
+          const caminho = await descEnviarAnexo(arq);
+          ATEND.itens[idx].bo = { caminho, numero: String(numeros[idx] || '').trim().slice(0, 60) };
+        } catch (e) { toast(escHtml(e.message || 'Não foi possível enviar o B.O.'), 'error', 6000); }
+        enviando--; render();
+      }));
+    };
+    ov.innerHTML = `<div class="modal-box" style="max-width:720px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="descAtTitulo">
+      <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="descAtTitulo"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg> Desconto em folha</div>
+        <div class="modal-sub">Perda, dano por mau uso e roubo sem B.O.</div></div>
+        <button class="modal-close" data-fechar aria-label="Fechar">×</button></div>
+      <div class="modal-body" id="descAtCorpo" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;min-height:0"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)">
+        <button class="btn btn-ghost" data-fechar>Voltar</button>
+        <button class="btn btn-primary" id="descAtOk">Confirmar e continuar</button></div></div>`;
+    ov.querySelectorAll('[data-fechar]').forEach(el => { el.onclick = () => { if (!enviando) fechar(false); }; });
+    ov.querySelector('#descAtOk').onclick = () => {
+      const { total } = calcular();
+      if (enviando) return;
+      if (total > 0 && !escolha) { toast('Escolha as parcelas do desconto.', 'warn'); return; }
+      // B.O. com número digitado depois de anexar: guarda o número
+      linhas.forEach(l => { if (l.it.bo?.caminho && numeros[l.idx] !== undefined) l.it.bo.numero = String(numeros[l.idx] || '').trim().slice(0, 60); });
+      ATEND.desconto = total > 0 ? { parcelas: Number(escolha) } : null;
+      fechar(true);
+    };
+    document.addEventListener('keydown', esc);
+    document.body.appendChild(ov);
+    render();
+  });
+}
+
+// Termo de desconto na tela de assinatura (link): o mesmo texto do termo impresso
+function descTermoAssinaturaHtml(d) {
+  const parcelas = descParcelasLista(d.valor_total, d.parcelas, d.mes_primeira_parcela);
+  return `<div id="assinDescTermo" style="border:2px solid #f59e0b;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
+    <div style="display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:#fbbf24"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg> Autorização de desconto em folha</div>
+    <div style="font-size:13px;color:#e2e8f0;margin-top:10px;line-height:1.6">Eu, <b>${escHtml(d.colaborador || '')}</b>${d.matricula ? `, matrícula <b>${escHtml(d.matricula)}</b>` : ''}, autorizo a empresa <b>${escHtml(DESC_EMPRESA)}</b> a descontar em folha a importância de <b style="color:#fbbf24">${descMoeda(d.valor_total)}</b>, referente a:</div>
+    <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px">${(d.itens || []).map(i => `<div style="font-size:12px;color:#cbd5e1;line-height:1.4">(${escHtml(i.motivo || '')}) ${escHtml(i.nome || '')} — ${escHtml(String(i.quantidade))} un — ${descMoeda(i.subtotal)}</div>`).join('')}</div>
+    <div style="font-size:13px;color:#e2e8f0;margin-top:12px">Em <b>${Number(d.parcelas) === 1 ? '1 parcela (à vista)' : `${Number(d.parcelas)} parcelas`}</b>:</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 16px;margin-top:4px">${parcelas.map(p => `<div style="font-size:12px;color:#cbd5e1;font-family:monospace">${p.n}- ${descMoeda(p.valor)} (${p.mes})</div>`).join('')}</div>
+    <div style="font-size:12px;color:#94a3b8;margin-top:10px;line-height:1.5">O valor será descontado na folha de pagamento ou, em caso de demissão, na minha rescisão.</div>
+    <div style="font-size:11px;color:#93c5fd;margin-top:10px;line-height:1.5">Artigo 462 da CLT: ao empregador é vedado efetuar quaisquer descontos nos salários do empregado, salvo quando este resultar de adiantamentos, de dispositivos de lei ou de contrato coletivo. § 1º Em caso de dano causado pelo empregado, o desconto será lícito, desde que esta possibilidade tenha sido acordada ou na ocorrência de dolo do empregado.</div>
+    <label style="display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:12px;border-radius:10px;background:#0f172a;cursor:pointer">
+      <input type="checkbox" id="assinDescAutorizo" style="width:22px;height:22px;flex-shrink:0;margin:0">
+      <span style="font-size:13px;color:#f1f5f9;font-weight:600;line-height:1.4">Li e autorizo o desconto em folha descrito acima.</span>
+    </label>
+  </div>`;
 }
 
 // O mesmo modal serve para a entrega de EPI e para a carga de viatura
@@ -12676,6 +12903,7 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     destinoEntregaId: destinoEntregaId,
     complementoDe:    ATEND.complementoDe || null,
     solicitacoesExtras: ATEND.solicitacoesExtras || [],
+    desconto:         ATEND.desconto || null,   // parcelas escolhidas (item 3)
   };
 
   const res = await apiMovimentacao('/atendimentos', registro);
@@ -12692,6 +12920,10 @@ async function finalizarConclusaoAtendimento(necessitaLogistica, destinoEntregaI
     ATEND.cronometro = setInterval(() => { ATEND.segundos++; }, 1000);
     return;
   }
+
+  // Desconto em folha (item 3): gerado junto, ou o aviso de que falhou (lançar à mão)
+  if (res.desconto_erro) toast(escHtml(res.desconto_erro), 'error', 12000);
+  else if (res.desconto_id) toast('Desconto em folha gerado: o colaborador autoriza na assinatura do recebimento.', 'info', 6000);
 
   // Atendimento já foi salvo com sucesso no passo acima (estoque já baixado).
   // O token de assinatura é CRÍTICO — sem ele o atendimento não pode ser assinado.
@@ -15263,6 +15495,8 @@ async function atenderSolicitacao(id, btnEl) {
     // Juntar pedidos (item 6)
     if (junta.modo === 'complemento') { ATEND.complementoDe = junta.pendente.id; ATEND.complementoInfo = junta.pendente; }
     ATEND.solicitacoesExtras = (junta.extras || []).map(x => x.id);
+    // Desconto em folha (item 3): as parcelas que o pedido escolheu com o colaborador
+    ATEND.descontoPedido = [s, ...(junta.extras || [])].map(x => Number(x.desconto_parcelas) || 0).find(n => n > 0) || null;
 
     // ── 2. Depois seleciona o colaborador ──
     // Garante colaboradores carregados antes (evita race condition com o carregamento da view)
@@ -15292,9 +15526,11 @@ async function atenderSolicitacao(id, btnEl) {
       'Troca por laudo':      'Troca Recuperação',
       'Troca por Tamanho':    'Troca Recuperação',
       'Troca por Manutenção': 'Troca Recuperação',
-      'Avariado por mau uso': 'Troca Desgaste',
-      'Perdido':              'Perda/Extravio',
-      'Roubado':              'Perda/Extravio',
+      // Desconto em folha (item 3, 17/11/2026): mau uso, perda e roubo chegam com o motivo que gera o
+      // desconto (antes mau uso ia como Troca Desgaste e perda/roubo como Perda/Extravio)
+      'Avariado por mau uso': 'Troca por dano',
+      'Perdido':              'Perda',
+      'Roubado':              'Roubo',
       'Mobilização':          'Entrega inicial',   // kit pedido pelo portal (item 7, parte 2)
     };
 
@@ -15331,6 +15567,11 @@ async function atenderSolicitacao(id, btnEl) {
       const aprovados = await validarEPrepararItens(selecionados);
       if (aprovados && aprovados.length) {
         adicionarItensAoAtendimento(aprovados);
+        // B.O. anexado no pedido (Roubado, item 3): vai no item do atendimento e o tira do desconto
+        itens.filter(x => x.bo?.caminho).forEach(x => {
+          const alvo = ATEND.itens.find(a => a.itemId === (x.itemId || x.item_id) && descTipoDoMotivo(a.motivo) === 'ROUBO' && !a.bo);
+          if (alvo) alvo.bo = { caminho: x.bo.caminho, numero: x.bo.numero || '' };
+        });
         const pedidosTxt = [s.id, ...(junta.extras || []).map(x => x.id)].map(x => '#' + x).join(', ');
         toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${aprovados.length} item(ns) carregado(s) ${junta.extras?.length ? 'dos pedidos' : 'da solicitação'} ${pedidosTxt}${junta.modo === 'complemento' ? ' — vão entrar no atendimento pendente' : ''}`, 'success', 4000);
       } else {
@@ -25250,18 +25491,155 @@ function limparDesconto() {
 
 async function carregarDescontos() {
   const tbody = document.getElementById('descBody');
-  if (!tbody) return;
   const data = await api('/descontos');
-  const lista = data?.data || [];
-  _descData = lista;
-  tbody.innerHTML = lista.length ? lista.map(d=>`<tr>
-    <td class="td-main">${escHtml(d.colaborador_nome||'—')}${d.desligamento_id ? ' <span style="font-size:10px;font-weight:600;color:var(--red)">· desligamento</span>' : ''}${d.sem_assinatura ? ' <span style="font-size:10px;font-weight:600;color:#f59e0b">· sem assinatura</span>' : ''}${d.status === 'Cancelado' ? ' <span style="font-size:10px;font-weight:600;color:var(--text-3)">· cancelado</span>' : ''}</td>
-    <td style="font-size:11px;font-weight:600;color:#22c55e">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td>
-    <td style="font-size:11px;text-align:center">${d.parcelas||1}x</td>
-    <td style="font-size:11px;color:var(--text-3)">${d.cidade||'—'}</td>
+  _descData = data?.data || [];
+  if (tbody) renderDescontos();
+}
+
+// Situação e origem de cada desconto (item 3, 17/11/2026). Os lançados à mão continuam "Ativo".
+const DESC_COR_SITUACAO = { 'Aguardando assinatura': 'var(--yellow)', 'Assinado': 'var(--green)', 'Ativo': 'var(--blue)', 'Dispensado': 'var(--text-3)', 'Cancelado': 'var(--red)' };
+function descSituacaoChip(st) {
+  const s = st || 'Ativo';
+  return `<span class="desc-sit" style="color:${DESC_COR_SITUACAO[s] || 'var(--text-3)'}">${escHtml(s)}</span>`;
+}
+function descOrigemTexto(d) {
+  if (d.atendimento_id) return `Atendimento de ${formatarData(d.data)}${d.solicitacao_id ? ` · pedido ${d.solicitacao_id}` : ''}`;
+  if (d.desligamento_id) return 'Desligamento';
+  return 'Lançado à mão';
+}
+function renderDescontos() {
+  const tbody = document.getElementById('descBody');
+  if (!tbody) return;
+  const filtro = document.getElementById('descFiltroSituacao')?.value || '';
+  const lista = (_descData || []).filter(d => !filtro || (d.status || 'Ativo') === filtro);
+  tbody.innerHTML = lista.length ? lista.map(d=>`<tr data-desc="${escHtml(d.id)}">
+    <td class="td-main">${escHtml(d.colaborador_nome||'—')}${d.sem_assinatura ? ' <span style="font-size:10px;font-weight:600;color:#f59e0b">· sem assinatura</span>' : ''}<div style="font-size:10px;font-weight:400;color:var(--text-3);margin-top:2px">${escHtml(descOrigemTexto(d))}</div></td>
+    <td style="white-space:nowrap"><div style="font-size:11px;font-weight:600;color:${['Dispensado', 'Cancelado'].includes(d.status) ? 'var(--text-3)' : '#22c55e'}">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div style="font-size:10px;color:var(--text-3);margin-top:2px">em ${d.parcelas||1}x</div></td>
+    <td>${descSituacaoChip(d.status)}</td>
     <td>${formatarData(d.data)}</td>
-    <td><button class="row-action" onclick="verDesconto('${d.id}')">Ver</button> <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirDesconto('${d.id}','${escJs(d.colaborador_nome||'')}')"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button></td>
-  </tr>`).join('') : `<tr><td colspan="6"><div class="empty-state" style="padding:16px"><div class="es-title">Nenhum desconto</div></div></td></tr>`;
+    <td style="white-space:nowrap"><button class="row-action" onclick="verDesconto('${escJs(d.id)}')">Ver</button> <button class="row-action" onclick="descDetalhes('${escJs(d.id)}')">Detalhes</button>${d.atendimento_id ? '' : ` <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirDesconto('${escJs(d.id)}','${escJs(d.colaborador_nome||'')}')" aria-label="Excluir"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button>`}</td>
+  </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">${filtro ? 'Nenhum desconto nesta situação' : 'Nenhum desconto'}</div></div></td></tr>`;
+}
+
+const descDataHora = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
+const descAssinaturaSegura = (s) => /^data:image\/(png|jpeg);base64,[A-Za-z0-9+/=]+$/.test(String(s || '')) ? s : '';
+// Carimbo da assinatura: data e hora com segundos, no horário de Brasília ("17/11/2026 às 20:27:15")
+const descCarimbo = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric',
+  hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(', ', ' às ') : '—';
+// Assinatura no termo igual à do comprovante do recebimento (services/comprovante.js, tingirAssinaturaAzul):
+// cada ponto do traço vira o azul de caneta (26, 58, 196), mantendo a transparência. Vale para o traço
+// branco do tablet e o escuro do link.
+function descTingirAssinatura(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const px = ctx.getImageData(0, 0, c.width, c.height), p = px.data;
+        for (let i = 0; i < p.length; i += 4) if (p[i + 3] > 10) { p[i] = 26; p[i + 1] = 58; p[i + 2] = 196; }
+        ctx.putImageData(px, 0, 0);
+        resolve(c.toDataURL('image/png'));
+      } catch { resolve(dataUrl); }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+// Detalhes: itens, documentos (assinatura do recebimento, comprovante, B.O.), histórico e Dispensar
+async function descDetalhes(id) {
+  let d = (_descData || []).find(x => x.id === id);
+  if (!d) { await carregarDescontos(); d = (_descData || []).find(x => x.id === id); }
+  if (!d) { toast('Desconto não encontrado', 'error'); return; }
+  let itens = []; try { itens = JSON.parse(d.itens || '[]'); } catch {}
+  const hist = Array.isArray(d.historico) ? d.historico : [];
+  const doc = (d.atendimento_id || d.bo_anexo) ? await api('/descontos/' + encodeURIComponent(d.id) + '/documentos') : null;
+  const at = doc?.ok ? doc.atendimento : null, bos = doc?.ok ? (doc.bos || []) : [];
+  const st = d.status || 'Ativo';
+  const podeDispensar = !['Dispensado', 'Cancelado'].includes(st);
+  document.getElementById('modalDescDetalhe')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalDescDetalhe'; ov.style.zIndex = '10002';
+  const fechar = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+  const esc = (ev) => { if (ev.key === 'Escape') fechar(); };
+  const docs = [];
+  if (d.atendimento_id) {
+    docs.push(!at ? (st === 'Cancelado' ? 'O atendimento foi cancelado.' : 'Atendimento não encontrado.')
+      : st === 'Assinado' ? `Autorizado na assinatura do recebimento em <b>${escHtml(descDataHora(d.assinado_em || at.assinado_em))}</b>.`
+      : st === 'Aguardando assinatura' ? 'Aguardando a assinatura do recebimento (link ou tablet). A entrega só é assinada com o "li e autorizo".'
+      : `Recebimento ${at.status === 'ASSINADO' ? 'assinado' : 'ainda não assinado'}.`);
+    if (at?.pdf_url) docs.push(`<a href="${escHtml(safeUrl(at.pdf_url))}" target="_blank" rel="noopener">Abrir o comprovante do recebimento</a>`);
+  }
+  bos.forEach(b => docs.push(b.url ? `<a href="${escHtml(safeUrl(b.url))}" target="_blank" rel="noopener">B.O.${b.numero ? ` nº ${escHtml(b.numero)}` : ''} (${escHtml(b.item)})</a>` : `B.O. ${escHtml(b.item)}: arquivo indisponível`));
+  ov.innerHTML = `<div class="modal-box" style="max-width:640px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="descDetTit">
+    <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="descDetTit"><svg class=ic aria-hidden=true><use href=#i-wallet></use></svg> Desconto · ${escHtml(d.colaborador_nome || '—')}</div>
+      <div class="modal-sub">${escHtml(descOrigemTexto(d))}${d.matricula ? ` · matrícula ${escHtml(d.matricula)}` : ''}</div></div>
+      <button class="modal-close" data-fechar aria-label="Fechar">×</button></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;overflow-y:auto;flex:1;min-height:0">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+        ${descSituacaoChip(st)}
+        <span style="font-size:13px"><b>${descMoeda(d.valor_total)}</b> em ${Number(d.parcelas) || 1}x</span>
+        <span style="font-size:11px;color:var(--text-3)">1ª parcela: ${escHtml(descMesExtenso(d.mes_primeira_parcela))}</span>
+      </div>
+      <div><div class="form-label">Itens</div>
+        <table class="desc-at-tab"><thead><tr><th>Item</th><th>Motivo</th><th class="c">Qtd</th><th class="d">Subtotal</th></tr></thead>
+        <tbody>${itens.map(i => `<tr><td>${escHtml(i.nome || i.descricao || '—')}</td><td>${escHtml(i.motivo_item || d.motivo || '')}</td><td class="c">${escHtml(String(i.quantidade || i.qtd || 1))}</td><td class="d">${descMoeda(i.subtotal != null ? i.subtotal : (Number(i.valor) || 0) * (Number(i.quantidade || i.qtd) || 1))}</td></tr>`).join('')}</tbody></table></div>
+      ${docs.length ? `<div><div class="form-label">Documentos</div><div style="display:flex;flex-direction:column;gap:6px;font-size:12px">${docs.map(x => `<div>${x}</div>`).join('')}</div></div>` : ''}
+      ${hist.length ? `<div><div class="form-label">Histórico</div><div class="desc-hist">${hist.map(h => `<div><b>${escHtml(descDataHora(h.em))}</b> · ${escHtml(h.por || '')}<br>${escHtml(h.texto || h.acao || '')}</div>`).join('')}</div></div>` : ''}
+      ${podeDispensar ? `<div id="descDispBox" style="display:none;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm)">
+        <div style="font-size:12px;font-weight:600">Dispensar o desconto</div>
+        <div style="font-size:11px;color:var(--text-3);line-height:1.45">${st === 'Aguardando assinatura' ? 'A assinatura do recebimento passa a ser feita sem o desconto.' : 'O desconto deixa de valer. Se já foi lançado na folha, avise o RH.'} Fica registrado quem dispensou e quando.</div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="radio" name="descDispTipo" value="OUTRO" checked> Colaborador recusou ou outro motivo</label>
+        <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="radio" name="descDispTipo" value="BO"> B.O. apresentado (roubo)</label>
+        <textarea class="form-input" id="descDispMotivo" rows="2" maxlength="500" placeholder="Motivo da dispensa" style="resize:vertical"></textarea>
+        <label class="btn btn-ghost btn-sm" id="descDispArqLbl" style="display:none;cursor:pointer;align-self:flex-start"><svg class=ic aria-hidden=true><use href=#i-paperclip></use></svg> <span id="descDispArqTxt">Anexar o B.O. (foto ou PDF)</span>
+          <input type="file" id="descDispArq" accept="image/*,application/pdf" style="display:none"></label>
+        <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-ghost" id="descDispCancelar">Voltar</button><button class="btn btn-primary" id="descDispOk" style="background:var(--red);border-color:var(--red)">Confirmar a dispensa</button></div>
+      </div>` : ''}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)">
+      ${podeDispensar ? '<button class="btn btn-ghost" id="descDispAbrir"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Dispensar</button>' : ''}
+      <button class="btn btn-ghost" id="descDetVer"><svg class=ic aria-hidden=true><use href=#i-file-text></use></svg> Ver termo</button>
+      <button class="btn btn-primary" data-fechar>Fechar</button></div></div>`;
+  ov.querySelectorAll('[data-fechar]').forEach(el => { el.onclick = fechar; });
+  ov.addEventListener('click', (ev) => { if (ev.target === ov) fechar(); });
+  ov.querySelector('#descDetVer').onclick = () => verDesconto(d.id);
+  if (podeDispensar) {
+    const box = ov.querySelector('#descDispBox');
+    let anexo = '', enviando = false;
+    ov.querySelector('#descDispAbrir').onclick = () => { box.style.display = 'flex'; box.scrollIntoView({ block: 'nearest' }); ov.querySelector('#descDispMotivo').focus(); };
+    ov.querySelector('#descDispCancelar').onclick = () => { box.style.display = 'none'; };
+    ov.querySelectorAll('input[name="descDispTipo"]').forEach(r => r.onchange = () => {
+      ov.querySelector('#descDispArqLbl').style.display = ov.querySelector('input[name="descDispTipo"]:checked').value === 'BO' ? '' : 'none';
+    });
+    ov.querySelector('#descDispArq').onchange = async (ev) => {
+      const arq = ev.target.files?.[0]; if (!arq) return;
+      enviando = true; ov.querySelector('#descDispArqTxt').textContent = 'Enviando…';
+      try { anexo = await descEnviarAnexo(arq); ov.querySelector('#descDispArqTxt').textContent = `B.O. anexado: ${arq.name}`; }
+      catch (e) { anexo = ''; ov.querySelector('#descDispArqTxt').textContent = 'Anexar o B.O. (foto ou PDF)'; toast(escHtml(e.message), 'error', 6000); }
+      enviando = false;
+    };
+    ov.querySelector('#descDispOk').onclick = async () => {
+      if (enviando) return;
+      const tipo = ov.querySelector('input[name="descDispTipo"]:checked').value;
+      const motivo = ov.querySelector('#descDispMotivo').value.trim();
+      if (tipo === 'BO' && !anexo) { toast('Anexe o B.O. (foto ou PDF).', 'warn'); return; }
+      if (tipo === 'OUTRO' && motivo.length < 5) { toast('Explique o motivo da dispensa.', 'warn'); return; }
+      const b = ov.querySelector('#descDispOk'); b.disabled = true;
+      const r = await api(`/descontos/${encodeURIComponent(d.id)}/dispensar`, { method: 'POST', body: JSON.stringify({ tipo, motivo, anexo }) });
+      b.disabled = false;
+      if (!r?.ok) { toast(escHtml(r?.erro || 'Não foi possível dispensar.'), 'error', 6000); return; }
+      toast('Desconto dispensado.', 'success');
+      fechar();
+      await carregarDescontos();
+      descDetalhes(d.id);
+    };
+  }
+  document.addEventListener('keydown', esc);
+  document.body.appendChild(ov);
 }
 
 async function excluirDesconto(id, nome) {
@@ -25278,8 +25656,22 @@ async function verDesconto(id) {
   var d = (_descData||[]).find(function(x){return x.id===id;});
   if (!d) { toast('Desconto não encontrado','error'); return; }
   // Desconto do desligamento (12/11/2026): a assinatura do colaborador é a mesma do termo
-  var assinaturaHtml = '';
-  if (d.desligamento_id) {
+  var assinaturaHtml = '', avisoSituacao = '';
+  // Desconto do atendimento (item 3, 17/11/2026): a assinatura é a do recebimento do material
+  if (d.atendimento_id) {
+    if (d.status === 'Assinado') {
+      var rdoc = await api('/descontos/' + encodeURIComponent(d.id) + '/documentos');
+      var atd = rdoc && rdoc.ok ? rdoc.atendimento : null;
+      var img = descAssinaturaSegura(atd && atd.assinatura);
+      // Igual ao comprovante do recebimento: o mesmo azul de caneta e o mesmo tamanho (120 × 50 pt)
+      if (img) img = await descTingirAssinatura(img);
+      if (img) assinaturaHtml = '<img src="' + img + '" alt="" style="width:160px;height:67px;display:block;margin:0 0 -2px 10px">'
+        + '<div style="font-size:9.5px;color:#334155;margin:0 0 4px 10px">Assinado digitalmente em <b>' + escHtml(descCarimbo(d.assinado_em || (atd && atd.assinado_em))) + '</b> (horário de Brasília), junto com o recebimento do material</div>';
+    } else {
+      avisoSituacao = d.status === 'Aguardando assinatura' ? 'AGUARDANDO A ASSINATURA DO COLABORADOR: sem valor até ser assinado'
+        : d.status === 'Dispensado' ? 'DESCONTO DISPENSADO: não descontar' : d.status === 'Cancelado' ? 'DESCONTO CANCELADO: não descontar' : '';
+    }
+  } else if (d.desligamento_id) {
     if (d.sem_assinatura) {
       assinaturaHtml = '<div style="border:1px solid #b45309;padding:6px 8px;font-size:11px;margin:0 0 6px;max-width:420px">' + escHtml(d.observacao_assinatura || 'O colaborador não assinou.') + '</div>';
     } else {
@@ -25329,13 +25721,14 @@ async function verDesconto(id) {
   var anoNum = dataDesc.getFullYear();
 
   // Itens
-  var dataFmt = d.data ? new Date(d.data).toLocaleDateString('pt-BR') : '';
+  // "AAAA-MM-DD" direto (new Date() lê como UTC e, no fuso do Brasil, voltava um dia: 17/11 saía 16/11)
+  var dataFmt = d.data ? String(d.data).slice(0, 10).split('-').reverse().join('/') : '';
   var motivo  = d.motivo || 'PERDA DE MATERIAL';
   var itensHtml = itens.map(function(it){
     var nome = it.nome||it.descricao||'—';
     var qtd  = it.quantidade||1;
     var val  = Number(it.valor||it.subtotal||0).toLocaleString('pt-BR',{minimumFractionDigits:2});
-    return '<p style="margin:3px 0;font-size:11.5px;line-height:1.5"><strong>('+escHtml(motivo)+')</strong> - '+escHtml(nome)+' - QTD: '+qtd+' - VALOR: R$ '+val+' - '+dataFmt+'</p>';
+    return '<p style="margin:3px 0;font-size:11.5px;line-height:1.5"><strong>('+escHtml(it.motivo_item || motivo)+')</strong> - '+escHtml(nome)+' - QTD: '+qtd+' - VALOR: R$ '+val+' - '+dataFmt+'</p>';
   }).join('');
 
   var nome  = d.colaborador_nome||'—';
@@ -25361,8 +25754,9 @@ async function verDesconto(id) {
     + '<style>'+css+'</style>'
     + '</head><body><div class="pg">'
     + '<h1>AUTORIZAÇÃO DE DESCONTOS</h1>'
+    + (avisoSituacao ? '<div style="border:2px solid #b91c1c;color:#b91c1c;font-weight:bold;text-align:center;padding:6px;margin-bottom:10px;font-size:12px">'+escHtml(avisoSituacao)+'</div>' : '')
     + '<div class="corpo">Eu, <strong>'+escHtml(nome)+'</strong> vinculado a matrícula: <strong>'+escHtml(matr)+'</strong>,'
-    + ' autorizo a empresa: <strong>CENEGED - Cia Eletromecânica e Gerenciamento de Dados S/A</strong>,'
+    + ' autorizo a empresa: <strong>'+escHtml(DESC_EMPRESA)+'</strong>,'
     + ' a descontar em folha a importância de: <strong>R$'+vtFmt+'</strong>.</div>'
     + '<p style="margin-bottom:6px;font-size:12px">Referente a:</p>'
     + itensHtml
@@ -38179,6 +38573,7 @@ function notifAbrir(n) {
   } else if (n.tipo === 'DESCONTO_GERADO') {
     if (!temPermissao('descontos')) return;
     showView('descontos', document.querySelector('.nav-item[data-view="descontos"]'));
+    if (n.ref_id) descDetalhes(n.ref_id);
   }
 }
 async function notifDestacarLinha(seletor) {
