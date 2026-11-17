@@ -191,6 +191,47 @@ input,select,textarea{font-family:var(--font-main);}
 .pb-td-clica{color:var(--accent-text);text-decoration:underline dotted}
 .pb-sit-zerado{color:var(--red);font-weight:700}.pb-sit-abaixo{color:var(--yellow);font-weight:700}.pb-sit-acima{color:#a78bfa;font-weight:700}
 .pb-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+/* Calendário das solicitações (17/11/2026) */
+.scal-box{max-width:1180px;width:100%}
+.scal-feitas{--scal-c:#3987e5}.scal-atendidas{--scal-c:#14b8a6}.scal-finalizadas{--scal-c:#22c55e}.scal-canceladas{--scal-c:#ef4444}.scal-fila{--scal-c:#f59e0b}
+.scal-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.scal-mes{font-size:17px;font-weight:700;min-width:180px;text-align:center}
+.scal-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.scal-kpi{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--bg)}
+.scal-kpi .r{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);display:flex;align-items:center;gap:6px}
+.scal-kpi .r::before,.scal-dia .l::before,.scal-tag::before{content:'';flex:none;width:8px;height:8px;border-radius:2px;background:var(--scal-c)}
+.scal-kpi .v{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text-1)}
+.scal-kpi .d{font-size:10px;color:var(--text-3);min-height:12px}
+.scal-ajuda{font-size:12px;color:var(--text-2);margin-bottom:12px}
+.scal-ajuda summary{cursor:pointer;color:var(--accent-text)}
+.scal-ajuda ul{margin:6px 0 0 18px;line-height:1.6}
+.scal-semana{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;text-align:center;margin-bottom:4px}
+.scal-grade{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.scal-dia{min-height:108px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);padding:6px 8px;text-align:left;font:inherit;color:var(--text-2);display:flex;flex-direction:column;gap:2px;cursor:pointer;min-width:0}
+.scal-dia:hover{border-color:var(--accent)}
+.scal-dia.vazio{border:0;background:transparent;cursor:default}
+.scal-dia.futuro{opacity:.35;cursor:default}
+.scal-dia.hoje{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.scal-dia.sel{background:var(--accent-soft);border-color:var(--accent)}
+.scal-dia .n{font-size:12px;font-weight:700;color:var(--text-1);margin-bottom:2px}
+.scal-dia .dow{display:none;font-weight:600;color:var(--text-3)}
+.scal-dia .hj{font-size:9px;color:var(--accent-text);font-weight:700;text-transform:uppercase}
+.scal-dia .l{font-size:11px;line-height:1.35;display:flex;align-items:center;gap:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scal-dia .l b{color:var(--text-1);font-variant-numeric:tabular-nums}
+.scal-dia .l.scal-fila{margin-top:auto;color:var(--text-3)}
+.scal-det-tit{font-size:15px;font-weight:700;margin:18px 0 10px}
+.scal-sec{margin-bottom:14px}
+.scal-sec-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.scal-tag{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--text-1)}
+.scal-sec-cab .qtd{font-size:12px;color:var(--text-3)}
+.scal-tab-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.scal-tab{width:100%;border-collapse:collapse;font-size:12px}
+.scal-tab th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.scal-tab td{padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.scal-tab tr.clica{cursor:pointer}.scal-tab tr.clica:hover td{background:var(--bg-hover)}
+@media (max-width:760px){.scal-semana{display:none}.scal-grade{grid-template-columns:1fr}.scal-dia.vazio,.scal-dia.futuro{display:none}
+  .scal-dia{min-height:0;flex-direction:row;flex-wrap:wrap;gap:2px 12px}.scal-dia .n{width:100%}.scal-dia .dow{display:inline}.scal-dia .l.scal-fila{margin-top:0}
+  .scal-kpis{grid-template-columns:repeat(2,1fr)}}
 .pb-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .pb-bloco{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
 .pb-rank{display:flex;flex-direction:column;gap:8px}
@@ -2463,6 +2504,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="">Todos os armazéns</option>
               </select>
               <button class="btn btn-ghost" id="btnRankingUrgencia" onclick="abrirRankingUrgencia()" title="Pedidos marcados como urgentes e rebaixados pelo almoxarifado, por solicitante"><svg class=ic aria-hidden=true><use href=#i-siren></use></svg> Urgentes por solicitante</button>
+              <button class="btn btn-ghost" onclick="scalAbrir()" title="Por dia: feitas, atendidas, finalizadas, canceladas e a fila no fim do dia"><svg class=ic aria-hidden=true><use href=#i-calendar-days></use></svg> Calendário</button>
               <button class="btn btn-ghost" onclick="carregarSolicitacoes()">↻ Atualizar</button>
               <span id="solUltimaAtt" style="font-size:10px;color:var(--text-3);white-space:nowrap"></span>
             </div>
@@ -14337,6 +14379,175 @@ async function abrirModalSolicitacao(id) {
     </div>`;
 
   document.getElementById('modalSolicitacao').classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════
+// CALENDÁRIO DAS SOLICITAÇÕES (17/11/2026, pedido do usuário) — por dia: feitas, atendidas,
+// finalizadas, canceladas e as que ficaram aguardando no fim do dia. Segue o filtro de armazém da
+// tela. As contas são do servidor (/solicitacoes/calendario, services/calendario_solicitacoes.js).
+// ═══════════════════════════════════════════
+const SCAL = { mes: null, dia: null, dados: null, armNome: '' };
+const SCAL_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const SCAL_SEMANA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const SCAL_SEMANA_LONGA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+const scalDow = (dia) => new Date(`${dia}T12:00:00Z`).getUTCDay();
+const scalMaiuscula = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+function scalAbrir() {
+  SCAL.mes = SCAL.mes || hojeBR().slice(0, 7);
+  scalFechar();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalSolCalendario';
+  ov.innerHTML = `<div class="modal-box scal-box" style="max-width:1180px;width:100%" role="dialog" aria-modal="true" aria-labelledby="scalTitulo">
+    <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="scalTitulo"><svg class=ic aria-hidden=true><use href=#i-calendar-days></use></svg> Calendário das solicitações</div>
+      <div class="modal-sub" id="scalSub"></div></div>
+      <button class="modal-close" onclick="scalFechar()" aria-label="Fechar">×</button></div>
+    <div class="modal-body" id="scalCorpo"></div></div>`;
+  ov.addEventListener('click', (e) => { if (e.target === ov) scalFechar(); });
+  document.body.appendChild(ov);
+  document.addEventListener('keydown', scalEsc);
+  scalCarregar();
+}
+function scalEsc(e) { if (e.key === 'Escape') scalFechar(); }
+function scalFechar() { document.getElementById('modalSolCalendario')?.remove(); document.removeEventListener('keydown', scalEsc); }
+
+async function scalCarregar() {
+  const corpo = document.getElementById('scalCorpo');
+  if (!corpo) return;
+  const sel = document.getElementById('solFiltroArmazem');
+  const arm = sel?.value || '';
+  SCAL.armNome = arm ? (sel.selectedOptions[0]?.textContent || '') : 'Todos os armazéns';
+  document.getElementById('scalSub').textContent = `${SCAL.armNome} · horário de Brasília · segue o filtro de armazém da tela`;
+  corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Contando os pedidos de cada dia…</div>';
+  const mes = SCAL.mes;
+  const r = await api(`/solicitacoes/calendario?mes=${mes}${arm ? `&armazem=${encodeURIComponent(arm)}` : ''}`);
+  if (SCAL.mes !== mes || !document.getElementById('scalCorpo')) return;
+  if (!r?.ok) { corpo.innerHTML = `<div class="pb-vazio">${escHtml(r?.erro || 'Não foi possível carregar o calendário')}</div>`; return; }
+  SCAL.dados = r;
+  scalRender();
+}
+function scalMudarMes(n) {
+  const [a, m] = SCAL.mes.split('-').map(Number);
+  const d = new Date(Date.UTC(a, m - 1 + n, 1));
+  SCAL.mes = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  SCAL.dia = null;
+  scalCarregar();
+}
+function scalHoje() { SCAL.mes = hojeBR().slice(0, 7); SCAL.dia = hojeBR(); scalCarregar(); }
+
+function scalRender() {
+  const r = SCAL.dados, corpo = document.getElementById('scalCorpo');
+  if (!r || !corpo) return;
+  const [a, m] = r.mes.split('-').map(Number);
+  const mesAtual = r.mes === r.hoje.slice(0, 7);
+  const ultimoDia = [...r.dias].reverse().find(d => !d.futuro);
+  const t = r.total;
+  const kpi = (cls, rot, v, det = '') => `<div class="scal-kpi scal-${cls}"><div class="r">${rot}</div><div class="v">${pbNum(v)}</div><div class="d">${det}</div></div>`;
+  const linha = (cls, v, um, varios) => (v ? `<div class="l scal-${cls}"><b>${pbNum(v)}</b> ${v === 1 ? um : varios}</div>` : '');
+  const vazios = Array.from({ length: scalDow(r.dias[0].dia) }, () => '<div class="scal-dia vazio" aria-hidden="true"></div>').join('');
+  const celulas = r.dias.map(d => {
+    const n = Number(d.dia.slice(8)), dow = SCAL_SEMANA[scalDow(d.dia)], hoje = d.dia === r.hoje;
+    if (d.futuro) return `<div class="scal-dia futuro"><div class="n"><span class="dow">${dow}</span> ${n}</div></div>`;
+    const resumo = `${n} de ${SCAL_MESES[m - 1]}: ${d.feitas} feitas, ${d.atendidas} atendidas, ${d.finalizadas} finalizadas, ${d.canceladas} canceladas, ${d.aguardando} na fila`;
+    return `<button type="button" class="scal-dia${hoje ? ' hoje' : ''}${d.dia === SCAL.dia ? ' sel' : ''}" data-dia="${d.dia}" onclick="scalVerDia('${d.dia}')" aria-label="${escHtml(resumo)}">
+      <div class="n"><span class="dow">${dow}</span> ${n}${hoje ? ' <span class="hj">hoje</span>' : ''}</div>
+      ${linha('feitas', d.feitas, 'feita', 'feitas')}${linha('atendidas', d.atendidas, 'atendida', 'atendidas')}
+      ${linha('finalizadas', d.finalizadas, 'finalizada', 'finalizadas')}${linha('canceladas', d.canceladas, 'cancelada', 'canceladas')}
+      <div class="l scal-fila">fila${hoje ? ' agora' : ''}: <b>${pbNum(d.aguardando)}</b></div>
+    </button>`;
+  }).join('');
+  corpo.innerHTML = `
+    <div class="scal-nav">
+      <button class="btn btn-ghost" onclick="scalMudarMes(-1)" aria-label="Mês anterior">‹</button>
+      <div class="scal-mes">${scalMaiuscula(SCAL_MESES[m - 1])} de ${a}</div>
+      <button class="btn btn-ghost" onclick="scalMudarMes(1)" aria-label="Próximo mês" ${mesAtual ? 'disabled' : ''}>›</button>
+      <button class="btn btn-ghost" onclick="scalHoje()">Hoje</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-ghost" onclick="scalExcelMes()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel do mês</button>
+    </div>
+    <div class="scal-kpis">
+      ${kpi('feitas', 'Feitas no mês', t.feitas)}${kpi('atendidas', 'Atendidas no mês', t.atendidas)}${kpi('finalizadas', 'Finalizadas no mês', t.finalizadas, 'com assinatura')}
+      ${kpi('canceladas', 'Canceladas no mês', t.canceladas, t.canceladas_prazo ? `${pbNum(t.canceladas_prazo)} pelo prazo` : '')}
+      ${kpi('fila', mesAtual ? 'Na fila agora' : 'Na fila no fim do mês', ultimoDia ? ultimoDia.aguardando : 0, 'pendentes e visualizados')}
+    </div>
+    <details class="scal-ajuda"><summary>O que cada número quer dizer</summary><ul>
+      <li><b>Feitas:</b> pedidos abertos naquele dia (no portal ou no GCA).</li>
+      <li><b>Atendidas:</b> pedidos atendidos naquele dia, não importa quando foram feitos.</li>
+      <li><b>Finalizadas:</b> pedidos cuja assinatura aconteceu naquele dia.</li>
+      <li><b>Canceladas:</b> canceladas naquele dia — pelo prazo (automático), porque o atendimento foi cancelado, ou por alguém.</li>
+      <li><b>Fila:</b> pedidos que, à meia-noite daquele dia, ainda não tinham sido atendidos nem cancelados. Hoje é a fila de agora.</li>
+      <li>Um pedido que mudou de armazém conta no armazém novo. Clique num dia para ver os pedidos (com Excel).</li>
+    </ul></details>
+    <div class="scal-semana" aria-hidden="true">${SCAL_SEMANA.map(s => `<div>${s}</div>`).join('')}</div>
+    <div class="scal-grade">${vazios}${celulas}</div>
+    <div id="scalDetalhe"></div>`;
+  if (SCAL.dia && r.dias.some(d => d.dia === SCAL.dia && !d.futuro)) scalVerDia(SCAL.dia, true);
+}
+
+function scalGrupos(dia) {
+  const ps = SCAL.dados?.pedidos || [], hoje = SCAL.dados?.hoje;
+  return [
+    { cls: 'feitas', rotulo: 'Feitas', linhas: ps.filter(p => p.criado === dia) },
+    { cls: 'atendidas', rotulo: 'Atendidas', linhas: ps.filter(p => p.atendido === dia) },
+    { cls: 'finalizadas', rotulo: 'Finalizadas (assinadas)', linhas: ps.filter(p => p.finalizado === dia) },
+    { cls: 'canceladas', rotulo: 'Canceladas', linhas: ps.filter(p => p.cancelado === dia), cancel: true },
+    { cls: 'fila', rotulo: dia === hoje ? 'Na fila agora' : 'Ficaram aguardando no fim do dia', espera: true,
+      linhas: ps.filter(p => p.criado && p.criado <= dia && (!p.fim_espera || p.fim_espera > dia)).sort((x, y) => String(x.criado).localeCompare(String(y.criado))) },
+  ];
+}
+const SCAL_CANCEL = { prazo: 'Pelo prazo (automático)', atendimento: 'Atendimento cancelado' };
+const scalComo = (p) => SCAL_CANCEL[p.cancelado_tipo] || `Por ${p.cancelado_por || 'alguém'}`;
+const scalDiasEsperando = (p, dia) => Math.round((Date.parse(`${dia}T12:00:00Z`) - Date.parse(`${p.criado}T12:00:00Z`)) / 864e5);
+
+function scalVerDia(dia, semRolar) {
+  SCAL.dia = dia;
+  document.querySelectorAll('.scal-dia.sel').forEach(x => x.classList.remove('sel'));
+  document.querySelector(`.scal-dia[data-dia="${dia}"]`)?.classList.add('sel');
+  const el = document.getElementById('scalDetalhe');
+  if (!el) return;
+  const grupos = scalGrupos(dia);
+  const cab = (g) => ['Pedido', 'Colaborador', 'Solicitante', 'Armazém', 'Prioridade', ...(g.cancel ? ['Como'] : []), ...(g.espera ? ['Aberto em', 'Esperando'] : [])];
+  const cels = (g, p) => [escHtml(p.id), escHtml(p.colaborador || '—'), escHtml(p.solicitante || '—'), escHtml(p.armazem || '—'),
+    p.prioridade === 'Urgente' ? gcaSit('Urgente', 'vermelho', 'siren') : escHtml(p.prioridade || 'Normal'),
+    ...(g.cancel ? [escHtml(scalComo(p))] : []),
+    ...(g.espera ? [formatarData(p.criado), `${scalDiasEsperando(p, dia)} ${scalDiasEsperando(p, dia) === 1 ? 'dia' : 'dias'}`] : [])];
+  const dow = SCAL_SEMANA_LONGA[scalDow(dia)];
+  el.innerHTML = `<div class="scal-det-tit">${scalMaiuscula(dow)}, ${formatarData(dia)}</div>`
+    + (grupos.map((g, i) => !g.linhas.length ? '' : `<div class="scal-sec">
+        <div class="scal-sec-cab"><span class="scal-tag scal-${g.cls}">${g.rotulo}</span><span class="qtd">${pbNum(g.linhas.length)}</span>
+          <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="scalExcelDia(${i})"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button></div>
+        <div class="scal-tab-wrap"><table class="scal-tab"><thead><tr>${cab(g).map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>
+          ${g.linhas.map(p => `<tr class="clica" onclick="scalAbrirPedido('${escJs(p.id)}', '${escJs(p.status || '')}')" title="Abrir o pedido">${cels(g, p).map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}
+        </tbody></table></div></div>`).join('') || '<div class="pb-vazio">Nenhum pedido neste dia.</div>');
+  if (!semRolar) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Abre o pedido na tela de Solicitações (o calendário fecha). Pedido já terminado pode estar só no histórico.
+function scalAbrirPedido(id, status) {
+  scalFechar();
+  if (!(_solicitacoes || []).some(s => s.id === id) && ['FINALIZADO', 'CANCELADO'].includes(status) && _solAbaAtual !== 'historico') mudarAbaSol('historico');
+  solIrParaPedido(id);
+}
+
+function scalExcelDia(i) {
+  const g = scalGrupos(SCAL.dia)[i];
+  if (!g?.linhas.length) return;
+  const cols = [{ key: 'id', label: 'Pedido' }, { key: 'colaborador', label: 'Colaborador' }, { key: 'solicitante', label: 'Solicitante' }, { key: 'armazem', label: 'Armazém' },
+    { key: 'prioridade', label: 'Prioridade' }, { key: 'situacao', label: 'Situação hoje' },
+    ...(g.cancel ? [{ key: 'como', label: 'Como foi cancelado' }, { key: 'motivo', label: 'Motivo' }] : []),
+    ...(g.espera ? [{ key: 'aberto', label: 'Aberto em' }, { key: 'esperando', label: 'Dias esperando' }] : [])];
+  const linhas = g.linhas.map(p => ({ ...p, situacao: SOL_ROTULO_STATUS?.[p.status] || p.status, como: scalComo(p), motivo: p.cancelado_motivo || '',
+    aberto: formatarData(p.criado), esperando: g.espera ? scalDiasEsperando(p, SCAL.dia) : '' }));
+  gcaExportarExcel(`Solicitacoes_${g.rotulo.replace(/[^\wÀ-ú]+/g, '_')}_${SCAL.dia}`, linhas, cols);
+}
+function scalExcelMes() {
+  const r = SCAL.dados;
+  if (!r) return;
+  const linhas = r.dias.filter(d => !d.futuro).map(d => ({ dia: formatarData(d.dia), semana: SCAL_SEMANA_LONGA[scalDow(d.dia)], feitas: d.feitas, atendidas: d.atendidas,
+    finalizadas: d.finalizadas, canceladas: d.canceladas, prazo: d.canceladas_prazo, fila: d.aguardando }));
+  gcaExportarExcel(`Calendario_solicitacoes_${r.mes}`, linhas, [{ key: 'dia', label: 'Dia' }, { key: 'semana', label: 'Dia da semana' }, { key: 'feitas', label: 'Feitas' },
+    { key: 'atendidas', label: 'Atendidas' }, { key: 'finalizadas', label: 'Finalizadas' }, { key: 'canceladas', label: 'Canceladas' }, { key: 'prazo', label: 'Canceladas pelo prazo' },
+    { key: 'fila', label: 'Fila no fim do dia' }]);
 }
 
 function fecharModalSolicitacao() {
