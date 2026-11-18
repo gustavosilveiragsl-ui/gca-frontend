@@ -543,6 +543,38 @@ tr.notif-destaque>td{animation:notifDestaque 2.6s ease}
 .est-abas .atend-tab{white-space:nowrap}
 .est-filtros{display:grid;grid-template-columns:minmax(240px,2fr) repeat(2,minmax(170px,1fr));gap:8px;max-width:900px}
 .est-filtros .form-input{width:100%;min-width:0;height:36px;padding:0 10px;font-size:12px}
+/* Nova Consulta de Viaturas (18/11/2026) */
+.vtr-filtros{display:grid;grid-template-columns:minmax(240px,2fr) repeat(2,minmax(170px,1fr));gap:8px;max-width:900px}
+.vtr-filtros .form-input{width:100%;min-width:0;height:36px;padding:0 10px;font-size:12px}
+.vtr-tab{width:100%;min-width:760px}
+.vtr-tab tbody tr{cursor:pointer}
+.vtr-placa{font-family:var(--font-mono);font-weight:700;letter-spacing:.03em}
+.vtr-sub{font-size:10.5px;color:var(--text-3);margin-top:2px}
+.vtr-barra{height:6px;border-radius:4px;background:var(--bg-hover);overflow:hidden;min-width:90px;max-width:160px}
+.vtr-barra i{display:block;height:100%}
+.vtr-chip{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap;margin:1px 2px 1px 0}
+.vtr-ok{color:var(--green)}.vtr-warn{color:var(--yellow)}.vtr-bad{color:var(--red)}.vtr-info{color:var(--blue)}.vtr-mut{color:var(--text-3)}
+.vtr-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.vtr-kpi{background:var(--bg-hover);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;min-width:0}
+.vtr-kpi small{display:block;font-size:9.5px;color:var(--text-3);text-transform:uppercase;letter-spacing:.04em}
+.vtr-kpi b{font-size:17px}
+.vtr-abas{display:flex;gap:2px;border-bottom:1px solid var(--border);overflow-x:auto}
+.vtr-abas .atend-tab{white-space:nowrap}
+.vtr-abas .n{font-size:9.5px;background:var(--bg-hover);border-radius:999px;padding:1px 6px;margin-left:4px;color:var(--text-2)}
+.vtr-serial{font-family:var(--font-mono);font-size:9.5px;background:var(--accent-soft);color:var(--accent-text);border-radius:4px;padding:1px 5px;margin:2px 3px 0 0;display:inline-block}
+.vtr-tl{display:flex;flex-direction:column}
+.vtr-tl>div{border-left:2px solid var(--border);padding:0 0 12px 14px;position:relative;font-size:12px;line-height:1.45}
+.vtr-tl>div::before{content:"";position:absolute;left:-6px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--bg-card);border:2px solid currentColor}
+.vtr-tl .q{color:var(--text-2)}
+.vtr-tl a{color:var(--blue);text-decoration:underline}
+.vtr-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.vtr-opt{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--bg-card);text-align:left;display:flex;flex-direction:column;gap:2px;color:var(--text-1)}
+.vtr-opt b{font-size:12px}.vtr-opt small{font-size:10px;color:var(--text-3)}
+.vtr-opt.on{border-color:var(--accent);background:var(--accent-soft)}
+.vtr-sug{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-card);max-height:180px;overflow-y:auto}
+.vtr-sug button{display:block;width:100%;text-align:left;border:none;background:none;padding:7px 10px;font-size:12px;color:var(--text-1)}
+.vtr-sug button:hover{background:var(--bg-hover)}
+@media (max-width:900px){.vtr-filtros{grid-template-columns:1fr 1fr}.vtr-filtros #vtrBusca{grid-column:1/-1}.vtr-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.vtr-opts{grid-template-columns:1fr 1fr}}
 @media (max-width:900px){.est-filtros{grid-template-columns:1fr 1fr}.est-filtros .est-f-busca{grid-column:1/-1}}
 .sol-cab-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sol-cab-tit{flex:1 1 360px;min-width:0}
@@ -5353,24 +5385,36 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
       <!-- CONSULTA DE VIATURAS -->
       <div class="view h-azul" id="view-consulta-viaturas">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-          <div>
-            <div class="page-title"><svg class=ic aria-hidden=true><use href=#i-car-front></use></svg> Consulta de Viaturas</div>
-            <div class="page-sub">Placas cadastradas e o material que está em cada uma</div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-ghost" onclick="carregarFrota()">↻ Recarregar</button>
-            <button class="btn btn-ghost" onclick="abrirConferencias()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Conferências</button>
-            <button class="btn btn-ghost" onclick="abrirCargaPadrao()"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Carga padrão</button>
-            <button class="btn btn-primary" data-perm-btn="cadastrar_viatura" onclick="abrirFormFrota()">+ Nova viatura</button>
-          </div>
-        </div>
-        <input class="search-box" id="vtrBusca" placeholder="Buscar por placa, modelo ou base..." oninput="renderFrota()" style="margin-bottom:12px;width:100%">
+        <!-- Nova Consulta de Viaturas (18/11/2026, item 10): lista com carga × padrão, conferência e atenção;
+             a placa abre a ficha (vtrFichaAbrir) -->
         <div class="card">
-          <table>
-            <thead><tr><th>Placa</th><th>Modelo</th><th>Tipo</th><th>Base</th><th style="text-align:center">Carga</th><th>Status</th><th></th></tr></thead>
-            <tbody id="vtrBody"><tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Carregando...</td></tr></tbody>
-          </table>
+          <div class="card-header est-cab">
+            <div class="est-cab-topo">
+              <div class="est-cab-tit"><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-car-front></use></svg> Consulta de Viaturas</div><div class="card-sub" id="vtrSub">Placas, carga × padrão, conferências e laudos</div></div>
+              <div class="est-cab-acoes">
+                <button class="btn btn-ghost" onclick="abrirConferencias()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Conferências</button>
+                <button class="btn btn-ghost" onclick="abrirCargaPadrao()"><svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg> Carga padrão</button>
+                <button class="btn btn-ghost" onclick="carregarFrota()">↻ Atualizar</button>
+                <button class="btn btn-primary" data-perm-btn="cadastrar_viatura" onclick="abrirFormFrota()">+ Nova viatura</button>
+              </div>
+            </div>
+            <div class="vtr-filtros">
+              <input class="form-input" id="vtrBusca" placeholder="Buscar placa, modelo ou base..." oninput="vtrRenderPainel()" aria-label="Buscar viatura">
+              <select class="form-input" id="vtrFiltroBase" onchange="vtrRenderPainel()" aria-label="Base"><option value="">Todas as bases</option></select>
+              <select class="form-input" id="vtrFiltroSit" onchange="vtrRenderPainel()" aria-label="Situação">
+                <option value="">Todas as viaturas</option>
+                <option value="atencao">Só com atenção</option>
+                <option value="faltando">Carga incompleta</option>
+                <option value="inativas">Inativas</option>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="vtr-tab">
+              <thead><tr><th>Placa</th><th>Tipo · Base</th><th>Carga × padrão</th><th>Última conferência</th><th>Atenção</th><th></th></tr></thead>
+              <tbody id="vtrPainelBody"><tr class="loading-row"><td colspan="6"><div class="spinner"></div></td></tr></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -10083,14 +10127,17 @@ async function verificarTokenAssinatura() {
   document.getElementById('loadingScreen')?.classList.add('hidden');
 
   const API = 'https://gca-backend-production.up.railway.app';
-  // O mesmo link de assinatura serve para a ficha de transferência entre placas
+  // O mesmo link de assinatura serve para a ficha de transferência entre placas e, desde 18/11/2026,
+  // para o termo do desconto que não nasce de atendimento (baixa de material da viatura)
   const ehViatura = params.get('tipo') === 'viatura';
+  const ehDesconto = params.get('tipo') === 'desconto';
   try {
-    const res = await fetch(`${API}${ehViatura ? `/viaturas/transferencia/token/${token}` : `/atendimentos/token/${token}`}`, { cache: 'no-store' });
+    const res = await fetch(`${API}${ehViatura ? `/viaturas/transferencia/token/${token}` : ehDesconto ? `/descontos/assinar/${token}` : `/atendimentos/token/${token}`}`, { cache: 'no-store' });
     const data = await res.json();
     const card = document.getElementById('assinCardConteudo');
 
     if (ehViatura && data.ok) { montarFichaTransferencia(card, token, data); return true; }
+    if (ehDesconto) { montarTermoDescontoLink(card, token, data); return true; }
 
     if (!data.ok) {
       card.innerHTML = `
@@ -10161,6 +10208,68 @@ async function verificarTokenAssinatura() {
   } catch(e) {
     document.getElementById('assinCardConteudo').innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8">Erro ao carregar. Tente novamente.</div>`;
     return true;
+  }
+}
+
+// ── Termo de desconto assinado pelo link (18/11/2026) ──
+function montarTermoDescontoLink(card, token, data) {
+  if (!data.ok) {
+    card.innerHTML = `<div style="text-align:center;padding:40px;border:1px solid #334155;border-radius:16px;background:#1e293b">
+      <div style="font-size:18px;font-weight:600;color:#f1f5f9;margin-bottom:8px">${data.jaAssinado ? 'Termo já assinado' : data.indisponivel ? 'Nada para assinar' : 'Link inválido'}</div>
+      <div style="font-size:13px;color:#94a3b8">${escHtml(data.jaAssinado ? 'Este desconto já foi autorizado anteriormente.' : data.erro || 'Peça um novo link ao almoxarifado.')}</div></div>`;
+    return;
+  }
+  const d = data.desconto;
+  window._assinDesconto = d;
+  card.innerHTML = `
+    <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#0f172a">
+      <div style="font-size:16px;font-weight:600;color:#f1f5f9">Olá, ${escHtml(d.colaborador || '')}!</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:4px">Leia o termo do desconto em folha e assine para autorizar.</div>
+    </div>
+    ${descTermoAssinaturaHtml(d)}
+    <div style="border:1px solid #334155;border-radius:16px;padding:20px;margin-bottom:20px;background:#1e293b">
+      <div style="font-size:13px;font-weight:600;color:#f1f5f9;margin-bottom:12px">Assine abaixo para autorizar o desconto:</div>
+      <canvas id="canvasAssinatura" width="520" height="260" style="border:2px dashed #475569;border-radius:10px;width:100%;touch-action:none;cursor:crosshair;background:#ffffff;display:block"></canvas>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <button onclick="limparAssinatura()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;padding:4px 8px">↺ Limpar</button>
+      </div>
+    </div>
+    <button id="btnAssinDescLink" onclick="confirmarTermoDescontoLink('${escJs(token)}')"
+      style="width:100%;padding:18px;background:#22c55e;color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:700;cursor:pointer">
+      <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Assinar e autorizar
+    </button>`;
+  iniciarCanvasAssinatura();
+}
+async function confirmarTermoDescontoLink(token) {
+  if (!_assinCanvas) return;
+  const vazio = !_assinCtx.getImageData(0, 0, _assinCanvas.width, _assinCanvas.height).data.some(v => v !== 0);
+  if (vazio) { alert('Por favor, assine no campo acima antes de confirmar.'); return; }
+  if (!document.getElementById('assinDescAutorizo')?.checked) {
+    alert('Para autorizar, marque "Li e autorizo o desconto em folha" no quadro do desconto.');
+    document.getElementById('assinDescTermo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  const btn = document.getElementById('btnAssinDescLink');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+  try {
+    const res = await fetch(`${API}/descontos/assinar/${encodeURIComponent(token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ assinatura_base64: _assinCanvas.toDataURL('image/png'), desconto_visto: window._assinDesconto?.conferencia || '', desconto_autorizado: true }) });
+    const data = await res.json();
+    if (data.codigo === 'DESCONTO_MUDOU') { alert(data.erro); verificarTokenAssinatura(); return; }
+    if (!data.ok && !data.jaAssinado) {
+      if (btn) { btn.disabled = false; btn.textContent = 'Assinar e autorizar'; }
+      alert(data.erro || 'Erro ao confirmar. Tente novamente.');
+      return;
+    }
+    document.getElementById('assinCardConteudo').innerHTML = `
+      <div style="text-align:center;padding:48px 24px;border:1px solid #22c55e;border-radius:16px">
+        <div style="font-size:56px;margin-bottom:16px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
+        <div style="font-size:20px;font-weight:700;color:#22c55e;margin-bottom:8px">Desconto autorizado</div>
+        <div style="font-size:13px;color:#94a3b8">Sua assinatura foi registrada. O almoxarifado já pode ver o termo assinado.</div>
+      </div>`;
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Assinar e autorizar'; }
+    alert('Erro de conexão. Tente novamente.');
   }
 }
 
@@ -25518,6 +25627,7 @@ function descSituacaoChip(st) {
   return `<span class="desc-sit" style="color:${DESC_COR_SITUACAO[s] || 'var(--text-3)'}">${escHtml(s)}</span>`;
 }
 function descOrigemTexto(d) {
+  if (d.baixa_viatura_id || d.origem === 'VIATURA') return `Baixa na viatura ${d.placa || ''} em ${formatarData(d.data)}`;
   if (d.atendimento_id) return `Atendimento de ${formatarData(d.data)}${d.solicitacao_id ? ` · pedido ${d.solicitacao_id}` : ''}`;
   if (d.desligamento_id) return 'Desligamento';
   return 'Lançado à mão';
@@ -25571,7 +25681,7 @@ async function descDetalhes(id) {
   if (!d) { toast('Desconto não encontrado', 'error'); return; }
   let itens = []; try { itens = JSON.parse(d.itens || '[]'); } catch {}
   const hist = Array.isArray(d.historico) ? d.historico : [];
-  const doc = (d.atendimento_id || d.bo_anexo) ? await api('/descontos/' + encodeURIComponent(d.id) + '/documentos') : null;
+  const doc = (d.atendimento_id || d.baixa_viatura_id || d.bo_anexo) ? await api('/descontos/' + encodeURIComponent(d.id) + '/documentos') : null;
   const at = doc?.ok ? doc.atendimento : null, bos = doc?.ok ? (doc.bos || []) : [];
   const st = d.status || 'Ativo';
   const podeDispensar = !['Dispensado', 'Cancelado'].includes(st);
@@ -25587,6 +25697,15 @@ async function descDetalhes(id) {
       : st === 'Aguardando assinatura' ? 'Aguardando a assinatura do recebimento (link ou tablet). A entrega só é assinada com o "li e autorizo".'
       : `Recebimento ${at.status === 'ASSINADO' ? 'assinado' : 'ainda não assinado'}.`);
     if (at?.pdf_url) docs.push(`<a href="${escHtml(safeUrl(at.pdf_url))}" target="_blank" rel="noopener">Abrir o comprovante do recebimento</a>`);
+  }
+  // Desconto da baixa na viatura (18/11/2026): assinatura pelo link do termo
+  if (d.baixa_viatura_id) {
+    const bx = doc?.ok ? doc.baixa : null;
+    if (bx) docs.push(`Baixa na viatura <b>${escHtml(bx.placa || '')}</b> em ${escHtml(formatarData(bx.data))}: ${escHtml(bx.motivo || '')}${bx.foto_url ? ` · <a href="${escHtml(safeUrl(bx.foto_url))}" target="_blank" rel="noopener">foto</a>` : ''}`);
+    if (st === 'Assinado') docs.push(`Autorizado pelo link do termo em <b>${escHtml(descDataHora(d.assinado_em || doc?.assinado_em))}</b>.`);
+    else if (st === 'Aguardando assinatura' && doc?.link) docs.push(`Aguardando a assinatura pelo link: <span style="display:inline-flex;gap:6px;flex-wrap:wrap;vertical-align:middle">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="copiarLink('${escJs(doc.link)}')">Copiar link</button>
+      <a class="btn btn-ghost btn-sm" href="https://wa.me/?text=${encodeURIComponent(`Olá, ${d.colaborador_nome}. Segue o termo de autorização do desconto em folha para você ler e assinar: ${doc.link}`)}" target="_blank" rel="noopener">WhatsApp</a></span>`);
   }
   bos.forEach(b => docs.push(b.url ? `<a href="${escHtml(safeUrl(b.url))}" target="_blank" rel="noopener">B.O.${b.numero ? ` nº ${escHtml(b.numero)}` : ''} (${escHtml(b.item)})</a>` : `B.O. ${escHtml(b.item)}: arquivo indisponível`));
   ov.innerHTML = `<div class="modal-box" style="max-width:640px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="descDetTit">
@@ -25673,15 +25792,16 @@ async function verDesconto(id) {
   // Desconto do desligamento (12/11/2026): a assinatura do colaborador é a mesma do termo
   var assinaturaHtml = '', avisoSituacao = '';
   // Desconto do atendimento (item 3, 17/11/2026): a assinatura é a do recebimento do material
-  if (d.atendimento_id) {
+  if (d.atendimento_id || d.baixa_viatura_id) {
     if (d.status === 'Assinado') {
       var rdoc = await api('/descontos/' + encodeURIComponent(d.id) + '/documentos');
       var atd = rdoc && rdoc.ok ? rdoc.atendimento : null;
-      var img = descAssinaturaSegura(atd && atd.assinatura);
+      // A assinatura é a do recebimento (atendimento) ou a feita pelo link do termo (baixa na viatura)
+      var img = descAssinaturaSegura((rdoc && rdoc.ok && rdoc.assinatura) || (atd && atd.assinatura));
       // Igual ao comprovante do recebimento: o mesmo azul de caneta e o mesmo tamanho (120 × 50 pt)
       if (img) img = await descTingirAssinatura(img);
       if (img) assinaturaHtml = '<img src="' + img + '" alt="" style="width:160px;height:67px;display:block;margin:0 0 -2px 10px">'
-        + '<div style="font-size:9.5px;color:#334155;margin:0 0 4px 10px">Assinado digitalmente em <b>' + escHtml(descCarimbo(d.assinado_em || (atd && atd.assinado_em))) + '</b> (horário de Brasília), junto com o recebimento do material</div>';
+        + '<div style="font-size:9.5px;color:#334155;margin:0 0 4px 10px">Assinado digitalmente em <b>' + escHtml(descCarimbo(d.assinado_em || (atd && atd.assinado_em))) + '</b> (horário de Brasília), ' + (d.baixa_viatura_id ? 'pelo link do termo' : 'junto com o recebimento do material') + '</div>';
     } else {
       avisoSituacao = d.status === 'Aguardando assinatura' ? 'AGUARDANDO A ASSINATURA DO COLABORADOR: sem valor até ser assinado'
         : d.status === 'Dispensado' ? 'DESCONTO DISPENSADO: não descontar' : d.status === 'Cancelado' ? 'DESCONTO CANCELADO: não descontar' : '';
@@ -35626,37 +35746,394 @@ function asExcelHist() {
 // ═══════════════════════════════════════════
 let _frota = [];
 
+// ═══════════════════════════════════════════
+// NOVA CONSULTA DE VIATURAS (item 10 da lista de 16/11, 18/11/2026)
+// Decisões do usuário: lista em tabela (opção A); a conferência há mais de 30 dias é só informação,
+// NÃO é alerta nem obrigação; laudos e documentos dentro da ficha; perdido, avariado e roubado
+// descontam de quem o almoxarife escolher, ou não descontam com o motivo escrito (o colaborador
+// assina o termo pelo link). A conferência pelo celular com fotos é a parte 2.
+// ═══════════════════════════════════════════
+let _vtrPainel = [];
+const VTR_BAIXA = {
+  QUEBRA: { rotulo: 'Avariado', dica: 'Quebrou; não volta ao estoque' },
+  PERDA: { rotulo: 'Perdido', dica: 'Não volta ao estoque' },
+  CONSUMO: { rotulo: 'Consumido no uso', dica: 'Fita, lacre, material que acaba' },
+  ROUBO: { rotulo: 'Roubado', dica: 'Com B.O., se tiver' },
+};
+const vtrDiasDesde = (iso) => iso ? Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) : null;
+const vtrHaDias = (n) => n === null ? 'nunca' : n === 0 ? 'hoje' : n === 1 ? 'há 1 dia' : `há ${n} dias`;
+const vtrChip = (txt, cls) => `<span class="vtr-chip ${cls}">${escHtml(txt)}</span>`;
+
+async function vtrCarregarPainel() {
+  const tbody = document.getElementById('vtrPainelBody');
+  if (!tbody) return;
+  const r = await api('/viaturas/painel');
+  if (!r?.ok) { tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--red);font-size:12px">${escHtml(r?.erro || 'Erro ao carregar')}</td></tr>`; return; }
+  _vtrPainel = r.data || [];
+  const sel = document.getElementById('vtrFiltroBase'), atual = sel.value;
+  const bases = [...new Set(_vtrPainel.map(v => String(v.base || '').trim()).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todas as bases</option>' + bases.map(b => `<option ${b === atual ? 'selected' : ''}>${escHtml(b)}</option>`).join('');
+  vtrRenderPainel();
+}
+// O que pede atenção (a conferência antiga NÃO entra: decisão do usuário)
+function vtrAtencao(v) {
+  const c = [];
+  // Viatura inativa não pede atenção: só a etiqueta
+  if ((v.status || 'ativa') !== 'ativa') return [vtrChip('Inativa', 'vtr-mut')];
+  if (v.padrao?.faltando > 0) c.push(vtrChip(`Faltando ${v.padrao.faltando}`, 'vtr-warn'));
+  if (v.padrao?.sobrando > 0) c.push(vtrChip(`Sobra ${v.padrao.sobrando}`, 'vtr-info'));
+  if (v.laudo?.status === 'VENCIDO') c.push(vtrChip(`${v.laudo.tipo || 'Laudo'} vencido`, 'vtr-bad'));
+  else if (v.laudo?.status === 'ALERTA') c.push(vtrChip(`Laudo vence em ${v.laudo.dias} dia${v.laudo.dias === 1 ? '' : 's'}`, 'vtr-warn'));
+  if (v.assinaturas_pendentes > 0) c.push(vtrChip(`Assinatura pendente${v.assinaturas_pendentes > 1 ? ` (${v.assinaturas_pendentes})` : ''}`, 'vtr-info'));
+  return c;
+}
+const vtrTemAtencao = (v) => (v.status || 'ativa') === 'ativa' && ((v.padrao?.faltando > 0) || v.laudo?.status === 'VENCIDO' || v.laudo?.status === 'ALERTA' || v.assinaturas_pendentes > 0);
+function vtrCargaCelula(v) {
+  const p = v.padrao || {};
+  if (!p.tem) return `<span style="font-size:12px">${v.carga?.total || 0} ${v.carga?.total === 1 ? 'item' : 'itens'}</span><div class="vtr-sub">tipo sem carga padrão</div>`;
+  const pct = p.total ? Math.round(p.completos / p.total * 100) : 0;
+  const cor = p.faltando ? 'var(--yellow)' : 'var(--green)';
+  return `<div class="vtr-barra" title="${pct}% do padrão"><i style="width:${pct}%;background:${cor}"></i></div>
+    <div class="vtr-sub">${p.completos} de ${p.total}${p.faltando ? ` · faltam ${p.faltando}` : ''}${p.sobrando ? ` · sobra ${p.sobrando}` : ''}</div>`;
+}
+function vtrRenderPainel() {
+  const tbody = document.getElementById('vtrPainelBody');
+  if (!tbody) return;
+  const q = (document.getElementById('vtrBusca')?.value || '').trim().toLowerCase();
+  const base = document.getElementById('vtrFiltroBase')?.value || '';
+  const sit = document.getElementById('vtrFiltroSit')?.value || '';
+  const lista = _vtrPainel.filter(v => (!q || [v.placa, v.modelo, v.base, v.tipo].some(x => String(x || '').toLowerCase().includes(q)))
+    && (!base || String(v.base || '').trim() === base)
+    && (!sit || (sit === 'atencao' ? vtrTemAtencao(v) : sit === 'faltando' ? v.padrao?.faltando > 0 : sit === 'inativas' ? (v.status || 'ativa') !== 'ativa' : true)));
+  const incompletas = _vtrPainel.filter(v => (v.status || 'ativa') === 'ativa' && v.padrao?.faltando > 0).length;
+  const pend = _vtrPainel.filter(v => v.assinaturas_pendentes > 0).length;
+  const sub = document.getElementById('vtrSub');
+  if (sub) sub.textContent = `${_vtrPainel.length} viatura${_vtrPainel.length === 1 ? '' : 's'}${incompletas ? ` · ${incompletas} com carga incompleta` : ''}${pend ? ` · ${pend} com assinatura pendente` : ''}`;
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">${_vtrPainel.length ? 'Nenhuma viatura com esse filtro' : 'Nenhuma viatura cadastrada'}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(v => {
+    const c = v.ultima_conferencia, dias = c ? vtrDiasDesde(c.em) : null;
+    const at = vtrAtencao(v);
+    return `<tr data-vtr="${escHtml(v.id)}" onclick="vtrFichaAbrir('${escJs(v.id)}')">
+      <td><div class="vtr-placa">${escHtml(v.placa)}</div><div class="vtr-sub">${escHtml(v.modelo || '—')}</div></td>
+      <td style="font-size:12px">${escHtml(v.tipo || '—')}<div class="vtr-sub">${escHtml(v.base || '—')}</div></td>
+      <td>${vtrCargaCelula(v)}</td>
+      <td style="font-size:12px">${c ? vtrHaDias(dias) : '<span style="color:var(--text-3)">nunca conferida</span>'}${c ? `<div class="vtr-sub">${escHtml(c.conferente || '—')}${c.divergencias ? ` · ${c.divergencias} divergência${c.divergencias === 1 ? '' : 's'}` : ''}</div>` : ''}</td>
+      <td>${at.length ? at.join('') : vtrChip('Em dia', 'vtr-ok')}</td>
+      <td style="text-align:right"><button class="row-action" onclick="event.stopPropagation();vtrFichaAbrir('${escJs(v.id)}')">Ver ficha</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Ficha da viatura ──
+let _vtrFicha = null, _vtrFichaAba = 'carga';
+function vtrLinhasCarga(f) {
+  const pad = Object.fromEntries((f.padrao || []).map(p => [p.item_id, p]));
+  const na = Object.fromEntries((f.itens || []).map(i => [i.item_id, i]));
+  const ids = [...new Set([...Object.keys(pad), ...Object.keys(na)])];
+  return ids.map(id => {
+    const p = pad[id], c = na[id];
+    const qPad = p ? Number(p.quantidade || 0) : null, qNa = c ? Number(c.saldo || 0) : 0;
+    const falta = qPad !== null ? Math.max(0, qPad - qNa) : 0, sobra = qPad !== null ? Math.max(0, qNa - qPad) : 0;
+    return { id, nome: c?.item_descricao || p?.item_descricao || id, padrao: qPad, na: qNa, falta, sobra, seriais: c?.seriais || [], ultima: (f.ultima_entrega || {})[id] || null };
+  }).sort((a, b) => (b.falta > 0) - (a.falta > 0) || a.nome.localeCompare(b.nome));
+}
+async function vtrFichaAbrir(id, aba) {
+  if (aba) _vtrFichaAba = aba;
+  let ov = document.getElementById('modalFichaVtr');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.className = 'modal-overlay'; ov.id = 'modalFichaVtr';
+    ov.addEventListener('click', (ev) => { if (ev.target === ov) vtrFichaFechar(); });
+    document.body.appendChild(ov);
+  }
+  if (!_vtrFicha || _vtrFicha.viatura?.id !== id) ov.innerHTML = '<div class="modal-box" style="max-width:1000px;width:100%;padding:40px;text-align:center"><div class="spinner" style="margin:0 auto"></div></div>';
+  const r = await api(`/viaturas/${encodeURIComponent(id)}/ficha`);
+  if (!r?.ok) { ov.remove(); toast(escHtml(r?.erro || 'Erro ao abrir a ficha'), 'error'); return; }
+  _vtrFicha = r;
+  vtrFichaRender();
+}
+function vtrFichaFechar() { document.getElementById('modalFichaVtr')?.remove(); _vtrFicha = null; }
+function vtrFichaRender() {
+  const f = _vtrFicha, v = f.viatura, ov = document.getElementById('modalFichaVtr');
+  if (!f || !ov) return;
+  const linhas = vtrLinhasCarga(f);
+  const totalPad = linhas.reduce((s, l) => s + (l.padrao || 0), 0);
+  const completos = linhas.reduce((s, l) => s + (l.padrao !== null ? Math.min(l.padrao, l.na) : 0), 0);
+  const faltando = linhas.reduce((s, l) => s + l.falta, 0), sobrando = linhas.reduce((s, l) => s + l.sobra + (l.padrao === null ? l.na : 0), 0);
+  const naCarga = linhas.reduce((s, l) => s + l.na, 0);
+  const ultConf = (f.conferencias || []).find(c => c.status !== 'EM_ANDAMENTO');
+  const diasConf = ultConf ? vtrDiasDesde(ultConf.concluido_em || ultConf.iniciado_em) : null;
+  const laudoRuim = (f.laudos || []).filter(l => l.status === 'VENCIDO' || l.status === 'ALERTA');
+  const laudoTxt = !(f.laudos || []).length ? '<b style="color:var(--text-3)">sem laudos</b>'
+    : laudoRuim.some(l => l.status === 'VENCIDO') ? '<b class="vtr-bad">vencido</b>' : laudoRuim.length ? `<b class="vtr-warn">${laudoRuim.length} vencendo</b>` : '<b class="vtr-ok">em dia</b>';
+  const podeEntregar = temPermissao('entregar_viatura');
+  const abas = [['carga', 'Carga × padrão', linhas.length], ['movimentos', 'Movimentos', (f.historico || []).length], ['conferencias', 'Conferências', (f.conferencias || []).length], ['laudos', 'Laudos e documentos', (f.laudos || []).length + (f.equipamentos || []).length]];
+  ov.innerHTML = `<div class="modal-box" style="max-width:1000px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="vtrFichaTit">
+    <div class="modal-header" style="flex-wrap:wrap;gap:10px">
+      <div style="min-width:0;flex:1 1 260px">
+        <div style="display:flex;gap:10px;align-items:center"><span class="vtr-placa" id="vtrFichaTit" style="font-size:20px">${escHtml(v.placa)}</span>${(v.status || 'ativa') === 'ativa' ? vtrChip('Ativa', 'vtr-ok') : vtrChip('Inativa', 'vtr-mut')}</div>
+        <div class="modal-sub">${escHtml([v.modelo, v.tipo, v.base ? 'base ' + v.base : ''].filter(Boolean).join(' · ') || 'Sem dados adicionais')}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <button class="btn btn-ghost" onclick="abrirQrViatura('${escJs(v.placa)}')"><svg class=ic aria-hidden=true><use href=#i-qr-code></use></svg> QR da viatura</button>
+        ${temPermissao('cadastrar_viatura') ? `<button class="btn btn-ghost" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>` : ''}
+        ${podeEntregar ? `<button class="btn btn-ghost" onclick="vtrIrTransferir('${escJs(v.id)}')"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg> Transferir entre placas</button>` : ''}
+        ${podeEntregar && faltando ? `<button class="btn btn-primary" onclick="vtrIrMobilizar('${escJs(v.id)}')">Entregar o que falta (${faltando})</button>` : ''}
+        <button class="modal-close" onclick="vtrFichaFechar()" aria-label="Fechar">×</button>
+      </div>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;min-height:0">
+      <div class="vtr-kpis">
+        <div class="vtr-kpi"><small>Na carga</small><b>${naCarga}</b> <span class="vtr-sub">${naCarga === 1 ? 'item' : 'itens'}</span></div>
+        <div class="vtr-kpi"><small>Padrão do tipo</small>${totalPad ? `<b class="${faltando ? 'vtr-warn' : 'vtr-ok'}">${Math.round(completos / totalPad * 100)}%</b> <span class="vtr-sub">${completos} de ${totalPad}</span>` : '<b style="color:var(--text-3)">—</b> <span class="vtr-sub">sem padrão</span>'}</div>
+        <div class="vtr-kpi"><small>Faltando</small><b class="${faltando ? 'vtr-warn' : ''}">${faltando}</b></div>
+        <div class="vtr-kpi"><small>Sobrando</small><b class="${sobrando ? 'vtr-info' : ''}">${sobrando}</b></div>
+        <div class="vtr-kpi"><small>Última conferência</small><b style="font-size:14px">${ultConf ? vtrHaDias(diasConf) : 'nunca'}</b></div>
+        <div class="vtr-kpi"><small>Laudos</small>${laudoTxt}</div>
+      </div>
+      <div class="vtr-abas" role="tablist">${abas.map(([k, rot, n]) => `<button class="atend-tab ${_vtrFichaAba === k ? 'active' : ''}" role="tab" onclick="_vtrFichaAba='${k}';vtrFichaRender()">${rot}<span class="n">${n}</span></button>`).join('')}</div>
+      <div id="vtrFichaCorpo">${vtrFichaAbaHtml(linhas, podeEntregar)}</div>
+    </div></div>`;
+}
+function vtrFichaAbaHtml(linhas, podeEntregar) {
+  const f = _vtrFicha, v = f.viatura;
+  if (_vtrFichaAba === 'movimentos') return vtrMovimentosHtml(f.historico || []);
+  if (_vtrFichaAba === 'conferencias') {
+    const cs = f.conferencias || [];
+    if (!cs.length) return '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Esta viatura ainda não foi conferida. A conferência é feita pelo celular, no QR da viatura.</div>';
+    return `<div style="overflow-x:auto"><table style="min-width:520px"><thead><tr><th>Data</th><th>Quem conferiu</th><th>Resultado</th><th></th></tr></thead><tbody>
+      ${cs.map(c => `<tr><td style="font-size:12px">${formatarDataHora(c.concluido_em || c.iniciado_em)}</td><td style="font-size:12px">${escHtml(c.conferente_nome || '—')}</td>
+        <td>${c.status === 'EM_ANDAMENTO' ? vtrChip('Em andamento', 'vtr-info') : Number(c.itens_divergentes) ? vtrChip(`${c.itens_divergentes} divergência${Number(c.itens_divergentes) === 1 ? '' : 's'}`, 'vtr-warn') : vtrChip('Sem divergência', 'vtr-ok')}</td>
+        <td style="text-align:right"><button class="row-action" onclick="abrirConferencia('${escJs(c.id)}')">Ver</button></td></tr>`).join('')}
+    </tbody></table></div><div class="vtr-sub" style="margin-top:8px">As fotos entram com a conferência nova pelo celular (próxima etapa).</div>`;
+  }
+  if (_vtrFichaAba === 'laudos') {
+    const ls = f.laudos || [], eq = f.equipamentos || [];
+    if (!ls.length && !eq.length) return '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhum laudo ou equipamento cadastrado para esta placa (tela Laudos de Viaturas).</div>';
+    return `${ls.length ? `<div style="overflow-x:auto"><table style="min-width:460px"><thead><tr><th>Laudo / documento</th><th>Validade</th><th></th></tr></thead><tbody>
+      ${ls.map(l => `<tr><td style="font-size:12px">${escHtml(l.tipo_laudo || '—')}</td>
+        <td>${l.status === 'VENCIDO' ? vtrChip(`vencido há ${Math.abs(l.dias)} dia${Math.abs(l.dias) === 1 ? '' : 's'}`, 'vtr-bad') : l.status === 'ALERTA' ? vtrChip(`vence em ${l.dias} dia${l.dias === 1 ? '' : 's'}`, 'vtr-warn') : l.status === 'OK' ? vtrChip(`até ${formatarData(String(l.data_vencimento).slice(0, 10))}`, 'vtr-ok') : '—'}</td>
+        <td style="text-align:right">${l.link_pdf ? `<a class="row-action" href="${escHtml(safeUrl(l.link_pdf))}" target="_blank" rel="noopener">PDF</a>` : ''}</td></tr>`).join('')}
+    </tbody></table></div>` : ''}
+    ${eq.length ? `<div class="form-label" style="margin-top:12px">Equipamentos</div><div style="display:flex;flex-wrap:wrap;gap:6px">${eq.map(e => vtrChip(`${e.label || e.tipo}: ${e.tem ? 'tem' : 'não tem'}`, e.tem ? 'vtr-ok' : 'vtr-mut')).join('')}</div>` : ''}`;
+  }
+  // Carga × padrão
+  if (!linhas.length) return '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Viatura sem material e sem carga padrão para o tipo.</div>';
+  return `<div style="overflow-x:auto"><table style="min-width:720px"><thead><tr><th>Item</th><th style="text-align:center">Padrão</th><th style="text-align:center">Na viatura</th><th>Situação</th><th>Última entrega</th><th></th></tr></thead><tbody>
+    ${linhas.map(l => `<tr data-item="${escHtml(l.id)}">
+      <td style="font-size:12px;font-weight:600">${escHtml(l.nome)}${l.seriais.length ? `<div>${l.seriais.map(s => `<span class="vtr-serial">${escHtml(s)}</span>`).join('')}</div>` : ''}</td>
+      <td style="text-align:center;font-size:12px">${l.padrao === null ? '<span class="vtr-sub">—</span>' : l.padrao}</td>
+      <td style="text-align:center;font-size:13px;font-weight:700">${l.na}</td>
+      <td>${l.padrao === null ? vtrChip('Fora do padrão', 'vtr-info') : l.falta ? vtrChip(l.na ? `Faltam ${l.falta}` : `Falta${l.falta > 1 ? 'm' : ''} ${l.falta}`, l.na ? 'vtr-warn' : 'vtr-bad') : l.sobra ? vtrChip(`Sobra ${l.sobra}`, 'vtr-info') : vtrChip('Ok', 'vtr-ok')}</td>
+      <td style="font-size:11px;color:var(--text-2)">${l.ultima ? `${formatarData(l.ultima.data)} · ${escHtml(l.ultima.pessoa || '—')}` : '—'}</td>
+      <td style="text-align:right;white-space:nowrap">${podeEntregar && l.na > 0 ? `<button class="row-action" onclick="vtrAcoesItem('${escJs(l.id)}')">Ações ▾</button>` : podeEntregar && l.falta ? `<button class="row-action" onclick="vtrIrMobilizar('${escJs(v.id)}')">Entregar</button>` : ''}</td>
+    </tr>`).join('')}
+  </tbody></table></div>`;
+}
+function vtrMovimentosHtml(hist) {
+  if (!hist.length) return '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhum movimento registrado.</div>';
+  return `<div class="vtr-tl">${hist.map(h => {
+    const quando = `<span class="vtr-sub">${formatarDataHora(h.criado_em)}</span>`;
+    if (h.tipo === 'BAIXA') {
+      const rot = VTR_BAIXA[h.baixa_tipo]?.rotulo || h.baixa_tipo;
+      return `<div class="vtr-bad"><b style="color:var(--text-1)">Baixa · ${escHtml(rot)}</b> ${quando}<div class="q">${escHtml(h.item || '')} · ${h.quantidade} · "${escHtml(h.motivo || '')}" · por ${escHtml(h.pessoa || '—')}</div>
+        <div class="q">${h.desconto_id ? `Desconto em folha gerado (tela Descontos)` : h.sem_desconto_motivo ? `Sem desconto: ${escHtml(h.sem_desconto_motivo)}` : ''}${h.foto_url ? ` · <a href="${escHtml(safeUrl(h.foto_url))}" target="_blank" rel="noopener">foto</a>` : ''}${h.bo_url ? ` · <a href="${escHtml(safeUrl(h.bo_url))}" target="_blank" rel="noopener">B.O.</a>` : ''}</div></div>`;
+    }
+    if (h.tipo === 'DEVOLUCAO') return `<div class="vtr-warn"><b style="color:var(--text-1)">Devolução ao estoque</b> ${quando}<div class="q">${escHtml(h.item || '')} · ${h.quantidade} · voltou para ${escHtml(h.destino || 'o estoque')}${h.motivo ? ` · ${escHtml(h.motivo)}` : ''}</div></div>`;
+    if (h.tipo === 'TRANSFERENCIA_SAIDA' || h.tipo === 'TRANSFERENCIA_ENTRADA') {
+      const saiu = h.tipo === 'TRANSFERENCIA_SAIDA';
+      return `<div class="vtr-info"><b style="color:var(--text-1)">${saiu ? 'Transferido para' : 'Recebido de'} ${escHtml(h.outra_placa || '')}</b> ${quando}<div class="q">${h.quantidade} ${h.quantidade === 1 ? 'item' : 'itens'} · ${saiu ? 'por' : 'recebido por'} ${escHtml(h.pessoa || '—')} · ${h.status === 'ASSINADA' ? vtrChip('Assinado', 'vtr-ok') : vtrChip('Aguardando assinatura', 'vtr-warn')}</div></div>`;
+    }
+    const cancelado = h.status === 'CANCELADO';
+    return `<div class="${cancelado ? 'vtr-mut' : 'vtr-ok'}"><b style="color:var(--text-1)">Entrega · ${h.quantidade} ${h.quantidade === 1 ? 'item' : 'itens'}</b> ${quando}<div class="q">Retirado por ${escHtml(h.pessoa || '—')} · ${cancelado ? vtrChip('Cancelado', 'vtr-mut') : h.status === 'ASSINADO' ? vtrChip('Assinado', 'vtr-ok') : vtrChip('Aguardando assinatura', 'vtr-warn')}</div></div>`;
+  }).join('')}</div>`;
+}
+function vtrIrMobilizar(id) {
+  vtrFichaFechar();
+  showView('carga-viatura', document.querySelector('.nav-item[data-view="carga-viatura"]'));
+  setTimeout(() => { cvAba('mobilizar', document.querySelectorAll('#view-carga-viatura .atend-tab')[1]); setTimeout(() => cvMobCarregar(id), 300); }, 300);
+}
+function vtrIrTransferir(id) {
+  vtrFichaFechar();
+  showView('carga-viatura', document.querySelector('.nav-item[data-view="carga-viatura"]'));
+  setTimeout(() => { cvAba('transferir', document.querySelectorAll('#view-carga-viatura .atend-tab')[2]); setTimeout(() => cvTrEscolherOrigem(id), 300); }, 300);
+}
+
+// ── Ações no item: tirar da viatura sempre com motivo ──
+let _vtrAc = null;
+async function vtrAcoesItem(itemId) {
+  const f = _vtrFicha;
+  const linha = vtrLinhasCarga(f).find(l => l.id === itemId);
+  if (!linha || !(linha.na > 0)) return;
+  if (!(_colaboradores || []).length) await carregarColaboradoresAtendimento();
+  const ult = linha.ultima;
+  _vtrAc = { linha, tipo: '', qtd: 1, seriais: [], foto: null, bo: null, enviando: 0,
+    descontar: true, colab: ult?.pessoa_id ? (_colaboradores || []).find(c => c.id === ult.pessoa_id) || null : null, parcelas: '', busca: '' };
+  document.getElementById('modalAcVtr')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalAcVtr'; ov.style.zIndex = '10003';
+  ov.addEventListener('click', (ev) => { if (ev.target === ov && !_vtrAc?.enviando) ov.remove(); });
+  document.body.appendChild(ov);
+  vtrAcRender();
+}
+function vtrAcValor() {
+  const a = _vtrAc; const preco = Number((_vtrFicha.precos || {})[a.linha.id]) || 0;
+  const qtd = a.linha.seriais.length ? a.seriais.length : Number(a.qtd) || 0;
+  return { preco, qtd, total: Math.round(preco * qtd * 100) / 100 };
+}
+function vtrAcRender() {
+  const a = _vtrAc, ov = document.getElementById('modalAcVtr');
+  if (!a || !ov) return;
+  const l = a.linha, v = _vtrFicha.viatura;
+  const ehBaixa = !!VTR_BAIXA[a.tipo], decide = ['PERDA', 'QUEBRA', 'ROUBO'].includes(a.tipo);
+  const { preco, qtd, total } = vtrAcValor();
+  const max = descMaxParcelas(total);
+  if (a.parcelas && Number(a.parcelas) > max) a.parcelas = '';
+  const opcoes = [['DEVOLVER', 'Devolver ao estoque', 'Volta para um armazém'], ['TRANSFERIR', 'Transferir para outra placa', 'Quem recebe assina'],
+    ...Object.entries(VTR_BAIXA).map(([k, o]) => [k, o.rotulo, o.dica])];
+  const sug = a.busca.length >= 2 ? (_colaboradores || []).filter(c => (c.status || 'ativo') !== 'desligado' && [c.nome, c.matricula].some(x => String(x || '').toLowerCase().includes(a.busca.toLowerCase()))).slice(0, 8) : [];
+  ov.innerHTML = `<div class="modal-box" style="max-width:600px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="vtrAcTit">
+    <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="vtrAcTit">${escHtml(l.nome)} · <span class="vtr-placa">${escHtml(v.placa)}</span></div>
+      <div class="modal-sub">${l.na} na viatura${preco ? ` · ${descMoeda(preco)} cada` : ''}</div></div>
+      <button class="modal-close" data-fechar aria-label="Fechar">×</button></div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;overflow-y:auto;flex:1;min-height:0">
+      ${a.resultado ? a.resultado : `
+      <div><div class="form-label">O que aconteceu</div>
+        <div class="vtr-opts">${opcoes.map(([k, rot, dica]) => `<button type="button" class="vtr-opt ${a.tipo === k ? 'on' : ''}" data-op="${k}"><b>${rot}</b><small>${dica}</small></button>`).join('')}</div></div>
+      ${ehBaixa ? `
+        <div style="display:grid;grid-template-columns:${l.seriais.length ? '1fr' : '120px 1fr'};gap:10px;align-items:start">
+          ${l.seriais.length ? `<div><div class="form-label">Seriais que saem *</div><div style="display:flex;gap:6px;flex-wrap:wrap">${l.seriais.map(s => `<label class="vtr-chip ${a.seriais.includes(s) ? 'vtr-bad' : 'vtr-mut'}" style="cursor:pointer"><input type="checkbox" data-serial="${escHtml(s)}" ${a.seriais.includes(s) ? 'checked' : ''} style="margin-right:4px">${escHtml(s)}</label>`).join('')}</div></div>`
+            : `<div><label class="form-label" for="vtrAcQtd">Quantidade *</label><input class="form-input" id="vtrAcQtd" type="number" min="1" max="${l.na}" value="${escHtml(String(a.qtd))}"></div>`}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-camera></use></svg> ${a.foto ? 'Foto anexada ✓' : 'Foto (opcional)'}<input type="file" accept="image/*" data-anexo="foto" style="display:none"></label>
+            ${a.tipo === 'ROUBO' ? `<label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-paperclip></use></svg> ${a.bo ? 'B.O. anexado ✓' : 'B.O. (foto ou PDF)'}<input type="file" accept="image/*,application/pdf" data-anexo="bo" style="display:none"></label>` : ''}
+            ${a.enviando ? '<span class="vtr-sub">Enviando…</span>' : ''}
+          </div>
+        </div>
+        <div><label class="form-label" for="vtrAcMotivo">Motivo *</label><textarea class="form-input" id="vtrAcMotivo" rows="2" maxlength="500" placeholder="O que aconteceu com o material">${escHtml(a.motivo || '')}</textarea></div>
+        ${decide ? `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+          <div class="form-label" style="margin:0">Desconto em folha${total ? ` · ${descMoeda(total)}` : ''}</div>
+          <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="radio" name="vtrAcDesc" value="sim" ${a.descontar ? 'checked' : ''}> Descontar de um colaborador</label>
+          ${a.descontar ? `<div style="display:flex;flex-direction:column;gap:6px;padding-left:22px">
+            ${a.colab ? `<div style="display:flex;gap:8px;align-items:center;font-size:12px"><b>${escHtml(a.colab.nome)}</b><span class="vtr-sub">mat. ${escHtml(a.colab.matricula || '—')}</span><button type="button" class="btn btn-ghost btn-sm" data-trocar>Trocar</button></div>
+              ${l.ultima?.pessoa_id === a.colab.id ? '<div class="vtr-sub">Sugestão: foi quem retirou este item por último.</div>' : ''}`
+              : `<input class="form-input" id="vtrAcBusca" placeholder="Buscar colaborador (nome ou matrícula)" value="${escHtml(a.busca)}" autocomplete="off">
+                 ${sug.length ? `<div class="vtr-sug">${sug.map(c => `<button type="button" data-colab="${escHtml(c.id)}">${escHtml(c.nome)} <span class="vtr-sub">· ${escHtml(c.matricula || '')} · ${escHtml(c.funcao || '')}</span></button>`).join('')}</div>` : ''}`}
+            ${!preco ? '<div class="desc-aviso"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Item sem preço no cadastro: corrija o preço ou escolha não descontar.</div>'
+              : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end"><div><label class="form-label" for="vtrAcParc">Parcelas *</label>
+                <select class="form-input" id="vtrAcParc"><option value="">Escolha…</option>${Array.from({ length: max }, (_, i) => i + 1).map(n => `<option value="${n}" ${String(n) === String(a.parcelas) ? 'selected' : ''}>${n === 1 ? `À vista: ${descMoeda(total)}` : `${n}x de ${descMoeda(total / n)}`}</option>`).join('')}</select></div>
+                <div class="vtr-sub">1ª parcela em ${escHtml(descMesExtenso(descMesPrimeira(hojeBR())))}. O colaborador assina o termo pelo link.</div></div>`}
+          </div>` : ''}
+          <label style="display:flex;gap:8px;align-items:center;font-size:12px"><input type="radio" name="vtrAcDesc" value="nao" ${!a.descontar ? 'checked' : ''}> Não descontar</label>
+          ${!a.descontar ? `<textarea class="form-input" id="vtrAcSemDesc" rows="2" maxlength="500" placeholder="Por que não descontar (ex.: B.O. apresentado, desgaste do serviço)" style="margin-left:22px;width:calc(100% - 22px)">${escHtml(a.semDesc || '')}</textarea>` : ''}
+        </div>` : ''}
+        <div id="vtrAcErro" style="font-size:12px;color:var(--red);min-height:14px"></div>` : ''}`}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)">
+      ${a.resultado ? '<button class="btn btn-primary" data-fechar>Fechar</button>' : `<button class="btn btn-ghost" data-fechar>Voltar</button>${ehBaixa ? `<button class="btn btn-primary" id="vtrAcOk" ${a.enviando ? 'disabled' : ''}>Registrar ${escHtml((VTR_BAIXA[a.tipo]?.rotulo || '').toLowerCase())}</button>` : ''}`}
+    </div></div>`;
+  // Eventos
+  ov.querySelectorAll('[data-fechar]').forEach(b => b.onclick = () => { if (a.enviando) return; const deu = !!a.resultado; ov.remove(); if (deu) { vtrFichaAbrir(v.id, 'carga'); vtrCarregarPainel(); } });
+  ov.querySelectorAll('[data-op]').forEach(b => b.onclick = () => {
+    vtrAcGuardar();
+    const op = b.dataset.op;
+    if (op === 'DEVOLVER') { ov.remove(); abrirDevolverViatura(v.id, l.id, l.nome, l.na, l.seriais); return; }
+    if (op === 'TRANSFERIR') { ov.remove(); vtrIrTransferir(v.id); return; }
+    a.tipo = op; vtrAcRender();
+  });
+  ov.querySelectorAll('[data-serial]').forEach(c => c.onchange = () => { vtrAcGuardar(); const s = c.dataset.serial; a.seriais = c.checked ? [...new Set([...a.seriais, s])] : a.seriais.filter(x => x !== s); vtrAcRender(); });
+  ov.querySelector('#vtrAcQtd')?.addEventListener('change', (e) => { vtrAcGuardar(); a.qtd = Math.min(l.na, Math.max(1, parseInt(e.target.value) || 1)); vtrAcRender(); });
+  ov.querySelectorAll('input[name="vtrAcDesc"]').forEach(r => r.onchange = () => { vtrAcGuardar(); a.descontar = r.value === 'sim'; vtrAcRender(); });
+  ov.querySelector('[data-trocar]')?.addEventListener('click', () => { vtrAcGuardar(); a.colab = null; a.busca = ''; vtrAcRender(); setTimeout(() => document.getElementById('vtrAcBusca')?.focus(), 0); });
+  const busca = ov.querySelector('#vtrAcBusca');
+  if (busca) busca.oninput = () => { vtrAcGuardar(); a.busca = busca.value; vtrAcRender(); const el = document.getElementById('vtrAcBusca'); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } };
+  ov.querySelectorAll('[data-colab]').forEach(b => b.onclick = () => { vtrAcGuardar(); a.colab = (_colaboradores || []).find(c => c.id === b.dataset.colab) || null; a.busca = ''; vtrAcRender(); });
+  ov.querySelector('#vtrAcParc')?.addEventListener('change', (e) => { a.parcelas = e.target.value; });
+  ov.querySelectorAll('[data-anexo]').forEach(inp => inp.onchange = async () => {
+    const arq = inp.files?.[0]; if (!arq) return;
+    vtrAcGuardar(); a.enviando++; vtrAcRender();
+    try {
+      const dataUrl = await descLerAnexo(arq);
+      const r = await api('/viaturas/anexo', { method: 'POST', body: JSON.stringify({ tipo: inp.dataset.anexo, dataUrl }) });
+      if (!r?.ok) throw new Error(r?.erro || 'Não foi possível enviar.');
+      a[inp.dataset.anexo] = r.caminho;
+    } catch (e) { toast(escHtml(e.message), 'error', 6000); }
+    a.enviando--; vtrAcRender();
+  });
+  ov.querySelector('#vtrAcOk')?.addEventListener('click', vtrAcEnviar);
+}
+// Guarda o que já foi digitado antes de redesenhar a janela
+function vtrAcGuardar() {
+  const a = _vtrAc; if (!a) return;
+  const m = document.getElementById('vtrAcMotivo'); if (m) a.motivo = m.value;
+  const s = document.getElementById('vtrAcSemDesc'); if (s) a.semDesc = s.value;
+  const p = document.getElementById('vtrAcParc'); if (p) a.parcelas = p.value;
+}
+async function vtrAcEnviar() {
+  vtrAcGuardar();
+  const a = _vtrAc, l = a.linha, v = _vtrFicha.viatura, erro = document.getElementById('vtrAcErro');
+  const { qtd, total } = vtrAcValor();
+  const motivo = String(a.motivo || '').trim();
+  const decide = ['PERDA', 'QUEBRA', 'ROUBO'].includes(a.tipo);
+  if (!(qtd > 0)) { erro.textContent = l.seriais.length ? 'Marque os seriais que saem da viatura.' : 'Informe a quantidade.'; return; }
+  if (motivo.length < 5) { erro.textContent = 'Escreva o motivo (mínimo 5 letras).'; return; }
+  const corpo = { item_id: l.id, quantidade: qtd, tipo: a.tipo, motivo, seriais: a.seriais, foto: a.foto || null, bo_anexo: a.bo || null };
+  if (decide) {
+    if (a.descontar) {
+      if (!a.colab) { erro.textContent = 'Escolha de quem descontar.'; return; }
+      if (!(total > 0)) { erro.textContent = 'Item sem preço no cadastro: escolha não descontar.'; return; }
+      if (!a.parcelas) { erro.textContent = 'Escolha as parcelas do desconto.'; return; }
+      corpo.desconto = { colaborador_id: a.colab.id, parcelas: Number(a.parcelas) };
+    } else {
+      if (String(a.semDesc || '').trim().length < 5) { erro.textContent = 'Escreva por que não descontar (mínimo 5 letras).'; return; }
+      corpo.sem_desconto_motivo = String(a.semDesc).trim();
+    }
+  }
+  a.enviando++; vtrAcRender();
+  const r = await apiMovimentacao(`/viaturas/${encodeURIComponent(v.id)}/baixar`, corpo);
+  a.enviando--;
+  if (!r?.ok) { vtrAcRender(); const e2 = document.getElementById('vtrAcErro'); if (e2) e2.textContent = r?.erro || 'Não foi possível registrar.'; return; }
+  const rot = VTR_BAIXA[a.tipo].rotulo;
+  a.resultado = `<div style="display:flex;flex-direction:column;gap:10px">
+    <div style="font-size:13px"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Baixa registrada: <b>${qtd} × ${escHtml(l.nome)}</b> (${escHtml(rot.toLowerCase())}). O material saiu da viatura e não volta ao estoque.</div>
+    ${r.desconto ? vtrLinkDescontoHtml(r.desconto) : r.desconto_erro ? `<div class="desc-aviso">${escHtml(r.desconto_erro)}</div>` : decide ? '<div class="vtr-sub">Sem desconto (motivo registrado no histórico da placa).</div>' : ''}
+  </div>`;
+  vtrAcRender();
+  if (r.desconto) vtrQrDoLink(r.desconto.link);
+}
+// Link de assinatura do termo: copiar, WhatsApp e QR
+function vtrLinkDescontoHtml(d) {
+  const msg = `Olá, ${d.colaborador}. Segue o termo de autorização do desconto em folha de ${descMoeda(d.valor_total)} (${d.parcelas}x) para você ler e assinar: ${d.link}`;
+  return `<div style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:12px"><b>Desconto em folha de ${descMoeda(d.valor_total)} em ${d.parcelas}x</b> para <b>${escHtml(d.colaborador)}</b>, aguardando a assinatura dele.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <input class="form-input" readonly value="${escHtml(d.link)}" style="flex:1;min-width:200px;font-size:11px" onclick="this.select()">
+      <button type="button" class="btn btn-ghost btn-sm" onclick="copiarLink('${escJs(d.link)}')">Copiar</button>
+      <a class="btn btn-ghost btn-sm" href="https://wa.me/?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">WhatsApp</a>
+    </div>
+    <div id="vtrQrDesc" style="text-align:center;min-height:20px"></div>
+    <div class="vtr-sub">O link também fica em Descontos → Detalhes, enquanto ele não assina.</div>
+  </div>`;
+}
+async function vtrQrDoLink(link) {
+  const r = await api(`/atendimentos/qrcode?url=${encodeURIComponent(link)}&size=180`);
+  const el = document.getElementById('vtrQrDesc');
+  if (el && r?.dataUrl) el.innerHTML = `<img src="${r.dataUrl}" alt="QR do link de assinatura" width="160" height="160">`;
+}
+
 async function carregarFrota() {
-  const tbody = document.getElementById('vtrBody');
-  if (tbody) tbody.innerHTML = '<tr class="loading-row"><td colspan="7"><div class="spinner"></div></td></tr>';
   const res = await api('/viaturas');
   _frota = res?.data || [];
   renderFrota();
 }
 
 function renderFrota() {
-  const tbody = document.getElementById('vtrBody');
-  if (!tbody) return;
-  const q = (document.getElementById('vtrBusca')?.value || '').toLowerCase();
-  const lista = q ? _frota.filter(v => [v.placa, v.modelo, v.base, v.tipo].some(x => (x || '').toLowerCase().includes(q))) : _frota;
-  if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:var(--text-3);font-size:12px">Nenhuma viatura cadastrada</td></tr>';
-    return;
-  }
-  tbody.innerHTML = lista.map(v => `<tr>
-    <td class="td-main" style="font-family:var(--font-mono);font-weight:700">${escHtml(v.placa)}</td>
-    <td>${escHtml(v.modelo || '—')}</td>
-    <td style="font-size:11px">${escHtml(v.tipo || '—')}</td>
-    <td style="font-size:11px">${escHtml(v.base || '—')}</td>
-    <td style="text-align:center;font-size:12px">${v.carga?.itens ? `${v.carga.itens} tipo(s) · ${v.carga.total}` : '<span style="color:var(--text-3)">vazia</span>'}</td>
-    <td>${v.status === 'ativa' ? '<span style="color:#22c55e;font-size:11px;font-weight:600">✓ Ativa</span>' : '<span style="color:var(--text-3);font-size:11px">Inativa</span>'}</td>
-    <td style="display:flex;gap:4px;justify-content:flex-end">
-      <button class="row-action" onclick="abrirCargaViatura('${escJs(v.id)}')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Carga</button>
-      <button class="row-action" onclick="abrirQrViatura('${escJs(v.placa)}')"><svg class=ic aria-hidden=true><use href=#i-tablet-smartphone></use></svg> QR</button>
-      ${temPermissao('cadastrar_viatura') ? `<button class="row-action" onclick="abrirFormFrota('${escJs(v.id)}')">Editar</button>
-      <button class="row-action" style="color:var(--red)" onclick="excluirFrota('${escJs(v.id)}','${escJs(v.placa)}')">✕</button>` : ''}
-    </td>
-  </tr>`).join('');
+  // Nova Consulta de Viaturas (18/11/2026): a lista vem de /viaturas/painel
+  if (document.getElementById('view-consulta-viaturas')?.classList.contains('active')) vtrCarregarPainel();
+  if (_vtrFicha && document.getElementById('modalFichaVtr')) vtrFichaAbrir(_vtrFicha.viatura.id);
 }
 
 function abrirFormFrota(id) {
@@ -36260,7 +36737,7 @@ async function confirmarDevolverViatura(viaturaId, itemId, saldo) {
     document.getElementById('modalDevVtr')?.remove();
     document.getElementById('modalCargaVtr')?.remove();
     toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${quantidade} devolvido(s) ao estoque${seriais.length ? ` (serial ${seriais.join(', ')})` : ''}.`, 'success');
-    carregarFrota();
+    carregarFrota();   // atualiza também a ficha da viatura, se estiver aberta (renderFrota)
   } else erro.textContent = res?.erro || 'Erro na devolução';
 }
 
