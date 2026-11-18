@@ -1930,6 +1930,9 @@ async function abrirConf() {
   ['wTroca','wDur','wDesc'].forEach(id=>document.getElementById(id).classList.add('hidden'));
   document.getElementById('durJust').value = '';
   document.getElementById('confMsg').textContent = '';
+  // O alerta de durabilidade é da pessoa deste pedido: não aproveita o de outro pedido/colaborador (18/11/2026)
+  _mCache[it.id] = _mCache[it.id] || {};
+  _mCache[it.id].dur = null;
 
   // Detecção automática de troca de tamanho — só a sugestão inicial; quem confirma
   // qual tamanho realmente está sendo devolvido é sempre o solicitante (checarTroca).
@@ -2048,6 +2051,7 @@ async function addItemConf() {
       const resV = await req('/solicitacao-auth/validar-viatura', { method: 'POST', body: { viatura_id: document.getElementById('vtrId').value, itens: lista } });
       if (!resV?.ok) { document.getElementById('confMsg').textContent = '' + (resV?.erro || 'Não foi possível validar'); return; }
     }
+    _mCache[it.id].dur = null;
     if (colId) {
       const [resN, resD, resDur] = await Promise.all([
         req('/solicitacao-auth/validar-nivel',      {method:'POST',body:{colaborador_id:colId,categoria:it.categoria||'',unidade:_usr.unidade}}),
