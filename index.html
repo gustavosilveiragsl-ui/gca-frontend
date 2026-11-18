@@ -533,6 +533,17 @@ tr.notif-destaque>td{animation:notifDestaque 2.6s ease}
 #modalDescDetalhe a{color:var(--blue);text-decoration:underline;font-weight:600}
 /* Cabeçalho das Solicitações (17/11/2026): título com espaço, botões à direita, filtros em grade embaixo */
 .sol-cab{flex-direction:column;align-items:stretch;gap:12px}
+/* Cabeçalho da Consulta de Estoque (18/11/2026): mesmo padrão do das Solicitações */
+.est-cab{flex-direction:column;align-items:stretch;gap:12px}
+.est-cab-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.est-cab-tit{flex:1 1 300px;min-width:0}
+.est-cab-tit .card-title{font-size:14px}
+.est-cab-acoes{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.est-abas{display:flex;flex-wrap:wrap;gap:0 4px;border-bottom:1px solid var(--border)}
+.est-abas .atend-tab{white-space:nowrap}
+.est-filtros{display:grid;grid-template-columns:minmax(240px,2fr) repeat(2,minmax(170px,1fr));gap:8px;max-width:900px}
+.est-filtros .form-input{width:100%;min-width:0;height:36px;padding:0 10px;font-size:12px}
+@media (max-width:900px){.est-filtros{grid-template-columns:1fr 1fr}.est-filtros .est-f-busca{grid-column:1/-1}}
 .sol-cab-topo{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .sol-cab-tit{flex:1 1 360px;min-width:0}
 .sol-cab-tit .card-title{font-size:14px}
@@ -2988,14 +2999,20 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 
         <!-- TABELA -->
         <div class="card">
-          <div class="card-header" style="flex-wrap:wrap">
-            <div><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
-              <button id="btnPrevisaoCompra" class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()"><svg class=ic aria-hidden=true><use href=#i-bell></use></svg> Previsão de Compra</button>
-            <!-- quebra linha: com nomes de armazém longos os botões passavam da largura do cartão -->
-            <div class="card-actions" style="flex-wrap:wrap;justify-content:flex-end">
-              <div id="estAbasArmazem" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-              <input class="search-box" type="text" id="estBusca" placeholder="Buscar item..." oninput="renderEstoque()">
-              <select class="form-input" id="estFiltroStatus" style="width:140px;font-size:11px" onchange="renderEstoque()">
+          <!-- Cabeçalho (18/11/2026): título e botões em cima, abas dos armazéns numa linha própria, filtros em grade -->
+          <div class="card-header est-cab">
+            <div class="est-cab-topo">
+              <div class="est-cab-tit"><div class="card-title">Consulta de Estoque</div><div class="card-sub">Saldo atual por armazém</div></div>
+              <div class="est-cab-acoes">
+                <button id="btnPrevisaoCompra" class="btn btn-ghost" style="color:#f59e0b;border-color:#f59e0b" onclick="abrirPrevisaoCompra()"><svg class=ic aria-hidden=true><use href=#i-bell></use></svg> Previsão de Compra</button>
+                <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
+                <button class="btn btn-ghost" id="btnEstExcel" onclick="exportarEstoqueExcel()" title="Baixa o que está na tela: todos os armazéns (lado a lado e um por aba) ou só o armazém escolhido"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
+              </div>
+            </div>
+            <div id="estAbasArmazem" class="est-abas" role="tablist" aria-label="Armazém"></div>
+            <div class="est-filtros">
+              <input class="form-input est-f-busca" type="text" id="estBusca" placeholder="Buscar item (nome ou código)..." oninput="renderEstoque()" aria-label="Buscar item">
+              <select class="form-input" id="estFiltroStatus" onchange="renderEstoque()" aria-label="Status">
                 <option value="">Todos os status</option>
                 <option value="critico">Crítico</option>
                 <option value="baixo">Baixo</option>
@@ -3003,11 +3020,9 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                 <option value="zerado">Zerado</option>
                 <option value="acima">Acima do máximo</option>
               </select>
-              <select class="form-input" id="estFiltroCategoria" style="width:160px;font-size:11px" onchange="renderEstoque()" title="Filtrar por categoria">
+              <select class="form-input" id="estFiltroCategoria" onchange="renderEstoque()" title="Filtrar por categoria" aria-label="Categoria">
                 <option value="">Todas as categorias</option>
               </select>
-              <button class="btn btn-ghost" onclick="carregarEstoque()">↻ Atualizar</button>
-              <button class="btn btn-ghost" id="btnEstExcel" onclick="exportarEstoqueExcel()" title="Baixa o que está na tela: todos os armazéns (lado a lado e um por aba) ou só o armazém escolhido"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
             </div>
           </div>
           <table style="table-layout:fixed;width:100%" id="estTabela">
