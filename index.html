@@ -5927,6 +5927,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
                   oninput="renderRecuperados()" onkeydown="if(event.key==='Enter')buscarRecupSerial()">
                 <button class="btn btn-ghost" onclick="buscarRecupSerial()"><svg class=ic aria-hidden=true><use href=#i-search></use></svg> Buscar Serial</button>
                 <button class="btn btn-ghost" onclick="carregarRecuperados()">↻</button>
+                <button class="btn btn-primary" id="btnTrazerDescarte" onclick="abrirTrazerDescarte()"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg> Trazer do descarte</button>
               </div>
             </div>
             <div id="recupBarraSelecao" class="hidden" style="display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(59,130,246,.08);border-bottom:1px solid var(--border)">
@@ -7252,6 +7253,51 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 </div>
 
 <!-- MODAL RECUPERAR ITEM NR10 -->
+<!-- Trazer do descarte (23/11/2026): material que foi para o descarte e deu para aproveitar volta ao estoque -->
+<div class="modal-overlay hidden" id="modalTrazerDescarte">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-header">
+      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg> Trazer do descarte</div><div style="font-size:11px;color:var(--text-3)">Material que estava no descarte e deu para aproveitar volta ao estoque</div></div>
+      <button class="modal-close" onclick="document.getElementById('modalTrazerDescarte').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div>
+        <label class="form-label" for="tdItem">Item *</label>
+        <input id="tdBusca" class="form-input" placeholder="Buscar item pelo nome ou código..." oninput="tdFiltrarItens(this.value)" autocomplete="off" style="margin-bottom:6px">
+        <select id="tdItem" class="form-input" onchange="tdEscolherItem()"></select>
+        <div id="tdSemItens" class="hidden" style="font-size:12px;color:var(--text-3);padding:8px 0">Nenhum item sem serial no descarte desta filial.</div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label class="form-label" for="tdQtd">Quantidade recuperada *</label>
+          <input id="tdQtd" class="form-input" type="number" min="1" step="1" placeholder="0">
+          <div id="tdSaldoInfo" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+        </div>
+        <div style="flex:1;min-width:180px">
+          <label class="form-label" for="tdArmazem">Armazém que recebe *</label>
+          <select id="tdArmazem" class="form-input"></select>
+        </div>
+      </div>
+      <div>
+        <label class="form-label" for="tdBase">De onde veio *</label>
+        <select id="tdBase" class="form-input"></select>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px">A base onde a sucata está (Resíduos por Base). Se ela já foi coletada, escolha "Já estava no armazém".</div>
+      </div>
+      <div>
+        <label class="form-label" for="tdObs">Observação</label>
+        <input id="tdObs" class="form-input" maxlength="300" placeholder="Ex.: lavadas e costuradas">
+      </div>
+      <div style="font-size:11px;color:var(--text-3);padding:8px;border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-sm);background:rgba(34,197,94,.05)">
+        <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ao confirmar: o estoque do armazém sobe, o descarte (e o saldo da base escolhida) desce na mesma quantidade, fica uma entrada "Recuperado do descarte" e a economia entra no Financeiro.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="document.getElementById('modalTrazerDescarte').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" id="tdBtnConfirmar" style="background:#22c55e;border-color:#22c55e" onclick="confirmarTrazerDescarte()"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Trazer para o estoque</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modalRecuperar">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -28784,6 +28830,81 @@ async function confirmarInutilizarSemSerial(id, item) {
   } else toast(res?.erro || 'Erro ao inutilizar', 'error');
 }
 
+// ── TRAZER DO DESCARTE (23/11/2026) ──
+// Item sem serial que estava no descarte (troca por desgaste/dano) e deu para aproveitar: volta ao
+// estoque, sai do descarte e da base onde a sucata está. Antes era entrada avulsa e o descarte ficava errado.
+let _tdItens = [];
+async function abrirTrazerDescarte() {
+  const modal = document.getElementById('modalTrazerDescarte');
+  document.getElementById('tdBusca').value = '';
+  document.getElementById('tdQtd').value = '';
+  document.getElementById('tdObs').value = '';
+  document.getElementById('tdSaldoInfo').textContent = 'Carregando o descarte...';
+  document.getElementById('tdItem').innerHTML = '';
+  document.getElementById('tdBase').innerHTML = '';
+  // Armazéns do usuário (o principal primeiro escolhido)
+  let armazensUser = _armazens || [];
+  if (GCA.usuario?.role !== 'admin') {
+    let userArms = []; try { userArms = JSON.parse(GCA.usuario?.armazens || '[]'); } catch {}
+    if (Array.isArray(userArms) && userArms.length) armazensUser = armazensUser.filter(a => userArms.includes(a.id));
+  }
+  const principal = armazensUser.find(a => a.principal) || armazensUser[0];
+  document.getElementById('tdArmazem').innerHTML = armazensUser.map(a => `<option value="${a.id}" ${principal && a.id === principal.id ? 'selected' : ''}>${escHtml(a.nome)}</option>`).join('');
+  modal.classList.remove('hidden');
+  const res = await api('/laudos/recuperados/descarte');
+  if (!res?.ok) { document.getElementById('tdSaldoInfo').textContent = res?.erro || 'Erro ao carregar o descarte'; return; }
+  _tdItens = res.itens || [];
+  tdFiltrarItens('');
+}
+
+function tdFiltrarItens(q) {
+  const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const termos = norm(q).split(/\s+/).filter(Boolean);
+  const lista = _tdItens.filter(i => !termos.length || termos.every(t => norm(`${i.descricao} ${i.codigo}`).includes(t)));
+  const sel = document.getElementById('tdItem');
+  const atual = sel.value;
+  document.getElementById('tdSemItens').classList.toggle('hidden', !!_tdItens.length);
+  sel.innerHTML = lista.length
+    ? lista.map(i => `<option value="${escHtml(i.item_id)}" ${i.item_id === atual ? 'selected' : ''}>${escHtml(i.descricao)}${i.codigo ? ' · ' + escHtml(i.codigo) : ''} — ${i.saldo} ${escHtml(i.un_med)} no descarte</option>`).join('')
+    : `<option value="">${_tdItens.length ? 'Nenhum item com essa busca' : 'Nada no descarte'}</option>`;
+  tdEscolherItem();
+}
+
+function tdEscolherItem() {
+  const it = _tdItens.find(i => i.item_id === document.getElementById('tdItem').value);
+  const qtd = document.getElementById('tdQtd'), base = document.getElementById('tdBase'), info = document.getElementById('tdSaldoInfo');
+  if (!it) { info.textContent = ''; base.innerHTML = ''; qtd.removeAttribute('max'); return; }
+  qtd.max = it.saldo;
+  info.textContent = `No descarte: ${it.saldo} ${it.un_med}`;
+  const bases = it.bases || [];
+  base.innerHTML = (bases.length > 1 ? '<option value="">Selecione...</option>' : '')
+    + bases.map(b => `<option value="${escHtml(b.base)}">${escHtml(b.base)} — ${b.saldo} no descarte</option>`).join('')
+    + '<option value="__ARMAZEM__">Já estava no armazém (base já coletada)</option>';
+  base.value = bases.length === 1 ? bases[0].base : (bases.length ? '' : '__ARMAZEM__');
+}
+
+async function confirmarTrazerDescarte() {
+  const it = _tdItens.find(i => i.item_id === document.getElementById('tdItem').value);
+  const qtd = Number(document.getElementById('tdQtd').value);
+  const armazem_id = document.getElementById('tdArmazem').value;
+  const baseSel = document.getElementById('tdBase').value;
+  if (!it) { toast('Escolha o item', 'warn'); return; }
+  if (!(qtd > 0)) { toast('Informe a quantidade recuperada', 'warn'); return; }
+  if (qtd > it.saldo) { toast(`O descarte tem só ${it.saldo} de ${it.descricao}`, 'warn'); return; }
+  if (!armazem_id) { toast('Escolha o armazém que recebe', 'warn'); return; }
+  if (!baseSel) { toast('Escolha de onde veio o material', 'warn'); return; }
+  const base = baseSel === '__ARMAZEM__' ? '' : baseSel;
+  const daBase = (it.bases || []).find(b => b.base === base);
+  if (base && daBase && qtd > daBase.saldo) { toast(`A base ${base} tem só ${daBase.saldo} no descarte`, 'warn'); return; }
+  const armNome = document.getElementById('tdArmazem').selectedOptions[0]?.textContent || '';
+  const res = await api('/laudos/recuperados/do-descarte', { method: 'POST',
+    body: JSON.stringify({ item_id: it.item_id, quantidade: qtd, armazem_id, base, obs: document.getElementById('tdObs').value.trim() }) });
+  if (res?.ok) {
+    document.getElementById('modalTrazerDescarte').classList.add('hidden');
+    toast(`${qtd} ${it.descricao} voltaram ao estoque de ${armNome}. No descarte agora: ${res.saldo_descarte}.`, 'success', 6000);
+  } else toast(res?.erro || 'Erro ao trazer do descarte', 'error');
+}
+
 function abrirModalRecuperar(idAtivo, serial, item, remessaItemId) {
   document.getElementById('recupIdAtivo').value         = idAtivo;
   document.getElementById('recupRemessaItemId').value   = remessaItemId || '';
@@ -33694,7 +33815,7 @@ const finR$ = (n) => (Number(n) || 0).toLocaleString('pt-BR', { style: 'currency
 const finNum = (n) => (Number(n) || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 const finData = (d) => d ? new Date(String(d).length === 10 ? d + 'T12:00:00' : d).toLocaleDateString('pt-BR') : '—';
 const FIN_ORIGEM = {
-  LAUDO: 'Aprovado no laudo', SEM_LAUDO: 'Recuperado sem laudo', SEM_SERIAL: 'Recuperado (sem serial)',
+  LAUDO: 'Aprovado no laudo', SEM_LAUDO: 'Recuperado sem laudo', SEM_SERIAL: 'Recuperado (sem serial)', DESCARTE: 'Recuperado do descarte',
   REPROVADO_LAUDO: 'Reprovado no laudo', INUTILIZADO_RECUPERACAO: 'Inutilizado na recuperação', DIVERGENCIA_SERIAL: 'Divergência de serial', DESCARTE_SERIAL: 'Descarte de serial',
   MANUTENCAO: 'Manutenção (evitou comprar novo)',
 };
