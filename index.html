@@ -111,6 +111,9 @@ input,select,textarea{font-family:var(--font-main);}
 .pb-kpi .d{font-size:11px;color:var(--text-2);margin-top:3px}
 .pb-kpi.alerta{border-color:rgba(248,113,113,.45)} .pb-kpi.alerta .v{color:var(--red)}
 .pb-kpi.aviso{border-color:rgba(251,191,36,.45)} .pb-kpi.aviso .v{color:var(--yellow)}
+.pb-kpi.bateu{border-color:rgba(34,197,94,.45)} .pb-kpi.bateu .v{color:#22c55e}
+.pb-meta-ok{color:#22c55e;font-weight:700}.pb-meta-nao{color:var(--red);font-weight:700}.pb-meta-sem{color:var(--text-3)}
+.pb-metas-form input{width:84px;font-size:12px;text-align:right}
 .pb-secao{font-size:12px;font-weight:700;color:var(--text-2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
 .pb-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px}
 .pb-card{background:var(--bg-card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:var(--radius-lg);padding:16px 18px;display:flex;flex-direction:column;gap:12px;animation:fadeUp .35s ease both}
@@ -1389,6 +1392,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
   </div>
   <nav class="pb-abas" id="pbAbas">
     <button data-aba="geral" onclick="pbAba('geral')">Visão geral</button>
+    <button data-aba="metas" onclick="pbAba('metas')">Metas</button>
     <button data-aba="financeiro" onclick="pbAba('financeiro')">Financeiro</button>
     <button data-aba="itens" onclick="pbAba('itens')">Itens e estoque</button>
     <button data-aba="graficos" onclick="pbAba('graficos')">Gráficos de estoque</button>
@@ -7887,6 +7891,7 @@ const pbPeriodoTexto = () => `${formatarData(PB.de)} a ${formatarData(PB.ate)}`;
 // O resumo vem sempre com todas as filiais (os rankings comparam todas); o resto vem sob demanda
 async function pbRecarregar(silencioso) {
   PB.fin = null; PB.pessoas = null; PB.inv = null; PB.log = null; PB.itens = null;   // ↻ refaz tudo, inclusive Itens e estoque
+  PB.metas = null; if (!silencioso) PB.metasNovo = true;   // metas: o ↻ pede a conta nova ao servidor
   PBG.dados = null; if (!silencioso) PBG.forcar = true;   // gráficos de estoque: o ↻ pede ao servidor a conta nova (sem a guardada)
   const corpo = document.getElementById('pbCorpo');
   if (!silencioso) corpo.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Somando as filiais…</div>';
@@ -7972,7 +7977,7 @@ function pbRender() {
       <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">${pbTituloEscopo()}</div>
       <div style="font-size:12px;color:var(--text-3)">${pbFiliais().length} filial(is) · atualizado às ${new Date(PB.resumo.gerado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
     </div>`;
-  const abas = { geral: pbAbaGeral, financeiro: pbAbaFinanceiro, itens: pbAbaItens, graficos: pbAbaGraficos, operacao: pbAbaOperacao, logistica: pbAbaLogistica, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
+  const abas = { geral: pbAbaGeral, metas: pbAbaMetas, financeiro: pbAbaFinanceiro, itens: pbAbaItens, graficos: pbAbaGraficos, operacao: pbAbaOperacao, logistica: pbAbaLogistica, inventarios: pbAbaInventarios, pessoas: pbAbaPessoas, rankings: pbAbaRankings };
   corpo.innerHTML = cab + '<div id="pbAbaCorpo"></div>';
   (abas[PB.aba] || pbAbaGeral)(document.getElementById('pbAbaCorpo'));
 }
@@ -8134,6 +8139,156 @@ async function pbAbrirDetalhe(tipo, titulo, filial) {
   const colunas = res.colunas.map(c => ({ ...c, tipo: Object.keys(tipos).find(t => tipos[t].includes(c.key)),
     cls: c.key === 'situacao' ? (l) => (l.situacao === 'zerado' || l.situacao === 'vencido' ? 'pb-sit-zerado' : l.situacao === 'abaixo' ? 'pb-sit-abaixo' : '') : null }));
   pbGaveta(titulo, `${escHtml(nomeF)} · ${pbPeriodoTexto()}`, [{ titulo: 'Lista', colunas, linhas: res.linhas }]);
+}
+
+// ── METAS (23/11/2026) ──
+// 7 indicadores por filial × a meta da filial. Tempos em dias úteis (segunda a sexta, 24 h).
+// Bateu = verde, não bateu = vermelho, sem meta = cinza. Clique no número para ver a lista.
+const PB_COR_FILIAL = ['#7c83f5', '#d97706', '#14b8a6', '#ec4899', '#84cc16', '#0ea5e9', '#f43f5e', '#a855f7', '#64748b'];
+function pbHorasUteis(h) {
+  if (h == null) return '—';
+  if (h < 1) return `${Math.round(h * 60)} min`;
+  if (h < 24) return `${String(Math.round(h * 10) / 10).replace('.', ',')} h`;
+  const d = Math.floor(h / 24), r = Math.round(h - d * 24);
+  return r ? `${d} d ${r} h` : `${d} d`;
+}
+function pbMetaFmt(ind, v) {
+  if (v == null) return '—';
+  if (ind.medida === 'pct') return pbPct(v);
+  if (ind.medida === 'qtd') return pbNum(v);
+  return pbHorasUteis(v);
+}
+// Junta filiais: tempos = soma ÷ quantidade; % = atendidas ÷ feitas; zerados = soma
+function pbMetaJuntar(ind, partes) {
+  const soma = partes.reduce((t, x) => t + (Number(x?.soma) || 0), 0), n = partes.reduce((t, x) => t + (Number(x?.n) || 0), 0);
+  if (!n) return null;
+  if (ind.medida === 'pct') return Math.round(soma / n * 1000) / 10;
+  if (ind.medida === 'qtd') return soma;
+  return Math.round(soma / n * 10) / 10;
+}
+const pbMetaBateu = (ind, v, meta) => (v == null || meta == null) ? null : (ind.sentido === 'maior' ? v >= meta : v <= meta);
+
+async function pbAbaMetas(el) {
+  if (!PB.metas || PB.metas._chave !== `${PB.de}|${PB.ate}`) {
+    el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Calculando os indicadores das filiais…</div>';
+    const res = await api(`/painel-brasil/metas?${pbQuery(PB.metasNovo ? { novo: '1' } : {})}`);
+    PB.metasNovo = false;
+    if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar as metas')}</div>`; return; }
+    PB.metas = { ...res, _chave: `${PB.de}|${PB.ate}` };
+    if (PB.aba !== 'metas') return;
+  }
+  const M = PB.metas, inds = M.indicadores;
+  const slugs = pbFiliais().map(f => f.slug);
+  const fs = M.filiais.filter(f => slugs.includes(f.slug));
+  const umaFilial = PB.filial !== 'todas' && fs.length === 1;
+  const kpis = inds.map((ind, i) => {
+    const v = pbMetaJuntar(ind, fs.map(f => f.total[ind.chave]));
+    const n = fs.reduce((t, f) => t + (f.total[ind.chave]?.n || 0), 0);
+    let det, cls = '';
+    if (umaFilial) {
+      const meta = fs[0].metas[ind.chave];
+      const b = pbMetaBateu(ind, v, meta);
+      det = meta == null ? 'sem meta' : `meta ${ind.sentido === 'maior' ? 'mínima' : 'máxima'} ${pbMetaFmt(ind, meta)} · ${b ? 'bateu' : 'não bateu'}`;
+      cls = b == null ? '' : b ? 'bateu' : 'alerta';
+    } else {
+      const comMeta = fs.filter(f => f.metas[ind.chave] != null && f.total[ind.chave]?.valor != null);
+      const bateram = comMeta.filter(f => pbMetaBateu(ind, f.total[ind.chave].valor, f.metas[ind.chave])).length;
+      det = comMeta.length ? `${bateram} de ${comMeta.length} filial(is) bateram a meta` : 'nenhuma filial com meta';
+      cls = comMeta.length ? (bateram === comMeta.length ? 'bateu' : 'alerta') : '';
+    }
+    const base = ind.chave === 'sol_atendidas' ? `${pbNum(fs.reduce((t, f) => t + (f.total[ind.chave]?.soma || 0), 0))} de ${pbNum(n)} pedidos`
+      : ind.chave === 'itens_zerados' ? (fs[0]?.corte_zerados ? `em ${formatarData(fs[0].corte_zerados)}` : '') : `${pbNum(n)} caso(s)`;
+    return pbKpi(escHtml(ind.titulo), pbMetaFmt(ind, v), `${base}${base ? ' · ' : ''}${det}`, cls, `pbMetasDetalhe('${ind.chave}')`, i);
+  }).join('');
+  const celula = (f, ind) => {
+    const v = f.total[ind.chave]?.valor, meta = f.metas[ind.chave], b = pbMetaBateu(ind, v, meta);
+    const cls = b == null ? 'pb-meta-sem' : b ? 'pb-meta-ok' : 'pb-meta-nao';
+    return `<td class="num"><span class="pb-td-clica ${cls}" onclick="pbMetasDetalhe('${ind.chave}','${escJs(f.slug)}')">${pbMetaFmt(ind, v)}</span>
+      <div style="font-size:10px;color:var(--text-3)">meta ${meta == null ? '—' : pbMetaFmt(ind, meta)}</div></td>`;
+  };
+  const indGraf = PB.metasGraf && inds.some(i => i.chave === PB.metasGraf) ? PB.metasGraf : inds[1].chave;
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--text-3);flex:1;min-width:240px">Tempos em dias úteis: segunda a sexta, as 24 horas (sábado e domingo não contam). Verde = bateu a meta, vermelho = não bateu. Clique num número para ver a lista.</div>
+      ${M.pode_editar ? '<button class="btn btn-primary" id="pbMetasEditar" onclick="pbMetasEditar()"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar metas</button>' : ''}
+    </div>
+    <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">${kpis}</div>
+    <div class="pb-bloco" style="margin-top:14px"><div class="pb-secao">Por filial — realizado × meta</div>
+      <div class="pb-tabela-wrap"><table class="pb-tabela" id="pbMetasTabela"><thead><tr><th>Filial</th>${inds.map(ind => `<th class="num" title="${escHtml(ind.descricao)}">${escHtml(ind.titulo)}</th>`).join('')}</tr></thead>
+      <tbody>${fs.map(f => `<tr><td style="font-weight:700">${escHtml(f.nome)}</td>${inds.map(ind => celula(f, ind)).join('')}</tr>`).join('')}</tbody></table></div>
+    </div>
+    <div class="pb-graf" style="margin-top:14px">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="pb-secao" style="margin:0">Mês a mês</div>
+        <select class="form-input" id="pbMetasGrafSel" style="width:auto;font-size:12px" onchange="PB.metasGraf=this.value;pbRender()">${inds.map(ind => `<option value="${ind.chave}" ${ind.chave === indGraf ? 'selected' : ''}>${escHtml(ind.titulo)}</option>`).join('')}</select></div>
+      <div style="height:280px;margin-top:8px"><canvas id="pbGrafMetas"></canvas></div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:8px;line-height:1.6">${inds.map(ind => `<b>${escHtml(ind.titulo)}:</b> ${escHtml(ind.descricao)}`).join('<br>')}</div>`;
+  if (!window.Chart) return;
+  const ind = inds.find(i => i.chave === indGraf);
+  const tema = getComputedStyle(document.documentElement);
+  const texto = tema.getPropertyValue('--text-2').trim() || '#94a3b8', grade = tema.getPropertyValue('--border').trim() || '#1e1e2e';
+  const conv = (v) => v == null ? null : ind.medida === 'horas' ? Math.round(v * 10) / 10 : v;
+  const cor = (slug) => PB_COR_FILIAL[Math.max(0, M.filiais.findIndex(x => x.slug === slug)) % PB_COR_FILIAL.length];
+  const datasets = fs.map(f => ({ label: f.nome, data: M.meses.map(m => conv(f.meses[m]?.[ind.chave]?.valor ?? null)), borderColor: cor(f.slug), backgroundColor: cor(f.slug),
+    borderWidth: 2, pointRadius: 4, tension: .25, spanGaps: true }));
+  if (umaFilial && fs[0].metas[ind.chave] != null) datasets.push({ label: 'Meta', data: M.meses.map(() => fs[0].metas[ind.chave]), borderColor: texto, borderDash: [6, 4], borderWidth: 2, pointRadius: 0 });
+  const opts = pbOpcoesGrafico(texto, grade);
+  opts.plugins.tooltip = { callbacks: { label: (c) => `${c.dataset.label}: ${pbMetaFmt(ind, c.raw)}` } };
+  opts.scales.y.ticks.callback = (v) => ind.medida === 'pct' ? `${v}%` : ind.medida === 'horas' ? `${v} h` : v;
+  PB.charts.metas = new Chart(document.getElementById('pbGrafMetas'), { type: 'line', options: opts,
+    data: { labels: M.meses.map(m => { const [a, mm] = m.split('-'); return `${['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'][Number(mm) - 1]}/${a.slice(2)}`; }), datasets } });
+}
+
+async function pbMetasDetalhe(chave, filial) {
+  const ind = PB.metas?.indicadores.find(i => i.chave === chave);
+  if (!ind) return;
+  const f = filial || PB.filial;
+  pbGaveta(ind.titulo, 'Carregando…', [{ html: '<div class="pb-carregando"><div class="spinner" style="margin:0 auto"></div></div>' }]);
+  const res = await api(`/painel-brasil/metas/detalhe?${pbQuery({ indicador: chave, filial: f })}`);
+  if (!document.getElementById('pbGaveta')) return;
+  if (!res?.ok) { pbGaveta(ind.titulo, '', [{ html: `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar')}</div>` }]); return; }
+  const nomeF = f === 'todas' ? 'Brasil' : (PB.metas.filiais.find(x => x.slug === f)?.nome || f);
+  const colunas = res.colunas.map(c => c.key === 'horas' ? { ...c, num: true } : c);
+  pbGaveta(ind.titulo, `${escHtml(nomeF)} · ${pbPeriodoTexto()} · ${escHtml(ind.descricao)}`, [{ titulo: 'Lista', colunas, linhas: res.linhas }]);
+}
+
+// Editar as metas: uma linha por indicador, uma coluna por filial (tempos em horas de dias úteis)
+function pbMetasEditar() {
+  const M = PB.metas; if (!M?.pode_editar) return;
+  const inds = M.indicadores;
+  const rotulo = (ind) => ind.medida === 'pct' ? '% mínima' : ind.medida === 'qtd' ? 'quantidade máxima' : 'horas máximas';
+  const html = `<div style="font-size:12px;color:var(--text-3);margin-bottom:10px">Deixe em branco para não ter meta. Tempos em horas de dias úteis (24 h = 1 dia útil; 48 h = 2 dias).</div>
+    <div class="pb-tabela-wrap pb-metas-form"><table class="pb-tabela"><thead><tr><th>Indicador</th>${M.filiais.map(f => `<th class="num">${escHtml(f.nome)}</th>`).join('')}</tr></thead>
+    <tbody>${inds.map(ind => `<tr><td><div style="font-weight:700">${escHtml(ind.titulo)}</div><div style="font-size:10px;color:var(--text-3)">${rotulo(ind)}</div></td>${M.filiais.map(f => `<td class="num">
+      <input type="number" class="form-input pb-meta-in" data-slug="${escHtml(f.slug)}" data-chave="${ind.chave}" min="0" ${ind.medida === 'pct' ? 'max="100" step="0.1"' : ind.medida === 'qtd' ? 'step="1"' : 'step="0.5"'}
+        value="${f.metas[ind.chave] ?? ''}" placeholder="—"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost" onclick="pbFecharGaveta()">Cancelar</button>
+      <button class="btn btn-primary" id="pbMetasSalvar" onclick="pbMetasSalvar(this)"><svg class=ic aria-hidden=true><use href=#i-check></use></svg> Salvar metas</button>
+    </div>`;
+  pbGaveta('Editar metas', 'Metas por filial — valem para o período que estiver escolhido no painel', [{ html }]);
+}
+
+async function pbMetasSalvar(btn) {
+  const M = PB.metas;
+  const mudou = [];
+  for (const f of M.filiais) {
+    const metas = {};
+    document.querySelectorAll(`#pbGaveta .pb-meta-in[data-slug="${CSS.escape(f.slug)}"]`).forEach(inp => { if (inp.value.trim() !== '') metas[inp.dataset.chave] = Number(inp.value); });
+    const antes = Object.fromEntries(M.indicadores.map(i => [i.chave, f.metas?.[i.chave]]).filter(([, v]) => v != null));
+    const agora = Object.fromEntries(M.indicadores.map(i => [i.chave, metas[i.chave]]).filter(([, v]) => v != null));
+    if (JSON.stringify(agora) !== JSON.stringify(antes)) mudou.push({ filial: f.slug, metas });
+  }
+  if (!mudou.length) { pbFecharGaveta(); return; }
+  btn.disabled = true;
+  for (const m of mudou) {
+    const res = await api('/painel-brasil/metas', { method: 'PUT', body: JSON.stringify(m) });
+    if (!res?.ok) { btn.disabled = false; toast(res?.erro || 'Erro ao salvar as metas', 'error'); return; }
+    const f = M.filiais.find(x => x.slug === m.filial); if (f) f.metas = res.metas;
+  }
+  pbFecharGaveta();
+  toast(`Metas salvas (${mudou.length} filial(is)).`, 'success');
+  pbRender();
 }
 
 // ── FINANCEIRO ──
@@ -22052,7 +22207,8 @@ function abrirPermissoes(id) {
   }
   // Somente Painel Brasil (13/10/2026): não opera filial; a única escolha é ver ou não o financeiro
   if (u.role === 'painel') {
-    _usrPermissoes = { painel_brasil: true, ...(_usrPermissoes.painel_financeiro === true ? { painel_financeiro: true } : {}) };
+    _usrPermissoes = { painel_brasil: true, ...(_usrPermissoes.painel_financeiro === true ? { painel_financeiro: true } : {}),
+      ...(_usrPermissoes.editar_metas_painel === true ? { editar_metas_painel: true } : {}) };
     _usrExcecoes = {};
     document.querySelectorAll('#permissoesPanel .card-actions button').forEach(b => { b.style.display = ''; });
     document.getElementById('permissoesGrid').innerHTML = `<div style="grid-column:span 3;padding:14px;border:1px solid var(--border);border-radius:var(--radius-md)">
@@ -22060,7 +22216,10 @@ function abrirPermissoes(id) {
       <div style="font-size:11px;color:var(--text-3);margin-bottom:10px">Entra direto no Painel Brasil, com as filiais marcadas no cadastro. Não opera nenhuma filial.</div>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer">
         <input type="checkbox" id="permPainelFin" ${_usrPermissoes.painel_financeiro === true ? 'checked' : ''}
-          onchange="_usrPermissoes = { painel_brasil: true, ...(this.checked ? { painel_financeiro: true } : {}) }"> Ver o Financeiro dentro do painel</label>
+          onchange="usrPainelPermissoes()"> Ver o Financeiro dentro do painel</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);cursor:pointer;margin-top:6px">
+        <input type="checkbox" id="permPainelMetas" ${_usrPermissoes.editar_metas_painel === true ? 'checked' : ''}
+          onchange="usrPainelPermissoes()"> Editar as metas do painel</label>
     </div>`;
     return;
   }
@@ -22083,7 +22242,13 @@ function abrirPermissoes(id) {
 // O padrão vale em todas as filiais do usuário. Numa filial, "usar permissões diferentes aqui"
 // cria uma lista própria, que substitui o padrão só ali. Painel Brasil e Gerenciar usuários valem
 // para o sistema todo e só existem no padrão. A regra é a mesma do servidor (permissoes_filial.js).
-const USR_PERMS_GLOBAIS = ['painel_brasil', 'gerenciar_usuarios'];
+const USR_PERMS_GLOBAIS = ['painel_brasil', 'gerenciar_usuarios', 'editar_metas_painel'];
+// Perfil "Somente Painel Brasil": as duas caixas (Financeiro e metas) montam as permissões dele
+function usrPainelPermissoes() {
+  _usrPermissoes = { painel_brasil: true,
+    ...(document.getElementById('permPainelFin')?.checked ? { painel_financeiro: true } : {}),
+    ...(document.getElementById('permPainelMetas')?.checked ? { editar_metas_painel: true } : {}) };
+}
 let _usrExcecoes = {}, _usrPermFilial = '', _usrFiliaisAlvo = [], _usrPermAlvo = null;
 function usrLerObjeto(v) {
   if (!v) return {};
@@ -22426,7 +22591,8 @@ const PERMISSOES_SCHEMA = {
     ver_laudos_viatura:'Laudos de Viaturas',
     ver_descarte:'Descarte de materiais', ver_recuperados:'Recuperados',
     ver_indicadores:'Ver indicadores',
-    painel_brasil:'Painel Brasil (todas as filiais da pessoa, lado a lado)'
+    painel_brasil:'Painel Brasil (todas as filiais da pessoa, lado a lado)',
+    editar_metas_painel:'Editar as metas do Painel Brasil (todas as filiais da pessoa)'
   }},
   cadastros: { label:'Cadastros', icon:'<svg class=ic aria-hidden=true><use href=#i-folder-kanban></use></svg>', itens:{
     cadastrar_itens:'Cadastrar/editar itens', cadastrar_colaboradores:'Cadastrar/editar colaboradores',
