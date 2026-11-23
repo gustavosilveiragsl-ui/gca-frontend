@@ -24805,75 +24805,132 @@ function _temSerial(it) {
   return it.requer_ensaio && it.possui_serie;
 }
 
-// Dispara ao mudar a quantidade ou destino num item com serial — renderiza seletores de serial
+// Dispara ao mudar a quantidade num item com serial — busca (uma vez) os seriais do nome dele e monta a escolha
 async function _atualizarSeriaisDev(itemId, saldoMax, parItem) {
   const row = document.querySelector(`.dev-row[data-item-id="${itemId}"]`);
   if (!row) return;
-  const qtdInput = row.querySelector('.dev-qtd');
   const serialBox = row.querySelector('.dev-serial-box');
   if (!serialBox) return;
+  const qtd = parseInt(row.querySelector('.dev-qtd')?.value) || 0;
+  if (qtd <= 0) { _renderSeriaisDev(row); return; }
+  if (!row._seriaisDev) {
+    serialBox.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:4px">Carregando seriais...</div>';
+    const res = await api(`/consulta/colaborador/${_consultaColabAtual}/seriais-item/${itemId}`);
+    if (!res?.ok) { serialBox.innerHTML = '<div style="font-size:11px;color:#ef4444;padding:4px">Erro ao carregar os seriais — feche e abra a devolução de novo</div>'; return; }
+    row._seriaisDev = res.seriais || [];
+  }
+  _renderSeriaisDev(row);
+}
 
-  const qtd = parseInt(qtdInput?.value) || 0;
-  if (qtd <= 0) { serialBox.innerHTML = ''; return; }
+// O que já foi marcado/digitado na linha — para não perder ao mudar a quantidade ou o modo
+function _estadoSeriaisDev(row) {
+  const marcados = {};
+  row.querySelectorAll('.dev-serial-cb').forEach(cb => {
+    marcados[cb.dataset.serial] = { checked: cb.checked, destino: cb.closest('span')?.querySelector('.dev-serial-destino')?.value };
+  });
+  const digitados = [...row.querySelectorAll('.dev-serial-manual')].map(inp => ({
+    serial: inp.value, destino: inp.closest('.dev-serial-linha')?.querySelector('.dev-serial-manual-destino')?.value,
+  })).filter(d => d.serial.trim());
+  const descarte = {};
+  row.querySelectorAll('.dev-serial-descarte').forEach(cb => { descarte[cb.dataset.serial] = cb.checked; });
+  return { marcados, digitados, descarte };
+}
 
-  // Quantos seriais precisamos? Para par: qtd * 2, senão qtd
-  const qtdSeriais = parItem ? qtd * 2 : qtd;
+// Troca entre a lista do nome dele e "os seriais devolvidos são diferentes" (23/11/2026)
+function _modoSeriaisDev(itemId, modo) {
+  const row = document.querySelector(`.dev-row[data-item-id="${itemId}"]`);
+  if (!row) return;
+  row.dataset.modoSerial = modo;
+  _renderSeriaisDev(row);
+}
 
-  // Busca seriais disponíveis deste colaborador para este item
-  serialBox.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:4px">Carregando seriais...</div>';
-  const res = await api(`/consulta/colaborador/${_consultaColabAtual}/seriais-item/${itemId}`);
-  const seriais = res?.seriais || [];
+// Monta a escolha dos seriais de um item:
+// - sem serial no nome dele: digita todos (o servidor cadastra no NR10);
+// - lista do nome dele (marcar) + campos para digitar os que faltam quando ele tem menos que o necessário
+//   (ex.: luva PAR com 1 serial só no nome dele);
+// - "diferentes": digita os devolvidos; os do nome dele que não voltaram podem ir para o descarte (perda).
+function _renderSeriaisDev(row) {
+  const box = row.querySelector('.dev-serial-box');
+  if (!box) return;
+  const itemId = row.dataset.itemId;
+  const ePar = row.dataset.par === '1';
+  const qtd = parseInt(row.querySelector('.dev-qtd')?.value) || 0;
+  const antes = _estadoSeriaisDev(row);
+  if (qtd <= 0) { box.innerHTML = ''; return; }
+  const qtdSeriais = ePar ? qtd * 2 : qtd;
+  const seriais = row._seriaisDev || [];
+  const modo = !seriais.length ? 'digitar' : (row.dataset.modoSerial === 'diferentes' ? 'diferentes' : 'lista');
+  const nomeColab = escHtml(_dadosColabAtual?.colaborador?.nome || 'colaborador');
+  const opcoes = (v) => [['ESTOQUE','Estoque'],['RECUPERACAO','Recuperação'],['INUTILIZADO','Inutilizado']]
+    .map(([k, t]) => `<option value="${k}"${v === k ? ' selected' : ''}>${t}</option>`).join('');
+  const campos = (n, rotulo) => Array.from({ length: n }).map((_, i) => {
+    const d = antes.digitados[i] || {};
+    return `<div class="dev-serial-linha" style="display:flex;align-items:center;gap:6px">
+      <input type="text" class="form-input dev-serial-manual" style="width:160px;font-size:11px;font-family:var(--font-mono)"
+        placeholder="${rotulo} ${i + 1}" value="${escHtml(d.serial || '')}" oninput="this.value=this.value.toUpperCase()">
+      <select class="dev-serial-manual-destino" style="font-size:10px;padding:3px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${opcoes(d.destino)}</select>
+    </div>`;
+  }).join('');
+  const erroBox = '<div class="dev-serial-erro" style="font-size:11px;color:#ef4444;margin-top:4px;display:none"></div>';
 
-  if (!seriais.length) {
-    // Colaborador tem o item em mãos mas nenhum serial dele está cadastrado no NR10 (item
-    // entregue antes do sistema rastrear seriais, por exemplo) — permite digitar manualmente
-    // em vez de travar a devolução. O backend cadastra o serial na hora, no status certo,
-    // quando o destino for Estoque ou Recuperação (Inutilizado não precisa cadastrar nada).
-    serialBox.innerHTML = `
+  if (modo === 'digitar') {
+    // Nenhum serial dele no NR10 (item entregue antes do sistema rastrear seriais, por exemplo):
+    // digita à mão; o servidor cadastra no status certo (Inutilizado não precisa cadastrar).
+    box.innerHTML = `
       <div style="font-size:10px;color:#f59e0b;margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Nenhum serial cadastrado no NR10 para este colaborador — digite ${qtdSeriais>1?'os '+qtdSeriais+' seriais':'o serial'} manualmente:</div>
-      <div style="display:flex;flex-direction:column;gap:4px">
-        ${Array.from({length: qtdSeriais}).map((_, si) => `
-        <div style="display:flex;align-items:center;gap:6px">
-          <input type="text" class="form-input dev-serial-manual" style="width:160px;font-size:11px;font-family:var(--font-mono)"
-            placeholder="Serial ${si+1}" oninput="this.value=this.value.toUpperCase()">
-          <select class="dev-serial-manual-destino" style="font-size:10px;padding:3px 5px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card)">
-            <option value="ESTOQUE">Estoque</option>
-            <option value="RECUPERACAO">Recuperação</option>
-            <option value="INUTILIZADO">Inutilizado</option>
-          </select>
-        </div>`).join('')}
-      </div>`;
+      <div style="display:flex;flex-direction:column;gap:4px">${campos(qtdSeriais, 'Serial')}</div>${erroBox}`;
     return;
   }
 
-  const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
-  serialBox.innerHTML = `
-    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-hash></use></svg> Seriais ${hint} — escolha o destino de cada um:</div>
-    <div style="display:flex;flex-wrap:wrap;gap:4px">
-      ${seriais.map(s=>`
-        <span style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;font-size:11px;background:var(--bg-2)">
-          <input type="checkbox" class="dev-serial-cb" data-item-id="${itemId}" data-serial="${escHtml(s.serial)}" style="accent-color:#a855f7">
-          ${escHtml(s.serial)}
-          <select class="dev-serial-destino" style="font-size:10px;padding:1px 3px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card)">
-            <option value="ESTOQUE">Estoque</option>
-            <option value="RECUPERACAO">Recuperação</option>
-            <option value="INUTILIZADO">Inutilizado</option>
-          </select>
-        </span>`).join('')}
-    </div>
-    <div class="dev-serial-erro" style="font-size:11px;color:#ef4444;margin-top:4px;display:none"></div>`;
+  if (modo === 'diferentes') {
+    box.innerHTML = `
+      <div style="font-size:10px;color:var(--text-3);margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-hash></use></svg> Digite ${qtdSeriais>1?'os '+qtdSeriais+' seriais devolvidos':'o serial devolvido'} e o destino de cada um:</div>
+      <div style="display:flex;flex-direction:column;gap:4px">${campos(qtdSeriais, 'Serial devolvido')}</div>
+      <div style="margin-top:8px;padding:8px;border:1px solid #fecaca;border-radius:var(--radius-sm);background:rgba(239,68,68,.06)">
+        <div style="font-size:11px;color:var(--text-1);font-weight:600;margin-bottom:4px">Seriais no nome de ${nomeColab}:</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${seriais.map(s => {
+            const marcado = antes.descarte[s.serial] !== false;
+            return `<label style="display:flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--border);border-radius:20px;font-size:11px;background:var(--bg-card);cursor:pointer">
+              <input type="checkbox" class="dev-serial-descarte" data-serial="${escHtml(s.serial)}" ${marcado ? 'checked' : ''} style="accent-color:#ef4444">
+              <span style="font-family:var(--font-mono)">${escHtml(s.serial)}</span> — vai para o descarte</label>`;
+          }).join('')}
+        </div>
+        <div style="font-size:10px;color:#b91c1c;margin-top:6px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Os marcados vão para DESCARTE e entram como PERDA no financeiro (mesma regra do atendimento). Desmarque o que ele ainda tem com ele. Se um destes for digitado acima como devolvido, ele volta normalmente.</div>
+      </div>
+      <button type="button" class="btn btn-ghost" style="margin-top:6px;font-size:11px;padding:4px 8px" onclick="_modoSeriaisDev('${itemId}','lista')"><svg class=ic aria-hidden=true><use href=#i-undo-2></use></svg> Voltar para a lista do nome dele</button>${erroBox}`;
+    return;
+  }
 
-  // Listener para limitar seleção ao número correto de seriais
+  // Lista do nome dele + campos para os que faltam
+  const faltam = Math.max(0, qtdSeriais - seriais.length);
+  const hint = ePar ? `(item par — ${qtdSeriais} seriais)` : `(${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
+  box.innerHTML = `
+    <div style="font-size:10px;color:var(--text-3);margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-hash></use></svg> Seriais ${hint} — marque os que estão no nome dele e escolha o destino de cada um:</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">
+      ${seriais.map(s => {
+        const a = antes.marcados[s.serial] || {};
+        return `<span style="display:flex;align-items:center;gap:4px;padding:3px 7px;border:1px solid var(--border);border-radius:20px;font-size:11px;background:var(--bg-2)">
+          <input type="checkbox" class="dev-serial-cb" data-item-id="${itemId}" data-serial="${escHtml(s.serial)}" ${a.checked ? 'checked' : ''} style="accent-color:#a855f7">
+          ${escHtml(s.serial)}
+          <select class="dev-serial-destino" style="font-size:10px;padding:1px 3px;border-radius:4px;border:1px solid var(--border);background:var(--bg-card);color:var(--text-1)">${opcoes(a.destino)}</select>
+        </span>`;
+      }).join('')}
+    </div>
+    ${faltam ? `
+    <div style="font-size:10px;color:#f59e0b;margin:8px 0 4px"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> No nome dele ${seriais.length === 1 ? 'só tem 1 serial' : 'só tem ' + seriais.length + ' seriais'} — digite ${faltam > 1 ? 'os ' + faltam + ' que faltam' : 'o que falta'} (o sistema cadastra no NR10):</div>
+    <div style="display:flex;flex-direction:column;gap:4px">${campos(faltam, 'Serial')}</div>` : ''}
+    <button type="button" class="btn btn-ghost" style="margin-top:6px;font-size:11px;padding:4px 8px" onclick="_modoSeriaisDev('${itemId}','diferentes')"><svg class=ic aria-hidden=true><use href=#i-arrow-left-right></use></svg> Os seriais devolvidos são diferentes dos que estão no nome dele</button>${erroBox}`;
+
+  // Não deixa marcar mais seriais da lista do que a quantidade pede
   row.querySelectorAll('.dev-serial-cb').forEach(cb => {
     cb.addEventListener('change', () => {
       const checked = row.querySelectorAll('.dev-serial-cb:checked').length;
       const erro = row.querySelector('.dev-serial-erro');
       if (checked > qtdSeriais) {
         cb.checked = false;
-        if (erro) { erro.textContent = `Selecione exatamente ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
-      } else {
-        if (erro) { erro.style.display='none'; }
-      }
+        if (erro) { erro.textContent = `Selecione no máximo ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
+      } else if (erro) { erro.style.display = 'none'; }
     });
   });
 }
@@ -24994,6 +25051,7 @@ async function confirmarDevolucao() {
   if (!armazem_id || !motivo || !data) { toast('Preencha armazém, motivo e data', 'warn'); return; }
 
   const itens = [];
+  const divergencias = [];
   let erro = null;
 
   document.querySelectorAll('.dev-row').forEach(row => {
@@ -25008,45 +25066,35 @@ async function confirmarDevolucao() {
       const ePar = row.dataset.par === '1';
       const qtdNecessaria = ePar ? qtd * 2 : qtd;
 
-      // Modo texto livre: colaborador tem o item mas nenhum serial dele está cadastrado
-      // no NR10 — os campos são digitados à mão em vez de marcados numa lista.
-      const camposManuais = [...row.querySelectorAll('.dev-serial-manual')];
-      if (camposManuais.length) {
-        const preenchidos = camposManuais.filter(inp => inp.value.trim());
-        if (preenchidos.length !== qtdNecessaria) {
-          erro = `Item "${item_descricao}": preencha exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
-          return;
-        }
-        const porDestinoManual = {};
-        preenchidos.forEach(inp => {
-          const destSel = inp.closest('div').querySelector('.dev-serial-manual-destino');
-          const destino = destSel?.value || 'ESTOQUE';
-          (porDestinoManual[destino] = porDestinoManual[destino] || []).push(inp.value.trim().toUpperCase());
-        });
-        Object.entries(porDestinoManual).forEach(([destino, seriaisGrupo]) => {
-          const quantidadeGrupo = ePar ? seriaisGrupo.length / 2 : seriaisGrupo.length;
-          itens.push({ item_id, item_descricao, quantidade: quantidadeGrupo, destino, seriais: seriaisGrupo });
-        });
-        return;
-      }
-
-      const cbsMarcados = [...row.querySelectorAll('.dev-serial-cb:checked')];
-      if (cbsMarcados.length !== qtdNecessaria) {
-        erro = `Item "${item_descricao}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
-        return;
-      }
-
-      // Agrupa os seriais marcados pelo destino escolhido individualmente em cada um
-      const porDestino = {};
-      cbsMarcados.forEach(cb => {
-        const destSel = cb.closest('span')?.querySelector('.dev-serial-destino');
-        const destino = destSel?.value || 'ESTOQUE';
-        (porDestino[destino] = porDestino[destino] || []).push(cb.dataset.serial);
+      // Seriais devolvidos = os marcados na lista do nome dele + os digitados à mão (23/11/2026)
+      const escolhidos = [];
+      row.querySelectorAll('.dev-serial-cb:checked').forEach(cb => {
+        escolhidos.push({ serial: String(cb.dataset.serial).trim().toUpperCase(), destino: cb.closest('span')?.querySelector('.dev-serial-destino')?.value || 'ESTOQUE' });
       });
+      row.querySelectorAll('.dev-serial-manual').forEach(inp => {
+        const s = inp.value.trim().toUpperCase();
+        if (s) escolhidos.push({ serial: s, destino: inp.closest('.dev-serial-linha')?.querySelector('.dev-serial-manual-destino')?.value || 'ESTOQUE' });
+      });
+      if (escolhidos.length !== qtdNecessaria) {
+        erro = `Item "${item_descricao}": informe exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd}) — marcados e digitados somam ${escolhidos.length}`;
+        return;
+      }
+      const repetido = escolhidos.find((e, i) => escolhidos.findIndex(x => x.serial === e.serial) !== i);
+      if (repetido) { erro = `Item "${item_descricao}": o serial ${repetido.serial} foi informado duas vezes`; return; }
+
+      // Agrupa pelo destino escolhido individualmente em cada serial
+      const porDestino = {};
+      escolhidos.forEach(e => { (porDestino[e.destino] = porDestino[e.destino] || []).push(e.serial); });
       Object.entries(porDestino).forEach(([destino, seriaisGrupo]) => {
         const quantidadeGrupo = ePar ? seriaisGrupo.length / 2 : seriaisGrupo.length;
         itens.push({ item_id, item_descricao, quantidade: quantidadeGrupo, destino, seriais: seriaisGrupo });
       });
+
+      // Modo "diferentes": os do nome dele marcados para o descarte (menos os que foram digitados como devolvidos)
+      const devolvidos = new Set(escolhidos.map(e => e.serial));
+      const descartar = [...row.querySelectorAll('.dev-serial-descarte:checked')]
+        .map(cb => String(cb.dataset.serial)).filter(s => !devolvidos.has(s.trim().toUpperCase()));
+      if (descartar.length) divergencias.push({ item_id, item_descricao, seriais: descartar });
       return;
     }
 
@@ -25064,15 +25112,21 @@ async function confirmarDevolucao() {
 
   if (erro) { toast(erro, 'warn'); return; }
   if (!itens.length) { toast('Informe a quantidade de pelo menos um item', 'warn'); return; }
+  if (divergencias.length) {
+    const lista = divergencias.map(d => `• ${d.item_descricao}: ${d.seriais.join(', ')}`).join('\n');
+    if (!confirm(`Estes seriais estão no nome de ${_dadosColabAtual?.colaborador?.nome || 'colaborador'} e NÃO voltaram:\n\n${lista}\n\nEles vão para DESCARTE e entram como PERDA no financeiro. Confirmar a devolução?`)) return;
+  }
 
   const res = await apiMovimentacao(`/consulta/colaborador/${_consultaColabAtual}/devolucao`,
-    { itens, armazem_id, nome_armazem, data, motivo, obs });
+    { itens, armazem_id, nome_armazem, data, motivo, obs,
+      divergencias: divergencias.map(d => ({ item_id: d.item_id, seriais: d.seriais })) });
 
   if (res?.ok) {
+    const desc = res.descartados?.length ? ` ${res.descartados.length} serial(is) do nome dele foram para o descarte (perda).` : '';
     if (res.comprovante) {
-      toast(`Devolução registrada! <a href="${escHtml(safeUrl(res.comprovante))}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;text-decoration:underline">Ver comprovante</a>`, 'success');
+      toast(`Devolução registrada!${desc} <a href="${escHtml(safeUrl(res.comprovante))}" target="_blank" onclick="event.stopPropagation()" style="color:#fff;text-decoration:underline">Ver comprovante</a>`, 'success');
     } else {
-      toast('Devolução registrada!', 'success');
+      toast(`Devolução registrada!${desc}`, 'success');
     }
     fecharModalDevolucao();
     abrirConsultaColab(_consultaColabAtual);
