@@ -2208,6 +2208,27 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 </div>
 
 <!-- MODAL: ATENDIMENTOS DE UM GRUPO (lista clicável → Consulta de Atendimentos) -->
+<!-- Incluir atendimentos da fila numa viagem já montada (23/11/2026) -->
+<div class="modal-overlay hidden" id="modalLogIncluir">
+  <div class="modal-box" style="max-width:560px">
+    <div class="modal-header">
+      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Incluir atendimentos na viagem</div>
+        <div style="font-size:11px;color:var(--text-3)" id="logIncluirSub"></div></div>
+      <button class="modal-close" onclick="document.getElementById('modalLogIncluir').classList.add('hidden')">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:8px">
+      <input id="logIncluirBusca" class="form-input" placeholder="Buscar por colaborador, placa ou destino..." oninput="logIncluirRender()" autocomplete="off">
+      <div style="font-size:11px;color:var(--text-3)">Destino que já está na viagem entra na carga dele. Destino novo vira uma carga nova nesta viagem, com o mesmo transportador e link de coleta próprio.</div>
+      <div id="logIncluirLista" style="display:flex;flex-direction:column;gap:6px;max-height:380px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer">
+      <span id="logIncluirContagem" style="font-size:12px;color:var(--text-3);margin-right:auto"></span>
+      <button class="btn btn-ghost" onclick="document.getElementById('modalLogIncluir').classList.add('hidden')">Cancelar</button>
+      <button class="btn btn-primary" id="logIncluirBtn" onclick="logConfirmarIncluir(this)"><svg class=ic aria-hidden=true><use href=#i-plus></use></svg> Incluir na viagem</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="modalLogisticaAtendimentos">
   <div class="modal-box" style="max-width:440px">
     <div class="modal-header">
@@ -21000,6 +21021,76 @@ async function irParaAtendimentoConsulta(atendimentoId) {
   verDetalhesAtendimento(atendimentoId);
 }
 
+// ── Incluir atendimentos da fila numa viagem já montada (23/11/2026) ──
+// Só antes da coleta: destino que já está na viagem entra na carga dele; destino novo vira carga
+// nova (mesmo transportador, link próprio); carga do destino já coletada não aceita.
+let _logIncluirViagem = null, _logIncluirFila = [], _logIncluirMarcados = new Set();
+async function logAbrirIncluir(viagemId) {
+  const v = (_logViagensData || []).find(x => x.id === viagemId);
+  if (!v) { toast('Viagem não encontrada — atualize a tela.', 'error'); return; }
+  _logIncluirViagem = v; _logIncluirMarcados = new Set();
+  document.getElementById('logIncluirBusca').value = '';
+  const destinos = (v.grupos || []).filter(g => g.status !== 'CANCELADO').map(g => g.destino);
+  document.getElementById('logIncluirSub').textContent = `Viagem com ${destinos.join(', ') || '—'}`;
+  document.getElementById('logIncluirLista').innerHTML = '<div class="spinner" style="margin:20px auto"></div>';
+  document.getElementById('modalLogIncluir').classList.remove('hidden');
+  const res = await api('/logistica/pendentes');
+  if (!res?.ok) { document.getElementById('logIncluirLista').innerHTML = `<div style="font-size:12px;color:#ef4444">${escHtml(res?.erro || 'Erro ao carregar a fila')}</div>`; return; }
+  _logIncluirFila = res.data || [];
+  logIncluirRender();
+}
+
+// Situação do atendimento nesta viagem: carga existente aguardando coleta, carga nova ou já coletada
+function logIncluirSituacao(a) {
+  const g = (_logIncluirViagem?.grupos || []).find(x => x.status !== 'CANCELADO' && (x.destino_entrega_id || null) === (a.destino_id || null));
+  if (!g) return { tipo: 'nova', txt: 'destino novo — vira carga nova nesta viagem' };
+  if (g.status === 'AGUARDANDO_COLETA') return { tipo: 'existe', txt: 'entra na carga deste destino' };
+  return { tipo: 'bloq', txt: 'a carga deste destino já foi coletada' };
+}
+
+function logIncluirRender() {
+  const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const termos = norm(document.getElementById('logIncluirBusca').value).split(/\s+/).filter(Boolean);
+  const lista = _logIncluirFila.filter(a => !termos.length || termos.every(t => norm(`${a.nome_colaborador} ${a.placa || ''} ${a.destino}`).includes(t)));
+  const ordem = { existe: 0, nova: 1, bloq: 2 };
+  lista.sort((x, y) => (ordem[logIncluirSituacao(x).tipo] - ordem[logIncluirSituacao(y).tipo]) || String(x.destino).localeCompare(String(y.destino), 'pt-BR'));
+  const cor = { existe: '#22c55e', nova: '#0ea5e9', bloq: '#ef4444' };
+  document.getElementById('logIncluirLista').innerHTML = lista.length ? lista.map(a => {
+    const s = logIncluirSituacao(a);
+    const nome = a.destinatario_tipo === 'VIATURA' ? `Viatura ${a.placa || ''}${a.nome_colaborador ? ' · ' + a.nome_colaborador : ''}` : (a.nome_colaborador || '—');
+    return `<label style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:8px;padding:8px 10px;${s.tipo === 'bloq' ? 'opacity:.55' : 'cursor:pointer'}">
+      <input type="checkbox" class="log-incluir-cb" data-id="${escHtml(a.id)}" ${s.tipo === 'bloq' ? 'disabled' : ''} ${_logIncluirMarcados.has(a.id) ? 'checked' : ''}
+        onchange="this.checked ? _logIncluirMarcados.add(this.dataset.id) : _logIncluirMarcados.delete(this.dataset.id); logIncluirContar()" style="accent-color:var(--accent)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:var(--text-1)">${escHtml(nome)}${a.urgente ? ' ' + gcaSit('Urgente', 'ambar', 'zap') : ''}</div>
+        <div style="font-size:11px;color:var(--text-3)"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(a.destino || '—')} · ${a.qtd_itens ?? '—'} item(ns)${a.armazem_nome ? ' · ' + escHtml(a.armazem_nome) : ''}</div>
+        <div style="font-size:10px;color:${cor[s.tipo]}">${escHtml(s.txt)}</div>
+      </div>
+    </label>`;
+  }).join('') : `<div class="empty-state" style="padding:16px"><div class="es-title">${_logIncluirFila.length ? 'Nenhum atendimento com essa busca' : 'Nenhum atendimento aguardando transporte'}</div></div>`;
+  logIncluirContar();
+}
+
+function logIncluirContar() {
+  const n = _logIncluirMarcados.size;
+  document.getElementById('logIncluirContagem').textContent = n ? `${n} selecionado(s)` : '';
+  document.getElementById('logIncluirBtn').disabled = !n;
+}
+
+async function logConfirmarIncluir(btn) {
+  const ids = [..._logIncluirMarcados];
+  if (!ids.length || !_logIncluirViagem) return;
+  btn.disabled = true;
+  const res = await api(`/logistica/viagens/${encodeURIComponent(_logIncluirViagem.id)}/atendimentos`, { method: 'POST', body: JSON.stringify({ atendimento_ids: ids }) });
+  btn.disabled = false;
+  if (!res?.ok) { toast(res?.erro || 'Erro ao incluir', 'error', 6000); if (res?.incluidos_antes) { carregarLogisticaViagens(); carregarLogisticaPendentes(); } return; }
+  document.getElementById('modalLogIncluir').classList.add('hidden');
+  const novas = res.cargas_novas || [];
+  toast(`${res.incluidos} atendimento(s) incluído(s) na viagem.${novas.length ? ` Carga nova para ${novas.map(c => c.destino).join(', ')}: mande o link de coleta (botão Link).` : ''} Reimprima o romaneio.`, 'success', 8000);
+  carregarLogisticaViagens();
+  carregarLogisticaPendentes();
+}
+
 async function removerAtendimentoDoGrupo(grupoId, atendimentoId) {
   if (!confirm('Remover este atendimento da viagem? Os demais continuam normalmente.')) return;
   const res = await api(`/logistica/grupos/${grupoId}/atendimentos/${atendimentoId}`, { method: 'DELETE' });
@@ -21278,6 +21369,7 @@ function renderLogViagens() {
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
         <div style="display:flex;align-items:center;gap:6px">
           ${(v.grupos||[]).some(g => g.status !== 'CANCELADO') ? `<button class="row-action" onclick="logAbrirRomaneio('${escJs(v.id)}')" title="Romaneio de carga: uma folha por destino, para imprimir e ir junto da carga"><svg class=ic aria-hidden=true><use href=#i-printer></use></svg> Imprimir romaneio</button>` : ''}
+          ${(v.grupos||[]).some(g => g.status === 'AGUARDANDO_COLETA') && temPermissao('logistica_editar_viagem') ? `<button class="row-action" onclick="logAbrirIncluir('${escJs(v.id)}')" title="Incluir atendimentos da fila nesta viagem (antes da coleta)"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Incluir atendimentos</button>` : ''}
           ${viagemBadge(v)}
         </div>
       </div>
@@ -21286,7 +21378,7 @@ function renderLogViagens() {
           <div class="log-grupo-head">
             <div>
               <div class="log-grupo-destino"><svg class=ic aria-hidden=true><use href=#i-map-pin></use></svg> ${escHtml(g.destino)}</div>
-              <button type="button" class="row-action" style="margin-top:4px" onclick="abrirModalAtendimentosGrupo('${g.id}')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${(g.atendimentos||[]).length} atendimento(s) — ver</button>
+              <button type="button" class="row-action" style="margin-top:4px" onclick="abrirModalAtendimentosGrupo('${g.id}')"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> ${(g.atendimentos||[]).length} atendimento(s) — ${g.status === 'AGUARDANDO_COLETA' && temPermissao('logistica_editar_viagem') ? 'ver / tirar' : 'ver'}</button>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
               ${grupoBadge(g)}
