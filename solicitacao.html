@@ -308,16 +308,22 @@ svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;f
     <div class="login-logo"><img src="./logo-gca.png" alt="GCA"></div>
     <div class="login-title">Solicitação de Material</div>
     <div class="login-sub">Sistema GCA · Almoxarifado Ceneged</div>
-    <div class="form-group">
-      <label class="form-label">Matrícula</label>
-      <input class="form-input" id="lMat" type="text" placeholder="Sua matrícula" onkeydown="if(event.key==='Enter')document.getElementById('lSen').focus()">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Senha</label>
-      <input class="form-input" id="lSen" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')login()">
-    </div>
-    <button class="btn btn-primary" id="btnLogin" onclick="login()">Entrar</button>
+    <!-- Formulário de verdade: assim o navegador reconhece o login e oferece salvar matrícula e senha
+         (na próxima vez é só clicar no campo e escolher). 23/11/2026 -->
+    <form id="formLogin" autocomplete="on" onsubmit="event.preventDefault(); login();">
+      <div class="form-group">
+        <label class="form-label" for="lMat">Matrícula</label>
+        <input class="form-input" id="lMat" name="username" type="text" placeholder="Sua matrícula" autocomplete="username" autocapitalize="none" spellcheck="false"
+          onkeydown="if(event.key==='Enter'&&!document.getElementById('lSen').value){event.preventDefault();document.getElementById('lSen').focus()}">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="lSen">Senha</label>
+        <input class="form-input" id="lSen" name="password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary" id="btnLogin">Entrar</button>
+    </form>
     <div id="loginErr" class="login-error hidden"></div>
+    <!-- Fora do formulário: os botões de filial não podem enviar o login de novo -->
     <div id="loginFiliais" class="hidden" style="margin-top:14px"></div>
   </div>
 </div>
@@ -1052,6 +1058,7 @@ async function login(unidade) {
     return;
   }
   boxFiliais.classList.add('hidden');
+  salvarSenhaNoNavegador(mat, sen);
   _usr = res.usuario; _solToken = res.token; _arm = res.armazens || [];
   document.getElementById('pgLogin').classList.add('hidden');
   document.getElementById('pgApp').classList.remove('hidden');
@@ -1063,6 +1070,16 @@ async function login(unidade) {
   carregarDados();
   mbIniciar();   // aba "Mobilização", só para quem tem a marca Pode pedir mobilização
   dsIniciar();   // aba "Desligamento", só para quem tem a marca Pode comunicar desligamento
+}
+
+// Depois de um login certo, pede ao navegador (Chrome/Edge) para salvar matrícula e senha: na próxima
+// vez é só clicar no campo e escolher. A senha fica no gerenciador de senhas do navegador, nunca no
+// sistema (23/11/2026). Navegador sem esse recurso: o formulário de login já basta para ele oferecer.
+function salvarSenhaNoNavegador(matricula, senha) {
+  try {
+    if (!matricula || !senha || !window.PasswordCredential || !navigator.credentials?.store) return;
+    navigator.credentials.store(new PasswordCredential({ id: matricula, password: senha, name: `${matricula} (Portal de solicitação)` })).catch(() => {});
+  } catch {}
 }
 
 function sair() {
