@@ -61,7 +61,7 @@
   --shadow:0 8px 24px rgba(0,0,0,.45);
   color-scheme:dark;
 }
-html,body{height:100%;margin:0}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
 body{background:var(--bg);color:var(--fg);font-family:var(--f);font-size:15px;-webkit-tap-highlight-color:transparent}
 *{box-sizing:border-box}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -69,10 +69,13 @@ button{cursor:pointer}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 
-#app{height:100%;display:flex;flex-direction:column;max-width:100%}
-.faixa{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-bottom:1px solid var(--warn-line);font-size:12px;font-weight:600;text-align:center;padding:6px max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px))}
+/* App instalado no iPhone (25/11/2026): a página ocupa a tela toda, inclusive embaixo da barra do relógio; o app fica
+   preso à tela (não sobra espaço embaixo) e o primeiro bloco reserva a área do relógio e da câmera (safe-area) */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:100%}
+.faixa{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-bottom:1px solid var(--warn-line);font-size:12px;font-weight:600;text-align:center;padding:calc(6px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px))}
 .faixa a{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--warn-line);background:var(--surface);color:var(--warn);font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
-.topo{flex-shrink:0;display:flex;align-items:center;gap:10px;min-height:60px;padding:0 max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.topo{flex-shrink:0;display:flex;align-items:center;gap:10px;min-height:calc(60px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+.faixa ~ .topo{min-height:60px;padding-top:0}
 .topo img{height:26px;width:auto}
 .topo .t{display:flex;flex-direction:column;min-width:0;flex:1}
 .topo .t b{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -231,7 +234,8 @@ p{margin:0}
 .vazio{text-align:center;padding:28px 12px;color:var(--fg-3);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r)}
 .kv{display:flex;justify-content:space-between;gap:10px;font-size:14px}
 .kv span:last-child{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
-.login{flex:1;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.login{flex:1;overflow-y:auto;display:flex;align-items:flex-start;justify-content:center;padding:calc(24px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.faixa ~ .login{padding-top:24px}
 /* margin auto centraliza quando cabe; quando não cabe, começa do topo (o logo não some) e rola (25/11/2026) */
 .login-caixa{width:100%;max-width:400px;display:flex;flex-direction:column;gap:22px;margin:auto 0}
 .confirma{border:1px solid var(--bad-line);background:var(--bad-bg);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--fg)}
@@ -293,10 +297,10 @@ canvas.ass{width:100%;height:180px;background:#ffffff;border:1px dashed var(--li
 .aviso-img{display:block;width:100%;padding:0;border:0;background:var(--surface-2);cursor:zoom-in;position:relative;font:inherit}
 .aviso-img img{width:100%;aspect-ratio:3/1;object-fit:cover;display:block}
 .aviso-img .lupa{position:absolute;right:8px;bottom:8px;display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:999px;background:rgba(15,23,42,.72);color:#fff;font-size:12px;font-weight:600}
-.visor{position:fixed;inset:0;z-index:60;background:rgba(2,6,23,.93);display:flex;align-items:center;justify-content:center;padding:64px 12px 24px}
+.visor{position:fixed;inset:0;z-index:60;background:rgba(2,6,23,.93);display:flex;align-items:center;justify-content:center;padding:calc(64px + env(safe-area-inset-top,0px)) 12px calc(24px + env(safe-area-inset-bottom,0px))}
 .visor img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;background:#fff}
-.visor-fechar{position:absolute;top:12px;right:12px;width:44px;height:44px;border-radius:999px;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center}
-.visor-tit{position:absolute;top:22px;left:16px;right:68px;color:#fff;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.visor-fechar{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:12px;width:44px;height:44px;border-radius:999px;border:none;background:rgba(255,255,255,.16);color:#fff;display:flex;align-items:center;justify-content:center}
+.visor-tit{position:absolute;top:calc(22px + env(safe-area-inset-top,0px));left:16px;right:68px;color:#fff;font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .aviso-portal .c{padding:12px;display:flex;gap:10px;align-items:flex-start}
 .aviso-portal .c > svg{color:var(--accent-text);margin-top:2px}
 .aviso-portal.atencao .c > svg,.aviso-portal.atencao b{color:var(--warn)}
@@ -667,7 +671,7 @@ function telaLogin() {
       <span class="ou">ou com matrícula e senha</span></div>` : ''}
     ${L.passo === 'cred' ? `<form data-f="login" id="formLogin" style="display:flex;flex-direction:column;gap:14px" autocomplete="on">
       <div class="campo"><label for="lgMat">Matrícula</label><input id="lgMat" name="username" inputmode="numeric" value="${esc(L.mat)}" autocomplete="username" required></div>
-      <div class="campo"><label for="lgSen">Senha</label><input id="lgSen" name="password" type="password" autocomplete="current-password" required></div>
+      <div class="campo"><label for="lgSen">Senha</label><input id="lgSen" name="password" type="password" inputmode="numeric" autocomplete="current-password" required></div>
       <div class="aviso bad" id="lgErro" role="alert"${L.erro ? '' : ' hidden'}>${ic('alerta', 17)}<span>${esc(L.erro)}</span></div>
       <button class="btn pri full grande" type="submit" id="btnEntrar">Entrar</button>
       <p class="muted" style="text-align:center">Esqueceu a senha? Fale com o almoxarifado da sua filial.</p>
