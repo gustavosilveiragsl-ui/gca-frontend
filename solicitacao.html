@@ -8,7 +8,9 @@
 <link rel="manifest" href="manifest-solicitacao.json">
 <meta name="theme-color" content="#4f46e5">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<!-- Barra do relógio no modo normal (25/11/2026): com "black-translucent" o iPhone posiciona a janela do app instalado
+     errado (a janela termina antes do fim da tela e sobra uma faixa embaixo do tamanho da barra) -->
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="GCA Solicitação">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="mobile-web-app-capable" content="yes">
@@ -72,9 +74,6 @@ button{cursor:pointer}
 /* App instalado no iPhone (25/11/2026): a página ocupa a tela toda, inclusive embaixo da barra do relógio; o app fica
    preso à tela (não sobra espaço embaixo) e o primeiro bloco reserva a área do relógio e da câmera (safe-area) */
 #app{position:fixed;inset:0;display:flex;flex-direction:column;max-width:100%}
-/* iPhone, app instalado: o iOS desconta a barra do relógio da altura da página e sobra uma faixa embaixo;
-   ajustarAlturaApp() põe a altura real da tela em --alto-app (25/11/2026) */
-html.app-ios #app{bottom:auto;height:var(--alto-app)}
 .faixa{flex-shrink:0;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:var(--warn-bg);color:var(--warn);border-bottom:1px solid var(--warn-line);font-size:12px;font-weight:600;text-align:center;padding:calc(6px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 6px max(16px,env(safe-area-inset-left,0px))}
 .faixa a{height:28px;padding:0 10px;border-radius:999px;border:1px solid var(--warn-line);background:var(--surface);color:var(--warn);font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:5px;text-decoration:none}
 .topo{flex-shrink:0;display:flex;align-items:center;gap:10px;min-height:calc(60px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));background:var(--surface);border-bottom:1px solid var(--line)}
@@ -716,31 +715,6 @@ function voltarPaginaAoTopo() {
 }
 document.addEventListener('focusout', () => setTimeout(() => { if (!campoDigitando()) voltarPaginaAoTopo(); }, 60));
 window.visualViewport?.addEventListener('resize', () => { if (!campoDigitando()) voltarPaginaAoTopo(); });
-// iPhone com o portal instalado na tela de início (navigator.standalone): a página é desenhada por baixo da barra do
-// relógio, mas o iOS desconta essa barra da altura da página — o app terminava antes do fim da tela (sobrava uma faixa
-// do tamanho da barra). Nesse modo o app sempre ocupa a tela inteira, então a altura vem do tamanho da tela.
-// Safari e Android ficam como estão (lá a altura informada é a certa). 25/11/2026.
-function ajustarAlturaApp() {
-  const raiz = document.documentElement;
-  let alto = 0;
-  try {
-    if (navigator.standalone === true) {
-      const sonda = document.createElement('div');
-      sonda.style.cssText = 'position:fixed;top:0;left:0;width:0;height:0;padding-top:env(safe-area-inset-top,0px);visibility:hidden;pointer-events:none';
-      document.body.appendChild(sonda);
-      const barra = sonda.getBoundingClientRect().height; sonda.remove();
-      const retrato = matchMedia('(orientation: portrait)').matches;
-      const tela = retrato ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-      // Só com a barra transparente (página por baixo do relógio) e a página menor que a tela
-      if (barra > 0 && tela > window.innerHeight) alto = tela;
-    }
-  } catch {}
-  raiz.classList.toggle('app-ios', alto > 0);
-  if (alto > 0) raiz.style.setProperty('--alto-app', alto + 'px'); else raiz.style.removeProperty('--alto-app');
-}
-ajustarAlturaApp();
-addEventListener('resize', ajustarAlturaApp);
-addEventListener('orientationchange', () => setTimeout(ajustarAlturaApp, 300));
 // Sessão aberta (senha ou biometria): mesmo caminho para os dois
 function concluirEntrada(r) {
   try { if (campoDigitando()) document.activeElement.blur(); } catch {}
