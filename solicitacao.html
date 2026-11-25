@@ -607,6 +607,7 @@ function render() {
   app.innerHTML = `${faixa()}${tela.topo}<div class="conteudo${tela.lado ? ' com-lado' : ''}" id="conteudo"><div class="wrap">${tela.lado ? `<div class="principal">${tela.corpo}</div><aside class="lado" aria-label="Seu pedido">${tela.lado}</aside>` : tela.corpo}</div></div>${tela.barra || ''}${navHtml()}${S.folha ? folhaHtml() : ''}`;
   const novo = app.querySelector('.conteudo');
   if (novo) novo.scrollTop = (tela.chave === ultimaTela) ? pos : 0;
+  if (tela.chave !== ultimaTela) voltarPaginaAoTopo();
   ultimaTela = tela.chave;
   restaurarFoco(foco);
   if (tela.depois) tela.depois();
@@ -698,14 +699,26 @@ async function entrar(unidade) {
   _cred = null;
   concluirEntrada(r);
 }
+// iPhone (25/11/2026): com o teclado aberto o Safari rola a página inteira; quando o campo some (entrou, trocou
+// de tela) ou o teclado fecha, ela ficava deslocada — o topo escondido e sobrando espaço embaixo. O portal rola por
+// dentro (.conteudo, .login), então a página em si sempre volta para o lugar.
+const campoDigitando = () => { const a = document.activeElement; return !!a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) && a.type !== 'checkbox' && a.type !== 'radio'; };
+function voltarPaginaAoTopo() {
+  const ajustar = () => { if (!campoDigitando() && (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop)) window.scrollTo(0, 0); };
+  ajustar(); requestAnimationFrame(ajustar); setTimeout(ajustar, 350); setTimeout(ajustar, 800);
+}
+document.addEventListener('focusout', () => setTimeout(() => { if (!campoDigitando()) voltarPaginaAoTopo(); }, 60));
+window.visualViewport?.addEventListener('resize', () => { if (!campoDigitando()) voltarPaginaAoTopo(); });
 // Sessão aberta (senha ou biometria): mesmo caminho para os dois
 function concluirEntrada(r) {
+  try { if (campoDigitando()) document.activeElement.blur(); } catch {}
   S.multiFilial = S.login.passo === 'filial';
   S.login = { passo: 'cred', filiais: [], mat: r.usuario?.matricula || S.login.mat, erro: '', aviso: '' };
   S.token = r.token; S.usr = r.usuario; S.arms = r.armazens || [];
   S.aba = 'pedir'; S.folha = null; S.dados = null; S.erroCarga = '';
   S.ped = novoPedido();
   render();
+  voltarPaginaAoTopo();
   carregarTudo();
 }
 
@@ -916,7 +929,7 @@ function pedParaQuem() {
   const p = S.ped;
   return {
     chave: 'p1', topo: topo({ titulo: p.editando ? `Editando ${p.editando}` : 'Solicitação de material' }),
-    corpo: `${p.editando ? '' : (cartaoInstalar() || cartaoBio())}${p.editando ? '' : avisosHtml(S.avisos)}<div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Passo 1 de 3</span><h1>Para quem é o material?</h1></div>
+    corpo: `${p.editando ? '' : (cartaoBio() || cartaoInstalar())}${p.editando ? '' : avisosHtml(S.avisos)}<div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Passo 1 de 3</span><h1>Para quem é o material?</h1></div>
       <div class="linha fixa"><span class="tx"><span>Pedido feito por</span><b style="font-size:14px">${esc(S.usr.nome)} · ${esc(S.usr.matricula)}</b></span></div>
       ${usaViatura() ? `<div class="seg" role="group" aria-label="Para quem"><button data-a="para" data-v="COLAB" aria-pressed="${p.para === 'COLAB'}">${ic('pessoa', 17)} Colaborador</button><button data-a="para" data-v="VTR" aria-pressed="${p.para === 'VTR'}">${ic('caminhao', 17)} Viatura</button></div>
         <p class="muted" style="font-size:12px">${p.para === 'VTR' ? 'Material de viatura (EPC, ferramentas) fica na placa: quem retirar assina a ficha.' : 'EPI e material pessoal são pedidos no nome do colaborador.'}</p>` : ''}
@@ -1780,7 +1793,7 @@ function blocoSuspenso(extra = '') {
 function telaSuspensa() {
   return { chave: 'suspenso', topo: topo({ titulo: 'Solicitação de material' }),
     // O desligamento continua liberado durante a suspensão (decisão do usuário, 24/11/2026)
-    corpo: `${avisosHtml(S.avisos)}${blocoSuspenso(`<span class="muted">Você continua podendo acompanhar os seus pedidos${S.podeDesl ? ' e comunicar desligamento' : ''}.</span><button class="btn pri full" data-a="aba" data-v="acomp">Acompanhar meus pedidos</button>${S.podeDesl ? '<button class="btn full" data-a="aba" data-v="desl">Comunicar desligamento</button>' : ''}`)}` };
+    corpo: `${cartaoBio() || cartaoInstalar()}${avisosHtml(S.avisos)}${blocoSuspenso(`<span class="muted">Você continua podendo acompanhar os seus pedidos${S.podeDesl ? ' e comunicar desligamento' : ''}.</span><button class="btn pri full" data-a="aba" data-v="acomp">Acompanhar meus pedidos</button>${S.podeDesl ? '<button class="btn full" data-a="aba" data-v="desl">Comunicar desligamento</button>' : ''}`)}` };
 }
 
 // ════════ INSTALAR O APP (item 4 da lista de 16/11) ════════
