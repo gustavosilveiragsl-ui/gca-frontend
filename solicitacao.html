@@ -241,6 +241,16 @@ p{margin:0}
 .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
 .btn-ic.quadrado{width:40px;height:40px;border:1px solid var(--line-2);border-radius:9px}
 .aviso-col .col{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0}
+/* Entrar com Face ID / digital (25/11/2026) */
+.btn-bio{border-color:var(--accent-line,var(--line-2));color:var(--accent-text)}
+.ou{display:flex;align-items:center;gap:10px;color:var(--fg-3);font-size:13px}
+.ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--line-2)}
+.bio-lista{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line-2);border-radius:12px;overflow:hidden}
+.bio-lista li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line-2)}
+.bio-lista li:last-child{border-bottom:0}
+.bio-lista li span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.bio-lista li b{font-size:14px}
+.bio-lista li small{font-size:12px;color:var(--fg-3)}
 .aviso-col .sel-inline{min-width:0;width:100%;background:var(--surface);color:var(--fg)}
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;font-size:12px;line-height:1.35}
 .det-item{display:flex;flex-direction:column;gap:5px;padding:10px 12px;border:1px solid var(--line);border-radius:10px}
@@ -392,6 +402,8 @@ const P = {
   estrela:'<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',
   livro:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
   megafone:'<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  digital:'<path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M2 16h.01"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/>',
+  rosto:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/>',
   atualizar:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
 };
 const ic = (n, s = 18, extra = '') => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" ${extra}>${P[n] || ''}</svg>`;
@@ -649,6 +661,9 @@ function telaLogin() {
     <div style="text-align:center;display:flex;flex-direction:column;gap:6px"><h1>Pedir material</h1><p class="muted">Entre com a sua matrícula para pedir, acompanhar e comunicar ao almoxarifado.</p></div>
     ${L.aviso ? `<div class="aviso info">${ic('info', 17)}<span>${esc(L.aviso)}</span></div>` : ''}
     ${avisosHtml(S.avisosEntrada)}
+    ${L.passo === 'cred' && S.bioPode && bioLocal() ? `<div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn full grande btn-bio" type="button" data-a="entrarBio" id="btnBio"${L.bioEnviando ? ' disabled' : ''}>${ic(bioIcone(), 22)} ${L.bioEnviando ? 'Confirmando...' : `Entrar com ${esc(bioNome())}`}</button>
+      <span class="ou">ou com matrícula e senha</span></div>` : ''}
     ${L.passo === 'cred' ? `<form data-f="login" id="formLogin" style="display:flex;flex-direction:column;gap:14px" autocomplete="on">
       <div class="campo"><label for="lgMat">Matrícula</label><input id="lgMat" name="username" inputmode="numeric" value="${esc(L.mat)}" autocomplete="username" required></div>
       <div class="campo"><label for="lgSen">Senha</label><input id="lgSen" name="password" type="password" autocomplete="current-password" required></div>
@@ -678,16 +693,122 @@ async function entrar(unidade) {
   const r = await req('/solicitacao-auth/login', { method: 'POST', body: corpo });
   if (btn) { btn.disabled = false; btn.textContent = 'Entrar'; }
   if (!r.ok) { erroLogin(r.erro || 'Matrícula ou senha incorretas.'); return; }
-  if (r.escolher_filial) { S.login.passo = 'filial'; S.login.filiais = r.filiais || []; S.login.erro = ''; render(); return; }
+  if (r.escolher_filial) { S.login.passo = 'filial'; S.login.filiais = r.filiais || []; S.login.erro = ''; S.login.bioEscolha = null; render(); return; }
   salvarSenhaNoNavegador(_cred.mat, _cred.sen);
   _cred = null;
+  concluirEntrada(r);
+}
+// Sessão aberta (senha ou biometria): mesmo caminho para os dois
+function concluirEntrada(r) {
   S.multiFilial = S.login.passo === 'filial';
-  S.login = { passo: 'cred', filiais: [], mat: corpo.matricula, erro: '', aviso: '' };
+  S.login = { passo: 'cred', filiais: [], mat: r.usuario?.matricula || S.login.mat, erro: '', aviso: '' };
   S.token = r.token; S.usr = r.usuario; S.arms = r.armazens || [];
   S.aba = 'pedir'; S.folha = null; S.dados = null; S.erroCarga = '';
   S.ped = novoPedido();
   render();
   carregarTudo();
+}
+
+// ════════ ENTRAR COM FACE ID / DIGITAL (25/11/2026, pedido do usuário) ════════
+// Chaves de acesso (WebAuthn): na primeira vez a pessoa entra com a senha e ativa este aparelho; depois, um toque.
+// A biometria nunca sai do celular. O aparelho guarda só "ativado para tal matrícula" (para mostrar o botão).
+const BIO_CHAVE = 'gca_portal_bio', BIO_NAO = 'gca_portal_bio_agora_nao';
+function bioLocal() { try { const v = JSON.parse(localStorage.getItem(BIO_CHAVE) || 'null'); return v && v.mat ? v : null; } catch { return null; } }
+function bioGuardar(v) { try { if (v) localStorage.setItem(BIO_CHAVE, JSON.stringify(v)); else localStorage.removeItem(BIO_CHAVE); } catch {} }
+let _bioNao = false; try { _bioNao = localStorage.getItem(BIO_NAO) === '1'; } catch {}
+const ehAndroid = () => /android/i.test(navigator.userAgent);
+const bioNome = () => ehIOS() ? 'Face ID' : ehAndroid() ? 'a digital' : 'a biometria';
+const bioIcone = () => ehIOS() ? 'rosto' : 'digital';
+// O aparelho tem leitor (Face ID, Touch ID, digital, rosto) que o navegador deixa usar?
+async function verBioDisponivel() {
+  try { S.bioPode = !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); }
+  catch { S.bioPode = false; }
+  render();
+}
+// base64url ⇄ bytes, e as opções/respostas no formato que o servidor usa
+function b64uParaBuf(s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); const bin = atob(s + '='.repeat((4 - s.length % 4) % 4)); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+function bufParaB64u(b) { const u = new Uint8Array(b); let s = ''; for (let i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+const opcoesCriar = (o) => ({ ...o, challenge: b64uParaBuf(o.challenge), user: { ...o.user, id: b64uParaBuf(o.user.id) }, excludeCredentials: (o.excludeCredentials || []).map(c => ({ ...c, id: b64uParaBuf(c.id) })) });
+const opcoesPegar = (o) => ({ ...o, challenge: b64uParaBuf(o.challenge), allowCredentials: (o.allowCredentials || []).map(c => ({ ...c, id: b64uParaBuf(c.id) })) });
+function credParaJson(c) {
+  const r = c.response, ext = c.getClientExtensionResults ? c.getClientExtensionResults() : {};
+  const base = { id: c.id, rawId: bufParaB64u(c.rawId), type: c.type, clientExtensionResults: ext, authenticatorAttachment: c.authenticatorAttachment || undefined };
+  if (r.attestationObject) return { ...base, response: { clientDataJSON: bufParaB64u(r.clientDataJSON), attestationObject: bufParaB64u(r.attestationObject), transports: r.getTransports ? r.getTransports() : [] } };
+  return { ...base, response: { clientDataJSON: bufParaB64u(r.clientDataJSON), authenticatorData: bufParaB64u(r.authenticatorData), signature: bufParaB64u(r.signature), userHandle: r.userHandle ? bufParaB64u(r.userHandle) : undefined } };
+}
+const erroBio = (e) => e?.name === 'NotAllowedError' ? 'A biometria foi cancelada ou não confirmou.' : e?.name === 'InvalidStateError' ? 'Este aparelho já estava ativado.' : 'Este aparelho não conseguiu usar a biometria.';
+
+async function entrarBio() {
+  if (S.login.bioEnviando) return;
+  S.login.bioEnviando = true; S.login.erro = ''; render();
+  const fim = (msg) => { S.login.bioEnviando = false; S.login.erro = msg || ''; render(); };
+  const o = await req('/solicitacao-auth/biometria/entrar/opcoes', { method: 'POST', body: {} });
+  if (!o.ok) return fim(o.erro || 'Não foi possível usar a biometria agora. Entre com a matrícula e a senha.');
+  let cred;
+  try { cred = await navigator.credentials.get({ publicKey: opcoesPegar(o.opcoes) }); }
+  catch (e) { return fim(`${erroBio(e)} Toque de novo ou entre com a matrícula e a senha.`); }
+  if (!cred) return fim('A biometria não respondeu. Entre com a matrícula e a senha.');
+  const r = await req('/solicitacao-auth/biometria/entrar', { method: 'POST', body: { resposta: credParaJson(cred), desafio: o.desafio } });
+  S.login.bioEnviando = false;
+  if (!r.ok) { if (r.codigo === 'BIO_DESATIVADA') bioGuardar(null); return fim(r.erro || 'Não foi possível entrar com a biometria.'); }
+  if (r.escolher_filial) { S.login.passo = 'filial'; S.login.filiais = r.filiais || []; S.login.erro = ''; S.login.bioEscolha = r.escolha; render(); return; }
+  concluirEntrada(r);
+}
+async function entrarBioFilial(unidade) {
+  const r = await req('/solicitacao-auth/biometria/entrar/filial', { method: 'POST', body: { escolha: S.login.bioEscolha, unidade } });
+  if (!r.ok) { erroLogin(r.erro || 'Não foi possível entrar.'); return; }
+  concluirEntrada(r);
+}
+async function ativarBio() {
+  if (S.bioAtivando) return;
+  S.bioAtivando = true; render();
+  const fim = (msg, ok) => { S.bioAtivando = false; render(); if (msg) toast(msg); return ok; };
+  const o = await req('/solicitacao-auth/biometria/ativar/opcoes', { method: 'POST', body: {} });
+  if (!o.ok) return fim(o.erro || 'Não foi possível ativar agora.');
+  let cred;
+  try { cred = await navigator.credentials.create({ publicKey: opcoesCriar(o.opcoes) }); }
+  catch (e) {
+    // Já ativado para esta pessoa neste aparelho (o servidor mandou a lista dos que já existem)
+    if (e?.name === 'InvalidStateError') { bioGuardar({ mat: S.usr.matricula, nome: S.usr.nome }); return fim('Este aparelho já estava ativado.'); }
+    return fim(erroBio(e));
+  }
+  const r = await req('/solicitacao-auth/biometria/ativar', { method: 'POST', body: { resposta: credParaJson(cred), desafio: o.desafio } });
+  if (!r.ok) return fim(r.erro || 'Não foi possível ativar.');
+  bioGuardar({ mat: S.usr.matricula, nome: S.usr.nome, id: cred.id });
+  S.bioAparelhos = null; if (S.folha?.tipo === 'conta') carregarAparelhosBio();
+  return fim(`Pronto! Na próxima vez, entre com ${bioNome()}.`, true);
+}
+async function carregarAparelhosBio() {
+  const r = await req('/solicitacao-auth/biometria/aparelhos');
+  S.bioAparelhos = r.ok ? (r.aparelhos || []) : [];
+  if (S.folha?.tipo === 'conta') render();
+}
+async function tirarAparelhoBio(id) {
+  const r = await req(`/solicitacao-auth/biometria/aparelhos/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  if (!r.ok) { toast(r.erro || 'Não foi possível tirar o aparelho.'); return; }
+  if (bioLocal()?.id === id) bioGuardar(null);
+  toast('Aparelho tirado. Ele volta a entrar só com a matrícula e a senha.');
+  carregarAparelhosBio();
+}
+// Convite depois de entrar com a senha (uma vez por aparelho; dá para ativar depois pela Conta)
+function cartaoBio() {
+  if (!S.bioPode || _bioNao || bioLocal()?.mat === S.usr?.matricula) return '';
+  return `<div class="aviso info aviso-col" id="cartaoBio">${ic(bioIcone(), 17)}<div class="col"><span><b>Entre mais rápido com ${bioNome()}.</b> Ative neste aparelho e, na próxima vez, é só um toque, sem digitar a senha.</span>
+    <div class="grid2"><button class="btn peq" data-a="bioAgoraNao">Agora não</button><button class="btn peq pri" data-a="ativarBio"${S.bioAtivando ? ' disabled' : ''}>${S.bioAtivando ? 'Ativando...' : 'Ativar'}</button></div></div></div>`;
+}
+// Bloco da biometria no menu Conta
+function contaBioHtml() {
+  if (!S.bioPode && !(S.bioAparelhos || []).length) return '';
+  const aqui = bioLocal()?.mat === S.usr?.matricula;
+  const lista = S.bioAparelhos;
+  const quando = (v) => { const d = new Date(v); return isNaN(d) ? '' : diaBR(d); };
+  return `<div class="campo"><span class="rot">Entrar com ${esc(bioNome())}</span>
+    ${S.bioPode ? (aqui ? `<div class="aviso ok">${ic('check', 17)}<span>Ativado neste aparelho.</span></div>`
+      : `<button class="btn full" data-a="ativarBio"${S.bioAtivando ? ' disabled' : ''}>${ic(bioIcone(), 18)} ${S.bioAtivando ? 'Ativando...' : 'Ativar neste aparelho'}</button>`) : ''}
+    ${lista === undefined || lista === null ? '<span class="muted" style="font-size:13px">Carregando os aparelhos...</span>'
+      : lista.length ? `<ul class="bio-lista">${lista.map(a => `<li><span><b>${esc(a.aparelho || 'Aparelho')}${bioLocal()?.id === a.id ? ' · este' : ''}</b><small>Ativado em ${esc(quando(a.criado_em))}${a.usado_em ? ` · usado em ${esc(quando(a.usado_em))}` : ''}</small></span><button class="btn peq" data-a="tirarAparelhoBio" data-v="${esc(a.id)}">Tirar</button></li>`).join('')}</ul>`
+      : '<span class="muted" style="font-size:13px">Nenhum aparelho ativado.</span>'}
+  </div>`;
 }
 // Depois de um login certo, pede ao navegador para guardar matrícula e senha (fica no gerenciador de senhas
 // do navegador, nunca no sistema), como no portal atual (23/11/2026)
@@ -795,7 +916,7 @@ function pedParaQuem() {
   const p = S.ped;
   return {
     chave: 'p1', topo: topo({ titulo: p.editando ? `Editando ${p.editando}` : 'Solicitação de material' }),
-    corpo: `${p.editando ? '' : cartaoInstalar()}${p.editando ? '' : avisosHtml(S.avisos)}<div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Passo 1 de 3</span><h1>Para quem é o material?</h1></div>
+    corpo: `${p.editando ? '' : (cartaoInstalar() || cartaoBio())}${p.editando ? '' : avisosHtml(S.avisos)}<div style="display:flex;flex-direction:column;gap:4px"><span class="eyebrow">Passo 1 de 3</span><h1>Para quem é o material?</h1></div>
       <div class="linha fixa"><span class="tx"><span>Pedido feito por</span><b style="font-size:14px">${esc(S.usr.nome)} · ${esc(S.usr.matricula)}</b></span></div>
       ${usaViatura() ? `<div class="seg" role="group" aria-label="Para quem"><button data-a="para" data-v="COLAB" aria-pressed="${p.para === 'COLAB'}">${ic('pessoa', 17)} Colaborador</button><button data-a="para" data-v="VTR" aria-pressed="${p.para === 'VTR'}">${ic('caminhao', 17)} Viatura</button></div>
         <p class="muted" style="font-size:12px">${p.para === 'VTR' ? 'Material de viatura (EPC, ferramentas) fica na placa: quem retirar assina a ficha.' : 'EPI e material pessoal são pedidos no nome do colaborador.'}</p>` : ''}
@@ -1702,6 +1823,7 @@ function folhaHtml() {
     corpo = `<b style="font-size:17px">${esc(S.usr.nome)}</b><span class="muted">Matrícula ${esc(S.usr.matricula)} · filial ${esc(nomeFilial())}</span>
       <div class="campo"><span class="rot">Tema</span><div class="seg" role="group" aria-label="Tema">${[[null, 'Do aparelho'], ['light', 'Claro'], ['dark', 'Escuro']].map(([v, t]) => `<button data-a="tema" data-v="${v || ''}" aria-pressed="${S.tema === v}">${t}</button>`).join('')}</div></div>
       ${podeInstalar() ? `<button class="btn full" data-a="instalarApp">${ic('baixar', 18)} Instalar o app</button>` : ''}
+      ${contaBioHtml()}
       ${S.multiFilial ? '<button class="btn full" data-a="trocarFilial">Trocar de filial</button>' : ''}
       <button class="btn full" data-a="sair">Sair</button>
       <button class="btn full" data-a="fecharFolha">Fechar</button>`;
@@ -2054,10 +2176,15 @@ function editarPedido(s) {
 
 const acoes = {
   recarregar: () => { S.erroCarga = ''; carregarTudo(); },
-  voltarLogin: () => { _cred = null; S.login.passo = 'cred'; S.login.erro = ''; },
-  entrarFilial: (v) => { entrar(v); return false; },
+  voltarLogin: () => { _cred = null; S.login.passo = 'cred'; S.login.erro = ''; S.login.bioEscolha = null; },
+  entrarFilial: (v) => { if (S.login.bioEscolha) entrarBioFilial(v); else entrar(v); return false; },
+  // Face ID / digital (25/11/2026)
+  entrarBio: () => { entrarBio(); return false; },
+  ativarBio: () => { ativarBio(); return false; },
+  bioAgoraNao: () => { _bioNao = true; try { localStorage.setItem(BIO_NAO, '1'); } catch {} },
+  tirarAparelhoBio: (v) => { if (confirm('Tirar este aparelho? Ele volta a entrar só com a matrícula e a senha.')) tirarAparelhoBio(v); return false; },
   aba: (v) => { if (v === 'acomp') S.ac.vista = 'painel'; S.aba = v; S.folha = null; carregarAvisos().then(renderDepois); if (v === 'acomp' || v === 'mob') carregarPedidos().then(renderDepois); if (v === 'desl') carregarDesls().then(renderDepois); if (v === 'pedir' && S.ped.enviado) S.ped = novoPedido(); },
-  conta: () => { S.folha = { tipo: 'conta' }; },
+  conta: () => { S.folha = { tipo: 'conta' }; S.bioAparelhos = null; carregarAparelhosBio(); },
   tema: (v) => { S.tema = v || null; try { if (S.tema) localStorage.setItem('gca_portal_tema', S.tema); else localStorage.removeItem('gca_portal_tema'); } catch {} aplicarTema(); },
   trocarFilial: () => { const mat = S.usr.matricula; S.token = null; S.usr = null; S.dados = null; S.folha = null; S.login = { passo: 'cred', filiais: [], mat, erro: '', aviso: 'Entre de novo e escolha a filial.' }; },
   sair: () => { const mat = S.usr?.matricula || ''; S.token = null; S.usr = null; S.dados = null; S.folha = null; S.pedidos = []; S.pedidosCarregados = false; S.ac = novoAc(); S.podeMob = S.podeDesl = false; S.mob = S.desl = S.desls = null; S.login = { passo: 'cred', filiais: [], mat, erro: '', aviso: '' }; },
@@ -2271,6 +2398,7 @@ setInterval(async () => {
 S.ped = novoPedido();
 render();
 carregarAvisosEntrada();
+verBioDisponivel();
 // Service worker sem cache, só com a página "Sem internet" (sw-portal.js). O escopo fica nas páginas /solicitacao*.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw-portal.js', { scope: './solicitacao' }).catch(() => {}); });
