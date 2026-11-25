@@ -194,6 +194,10 @@ p{margin:0}
 .stepper button:disabled{opacity:.35}
 .stepper span{min-width:30px;text-align:center;font-weight:700;font-size:16px;font-variant-numeric:tabular-nums}
 .sel-inline{flex:1;min-width:150px;height:40px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);padding:0 10px;font-size:15px}
+/* iPhone (25/11/2026): o Safari aproxima a tela sozinho ao tocar num campo com letra menor que 16 px.
+   No celular (e em qualquer iPhone/iPad), todo campo de digitar ou escolher fica com 16 px. */
+@media (max-width: 900px){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea{font-size:16px!important}}
+@supports (-webkit-touch-callout: none){input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),select,textarea{font-size:16px!important}}
 .erro-linha{font-size:13px;color:var(--bad);font-weight:600}
 .cartao{border-radius:14px;border:1px solid var(--line);background:var(--surface);padding:14px;display:flex;flex-direction:column;gap:12px}
 .cartao.clic{text-align:left;width:100%}
@@ -622,6 +626,9 @@ function restaurarFoco(foco) {
   if (!foco) return;
   const el = document.getElementById(foco.id);
   if (!el) return;
+  // Lista de opções (motivo, estado...): no iPhone, dar foco de novo ABRE a lista outra vez (25/11/2026:
+  // "o motivo pede para escolher duas vezes"). O foco só volta para campo de digitar.
+  if (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' || el.type === 'file') return;
   el.focus({ preventScroll: true });
   try { if (foco.i != null) el.setSelectionRange(foco.i, foco.f); } catch {}
 }
