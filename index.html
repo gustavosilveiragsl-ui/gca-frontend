@@ -605,6 +605,57 @@ tbody tr:hover td{background:var(--bg-hover);}
 .tag-blue{background:var(--blue-soft);color:var(--blue);}
 .tag-accent{background:var(--accent-soft);color:var(--accent-text);}
 .tag-gray{background:var(--border);color:var(--text-3);}
+/* Avisos do Portal (24/11/2026) */
+.ap-grade{display:grid;grid-template-columns:minmax(320px,440px) 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.ap-grade{grid-template-columns:1fr}}
+.ap-opcao{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-1);padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius-md);cursor:pointer}
+/* "Li e entendi" (24/11/2026) */
+.ap-ciencia{align-items:flex-start;padding:10px}
+.ap-ciencia span{display:flex;flex-direction:column;gap:2px}
+.ap-ciencia small{font-size:11px;color:var(--text-3);font-weight:400}
+.ap-ciencia input{margin-top:2px}
+.ap-ciencia-linha{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text-2);margin-top:2px}
+.ap-cien-grade{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:640px){.ap-cien-grade{grid-template-columns:1fr}}
+.ap-cien-col{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden}
+.ap-cien-col h4{font-size:12px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--bg-2,rgba(0,0,0,.03))}
+.ap-cien-col ul{list-style:none;max-height:340px;overflow:auto}
+.ap-cien-col li{padding:7px 10px;border-bottom:1px solid var(--border);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+.ap-cien-col li:last-child{border-bottom:0}
+.ap-cien-col li small{color:var(--text-3);white-space:nowrap}
+.ap-aviso{border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;background:var(--bg)}
+.ap-aviso.atencao{border-color:rgba(251,191,36,.45)}
+.ap-aviso img{width:100%;aspect-ratio:3/1;object-fit:cover;display:block}
+.ap-aviso .ap-c{padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+/* Público do aviso (25/11/2026): funções, bases, setores e pessoas */
+.ap-publico{display:flex;flex-direction:column;gap:10px;margin-top:8px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg)}
+.ap-publico .ap-regra{font-size:11px;color:var(--text-3);line-height:1.45}
+.ap-grupo{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--bg-card)}
+.ap-grupo>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;font-size:12px;font-weight:600;color:var(--text-1)}
+.ap-grupo>summary::-webkit-details-marker{display:none}
+.ap-grupo>summary small{font-weight:400;color:var(--text-3)}
+.ap-grupo[open]>summary{border-bottom:1px solid var(--border)}
+.ap-grupo .ap-busca{margin:8px 10px 4px;width:calc(100% - 20px)}
+.ap-grupo ul{list-style:none;max-height:180px;overflow:auto;padding:4px 0}
+.ap-grupo li label{display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:var(--text-1)}
+.ap-grupo li label:hover{background:var(--bg-hover)}
+.ap-grupo li small{margin-left:auto;color:var(--text-3);font-size:10px}
+.ap-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 8px}
+.ap-chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 4px 3px 8px;border-radius:999px;background:var(--accent-soft,rgba(59,130,246,.12));color:var(--text-1);border:1px solid var(--border)}
+.ap-chip button{border:0;background:none;color:var(--text-3);cursor:pointer;padding:0 4px;font-size:13px;line-height:1}
+.ap-sug{list-style:none;margin:0 10px 8px;border:1px solid var(--border);border-radius:var(--radius-md);max-height:200px;overflow:auto;background:var(--bg-card)}
+.ap-sug li{padding:6px 10px;font-size:12px;cursor:pointer;display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid var(--border)}
+.ap-sug li:last-child{border-bottom:0}
+.ap-sug li:hover{background:var(--bg-hover)}
+.ap-sug li small{color:var(--text-3)}
+.ap-conta{font-size:12px;color:var(--text-1);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ap-conta details{width:100%}
+.ap-conta details summary{cursor:pointer;font-size:11px;color:var(--accent-text,var(--text-2))}
+.ap-conta details div{font-size:11px;color:var(--text-2);line-height:1.6;max-height:140px;overflow:auto;margin-top:4px}
+.ap-publico-linha{font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:5px}
+.ap-susp{border-radius:var(--radius-md);padding:12px;display:flex;flex-direction:column;gap:10px}
+.ap-susp.ligada{background:var(--red-soft);border:1px solid rgba(248,113,113,.35)}
+.ap-susp.livre{background:var(--green-soft);border:1px solid rgba(34,197,94,.3)}
 .row-action{padding:4px 10px;border-radius:4px;background:var(--bg-hover);color:var(--text-2);border:1px solid var(--border);font-size:10px;font-weight:500;}
 .row-action:hover{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent);}
 
@@ -1566,6 +1617,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           <button class="nav-item" data-view="usuarios" data-perm="gerenciar_usuarios" onclick="showView('usuarios',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-user-cog></use></svg></span> Usuários</button>
           <button class="nav-item" data-view="links-externos" data-perm="ver_links_externos" onclick="showView('links-externos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-link></use></svg></span> Links Externos</button>
           <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('logins-solicitacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-key-round></use></svg></span> Usuários de Solicitação</button>
+          <button class="nav-item" data-view="avisos-portal" data-perm="avisos_portal" onclick="showView('avisos-portal',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-megaphone></use></svg></span> Avisos do Portal</button>
 
           <!-- Administração — somente admin -->
           <div id="navAdminGrp" style="display:none">
@@ -6428,6 +6480,61 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         </div>
       </div>
 
+      <!-- ── AVISOS DO PORTAL (24/11/2026): avisos no portal de solicitação e suspensão dos pedidos da filial ── -->
+      <div class="view h-ambar" id="view-avisos-portal">
+        <div class="ap-grade">
+          <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+            <div class="card">
+              <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Pedidos pelo portal</div><div class="card-sub">Suspender os pedidos desta filial. A pessoa continua entrando para acompanhar os pedidos dela.</div></div></div>
+              <div style="padding:16px" id="apSuspCorpo"><div class="spinner"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div><div class="card-title" id="apFormTitulo">Novo aviso</div><div class="card-sub">Aparece no topo do portal de solicitação, para todos da filial ou só para o público que você escolher</div></div></div>
+              <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+                <input type="hidden" id="apEditId">
+                <div><label class="form-label" for="apTitulo">Título *</label><input id="apTitulo" class="form-input" maxlength="120" placeholder="Ex.: Inventário na sexta-feira"></div>
+                <div><label class="form-label" for="apTexto">Texto</label><textarea id="apTexto" class="form-input" rows="3" maxlength="2000" placeholder="Ex.: O almoxarifado fecha às 14h. Faça os pedidos até quinta."></textarea></div>
+                <div><span class="form-label">Tipo</span>
+                  <div style="display:flex;gap:8px"><label class="ap-opcao"><input type="radio" name="apTipo" value="INFO" checked> Informativo</label><label class="ap-opcao"><input type="radio" name="apTipo" value="ATENCAO"> Atenção (amarelo)</label></div></div>
+                <div><span class="form-label">Imagem (banner, opcional)</span>
+                  <div id="apImgPrevia" class="hidden" style="position:relative;margin-bottom:8px"><img id="apImgTag" alt="Banner do aviso" style="width:100%;aspect-ratio:3/1;object-fit:cover;display:block;border-radius:var(--radius-md);border:1px solid var(--border)">
+                    <div id="apImgInfo" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+                    <button type="button" class="btn btn-ghost" style="position:absolute;top:6px;right:6px;padding:4px 10px;font-size:11px;background:var(--bg-card)" onclick="apTirarImagem()">Tirar</button></div>
+                  <label class="btn btn-ghost" style="cursor:pointer;display:inline-flex;gap:6px;align-items:center"><svg class=ic aria-hidden=true><use href=#i-camera></use></svg> <span id="apImgBotao">Escolher imagem</span><input type="file" accept="image/*" style="display:none" onchange="apEscolherImagem(this)"></label>
+                  <div style="font-size:11px;color:var(--text-3);margin-top:6px;line-height:1.45"><b>Tamanho ideal: 1200 × 400 pixels</b> (deitada, 3 de largura para 1 de altura). No portal a imagem aparece numa faixa nesse formato; se ela for de outro tamanho, a faixa mostra o meio e a pessoa toca para ver a imagem inteira.</div></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                  <div><label class="form-label" for="apInicio">Início *</label><input id="apInicio" type="date" class="form-input"></div>
+                  <div><label class="form-label" for="apFim">Fim (opcional)</label><input id="apFim" type="date" class="form-input"></div>
+                </div>
+                <label class="ap-opcao ap-ciencia"><input type="checkbox" id="apCiencia"> <span><b>Exigir "Li e entendi"</b><small>A pessoa só usa o portal depois de confirmar a leitura. Aqui aparece quem leu e quem falta.</small></span></label>
+                <div id="apSoAdmin" class="hidden" style="display:flex;flex-direction:column;gap:6px;padding:10px;border:1px dashed var(--border);border-radius:var(--radius-md)">
+                  <label class="ap-opcao"><input type="checkbox" id="apTodas" onchange="apAjustarPublico()"> Para todas as filiais</label>
+                  <label class="ap-opcao hidden" id="apEntradaBox"><input type="checkbox" id="apEntrada"> Também na tela de entrar do portal (antes do login)</label>
+                </div>
+                <div><span class="form-label">Para quem</span>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="ap-opcao"><input type="radio" name="apPublico" value="todos" checked onchange="apAjustarPublico()"> <span id="apPublicoTodosTx">Todos da filial</span></label><label class="ap-opcao"><input type="radio" name="apPublico" value="escolher" onchange="apAjustarPublico()"> Escolher o público</label></div>
+                  <div id="apPublicoBox" class="ap-publico hidden"></div>
+                </div>
+                <div id="apErro" class="hidden" style="font-size:12px;color:var(--red)"></div>
+                <div style="display:flex;gap:8px"><button class="btn btn-primary" id="apBtnSalvar" onclick="apSalvar()"><svg class=ic aria-hidden=true><use href=#i-save></use></svg> Publicar aviso</button>
+                  <button class="btn btn-ghost hidden" id="apBtnCancelar" onclick="apLimparForm()">Cancelar edição</button></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+            <div class="card">
+              <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-megaphone></use></svg> Avisos</div><div class="card-sub">Desta filial e os de todas as filiais</div></div>
+                <button class="btn btn-ghost" style="padding:5px 10px;font-size:11px" onclick="carregarAvisosPortal()"><svg class=ic aria-hidden=true><use href=#i-repeat></use></svg> Atualizar</button></div>
+              <div id="apLista" style="padding:12px;display:flex;flex-direction:column;gap:10px"><div class="spinner"></div></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-clock></use></svg> Histórico das suspensões</div><div class="card-sub">Quem suspendeu e quem liberou</div></div></div>
+              <div id="apHistorico" style="padding:12px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── INVENTÁRIO ROTATIVO MENSAL ── -->
       <div class="view h-verde" id="view-inventario">
 
@@ -9618,7 +9725,7 @@ const VIEW_TITLES = {
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
   'consulta-ultima-retirada':['Última Retirada por Item','/ Consulta'],
   'consulta-tamanhos':['Tamanhos dos Colaboradores','/ Consulta'],
-  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'],
+  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'], 'avisos-portal':['Avisos do Portal','/ Portal de solicitação'],
   // Telas do menu que não tinham título (o topo mostrava o código da tela)
   'enel-atendimento':['Materiais Cliente','/ Atendimento Material'],
   'enel-sol-materiais':['Materiais Cliente','/ Solicitações ENEL'],
@@ -9737,6 +9844,7 @@ function onViewLoad(nome) {
   if (nome === 'equipes')            carregarEquipesView();
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
+  if (nome === 'avisos-portal')      carregarAvisosPortal();
   if (nome === 'logins-solicitacao') { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'desligamentos')      { if (!_colaboradores.length) carregarColaboradoresAtendimento(); if (!_armazens.length) carregarArmazens(); dslCarregar(); }
@@ -11444,6 +11552,324 @@ async function gcaMostrarQr(alvo, link, tamanho = 160) {
   el.innerHTML = dataUrl
     ? `<img src="${dataUrl}" style="width:${tamanho}px;height:${tamanho}px" alt="QR code do link">`
     : '<div style="font-size:11px;color:var(--text-3);padding:12px">QR indisponível agora — use o link</div>';
+}
+
+// ══════════════════════════════════════════
+// AVISOS DO PORTAL (24/11/2026): avisos no portal de solicitação e suspensão dos pedidos da filial.
+// Pedido do usuário em 17/11/2026, depois de suspender o Maranhão por SQL. A suspensão não mexe nos logins:
+// bloqueia pedido novo, edição e mobilização; a pessoa continua entrando para acompanhar.
+// ══════════════════════════════════════════
+let _ap = null, _apImagem = null, _apManterImagem = false;
+const AP_SIT = { NO_AR: ['No ar', 'tag-green'], AGENDADO: ['Agendado', 'tag-blue'], VENCIDO: ['Terminou', 'tag-gray'], ENCERRADO: ['Encerrado', 'tag-gray'] };
+const apData = (d) => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '';
+const apHoje = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+async function carregarAvisosPortal() {
+  const r = await api('/avisos-portal');
+  if (!r) return;
+  if (!r.ok) {
+    document.getElementById('apLista').innerHTML = `<div style="font-size:12px;color:var(--red)">${escHtml(r.erro || 'Não foi possível carregar.')}</div>`;
+    document.getElementById('apSuspCorpo').innerHTML = '';
+    return;
+  }
+  _ap = r;
+  // Quem tem acesso ao portal pode ter mudado: recarrega as opções do público na próxima escolha
+  _apOpc = null;
+  if (apModoPublico() === 'escolher') apAjustarPublico();
+  document.getElementById('apSoAdmin').classList.toggle('hidden', !r.admin);
+  if (!document.getElementById('apEditId').value && !document.getElementById('apInicio').value) document.getElementById('apInicio').value = r.hoje;
+  renderAvisosPortal();
+}
+function renderAvisosPortal() {
+  const r = _ap; if (!r) return;
+  const s = r.suspensao;
+  document.getElementById('apSuspCorpo').innerHTML = s
+    ? `<div class="ap-susp ligada"><div style="font-weight:700;color:var(--red)"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Pedidos SUSPENSOS${s.ate ? ' até ' + apData(s.ate) : ' até liberar'}</div>
+        <div style="font-size:12px;color:var(--text-1)">"${escHtml(s.mensagem)}"</div>
+        <div style="font-size:11px;color:var(--text-3)">Suspenso por ${escHtml(s.ligada_por || '—')} em ${fmtData(s.ligada_em)}</div>
+        <button class="btn btn-primary" onclick="apLiberar()"><svg class=ic aria-hidden=true><use href=#i-lock-open></use></svg> Liberar os pedidos agora</button></div>`
+    : `<div class="ap-susp livre"><div style="font-weight:700;color:var(--green)"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Pedidos liberados</div>
+        <div><label class="form-label" for="apSuspMsg">Mensagem que as pessoas vão ver *</label><textarea id="apSuspMsg" class="form-input" rows="2" maxlength="500" placeholder="Ex.: Pedidos suspensos para o inventário geral. Voltam na segunda."></textarea></div>
+        <div><label class="form-label" for="apSuspAte">Até (opcional)</label><input id="apSuspAte" type="date" class="form-input" min="${r.hoje}"><div style="font-size:10px;color:var(--text-3);margin-top:4px">Sem data, fica suspenso até você liberar. Com data, volta sozinho no dia seguinte.</div></div>
+        <div id="apSuspErro" class="hidden" style="font-size:12px;color:var(--red)"></div>
+        <button class="btn btn-ghost" style="color:var(--red);border-color:rgba(248,113,113,.5)" onclick="apSuspender()"><svg class=ic aria-hidden=true><use href=#i-ban></use></svg> Suspender os pedidos desta filial</button></div>`;
+  const lista = r.avisos || [];
+  document.getElementById('apLista').innerHTML = lista.length ? lista.map(a => {
+    const [sit, cls] = AP_SIT[a.situacao] || [a.situacao, 'tag-gray'];
+    return `<div class="ap-aviso${a.tipo === 'ATENCAO' ? ' atencao' : ''}">${a.imagem ? `<img src="${escHtml(a.imagem)}" alt="">` : ''}
+      <div class="ap-c"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><b style="font-size:13px">${escHtml(a.titulo)}</b>
+        <span style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end"><span class="tag ${cls}">${sit}</span>${a.tipo === 'ATENCAO' ? '<span class="tag tag-yellow">Atenção</span>' : ''}${a.unidade === 'todas' ? '<span class="tag tag-accent">Todas as filiais</span>' : ''}${a.tela_entrada ? '<span class="tag tag-accent">Tela de entrar</span>' : ''}</span></div>
+        ${a.texto ? `<div style="font-size:12px;color:var(--text-2);white-space:pre-wrap">${escHtml(a.texto)}</div>` : ''}
+        ${a.publico_resumo ? `<div class="ap-publico-linha"><svg class=ic aria-hidden=true><use href=#i-users></use></svg> Só para: <b>${escHtml(a.publico_resumo)}</b></div>` : ''}
+        <div style="font-size:11px;color:var(--text-3)">${apData(a.inicio)}${a.fim ? ' a ' + apData(a.fim) : ' · sem data para acabar'} · por ${escHtml(a.criado_por || '—')}${a.encerrado_por ? ' · encerrado por ' + escHtml(a.encerrado_por) : ''}</div>
+        ${a.exige_ciencia ? apCienciaLinha(a) : ''}
+        ${a.ativo && a.pode_editar ? `<div style="display:flex;gap:6px;margin-top:4px"><button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" onclick="apEditar('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Editar</button>
+          <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px;color:var(--red)" onclick="apEncerrar('${escJs(a.id)}')"><svg class=ic aria-hidden=true><use href=#i-x></use></svg> Encerrar</button></div>` : ''}</div></div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text-3)">Nenhum aviso ainda. Escreva o primeiro ao lado.</div>';
+  const h = r.historico || [];
+  document.getElementById('apHistorico').innerHTML = h.length ? `<table><thead><tr><th>Mensagem</th><th>Suspendeu</th><th>Liberou</th></tr></thead><tbody>${h.map(x => `<tr>
+      <td style="font-size:12px">${escHtml(x.mensagem)}${x.ate ? `<div style="font-size:10px;color:var(--text-3)">até ${apData(x.ate)}</div>` : ''}</td>
+      <td style="font-size:11px">${escHtml(x.ligada_por || '—')}<div style="color:var(--text-3)">${fmtData(x.ligada_em)}</div></td>
+      <td style="font-size:11px">${x.ativa ? (x.ate && x.ate < r.hoje ? '<span class="tag tag-gray">Terminou na data</span>' : '<span class="tag tag-red">Suspenso agora</span>') : `${escHtml(x.desligada_por || '—')}<div style="color:var(--text-3)">${fmtData(x.desligada_em)}</div>`}</td></tr>`).join('')}</tbody></table>`
+    : '<div style="font-size:12px;color:var(--text-3)">Nenhuma suspensão até hoje.</div>';
+}
+// "Li e entendi" (24/11/2026): quantos da filial já confirmaram e a lista de quem leu e de quem falta
+function apCienciaLinha(a) {
+  const c = a.ciencia || { leram: 0, total: 0 };
+  const pct = c.total ? Math.round(c.leram * 100 / c.total) : 0;
+  return `<div class="ap-ciencia-linha"><span class="tag tag-blue">Li e entendi</span><span>Leram <b>${c.leram}</b> de ${c.total}${c.total ? ` (${pct}%)` : ''}</span>
+    <button class="btn btn-ghost" style="padding:3px 9px;font-size:11px" onclick="apVerCiencia('${escJs(a.id)}')">Ver quem leu</button></div>`;
+}
+async function apVerCiencia(id) {
+  const r = await api('/avisos-portal/' + encodeURIComponent(id) + '/ciencia');
+  if (!r) return;
+  if (!r.ok) { toast(escHtml(r.erro || 'Não foi possível carregar.'), 'error'); return; }
+  document.getElementById('modalApCiencia')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'modalApCiencia'; ov.style.zIndex = '10002';
+  const fechar = () => { ov.remove(); document.removeEventListener('keydown', esc); };
+  const esc = (ev) => { if (ev.key === 'Escape') fechar(); };
+  const quando = (v) => { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+  const pessoa = (p) => `${escHtml(p.nome || '—')}${p.matricula ? ` <span style="color:var(--text-3)">· ${escHtml(p.matricula)}</span>` : ''}`;
+  ov.innerHTML = `<div class="modal-box" style="max-width:720px;width:100%" role="dialog" aria-modal="true" aria-labelledby="apCienTit">
+    <div class="modal-header"><div style="min-width:0"><div class="modal-title" id="apCienTit">Quem leu: ${escHtml(r.titulo || '')}</div>
+      <div class="modal-sub">Leram ${r.leram.length} de ${r.total} ${r.publico_resumo ? `do público deste aviso (${escHtml(r.publico_resumo)})` : 'logins ativos do portal desta filial'}</div></div>
+      <button class="modal-close" data-fechar aria-label="Fechar">×</button></div>
+    <div class="modal-body"><div class="ap-cien-grade">
+      <div class="ap-cien-col"><h4>Leram (${r.leram.length})</h4><ul>${r.leram.map(p => `<li><span>${pessoa(p)}</span><small>${escHtml(quando(p.ciente_em))}</small></li>`).join('') || '<li><span style="color:var(--text-3)">Ninguém ainda</span></li>'}</ul></div>
+      <div class="ap-cien-col"><h4>Ainda não leram (${r.faltam.length})</h4><ul>${r.faltam.map(p => `<li><span>${pessoa(p)}</span></li>`).join('') || '<li><span style="color:var(--text-3)">Todos já leram</span></li>'}</ul></div>
+    </div><div style="font-size:11px;color:var(--text-3);margin-top:10px">Só aparece quem entrou no portal desde que o aviso foi publicado. Quem não entra no portal fica em "Ainda não leram".</div></div>
+    <div style="display:flex;justify-content:flex-end;padding:12px 20px;border-top:1px solid var(--border)"><button class="btn btn-primary" data-fechar>Fechar</button></div></div>`;
+  ov.querySelectorAll('[data-fechar]').forEach(el => { el.onclick = fechar; });
+  ov.addEventListener('click', (ev) => { if (ev.target === ov) fechar(); });
+  document.addEventListener('keydown', esc);
+  document.body.appendChild(ov);
+}
+// ── Público do aviso (25/11/2026): por função, base, setor ou pessoas escolhidas ──
+// Vê o aviso quem bate em todos os grupos marcados (o grupo sem marcar não filtra); as pessoas escolhidas
+// veem sempre. O servidor confere tudo de novo; aqui é para escolher e mostrar quantos vão ver.
+let _apOpc = null;
+const _apPub = { funcoes: new Set(), bases: new Set(), setores: new Set(), pessoas: new Map() };
+const AP_GRUPOS = [['funcoes', 'Função', 'funcao'], ['bases', 'Base', 'base'], ['setores', 'Setor', 'setor']];
+const apNorm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const apModoPublico = () => document.querySelector('input[name=apPublico]:checked')?.value || 'todos';
+const apEhTodas = () => !!document.getElementById('apTodas')?.checked;
+async function apCarregarOpcoes() {
+  const r = await api('/avisos-portal/publico-opcoes');
+  _apOpc = r?.ok ? r : { pessoas: [], funcoes: [], bases: [], setores: [], funcoes_todas: null, erro: r?.erro || 'Não foi possível carregar as pessoas do portal.' };
+  apRenderPublico();
+}
+function apAjustarPublico() {
+  const todas = apEhTodas(), escolher = apModoPublico() === 'escolher';
+  document.getElementById('apPublicoTodosTx').textContent = todas ? 'Todos de todas as filiais' : 'Todos da filial';
+  // A tela de entrar é antes do login: só aviso de todas as filiais e para todos
+  document.getElementById('apEntradaBox').classList.toggle('hidden', !todas || escolher);
+  if (!todas || escolher) document.getElementById('apEntrada').checked = false;
+  document.getElementById('apPublicoBox').classList.toggle('hidden', !escolher);
+  if (escolher && !_apOpc) { document.getElementById('apPublicoBox').innerHTML = '<div class="spinner"></div>'; apCarregarOpcoes(); return; }
+  apRenderPublico();
+}
+// Quem desta filial vai ver, com o que está marcado agora
+function apQuemVe() {
+  const todas = apEhTodas();
+  const grupos = AP_GRUPOS.filter(([k]) => _apPub[k].size && (!todas || k === 'funcoes'));
+  return (_apOpc?.pessoas || []).filter(p => (!todas && _apPub.pessoas.has(p.id)) || (grupos.length > 0 && grupos.every(([k, , campo]) => _apPub[k].has(p[campo]))));
+}
+function apRenderPublico() {
+  const box = document.getElementById('apPublicoBox');
+  if (!box || box.classList.contains('hidden') || !_apOpc) return;
+  const todas = apEhTodas(), pess = _apOpc.pessoas || [];
+  const grupo = ([k, rot, campo]) => {
+    if (todas && k !== 'funcoes') return '';
+    const base = k === 'funcoes' && todas ? (_apOpc.funcoes_todas || _apOpc.funcoes || []) : (_apOpc[k] || []);
+    const valores = [...new Set([...base, ..._apPub[k]])];   // o que já estava marcado continua na lista
+    return `<details class="ap-grupo" data-grupo="${k}"${_apPub[k].size ? ' open' : ''}>
+      <summary>${rot} <small data-resumo="${k}"></small></summary>
+      ${valores.length > 8 ? `<input class="form-input ap-busca" placeholder="Buscar ${rot.toLowerCase()}" oninput="apFiltrarGrupo('${k}', this.value)">` : ''}
+      <ul>${valores.map(v => `<li data-busca="${escHtml(apNorm(v))}"><label><input type="checkbox" data-v="${escHtml(v)}"${_apPub[k].has(v) ? ' checked' : ''} onchange="apMarcar('${k}', this.dataset.v, this.checked)"> ${escHtml(v)}${todas ? '' : `<small>${pess.filter(p => p[campo] === v).length}</small>`}</label></li>`).join('') || '<li><label style="color:var(--text-3)">Ninguém com acesso ao portal</label></li>'}</ul>
+    </details>`;
+  };
+  box.innerHTML = `${_apOpc.erro ? `<div style="font-size:12px;color:var(--red)">${escHtml(_apOpc.erro)}</div>` : ''}
+    <div class="ap-regra">${todas
+      ? 'No aviso para todas as filiais, o público é escolhido só por função: vê quem tem uma das funções marcadas, em qualquer filial.'
+      : 'Vê o aviso quem tem uma das funções marcadas <b>e</b> é de uma das bases <b>e</b> de um dos setores marcados. O que ficar sem marcar não filtra. As pessoas escolhidas veem sempre.'}</div>
+    ${AP_GRUPOS.map(grupo).join('')}
+    ${todas ? '' : `<div class="ap-grupo"><div style="padding:8px 10px;font-size:12px;font-weight:600">Pessoas escolhidas <small style="font-weight:400;color:var(--text-3)">veem sempre</small></div>
+      <input id="apPessoaBusca" class="form-input ap-busca" placeholder="Buscar pelo nome ou matrícula" oninput="apBuscarPessoa(this.value)" autocomplete="off">
+      <ul id="apPessoaSug" class="ap-sug hidden"></ul>
+      <div class="ap-chips" id="apPessoaChips"></div></div>`}
+    <div class="ap-conta" id="apConta"></div>`;
+  apRenderPessoas(); apAtualizarConta();
+}
+function apFiltrarGrupo(k, q) {
+  const b = apNorm(q).trim();
+  document.querySelectorAll(`#apPublicoBox details[data-grupo="${k}"] li[data-busca]`).forEach(li => { li.style.display = !b || li.dataset.busca.includes(b) ? '' : 'none'; });
+}
+function apMarcar(k, v, marcado) { if (marcado) _apPub[k].add(v); else _apPub[k].delete(v); apAtualizarConta(); }
+function apBuscarPessoa(q) {
+  const ul = document.getElementById('apPessoaSug'); if (!ul) return;
+  const b = apNorm(q).trim();
+  if (b.length < 2) { ul.classList.add('hidden'); ul.innerHTML = ''; return; }
+  const achados = (_apOpc?.pessoas || []).filter(p => !_apPub.pessoas.has(p.id) && (apNorm(p.nome).includes(b) || String(p.matricula || '').includes(b))).slice(0, 8);
+  ul.innerHTML = achados.map(p => `<li onclick="apAddPessoa('${escJs(p.id)}')"><span>${escHtml(p.nome)}${p.matricula ? ` <small>· ${escHtml(p.matricula)}</small>` : ''}</span><small>${escHtml(p.funcao || '')}${p.base ? ' · ' + escHtml(p.base) : ''}</small></li>`).join('')
+    || '<li style="cursor:default;color:var(--text-3)">Ninguém com acesso ao portal com esse nome</li>';
+  ul.classList.remove('hidden');
+}
+function apAddPessoa(id) {
+  const p = (_apOpc?.pessoas || []).find(x => x.id === id); if (!p) return;
+  _apPub.pessoas.set(p.id, { id: p.id, nome: p.nome, matricula: p.matricula });
+  const inp = document.getElementById('apPessoaBusca'); if (inp) { inp.value = ''; inp.focus(); }
+  apBuscarPessoa(''); apRenderPessoas(); apAtualizarConta();
+}
+function apTirarPessoa(id) { _apPub.pessoas.delete(id); apRenderPessoas(); apAtualizarConta(); }
+function apRenderPessoas() {
+  const el = document.getElementById('apPessoaChips'); if (!el) return;
+  el.innerHTML = [..._apPub.pessoas.values()].map(p => `<span class="ap-chip">${escHtml(p.nome || p.id)}${p.matricula ? ` · ${escHtml(p.matricula)}` : ''}<button type="button" aria-label="Tirar ${escHtml(p.nome || '')}" onclick="apTirarPessoa('${escJs(p.id)}')">×</button></span>`).join('');
+}
+function apAtualizarConta() {
+  AP_GRUPOS.forEach(([k]) => { const s = document.querySelector(`#apPublicoBox [data-resumo="${k}"]`); if (s) s.textContent = _apPub[k].size ? `${_apPub[k].size} marcada${_apPub[k].size > 1 ? 's' : ''}` : 'sem filtro'; });
+  const el = document.getElementById('apConta'); if (!el) return;
+  const todas = apEhTodas();
+  const algo = _apPub.funcoes.size || (!todas && (_apPub.bases.size || _apPub.setores.size || _apPub.pessoas.size));
+  if (!algo) { el.innerHTML = `<span style="color:var(--text-3)">Marque ${todas ? 'pelo menos uma função' : 'pelo menos uma função, base, setor ou pessoa'}.</span>`; return; }
+  const ve = apQuemVe(), total = (_apOpc?.pessoas || []).length;
+  el.innerHTML = `<svg class=ic aria-hidden=true><use href=#i-users></use></svg> ${todas ? 'Nesta filial, vão ver' : 'Vão ver'} <b>${ve.length}</b> de ${total} pessoa${total === 1 ? '' : 's'} com acesso ao portal${todas ? ' (e quem tiver essas funções nas outras filiais)' : ''}
+    ${ve.length ? `<details><summary>Ver quem</summary><div>${ve.map(p => escHtml(p.nome)).join(', ')}</div></details>` : '<span style="color:var(--red);width:100%">Ninguém desta filial bate com essa escolha.</span>'}`;
+}
+function apLimparPublico() {
+  ['funcoes', 'bases', 'setores'].forEach(k => _apPub[k].clear()); _apPub.pessoas.clear();
+  document.querySelector('input[name=apPublico][value=todos]').checked = true;
+}
+// O que vai para o servidor (null = todos)
+function apPublicoDoForm() {
+  if (apModoPublico() !== 'escolher') return null;
+  const todas = apEhTodas();
+  return { funcoes: [..._apPub.funcoes], bases: todas ? [] : [..._apPub.bases], setores: todas ? [] : [..._apPub.setores],
+    pessoas: todas ? [] : [..._apPub.pessoas.values()].map(p => ({ id: p.id })) };
+}
+
+function apErro(id, msg) { const el = document.getElementById(id); if (!el) return; el.textContent = msg || ''; el.classList.toggle('hidden', !msg); }
+function apLimparForm() {
+  ['apEditId', 'apTitulo', 'apTexto', 'apFim'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('apInicio').value = _ap?.hoje || apHoje();
+  document.querySelector('input[name=apTipo][value=INFO]').checked = true;
+  document.getElementById('apTodas').checked = false; document.getElementById('apEntrada').checked = false;
+  document.getElementById('apCiencia').checked = false;
+  document.getElementById('apTodas').disabled = false;
+  apLimparPublico(); apAjustarPublico();
+  apTirarImagem();
+  document.getElementById('apFormTitulo').textContent = 'Novo aviso';
+  document.getElementById('apBtnSalvar').innerHTML = '<svg class=ic aria-hidden=true><use href=#i-save></use></svg> Publicar aviso';
+  document.getElementById('apBtnCancelar').classList.add('hidden');
+  apErro('apErro', '');
+}
+function apMostrarImagem(src) {
+  const tag = document.getElementById('apImgTag'), info = document.getElementById('apImgInfo');
+  info.textContent = '';
+  // Diz o tamanho e se a faixa do portal vai cortar (fora de 3 por 1)
+  tag.onload = () => {
+    const w = tag.naturalWidth, h = tag.naturalHeight; if (!w || !h) return;
+    const r = w / h, corta = r < 2.6 || r > 3.4;
+    info.innerHTML = `Assim aparece no portal. Imagem de ${w} × ${h} px${corta ? ` · <span style="color:var(--yellow,#d97706)">${r < 2.6 ? 'mais alta' : 'mais comprida'} que 3 por 1: a faixa corta ${r < 2.6 ? 'em cima e embaixo' : 'dos lados'}; no portal a pessoa toca para ver inteira</span>` : ' · formato certo, aparece inteira'}`;
+  };
+  tag.src = src || '';
+  document.getElementById('apImgPrevia').classList.toggle('hidden', !src);
+  document.getElementById('apImgBotao').textContent = src ? 'Trocar imagem' : 'Escolher imagem';
+}
+function apTirarImagem() { _apImagem = null; _apManterImagem = false; apMostrarImagem(null); }
+// A imagem é reduzida aqui (até 1200 px de largura, JPEG) antes de enviar
+function apEscolherImagem(input) {
+  const arq = input.files?.[0]; input.value = '';
+  if (!arq) return;
+  if (!/^image\//.test(arq.type || '')) { apErro('apErro', 'Escolha uma imagem (JPG ou PNG).'); return; }
+  const url = URL.createObjectURL(arq), img = new Image();
+  img.onload = () => {
+    const esc = Math.min(1, 1200 / img.naturalWidth);
+    const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * esc); c.height = Math.round(img.naturalHeight * esc);
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(img, 0, 0, c.width, c.height);
+    URL.revokeObjectURL(url);
+    _apImagem = c.toDataURL('image/jpeg', 0.82); _apManterImagem = false;
+    apMostrarImagem(_apImagem); apErro('apErro', '');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); apErro('apErro', 'Não foi possível ler a imagem.'); };
+  img.src = url;
+}
+function apEditar(id) {
+  const a = (_ap?.avisos || []).find(x => x.id === id); if (!a) return;
+  document.getElementById('apEditId').value = a.id;
+  document.getElementById('apTitulo').value = a.titulo || '';
+  document.getElementById('apTexto').value = a.texto || '';
+  document.querySelector(`input[name=apTipo][value=${a.tipo === 'ATENCAO' ? 'ATENCAO' : 'INFO'}]`).checked = true;
+  document.getElementById('apInicio').value = a.inicio || '';
+  document.getElementById('apFim').value = a.fim || '';
+  document.getElementById('apTodas').checked = a.unidade === 'todas'; document.getElementById('apTodas').disabled = true;
+  document.getElementById('apEntrada').checked = !!a.tela_entrada;
+  document.getElementById('apCiencia').checked = !!a.exige_ciencia;
+  // Público (25/11/2026)
+  apLimparPublico();
+  const pub = a.publico || null;
+  if (pub && ((pub.funcoes || []).length || (pub.bases || []).length || (pub.setores || []).length || (pub.pessoas || []).length)) {
+    (pub.funcoes || []).forEach(v => _apPub.funcoes.add(v)); (pub.bases || []).forEach(v => _apPub.bases.add(v)); (pub.setores || []).forEach(v => _apPub.setores.add(v));
+    (pub.pessoas || []).forEach(p => _apPub.pessoas.set(p.id, p));
+    document.querySelector('input[name=apPublico][value=escolher]').checked = true;
+  }
+  apAjustarPublico();
+  document.getElementById('apEntrada').checked = !!a.tela_entrada;
+  _apImagem = null; _apManterImagem = !!a.imagem; apMostrarImagem(a.imagem || null);
+  document.getElementById('apFormTitulo').textContent = 'Editar aviso';
+  document.getElementById('apBtnSalvar').innerHTML = '<svg class=ic aria-hidden=true><use href=#i-save></use></svg> Salvar aviso';
+  document.getElementById('apBtnCancelar').classList.remove('hidden');
+  document.getElementById('apTitulo').focus();
+}
+async function apSalvar() {
+  const id = document.getElementById('apEditId').value;
+  const corpo = {
+    titulo: document.getElementById('apTitulo').value.trim(), texto: document.getElementById('apTexto').value.trim(),
+    tipo: document.querySelector('input[name=apTipo]:checked')?.value || 'INFO',
+    inicio: document.getElementById('apInicio').value, fim: document.getElementById('apFim').value || null,
+    imagem: _apImagem, manter_imagem: !_apImagem && _apManterImagem,
+    unidade: document.getElementById('apTodas').checked ? 'todas' : undefined,
+    tela_entrada: document.getElementById('apTodas').checked && document.getElementById('apEntrada').checked,
+    exige_ciencia: document.getElementById('apCiencia').checked,
+    publico: apPublicoDoForm(),
+  };
+  if (corpo.titulo.length < 3) { apErro('apErro', 'Escreva o título do aviso.'); return; }
+  if (!corpo.inicio) { apErro('apErro', 'Informe a data de início.'); return; }
+  const p = corpo.publico;
+  if (p && !p.funcoes.length && !p.bases.length && !p.setores.length && !p.pessoas.length) {
+    apErro('apErro', corpo.unidade === 'todas' ? 'Marque pelo menos uma função, ou escolha "Todos".' : 'Marque pelo menos uma função, base, setor ou pessoa, ou escolha "Todos".'); return;
+  }
+  const btn = document.getElementById('apBtnSalvar'); btn.disabled = true;
+  const r = await api(id ? '/avisos-portal/' + encodeURIComponent(id) : '/avisos-portal', { method: id ? 'PUT' : 'POST', body: JSON.stringify(corpo) });
+  btn.disabled = false;
+  if (!r) return;
+  if (!r.ok) { apErro('apErro', r.erro || 'Não foi possível salvar.'); return; }
+  toast(id ? 'Aviso salvo.' : 'Aviso publicado no portal.', 'success');
+  apLimparForm(); carregarAvisosPortal();
+}
+async function apEncerrar(id) {
+  if (!confirm('Encerrar este aviso? Ele sai do portal e fica no histórico.')) return;
+  const r = await api('/avisos-portal/' + encodeURIComponent(id) + '/encerrar', { method: 'POST' });
+  if (!r) return;
+  if (!r.ok) { toast(r.erro || 'Não foi possível encerrar.', 'error'); return; }
+  if (document.getElementById('apEditId').value === id) apLimparForm();
+  toast('Aviso encerrado.', 'success'); carregarAvisosPortal();
+}
+async function apSuspender() {
+  const mensagem = (document.getElementById('apSuspMsg')?.value || '').trim();
+  const ate = document.getElementById('apSuspAte')?.value || null;
+  if (mensagem.length < 5) { apErro('apSuspErro', 'Escreva a mensagem que as pessoas vão ver no portal.'); return; }
+  if (!confirm(`Suspender os pedidos do portal desta filial${ate ? ' até ' + apData(ate) : ' até você liberar'}?\n\nNinguém consegue pedir, editar pedido ou pedir mobilização. Acompanhar continua funcionando.`)) return;
+  const r = await api('/avisos-portal/suspensao', { method: 'POST', body: JSON.stringify({ mensagem, ate }) });
+  if (!r) return;
+  if (!r.ok) { apErro('apSuspErro', r.erro || 'Não foi possível suspender.'); return; }
+  toast('Pedidos do portal suspensos nesta filial.', 'success'); carregarAvisosPortal();
+}
+async function apLiberar() {
+  if (!confirm('Liberar os pedidos do portal desta filial agora?')) return;
+  const r = await api('/avisos-portal/suspensao/desligar', { method: 'POST' });
+  if (!r) return;
+  if (!r.ok) { toast(r.erro || 'Não foi possível liberar.', 'error'); return; }
+  toast('Pedidos do portal liberados.', 'success'); carregarAvisosPortal();
 }
 
 async function api(path, opts={}) {
@@ -22599,6 +23025,7 @@ const PERMISSOES_SCHEMA = {
     cadastrar_armazens:'Cadastrar armazéns', cadastrar_equipes:'Cadastrar equipes',
     cadastrar_dotacao:'Cadastrar dotação', catalogo_armazem:'Catálogo por Armazém',
     gerenciar_usuarios:'Gerenciar usuários', gerenciar_usuarios_solicitacao:'Usuários de Solicitação',
+    avisos_portal:'Avisos e suspensão do portal de solicitação',
     ver_links_externos:'Links Externos'
   }},
   inventario: { label:'Inventário', icon:'<svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg>', itens:{
