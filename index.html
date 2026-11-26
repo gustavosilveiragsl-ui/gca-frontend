@@ -45,6 +45,45 @@ body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-h
 button{font-family:var(--font-main);cursor:pointer;}
 input,select,textarea{font-family:var(--font-main);}
 .hidden{display:none!important;}
+/* Tablets de assinatura (24/11/2026) */
+.tb-grade{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:20px;align-items:start}
+@media (max-width:900px){.tb-grade{grid-template-columns:1fr}}
+.tb-passos ol{margin:4px 0 0 18px;font-size:12px;color:var(--text-2);line-height:1.7}
+.tb-passos a{word-break:break-all;color:#818cf8;font-weight:600}
+.tb-item{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--border);border-radius:var(--radius-md);margin-bottom:10px;flex-wrap:wrap}
+.tb-item:last-child{margin-bottom:0}
+.tb-item-info{flex:1;min-width:200px}
+.tb-item-nome{font-weight:700;font-size:14px}
+.tb-arm{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text-2);margin-top:3px}
+/* Desconto: como o colaborador vai assinar (QR no balcão, link, tablet do armazém, papel) */
+.desc-ass{display:flex;gap:16px;flex-wrap:wrap;padding:14px;border:1px solid var(--border);border-radius:var(--radius-md)}
+.desc-ass-qr{display:flex;flex-direction:column;align-items:center;gap:6px;width:150px;flex-shrink:0;text-align:center}
+.desc-ass-qrbox{width:140px;height:140px;background:#fff;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center;color:#475569;font-size:11px}
+.desc-ass-qrbox img{width:132px!important;height:132px!important}
+.desc-ass-qrleg{font-size:11px;color:var(--text-3);line-height:1.4}
+.desc-ass-ops{flex:1;min-width:220px;display:flex;flex-direction:column;gap:12px}
+.desc-ass-tit{font-size:12px;font-weight:700}
+.desc-ass-sub{font-size:11px;color:var(--text-3);margin-top:1px}
+.desc-ass-bts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px}
+.desc-ass-bts a.btn{text-decoration:none;color:inherit}
+.tb-item-sub{font-size:11px;color:var(--text-3);margin-top:3px;line-height:1.5}
+.tb-codigo{font-family:var(--font-mono);font-size:28px;font-weight:500;letter-spacing:6px;padding:6px 14px;border-radius:var(--radius-sm);background:rgba(99,102,241,.1);border:1px dashed #6366f1;color:var(--text-1);white-space:nowrap}
+.tb-chip{display:inline-flex;align-items:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.4px}
+.tb-chip.ativo{background:rgba(34,197,94,.15);color:#16a34a}
+.tb-chip.aguardando{background:rgba(99,102,241,.15);color:#6366f1}
+.tb-chip.vencido{background:rgba(245,158,11,.15);color:#d97706}
+.tb-chip.despareado{background:rgba(148,163,184,.18);color:var(--text-3)}
+.tb-acoes{display:flex;gap:6px;flex-wrap:wrap}
+/* Trazer do descarte: abas sem serial / com serial NR10 (24/11/2026) */
+.td-abas{display:flex;gap:4px;padding:3px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-2,rgba(0,0,0,.03))}
+.td-aba{flex:1;padding:7px 10px;border:0;border-radius:calc(var(--radius-sm) - 2px);background:transparent;color:var(--text-2);font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.td-aba.ativa{background:var(--accent,#6366f1);color:#fff}
+.tds-lista{max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.tds-linha{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px}
+.tds-linha:last-child{border-bottom:0}
+.tds-linha input{margin-top:2px;flex-shrink:0}
+.tds-linha small{display:block;color:var(--text-3);font-size:10.5px;margin-top:1px}
+.tds-vazio{padding:10px;font-size:12px;color:var(--text-3)}
 
 /* LOADING */
 #loadingScreen{position:fixed;inset:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px;transition:opacity 0.4s ease;}
@@ -1618,6 +1657,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           <button class="nav-item" data-view="links-externos" data-perm="ver_links_externos" onclick="showView('links-externos',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-link></use></svg></span> Links Externos</button>
           <button class="nav-item" data-view="logins-solicitacao" data-perm="gerenciar_usuarios_solicitacao" onclick="showView('logins-solicitacao',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-key-round></use></svg></span> Usuários de Solicitação</button>
           <button class="nav-item" data-view="avisos-portal" data-perm="avisos_portal" onclick="showView('avisos-portal',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-megaphone></use></svg></span> Avisos do Portal</button>
+          <button class="nav-item" data-view="tablets" data-perm="tablets_assinatura" onclick="showView('tablets',this)"><span class="ni-icon"><svg class=ic aria-hidden=true><use href=#i-tablet-smartphone></use></svg></span> Tablets de Assinatura</button>
 
           <!-- Administração — somente admin -->
           <div id="navAdminGrp" style="display:none">
@@ -6480,6 +6520,34 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         </div>
       </div>
 
+      <!-- ── TABLETS DE ASSINATURA (24/11/2026): pareados por código; só eles recebem as assinaturas da filial ── -->
+      <div class="view" id="view-tablets">
+        <div class="tb-grade">
+          <div class="card">
+            <div class="card-header"><div><div class="card-title"><svg class=ic aria-hidden=true><use href=#i-tablet-smartphone></use></svg> Novo tablet</div><div class="card-sub">Gera um código de 6 números para digitar no tablet. Vale 15 minutos e uma vez só.</div></div></div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px">
+              <div><label class="form-label" for="tbNome">Nome do tablet *</label><input id="tbNome" class="form-input" maxlength="60" placeholder="Ex.: Balcão do almoxarifado" onkeydown="if(event.key==='Enter')tbNovo()"></div>
+              <div><label class="form-label" for="tbArmazem">Armazém *</label><select id="tbArmazem" class="form-input"></select>
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px">O tablet só mostra as assinaturas deste armazém.</div></div>
+              <button class="btn btn-primary" id="tbBtnNovo" onclick="tbNovo()"><svg class=ic aria-hidden=true><use href=#i-key-round></use></svg> Gerar código</button>
+              <div class="tb-passos">
+                <div class="form-label">No tablet</div>
+                <ol>
+                  <li>Abra <a id="tbLinkTablet" target="_blank" rel="noopener"></a> <button type="button" class="btn btn-ghost btn-sm" onclick="copiarLink(document.getElementById('tbLinkTablet').href)">Copiar</button></li>
+                  <li>Digite o código que aparece aqui e toque em <b>Parear este tablet</b>.</li>
+                  <li>Pronto: o que for mandado ao tablet deste armazém aparece nele.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div><div class="card-title">Tablets desta filial</div><div class="card-sub">Cada tablet é de um armazém. Desparear corta o acesso na hora (tablet perdido, trocado ou fora de uso)</div></div>
+              <button class="btn btn-ghost btn-sm" onclick="carregarTablets()">Atualizar</button></div>
+            <div id="tbLista" style="padding:16px"><div class="spinner"></div></div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── AVISOS DO PORTAL (24/11/2026): avisos no portal de solicitação e suspensão dos pedidos da filial ── -->
       <div class="view h-ambar" id="view-avisos-portal">
         <div class="ap-grade">
@@ -7389,10 +7457,15 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
 <div class="modal-overlay hidden" id="modalTrazerDescarte">
   <div class="modal-box" style="max-width:500px">
     <div class="modal-header">
-      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg> Trazer do descarte</div><div style="font-size:11px;color:var(--text-3)">Material que estava no descarte e deu para aproveitar volta ao estoque</div></div>
+      <div><div class="modal-title"><svg class=ic aria-hidden=true><use href=#i-recycle></use></svg> Trazer do descarte</div><div style="font-size:11px;color:var(--text-3)">Material que estava no descarte e deu para aproveitar volta ao estoque (o com serial NR10 passa antes pelo laudo)</div></div>
       <button class="modal-close" onclick="document.getElementById('modalTrazerDescarte').classList.add('hidden')">×</button>
     </div>
     <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
+      <div class="td-abas" role="tablist">
+        <button type="button" role="tab" id="tdAbaSem" class="td-aba ativa" onclick="tdTrocarAba('sem')">Sem serial</button>
+        <button type="button" role="tab" id="tdAbaSerial" class="td-aba" onclick="tdTrocarAba('serial')">Com serial NR10</button>
+      </div>
+      <div id="tdPainelSem" style="display:flex;flex-direction:column;gap:12px">
       <div>
         <label class="form-label" for="tdItem">Item *</label>
         <input id="tdBusca" class="form-input" placeholder="Buscar item pelo nome ou código..." oninput="tdFiltrarItens(this.value)" autocomplete="off" style="margin-bottom:6px">
@@ -7421,6 +7494,43 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
       </div>
       <div style="font-size:11px;color:var(--text-3);padding:8px;border:1px solid rgba(34,197,94,.2);border-radius:var(--radius-sm);background:rgba(34,197,94,.05)">
         <svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Ao confirmar: o estoque do armazém sobe, o descarte (e o saldo da base escolhida) desce na mesma quantidade, fica uma entrada "Recuperado do descarte" e a economia entra no Financeiro.
+      </div>
+      </div>
+      <!-- Com serial NR10 (24/11/2026): sai do descarte e vai para laudo -->
+      <div id="tdPainelSerial" style="display:none;flex-direction:column;gap:12px">
+        <div>
+          <label class="form-label" for="tdsItem">Item *</label>
+          <input id="tdsBusca" class="form-input" placeholder="Buscar pelo item ou pelo serial..." oninput="tdsFiltrar(this.value)" autocomplete="off" style="margin-bottom:6px">
+          <select id="tdsItem" class="form-input" onchange="tdsEscolherItem()"></select>
+          <div id="tdsSemItens" class="hidden" style="font-size:12px;color:var(--text-3);padding:8px 0">Nenhum serial NR10 no descarte desta filial.</div>
+        </div>
+        <div>
+          <div class="form-label" style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <span>Seriais que deram para aproveitar *</span>
+            <button type="button" class="btn btn-ghost btn-sm" id="tdsMarcarTodos" onclick="tdsMarcarTodos()">Marcar todos</button>
+          </div>
+          <div id="tdsSeriais" class="tds-lista"></div>
+          <div id="tdsContagem" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <label class="form-label" for="tdsArmazem">Volta para o armazém *</label>
+            <select id="tdsArmazem" class="form-input"></select>
+            <div style="font-size:11px;color:var(--text-3);margin-top:4px">Onde o serial entra no estoque depois do laudo aprovado.</div>
+          </div>
+          <div style="flex:1;min-width:180px">
+            <label class="form-label" for="tdsBase">De onde veio *</label>
+            <select id="tdsBase" class="form-input"></select>
+            <div id="tdsDescarteInfo" style="font-size:11px;color:var(--text-3);margin-top:4px"></div>
+          </div>
+        </div>
+        <div>
+          <label class="form-label" for="tdsObs">Observação</label>
+          <input id="tdsObs" class="form-input" maxlength="300" placeholder="Ex.: sem furo, só suja">
+        </div>
+        <div style="font-size:11px;color:var(--text-3);padding:8px;border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-sm);background:rgba(245,158,11,.06)">
+          <svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Serial NR10 só volta ao estoque com laudo novo. Ao confirmar, ele sai do descarte (e da base escolhida) e fica em <b>Aguardando laudo</b>, aqui na Recuperação de Materiais. Monte a remessa de laudo como sempre: no Recuperar, com o rastreio novo, ele entra no estoque do armazém escolhido e a economia vai para o Financeiro. Se for reprovado, volta ao descarte sem contar outra perda.
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -9725,7 +9835,7 @@ const VIEW_TITLES = {
   'consulta-colaboradores':  ['Consulta de Colaboradores','/ Ficha'],
   'consulta-ultima-retirada':['Última Retirada por Item','/ Consulta'],
   'consulta-tamanhos':['Tamanhos dos Colaboradores','/ Consulta'],
-  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'], 'avisos-portal':['Avisos do Portal','/ Portal de solicitação'],
+  'consulta-dotacao':        ['Dotação por Função','/ Consulta'], dotacao:['Dotação','/ Por Função'], usuarios:['Usuários','/ Gestão'], 'logins-solicitacao':['Usuários de Solicitação','/ Cadastro'], 'avisos-portal':['Avisos do Portal','/ Portal de solicitação'], tablets:['Tablets de Assinatura','/ Pareamento'],
   // Telas do menu que não tinham título (o topo mostrava o código da tela)
   'enel-atendimento':['Materiais Cliente','/ Atendimento Material'],
   'enel-sol-materiais':['Materiais Cliente','/ Solicitações ENEL'],
@@ -9845,6 +9955,7 @@ function onViewLoad(nome) {
   if (nome === 'dotacao')            { if (!_itens.length) carregarItensAtendimento(); carregarDotacao(); }
   if (nome === 'usuarios')           { carregarUsuariosView(); renderArmazensUsuario([]); }
   if (nome === 'avisos-portal')      carregarAvisosPortal();
+  if (nome === 'tablets')            carregarTablets();
   if (nome === 'logins-solicitacao') { if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarLS(); carregarArmazensLS(); }
   if (nome === 'descontos')          { if (!_itens.length) carregarItensAtendimento(); if (!_colaboradores.length) carregarColaboradoresAtendimento(); carregarDescontos(); }
   if (nome === 'desligamentos')      { if (!_colaboradores.length) carregarColaboradoresAtendimento(); if (!_armazens.length) carregarArmazens(); dslCarregar(); }
@@ -13467,9 +13578,10 @@ async function descLerAnexo(arquivo) {
     return c.toDataURL('image/jpeg', 0.85);
   } finally { URL.revokeObjectURL(url); }
 }
-async function descEnviarAnexo(arquivo) {
+// pasta: 'bo' (padrão) ou 'termos' (termo do desconto lançado à mão, assinado em papel, 24/11/2026)
+async function descEnviarAnexo(arquivo, pasta) {
   const dataUrl = await descLerAnexo(arquivo);
-  const r = await api('/descontos/anexo', { method: 'POST', body: JSON.stringify({ dataUrl }) });
+  const r = await api('/descontos/anexo', { method: 'POST', body: JSON.stringify({ dataUrl, ...(pasta ? { pasta } : {}) }) });
   if (!r?.ok) throw new Error(r?.erro || 'Não foi possível enviar o arquivo.');
   return r.caminho;
 }
@@ -13855,7 +13967,9 @@ async function enviarTablet() {
   const id = ATEND.id;
   if (!id) { toast('Nenhum atendimento ativo', 'warn'); return; }
   const res = await api(`/atendimentos/${id}/enviar-tablet`, { method: 'POST' });
-  if (res?.ok) {
+  if (res?.ok && res.tablets_ativos === 0) {
+    tbAvisoSemTablet(res);
+  } else if (res?.ok) {
     toast('<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Enviado ao tablet! Aguardando assinatura.', 'success', 4000);
   } else {
     toast(res?.erro || 'Erro ao enviar ao tablet', 'error');
@@ -23026,6 +23140,7 @@ const PERMISSOES_SCHEMA = {
     cadastrar_dotacao:'Cadastrar dotação', catalogo_armazem:'Catálogo por Armazém',
     gerenciar_usuarios:'Gerenciar usuários', gerenciar_usuarios_solicitacao:'Usuários de Solicitação',
     avisos_portal:'Avisos e suspensão do portal de solicitação',
+    tablets_assinatura:'Tablets de assinatura (parear e desparear)',
     ver_links_externos:'Links Externos'
   }},
   inventario: { label:'Inventário', icon:'<svg class=ic aria-hidden=true><use href=#i-clipboard-list></use></svg>', itens:{
@@ -25650,7 +25765,7 @@ function _renderSeriaisDev(row) {
 
   // Lista do nome dele + campos para os que faltam
   const faltam = Math.max(0, qtdSeriais - seriais.length);
-  const hint = ePar ? `(item par — ${qtdSeriais} seriais)` : `(${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
+  const hint = ePar ? `(item par — ${qtdSeriais} seriais)` : `(${qtdSeriais} ${qtdSeriais>1?'seriais':'serial'})`;
   box.innerHTML = `
     <div style="font-size:10px;color:var(--text-3);margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-hash></use></svg> Seriais ${hint} — marque os que estão no nome dele e escolha o destino de cada um:</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px">
@@ -25675,7 +25790,7 @@ function _renderSeriaisDev(row) {
       const erro = row.querySelector('.dev-serial-erro');
       if (checked > qtdSeriais) {
         cb.checked = false;
-        if (erro) { erro.textContent = `Selecione no máximo ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
+        if (erro) { erro.textContent = `Selecione no máximo ${qtdSeriais} ${qtdSeriais>1?'seriais':'serial'}`; erro.style.display=''; }
       } else if (erro) { erro.style.display = 'none'; }
     });
   });
@@ -25822,7 +25937,7 @@ async function confirmarDevolucao() {
         if (s) escolhidos.push({ serial: s, destino: inp.closest('.dev-serial-linha')?.querySelector('.dev-serial-manual-destino')?.value || 'ESTOQUE' });
       });
       if (escolhidos.length !== qtdNecessaria) {
-        erro = `Item "${item_descricao}": informe exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd}) — marcados e digitados somam ${escolhidos.length}`;
+        erro = `Item "${item_descricao}": informe exatamente ${qtdNecessaria} ${qtdNecessaria>1?'seriais':'serial'} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd}) — marcados e digitados somam ${escolhidos.length}`;
         return;
       }
       const repetido = escolhidos.find((e, i) => escolhidos.findIndex(x => x.serial === e.serial) !== i);
@@ -25976,7 +26091,7 @@ async function _atualizarSeriaisTransf(itemId, parItem) {
     return;
   }
 
-  const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} serial${qtdSeriais>1?'is':''})`;
+  const hint = parItem ? `(item par — selecione ${qtdSeriais} seriais)` : `(selecione ${qtdSeriais} ${qtdSeriais>1?'seriais':'serial'})`;
   serialBox.innerHTML = `
     <div style="font-size:10px;color:var(--text-3);margin-bottom:4px"><svg class=ic aria-hidden=true><use href=#i-hash></use></svg> Seriais ${hint}:</div>
     <div style="display:flex;flex-wrap:wrap;gap:4px">
@@ -25994,7 +26109,7 @@ async function _atualizarSeriaisTransf(itemId, parItem) {
       const erro = row.querySelector('.transf-serial-erro');
       if (checked > qtdSeriais) {
         cb.checked = false;
-        if (erro) { erro.textContent = `Selecione exatamente ${qtdSeriais} serial${qtdSeriais>1?'is':''}`; erro.style.display=''; }
+        if (erro) { erro.textContent = `Selecione exatamente ${qtdSeriais} ${qtdSeriais>1?'seriais':'serial'}`; erro.style.display=''; }
       } else {
         if (erro) { erro.style.display='none'; }
       }
@@ -26088,7 +26203,7 @@ async function confirmarTransfColab() {
       const selecionados = [...row.querySelectorAll('.transf-serial-cb:checked')].map(cb => cb.dataset.serial);
       const qtdNecessaria = ePar ? qtd * 2 : qtd;
       if (selecionados.length !== qtdNecessaria) {
-        erro = `Item "${item_nome}": selecione exatamente ${qtdNecessaria} serial${qtdNecessaria>1?'is':''} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
+        erro = `Item "${item_nome}": selecione exatamente ${qtdNecessaria} ${qtdNecessaria>1?'seriais':'serial'} (${ePar?'item par: '+qtd+' un × 2':'qtd: '+qtd})`;
         return;
       }
       seriais = selecionados;
@@ -26330,10 +26445,23 @@ function renderDescItens() {
     </div>`).join('');
 }
 
+// Parcela mínima de R$ 60 (24/11/2026, a mesma regra do desconto do atendimento): as parcelas que passam do
+// limite ficam desligadas; abaixo de R$ 120 é só à vista. O servidor confere de novo.
+function descMaxParcelasManual(total) { return Math.max(1, Math.floor(Math.round((Number(total) || 0) * 100) / 100 / 60 + 1e-9)); }
+function descLimitarParcelas(total) {
+  const sel = document.getElementById('descParcelas'); if (!sel) return;
+  const max = descMaxParcelasManual(total);
+  [...sel.options].forEach(o => { o.disabled = Number(o.value) > max; });
+  if (Number(sel.value) > max) { sel.value = String(max); atualizarCronograma(); }
+  let dica = document.getElementById('descParcelasDica');
+  if (!dica) { dica = document.createElement('div'); dica.id = 'descParcelasDica'; dica.style.cssText = 'font-size:10px;color:var(--text-3);margin-top:4px'; sel.insertAdjacentElement('afterend', dica); }
+  dica.textContent = total > 0 ? `Parcela mínima de R$ 60: até ${max}x${max === 1 ? ' (só à vista)' : ''}.` : '';
+}
 function atualizarTotaisDesc() {
   const totalItens = _descItens.reduce((s,i)=>s+(i.valor*i.qtd),0);
   const desconto   = parseFloat(document.getElementById('descDesconto')?.value)||0;
   const totalFinal = Math.max(totalItens - desconto, 0);
+  descLimitarParcelas(totalFinal);
   const box = document.getElementById('descTotaisBox');
   if (_descItens.length) {
     box.style.display = 'flex';
@@ -26392,11 +26520,14 @@ async function salvarDesconto() {
     motivo_desconto: descMotivo,
     parcelas: parseInt(document.getElementById('descParcelas').value)||1,
     mes_primeira_parcela: document.getElementById('descMesParcela').value,
-    status: 'Ativo', data: hojeBR(),
-    gerado_por: GCA.usuario?.nome||GCA.usuario?.username,
+    data: hojeBR(),
   };
+  if (body.parcelas > descMaxParcelasManual(valorTotal)) { toast(`Parcela mínima de R$ 60: no máximo ${descMaxParcelasManual(valorTotal)}x.`, 'warn'); return; }
   const res = await api('/descontos', { method:'POST', body: JSON.stringify(body) });
-  if (res?.ok) { toast('Desconto gerado!', 'success'); limparDesconto(); carregarDescontos(); }
+  if (res?.ok) {
+    toast('Desconto gerado: falta a assinatura do colaborador (link ou termo em papel).', 'success', 6000);
+    limparDesconto(); await carregarDescontos(); descDetalhes(res.id);
+  }
   else toast(res?.erro||'Erro ao salvar','error');
 }
 
@@ -26442,7 +26573,7 @@ function renderDescontos() {
     <td style="white-space:nowrap"><div style="font-size:11px;font-weight:600;color:${['Dispensado', 'Cancelado'].includes(d.status) ? 'var(--text-3)' : '#22c55e'}">${Number(d.valor_total||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div style="font-size:10px;color:var(--text-3);margin-top:2px">em ${d.parcelas||1}x</div></td>
     <td>${descSituacaoChip(d.status)}</td>
     <td>${formatarData(d.data)}</td>
-    <td style="white-space:nowrap"><button class="row-action" onclick="verDesconto('${escJs(d.id)}')">Ver</button> <button class="row-action" onclick="descDetalhes('${escJs(d.id)}')">Detalhes</button>${d.atendimento_id ? '' : ` <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirDesconto('${escJs(d.id)}','${escJs(d.colaborador_nome||'')}')" aria-label="Excluir"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button>`}</td>
+    <td style="white-space:nowrap"><button class="row-action" onclick="verDesconto('${escJs(d.id)}')">Ver</button> <button class="row-action" onclick="descDetalhes('${escJs(d.id)}')">Detalhes</button>${d.atendimento_id || d.status === 'Assinado' ? '' : ` <button class="row-action" style="color:var(--red);border-color:var(--red)" onclick="excluirDesconto('${escJs(d.id)}','${escJs(d.colaborador_nome||'')}')" aria-label="Excluir"><svg class=ic aria-hidden=true><use href=#i-trash-2></use></svg></button>`}</td>
   </tr>`).join('') : `<tr><td colspan="5"><div class="empty-state" style="padding:16px"><div class="es-title">${filtro ? 'Nenhum desconto nesta situação' : 'Nenhum desconto'}</div></div></td></tr>`;
 }
 
@@ -26475,16 +26606,39 @@ function descTingirAssinatura(dataUrl) {
 }
 
 // Detalhes: itens, documentos (assinatura do recebimento, comprovante, B.O.), histórico e Dispensar
+// Assinado no tablet (24/11/2026): o histórico diz onde foi
+function descViaTablet(d) { return (Array.isArray(d?.historico) ? d.historico : []).some(h => h.acao === 'ASSINADO' && /tablet/i.test(h.texto || '')); }
 async function descDetalhes(id) {
   let d = (_descData || []).find(x => x.id === id);
   if (!d) { await carregarDescontos(); d = (_descData || []).find(x => x.id === id); }
   if (!d) { toast('Desconto não encontrado', 'error'); return; }
   let itens = []; try { itens = JSON.parse(d.itens || '[]'); } catch {}
   const hist = Array.isArray(d.historico) ? d.historico : [];
-  const doc = (d.atendimento_id || d.baixa_viatura_id || d.bo_anexo) ? await api('/descontos/' + encodeURIComponent(d.id) + '/documentos') : null;
+  const manual = d.origem === 'MANUAL';
+  const doc = (d.atendimento_id || d.baixa_viatura_id || d.bo_anexo || manual) ? await api('/descontos/' + encodeURIComponent(d.id) + '/documentos') : null;
   const at = doc?.ok ? doc.atendimento : null, bos = doc?.ok ? (doc.bos || []) : [];
   const st = d.status || 'Ativo';
   const podeDispensar = !['Dispensado', 'Cancelado'].includes(st);
+  const assinadoOnde = descViaTablet(d) ? 'no tablet' : 'pelo link do termo';
+  // Como o colaborador vai assinar (24/11/2026): a maioria dos armazéns não tem tablet. QR no balcão (celular dele),
+  // link/WhatsApp de longe, tablet do armazém (só aparece se houver) e, no lançado à mão, o termo em papel.
+  const aguardaLink = st === 'Aguardando assinatura' && !!doc?.link && (manual || !!d.baixa_viatura_id);
+  const blocoAssinar = !aguardaLink ? '' : `<div><div class="form-label">Como o colaborador vai assinar</div>
+    <div class="desc-ass">
+      <div class="desc-ass-qr"><div class="desc-ass-qrbox" id="descQr">Gerando o QR...</div>
+        <div class="desc-ass-qrleg"><b>No balcão:</b> ele lê com a câmera do celular dele e assina ali</div></div>
+      <div class="desc-ass-ops">
+        <div><div class="desc-ass-tit">De longe, pelo celular dele</div><div class="desc-ass-bts">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="copiarLink('${escJs(doc.link)}')"><svg class=ic aria-hidden=true><use href=#i-copy></use></svg> Copiar link</button>
+          <a class="btn btn-ghost btn-sm" href="https://wa.me/?text=${encodeURIComponent(`Olá, ${d.colaborador_nome}. Segue o termo de autorização do desconto em folha para você ler e assinar: ${doc.link}`)}" target="_blank" rel="noopener"><svg class=ic aria-hidden=true><use href=#i-message-square></use></svg> WhatsApp</a></div></div>
+        <div id="descTabletOp" style="display:none"><div class="desc-ass-tit" id="descTabletTit">No tablet do armazém</div><div class="desc-ass-bts">
+          <select id="descTabletArm" class="form-input" style="width:auto;min-width:180px;padding:5px 8px;font-size:12px" aria-label="Armazém do tablet"></select>
+          <button type="button" class="btn btn-ghost btn-sm" data-tablet><svg class=ic aria-hidden=true><use href=#i-tablet-smartphone></use></svg> ${d.tablet_pendente ? 'No tablet (mandar de novo)' : 'Mandar ao tablet'}</button></div></div>
+        ${manual ? `<div><div class="desc-ass-tit">Em papel</div><div class="desc-ass-sub">Imprima pelo "Ver termo", colha a assinatura e anexe a foto ou o PDF</div><div class="desc-ass-bts">
+          <label class="btn btn-ghost btn-sm" style="cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-paperclip></use></svg> <span id="descTermoTxt">Anexar o termo assinado</span>
+          <input type="file" id="descTermoArq" accept="image/*,application/pdf" style="display:none"></label></div></div>` : ''}
+      </div>
+    </div></div>`;
   document.getElementById('modalDescDetalhe')?.remove();
   const ov = document.createElement('div');
   ov.className = 'modal-overlay'; ov.id = 'modalDescDetalhe'; ov.style.zIndex = '10002';
@@ -26502,10 +26656,12 @@ async function descDetalhes(id) {
   if (d.baixa_viatura_id) {
     const bx = doc?.ok ? doc.baixa : null;
     if (bx) docs.push(`Baixa na viatura <b>${escHtml(bx.placa || '')}</b> em ${escHtml(formatarData(bx.data))}: ${escHtml(bx.motivo || '')}${bx.foto_url ? ` · <a href="${escHtml(safeUrl(bx.foto_url))}" target="_blank" rel="noopener">foto</a>` : ''}`);
-    if (st === 'Assinado') docs.push(`Autorizado pelo link do termo em <b>${escHtml(descDataHora(d.assinado_em || doc?.assinado_em))}</b>.`);
-    else if (st === 'Aguardando assinatura' && doc?.link) docs.push(`Aguardando a assinatura pelo link: <span style="display:inline-flex;gap:6px;flex-wrap:wrap;vertical-align:middle">
-      <button type="button" class="btn btn-ghost btn-sm" onclick="copiarLink('${escJs(doc.link)}')">Copiar link</button>
-      <a class="btn btn-ghost btn-sm" href="https://wa.me/?text=${encodeURIComponent(`Olá, ${d.colaborador_nome}. Segue o termo de autorização do desconto em folha para você ler e assinar: ${doc.link}`)}" target="_blank" rel="noopener">WhatsApp</a></span>`);
+    if (st === 'Assinado') docs.push(`Autorizado ${assinadoOnde} em <b>${escHtml(descDataHora(d.assinado_em || doc?.assinado_em))}</b>.`);
+  }
+  // Lançado à mão (24/11/2026): assina pelo link do termo OU o termo assinado em papel é anexado aqui
+  if (manual) {
+    if (st === 'Assinado') docs.push(doc?.termo_url ? `Termo assinado em papel: <a href="${escHtml(safeUrl(doc.termo_url))}" target="_blank" rel="noopener">abrir o anexo</a> (anexado em ${escHtml(descDataHora(d.assinado_em))})`
+      : `Autorizado ${assinadoOnde} em <b>${escHtml(descDataHora(d.assinado_em || doc?.assinado_em))}</b>.`);
   }
   bos.forEach(b => docs.push(b.url ? `<a href="${escHtml(safeUrl(b.url))}" target="_blank" rel="noopener">B.O.${b.numero ? ` nº ${escHtml(b.numero)}` : ''} (${escHtml(b.item)})</a>` : `B.O. ${escHtml(b.item)}: arquivo indisponível`));
   ov.innerHTML = `<div class="modal-box" style="max-width:640px;width:100%;max-height:calc(100vh - 48px);display:flex;flex-direction:column" role="dialog" aria-modal="true" aria-labelledby="descDetTit">
@@ -26521,6 +26677,7 @@ async function descDetalhes(id) {
       <div><div class="form-label">Itens</div>
         <table class="desc-at-tab"><thead><tr><th>Item</th><th>Motivo</th><th class="c">Qtd</th><th class="d">Subtotal</th></tr></thead>
         <tbody>${itens.map(i => `<tr><td>${escHtml(i.nome || i.descricao || '—')}</td><td>${escHtml(i.motivo_item || d.motivo || '')}</td><td class="c">${escHtml(String(i.quantidade || i.qtd || 1))}</td><td class="d">${descMoeda(i.subtotal != null ? i.subtotal : (Number(i.valor) || 0) * (Number(i.quantidade || i.qtd) || 1))}</td></tr>`).join('')}</tbody></table></div>
+      ${blocoAssinar}
       ${docs.length ? `<div><div class="form-label">Documentos</div><div style="display:flex;flex-direction:column;gap:6px;font-size:12px">${docs.map(x => `<div>${x}</div>`).join('')}</div></div>` : ''}
       ${hist.length ? `<div><div class="form-label">Histórico</div><div class="desc-hist">${hist.map(h => `<div><b>${escHtml(descDataHora(h.em))}</b> · ${escHtml(h.por || '')}<br>${escHtml(h.texto || h.acao || '')}</div>`).join('')}</div></div>` : ''}
       ${podeDispensar ? `<div id="descDispBox" style="display:none;flex-direction:column;gap:10px;padding:12px;border:1px solid var(--border);border-radius:var(--radius-sm)">
@@ -26541,6 +26698,42 @@ async function descDetalhes(id) {
   ov.querySelectorAll('[data-fechar]').forEach(el => { el.onclick = fechar; });
   ov.addEventListener('click', (ev) => { if (ev.target === ov) fechar(); });
   ov.querySelector('#descDetVer').onclick = () => verDesconto(d.id);
+  if (aguardaLink) {
+    gcaMostrarQr(ov.querySelector('#descQr'), doc.link, 132);   // a janela ainda não está na página: vai pelo elemento
+    // Tablet: só aparece se algum armazém do usuário tem tablet pareado; com mais de um, escolhe o armazém
+    api('/tablets/armazens').then(rt => {
+      const arms = rt?.ok ? rt.armazens : [];
+      const op = ov.querySelector('#descTabletOp'), sel = ov.querySelector('#descTabletArm');
+      if (!op || !arms.length) return;
+      sel.innerHTML = arms.map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('');
+      if (d.tablet_armazem_id && arms.some(a => a.id === d.tablet_armazem_id)) sel.value = d.tablet_armazem_id;
+      sel.style.display = arms.length > 1 ? '' : 'none';
+      ov.querySelector('#descTabletTit').textContent = arms.length > 1 ? 'No tablet do armazém' : `No tablet do ${arms[0].nome}`;
+      op.style.display = '';
+    });
+  }
+  ov.querySelectorAll('[data-tablet]').forEach(b => { b.onclick = async () => {
+    const armazem_id = ov.querySelector('#descTabletArm')?.value || '';
+    b.disabled = true;
+    const r = await api(`/descontos/${encodeURIComponent(d.id)}/enviar-tablet`, { method: 'POST', body: JSON.stringify({ armazem_id }) });
+    b.disabled = false;
+    if (!r?.ok) { toast(escHtml(r?.erro || 'Erro ao mandar ao tablet'), 'error', 6000); return; }
+    toast(escHtml(`Mandado ao tablet do ${r.armazem}: o colaborador toca no nome dele, lê o termo e assina.`), 'success', 5000);
+    d.tablet_pendente = true; d.tablet_armazem_id = armazem_id;
+    b.innerHTML = '<svg class=ic aria-hidden=true><use href=#i-tablet-smartphone></use></svg> No tablet (mandar de novo)';
+  }; });
+  const termoArq = ov.querySelector('#descTermoArq');
+  if (termoArq) termoArq.onchange = async (ev) => {
+    const arq = ev.target.files?.[0]; if (!arq) return;
+    const txt = ov.querySelector('#descTermoTxt'); txt.textContent = 'Enviando…';
+    try {
+      const anexo = await descEnviarAnexo(arq, 'termos');
+      const r = await api(`/descontos/${encodeURIComponent(d.id)}/anexar-assinado`, { method: 'POST', body: JSON.stringify({ anexo }) });
+      if (!r?.ok) throw new Error(r?.erro || 'Não foi possível anexar o termo.');
+      toast('Termo assinado anexado: desconto assinado.', 'success');
+      fechar(); await carregarDescontos(); descDetalhes(d.id);
+    } catch (e) { txt.textContent = 'Anexar o termo assinado (foto ou PDF)'; toast(escHtml(e.message), 'error', 6000); }
+  };
   if (podeDispensar) {
     const box = ov.querySelector('#descDispBox');
     let anexo = '', enviando = false;
@@ -26592,7 +26785,7 @@ async function verDesconto(id) {
   // Desconto do desligamento (12/11/2026): a assinatura do colaborador é a mesma do termo
   var assinaturaHtml = '', avisoSituacao = '';
   // Desconto do atendimento (item 3, 17/11/2026): a assinatura é a do recebimento do material
-  if (d.atendimento_id || d.baixa_viatura_id) {
+  if (d.atendimento_id || d.baixa_viatura_id || (d.origem === 'MANUAL' && d.status === 'Assinado' && d.assinatura_base64)) {
     if (d.status === 'Assinado') {
       var rdoc = await api('/descontos/' + encodeURIComponent(d.id) + '/documentos');
       var atd = rdoc && rdoc.ok ? rdoc.atendimento : null;
@@ -26601,7 +26794,7 @@ async function verDesconto(id) {
       // Igual ao comprovante do recebimento: o mesmo azul de caneta e o mesmo tamanho (120 × 50 pt)
       if (img) img = await descTingirAssinatura(img);
       if (img) assinaturaHtml = '<img src="' + img + '" alt="" style="width:160px;height:67px;display:block;margin:0 0 -2px 10px">'
-        + '<div style="font-size:9.5px;color:#334155;margin:0 0 4px 10px">Assinado digitalmente em <b>' + escHtml(descCarimbo(d.assinado_em || (atd && atd.assinado_em))) + '</b> (horário de Brasília), ' + (d.baixa_viatura_id ? 'pelo link do termo' : 'junto com o recebimento do material') + '</div>';
+        + '<div style="font-size:9.5px;color:#334155;margin:0 0 4px 10px">Assinado digitalmente em <b>' + escHtml(descCarimbo(d.assinado_em || (atd && atd.assinado_em))) + '</b> (horário de Brasília), ' + (d.atendimento_id ? 'junto com o recebimento do material' : descViaTablet(d) ? 'no tablet' : 'pelo link do termo') + '</div>';
     } else {
       avisoSituacao = d.status === 'Aguardando assinatura' ? 'AGUARDANDO A ASSINATURA DO COLABORADOR: sem valor até ser assinado'
         : d.status === 'Dispensado' ? 'DESCONTO DISPENSADO: não descontar' : d.status === 'Cancelado' ? 'DESCONTO CANCELADO: não descontar' : '';
@@ -28462,7 +28655,7 @@ async function buscarLocalizador() {
     // Nome de colaborador e observação vêm do banco (digitados por gente): escapa tudo.
     const corEvento = (t) => ({
       ENTRADA: '#22c55e', SAIDA: '#ef4444', RECUPERACAO: '#0ea5e9',
-      DESCARTE: '#64748b', ENVIO_LAUDO: '#f59e0b', RETORNO_LAUDO: '#a855f7',
+      DESCARTE: '#64748b', ENVIO_LAUDO: '#f59e0b', RETORNO_LAUDO: '#a855f7', SAIU_DESCARTE: '#0ea5e9',
     })[String(t || '').toUpperCase()] || 'var(--text-1)';
 
     const celula = 'padding:6px 8px;font-size:11px;border-bottom:1px solid var(--border)';
@@ -29515,6 +29708,98 @@ async function confirmarInutilizarSemSerial(id, item) {
   } else toast(res?.erro || 'Erro ao inutilizar', 'error');
 }
 
+// ── TABLETS DE ASSINATURA (24/11/2026) ──
+// O tablet não escolhe mais a filial numa lista pública: aqui se cria o tablet e sai um código de 6 números
+// (15 minutos, uma vez só). Digitado no tablet, ele fica pareado; desparear corta na hora.
+let _tbLista = [], _tbTimer = null, _tbSeg = 0;
+function tbLinkDoTablet() { try { const u = new URL('tablet.html', location.href); u.hash = ''; u.search = ''; return u.href; } catch { return 'tablet.html'; } }
+function tbQuando(v) { const d = v ? new Date(v) : null; return d && !isNaN(d) ? d.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—'; }
+function tbFaltam(v) { const ms = new Date(v) - Date.now(); if (!(ms > 0)) return ''; const m = Math.floor(ms / 60000), s = Math.floor(ms % 60000 / 1000); return `${m}:${String(s).padStart(2, '0')}`; }
+async function carregarTablets() {
+  const link = document.getElementById('tbLinkTablet'), url = tbLinkDoTablet();
+  link.href = url; link.textContent = url.replace(/^https?:\/\//, '');
+  const res = await api('/tablets');
+  const box = document.getElementById('tbLista');
+  if (!res?.ok) { box.innerHTML = `<div style="font-size:12px;color:var(--text-3)">${escHtml(res?.erro || 'Erro ao carregar os tablets')}</div>`; return; }
+  _tbLista = res.tablets || [];
+  // Armazéns que o usuário vê. Com mais de um, a pessoa escolhe (o tablet no armazém errado não mostra nada);
+  // mantém a escolha ao atualizar
+  const sel = document.getElementById('tbArmazem'), atual = sel.value;
+  const arms = res.armazens || [];
+  sel.innerHTML = (arms.length > 1 ? '<option value="">Selecione...</option>' : '') + arms.map(a => `<option value="${escHtml(a.id)}">${escHtml(a.nome)}</option>`).join('');
+  sel.value = arms.some(a => a.id === atual) ? atual : (arms.length === 1 ? arms[0].id : '');
+  renderTablets();
+  tbAgendar();
+}
+function renderTablets() {
+  const box = document.getElementById('tbLista');
+  if (!_tbLista.length) { box.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:4px 0">Nenhum tablet nesta filial. Crie um ao lado e digite o código no tablet.</div>'; return; }
+  const CHIP = { ATIVO: ['ativo', 'Pareado'], AGUARDANDO: ['aguardando', 'Aguardando o código'], CODIGO_VENCIDO: ['vencido', 'Código vencido'], DESPAREADO: ['despareado', 'Despareado'] };
+  box.innerHTML = _tbLista.map(tb => {
+    const [cls, txt] = CHIP[tb.situacao] || ['despareado', tb.situacao];
+    const linhas = [];
+    if (tb.situacao === 'ATIVO') linhas.push(`Pareado em ${tbQuando(tb.pareado_em)}${tb.ultimo_acesso ? ` · visto por último em ${tbQuando(tb.ultimo_acesso)}` : ''}`);
+    if (tb.situacao === 'ATIVO' && tb.codigo) linhas.push('Código para outro aparelho: quando ele for usado, este aparelho para de funcionar.');
+    if (tb.situacao === 'DESPAREADO') linhas.push(`Despareado por ${escHtml(tb.despareado_por || '—')} em ${tbQuando(tb.despareado_em)}`);
+    linhas.push(`Criado por ${escHtml(tb.criado_por || '—')} em ${tbQuando(tb.criado_em)}`);
+    const codigo = tb.codigo ? `<div style="text-align:center"><div class="tb-codigo" aria-label="Código ${escHtml(tb.codigo.split('').join(' '))}">${escHtml(tb.codigo.slice(0, 3))} ${escHtml(tb.codigo.slice(3))}</div>
+      <div class="tb-item-sub" data-tb-faltam="${escHtml(tb.codigo_expira_em || '')}">vale por ${tbFaltam(tb.codigo_expira_em) || '0:00'}</div></div>` : '';
+    const acoes = tb.situacao === 'DESPAREADO' ? '' : `<div class="tb-acoes">
+      ${tb.situacao === 'AGUARDANDO' ? '' : `<button class="btn btn-ghost btn-sm" onclick="tbCodigoNovo('${escJs(tb.id)}')">${tb.situacao === 'ATIVO' ? 'Trocar de aparelho' : 'Gerar código novo'}</button>`}
+      <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:var(--red)" onclick="tbDesparear('${escJs(tb.id)}')">Desparear</button></div>`;
+    return `<div class="tb-item" data-tb="${escHtml(tb.id)}"><div class="tb-item-info"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tb-item-nome">${escHtml(tb.nome)}</span><span class="tb-chip ${cls}">${txt}</span></div>
+      <div class="tb-arm"><svg class=ic aria-hidden=true><use href=#i-warehouse></use></svg> ${escHtml(tb.armazem_nome || 'Armazém não informado')}</div>
+      <div class="tb-item-sub">${linhas.join('<br>')}</div></div>${codigo}${acoes}</div>`;
+  }).join('');
+}
+// Enquanto a tela está aberta: o relógio do código anda a cada segundo e, com código valendo, a lista
+// atualiza a cada 5 s (para ver "Pareado" assim que o tablet usar o código)
+function tbAgendar() {
+  clearInterval(_tbTimer);
+  _tbTimer = setInterval(async () => {
+    if (!document.getElementById('view-tablets')?.classList.contains('active')) { clearInterval(_tbTimer); _tbTimer = null; return; }
+    document.querySelectorAll('[data-tb-faltam]').forEach(el => { const f = tbFaltam(el.dataset.tbFaltam); el.textContent = f ? `vale por ${f}` : 'código vencido'; });
+    _tbSeg = (_tbSeg + 1) % 5;
+    if (_tbSeg === 0 && _tbLista.some(tb => tb.codigo)) {
+      const res = await api('/tablets');
+      if (res?.ok && JSON.stringify(res.tablets) !== JSON.stringify(_tbLista)) { _tbLista = res.tablets || []; renderTablets(); }
+    }
+  }, 1000);
+}
+async function tbNovo() {
+  const nome = document.getElementById('tbNome').value.trim();
+  const armazem_id = document.getElementById('tbArmazem').value;
+  if (nome.length < 2) { toast('Dê um nome ao tablet (ex.: Balcão do almoxarifado)', 'warn'); document.getElementById('tbNome').focus(); return; }
+  if (!armazem_id) { toast('Escolha o armazém do tablet', 'warn'); document.getElementById('tbArmazem').focus(); return; }
+  const btn = document.getElementById('tbBtnNovo'); btn.disabled = true;
+  try {
+    const res = await api('/tablets', { method: 'POST', body: JSON.stringify({ nome, armazem_id }) });
+    if (!res?.ok) { toast(escHtml(res?.erro || 'Erro ao criar o tablet'), 'error', 6000); return; }
+    document.getElementById('tbNome').value = '';
+    toast('Código gerado: digite no tablet em até 15 minutos.', 'success', 5000);
+    await carregarTablets();
+  } finally { btn.disabled = false; }
+}
+async function tbCodigoNovo(id) {
+  const tb = _tbLista.find(x => x.id === id); if (!tb) return;
+  if (tb.situacao === 'ATIVO' && !confirm(`Gerar um código para parear outro aparelho como "${tb.nome}"?\n\nQuando o aparelho novo usar o código, este para de funcionar.`)) return;
+  const res = await api(`/tablets/${encodeURIComponent(id)}/codigo`, { method: 'POST' });
+  if (!res?.ok) { toast(escHtml(res?.erro || 'Erro ao gerar o código'), 'error'); return; }
+  await carregarTablets();
+}
+async function tbDesparear(id) {
+  const tb = _tbLista.find(x => x.id === id); if (!tb) return;
+  if (!confirm(`Desparear "${tb.nome}"?\n\nO tablet para de receber as assinaturas na hora. Para voltar, cadastre de novo e digite um código novo.`)) return;
+  const res = await api(`/tablets/${encodeURIComponent(id)}/desparear`, { method: 'POST' });
+  if (!res?.ok) { toast(escHtml(res?.erro || 'Erro ao desparear'), 'error'); return; }
+  toast(`${escHtml(tb.nome)} despareado.`, 'success');
+  await carregarTablets();
+}
+// Aviso de quem manda ao tablet sem nenhum tablet pareado na filial
+function tbAvisoSemTablet(res) {
+  if (res?.tablets_ativos === 0) toast('O armazém deste atendimento não tem tablet pareado: ninguém vai ver. Use o QR, o link ou o WhatsApp.', 'warn', 8000);
+}
+
 // ── TRAZER DO DESCARTE (23/11/2026) ──
 // Item sem serial que estava no descarte (troca por desgaste/dano) e deu para aproveitar: volta ao
 // estoque, sai do descarte e da base onde a sucata está. Antes era entrada avulsa e o descarte ficava errado.
@@ -29535,11 +29820,119 @@ async function abrirTrazerDescarte() {
   }
   const principal = armazensUser.find(a => a.principal) || armazensUser[0];
   document.getElementById('tdArmazem').innerHTML = armazensUser.map(a => `<option value="${a.id}" ${principal && a.id === principal.id ? 'selected' : ''}>${escHtml(a.nome)}</option>`).join('');
+  document.getElementById('tdsArmazem').innerHTML = document.getElementById('tdArmazem').innerHTML;
+  document.getElementById('tdsBusca').value = '';
+  document.getElementById('tdsObs').value = '';
+  document.getElementById('tdsItem').innerHTML = '';
+  document.getElementById('tdsSeriais').innerHTML = '<div class="tds-vazio">Carregando o descarte...</div>';
+  document.getElementById('tdsBase').innerHTML = '';
+  document.getElementById('tdsContagem').textContent = '';
+  document.getElementById('tdsDescarteInfo').textContent = '';
+  tdTrocarAba('sem');
   modal.classList.remove('hidden');
   const res = await api('/laudos/recuperados/descarte');
-  if (!res?.ok) { document.getElementById('tdSaldoInfo').textContent = res?.erro || 'Erro ao carregar o descarte'; return; }
+  if (!res?.ok) {
+    document.getElementById('tdSaldoInfo').textContent = res?.erro || 'Erro ao carregar o descarte';
+    document.getElementById('tdsSeriais').innerHTML = `<div class="tds-vazio">${escHtml(res?.erro || 'Erro ao carregar o descarte')}</div>`;
+    return;
+  }
   _tdItens = res.itens || [];
+  _tdsItens = res.itens_serial || [];
   tdFiltrarItens('');
+  tdsFiltrar('');
+}
+
+// Aba do Trazer do descarte: sem serial (volta direto ao estoque) ou com serial NR10 (vai para laudo)
+let _tdAba = 'sem';
+function tdTrocarAba(aba) {
+  _tdAba = aba === 'serial' ? 'serial' : 'sem';
+  document.getElementById('tdAbaSem').classList.toggle('ativa', _tdAba === 'sem');
+  document.getElementById('tdAbaSerial').classList.toggle('ativa', _tdAba === 'serial');
+  document.getElementById('tdAbaSem').setAttribute('aria-selected', _tdAba === 'sem');
+  document.getElementById('tdAbaSerial').setAttribute('aria-selected', _tdAba === 'serial');
+  document.getElementById('tdPainelSem').style.display = _tdAba === 'sem' ? 'flex' : 'none';
+  document.getElementById('tdPainelSerial').style.display = _tdAba === 'serial' ? 'flex' : 'none';
+  const btn = document.getElementById('tdBtnConfirmar');
+  btn.style.background = btn.style.borderColor = _tdAba === 'sem' ? '#22c55e' : '#d97706';
+  btn.innerHTML = _tdAba === 'sem'
+    ? '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Trazer para o estoque'
+    : '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Mandar para laudo';
+}
+
+// ── Com serial NR10 (24/11/2026) ──
+let _tdsItens = [];
+const tdsNorm = (t) => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function tdsTermos() { return tdsNorm(document.getElementById('tdsBusca').value).split(/\s+/).filter(Boolean); }
+function tdsBate(texto, termos) { const n = tdsNorm(texto); return termos.every(t => n.includes(t)); }
+function tdsFiltrar() {
+  const termos = tdsTermos();
+  const lista = _tdsItens.filter(i => !termos.length || tdsBate(`${i.descricao} ${i.codigo}`, termos) || i.seriais.some(s => tdsBate(s.serial, termos)));
+  const sel = document.getElementById('tdsItem');
+  const atual = sel.value;
+  document.getElementById('tdsSemItens').classList.toggle('hidden', !!_tdsItens.length);
+  sel.innerHTML = lista.length
+    ? lista.map(i => `<option value="${escHtml(i.item_id)}" ${i.item_id === atual ? 'selected' : ''}>${escHtml(i.descricao)}${i.codigo ? ' · ' + escHtml(i.codigo) : ''} — ${i.seriais.length} ${i.seriais.length === 1 ? 'serial' : 'seriais'} no descarte</option>`).join('')
+    : `<option value="">${_tdsItens.length ? 'Nenhum item ou serial com essa busca' : 'Nenhum serial no descarte'}</option>`;
+  tdsEscolherItem();
+}
+function tdsDia(v) { const d = new Date(v); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }); }
+function tdsItemAtual() { return _tdsItens.find(i => i.item_id === document.getElementById('tdsItem').value); }
+function tdsEscolherItem() {
+  const it = tdsItemAtual();
+  const box = document.getElementById('tdsSeriais'), base = document.getElementById('tdsBase');
+  const info = document.getElementById('tdsDescarteInfo');
+  if (!it) { box.innerHTML = `<div class="tds-vazio">${_tdsItens.length ? 'Escolha o item.' : 'Nenhum serial NR10 no descarte desta filial.'}</div>`; base.innerHTML = ''; info.textContent = ''; tdsContar(); return; }
+  // Buscou pelo serial: mostra só os que batem
+  const termos = tdsTermos();
+  const batem = termos.length && !tdsBate(`${it.descricao} ${it.codigo}`, termos) ? it.seriais.filter(s => tdsBate(s.serial, termos)) : [];
+  const seriais = batem.length ? batem : it.seriais;
+  const marcados = new Set([...box.querySelectorAll('input:checked')].map(c => c.value));
+  box.innerHTML = seriais.map(s => `<label class="tds-linha"><input type="checkbox" value="${escHtml(s.id_ativo)}" ${marcados.has(s.id_ativo) || batem.length === 1 ? 'checked' : ''} onchange="tdsContar()">
+      <span><b>${escHtml(s.serial)}</b><small>${escHtml(s.motivo || 'Sem motivo registrado')}${s.desde ? ' · no descarte desde ' + escHtml(tdsDia(s.desde)) : ''}</small></span></label>`).join('')
+    + (batem.length && batem.length < it.seriais.length ? `<div class="tds-vazio">Mostrando ${batem.length} de ${it.seriais.length} seriais deste item (pela busca).</div>` : '');
+  const bases = it.bases || [];
+  base.innerHTML = (bases.length > 1 ? '<option value="">Selecione...</option>' : '')
+    + bases.map(b => `<option value="${escHtml(b.base)}">${escHtml(b.base)} — ${b.saldo} no descarte</option>`).join('')
+    + '<option value="__ARMAZEM__">Já estava no armazém (base já coletada)</option>';
+  base.value = bases.length === 1 ? bases[0].base : (bases.length ? '' : '__ARMAZEM__');
+  info.textContent = `Descarte do item: ${it.descarte} ${it.un_med}${it.par ? ' (cada serial conta meio par)' : ''}.`;
+  tdsContar();
+}
+function tdsMarcados() { return [...document.querySelectorAll('#tdsSeriais input:checked')].map(c => c.value); }
+function tdsContar() {
+  const n = tdsMarcados().length, total = document.querySelectorAll('#tdsSeriais input').length;
+  document.getElementById('tdsContagem').textContent = total ? (n ? `${n} ${n === 1 ? 'serial' : 'seriais'} marcado${n === 1 ? '' : 's'}` : 'Marque os seriais que deram para aproveitar.') : '';
+  const btn = document.getElementById('tdsMarcarTodos');
+  btn.textContent = total && n === total ? 'Desmarcar todos' : 'Marcar todos';
+  btn.disabled = !total;
+}
+function tdsMarcarTodos() {
+  const caixas = [...document.querySelectorAll('#tdsSeriais input')];
+  const todos = caixas.length && caixas.every(c => c.checked);
+  caixas.forEach(c => { c.checked = !todos; });
+  tdsContar();
+}
+async function confirmarSerialDoDescarte() {
+  const it = tdsItemAtual();
+  const ids = tdsMarcados();
+  const armazem_id = document.getElementById('tdsArmazem').value;
+  const baseSel = document.getElementById('tdsBase').value;
+  if (!it) { toast('Escolha o item', 'warn'); return; }
+  if (!ids.length) { toast('Marque o serial que deu para aproveitar', 'warn'); return; }
+  if (!armazem_id) { toast('Escolha o armazém para onde ele volta', 'warn'); return; }
+  if (!baseSel) { toast('Escolha de onde veio o material', 'warn'); return; }
+  const btn = document.getElementById('tdBtnConfirmar');
+  btn.disabled = true;
+  try {
+    const res = await api('/laudos/recuperados/serial-do-descarte', { method: 'POST',
+      body: JSON.stringify({ ids, armazem_id, base: baseSel === '__ARMAZEM__' ? '' : baseSel, obs: document.getElementById('tdsObs').value.trim() }) });
+    if (!res?.ok) { toast(escHtml(res?.erro || 'Erro ao tirar do descarte'), 'error', 6000); return; }
+    document.getElementById('modalTrazerDescarte').classList.add('hidden');
+    const n = res.enviados.length;
+    toast(escHtml(`${n} ${n === 1 ? 'serial' : 'seriais'} de ${it.descricao} saí${n === 1 ? 'u' : 'ram'} do descarte e ${n === 1 ? 'está' : 'estão'} em Aguardando laudo.`
+      + (res.pulados?.length ? ` Já tinham sido movimentados: ${res.pulados.join(', ')}.` : '')), 'success', 7000);
+    if (typeof carregarRecuperados === 'function') carregarRecuperados();
+  } finally { btn.disabled = false; }
 }
 
 function tdFiltrarItens(q) {
@@ -29569,6 +29962,7 @@ function tdEscolherItem() {
 }
 
 async function confirmarTrazerDescarte() {
+  if (_tdAba === 'serial') return confirmarSerialDoDescarte();
   const it = _tdItens.find(i => i.item_id === document.getElementById('tdItem').value);
   const qtd = Number(document.getElementById('tdQtd').value);
   const armazem_id = document.getElementById('tdArmazem').value;
@@ -29611,6 +30005,9 @@ function abrirModalRecuperar(idAtivo, serial, item, remessaItemId) {
     if (userArms.length) armazensUser = _armazens.filter(a => userArms.includes(a.id));
   }
   selArm.innerHTML = armazensUser.map(a=>`<option value="${a.id}">${escHtml(a.nome)}</option>`).join('');
+  // Já vem escolhido o armazém do serial: de onde ele saiu para o laudo, ou o escolhido no "Trazer do descarte" (24/11/2026)
+  const armDoSerial = (_recupData || []).find(r => r.id_ativo === idAtivo)?.armazem_id;
+  if (armDoSerial && armazensUser.some(a => a.id === armDoSerial)) selArm.value = armDoSerial;
 
   document.getElementById('modalRecuperar').classList.remove('hidden');
 }
@@ -37322,10 +37719,17 @@ async function abrirConferencia(id) {
   renderConferenciaItens(c, itens);
 }
 
+// Fotos da conferência pelo celular (24/11/2026): a da viatura, a de todos os itens juntos e as dos itens com diferença
+function confFotoMini(url, legenda) {
+  return `<a href="${escHtml(url)}" target="_blank" rel="noopener" title="${escHtml(legenda || 'Abrir a foto')}" style="display:inline-flex;flex-direction:column;gap:3px;text-decoration:none;color:var(--text-3);font-size:10px">
+    <img src="${escHtml(url)}" alt="${escHtml(legenda || 'Foto')}" style="width:96px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--border)">${legenda ? escHtml(legenda) : ''}</a>`;
+}
 function renderConferenciaItens(c, itens) {
   const alvo = document.getElementById('confDetLista');
   if (!alvo) return;
-  alvo.innerHTML = `<table style="width:100%;border-collapse:collapse">
+  const fotosFim = [c.foto_viatura_url ? confFotoMini(c.foto_viatura_url, 'Viatura') : '', c.foto_itens_url ? confFotoMini(c.foto_itens_url, 'Todos os itens') : ''].filter(Boolean).join('');
+  alvo.innerHTML = (fotosFim ? `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius-md)"><div style="width:100%;font-size:11px;font-weight:600;color:var(--text-2)"><svg class=ic aria-hidden=true><use href=#i-camera></use></svg> Fotos da conferência (abrem em tamanho grande)</div>${fotosFim}</div>` : '')
+    + `<table style="width:100%;border-collapse:collapse">
     <thead><tr>
       <th style="text-align:left;font-size:11px;color:var(--text-3);padding:6px">Material</th>
       <th style="text-align:center;font-size:11px;color:var(--text-3);padding:6px">Previsto</th>
@@ -37340,7 +37744,8 @@ function renderConferenciaItens(c, itens) {
       return `<tr style="border-top:1px solid var(--border)">
         <td style="padding:8px 6px;font-size:12px">${escHtml(i.item_descricao || i.item_id)}
           ${faltaSerial.length ? `<div style="font-size:10px;color:#f87171;font-family:var(--font-mono)">não achou: ${escHtml(faltaSerial.join(', '))}</div>` : ''}
-          ${sobraSerial.length ? `<div style="font-size:10px;color:#fbbf24;font-family:var(--font-mono)">a mais: ${escHtml(sobraSerial.join(', '))}</div>` : ''}</td>
+          ${sobraSerial.length ? `<div style="font-size:10px;color:#fbbf24;font-family:var(--font-mono)">a mais: ${escHtml(sobraSerial.join(', '))}</div>` : ''}
+          ${(i.fotos_urls || []).length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${i.fotos_urls.map((u, k) => confFotoMini(u, i.fotos_urls.length > 1 ? 'Foto ' + (k + 1) : '')).join('')}</div>` : ''}</td>
         <td style="padding:8px 6px;text-align:center;font-size:12px">${i.esperado}</td>
         <td style="padding:8px 6px;text-align:center;font-size:12px">${i.contado === null ? '—' : i.contado}</td>
         <td style="padding:8px 6px;text-align:center;font-size:12px;font-weight:700;color:${dif === 0 ? '#22c55e' : (dif < 0 ? '#f87171' : '#fbbf24')}">${dif > 0 ? '+' : ''}${dif}</td>

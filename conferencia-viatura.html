@@ -1,169 +1,209 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>GCA — Conferência da Viatura</title>
+<title>GCA Conferência da viatura</title>
 <link rel="icon" type="image/png" href="./icon-v3.png">
 <meta name="mobile-web-app-capable" content="yes">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#4f46e5">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&display=swap">
+<!-- Conferência da carga da viatura pelo celular — visual novo dos links externos e fotos (24/11/2026, item 10 parte 2
+     da lista de 16/11). Decisões do usuário (18/11): foto dos itens com diferença e, no fim, foto da viatura + uma foto
+     de todos os itens juntos. O QR da viatura abre esta página; entra com o crachá do portal (pode_conferir_viatura).
+     A conferência não mexe na carga: registra e aponta a diferença; quem acerta é o almoxarifado no GCA. -->
 <style>
-:root {
-  --accent:#6366f1;--accent-hover:#4f46e5;--accent-text:#818cf8;
-  --green:#22c55e;--green-soft:#052e16;--yellow:#fbbf24;--yellow-soft:#1c1300;
-  --red:#f87171;--red-soft:#1c0a0a;
-  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;
-  --font-main:'DM Sans',-apple-system,sans-serif;--font-mono:'DM Mono',monospace;
-  --bg:#0a0a0f;--bg-card:#0f0f17;--bg-hover:#0f172a;
-  --border:#1e1e2e;--border-mid:#2a2a3e;
-  --text-1:#f1f5f9;--text-2:#94a3b8;--text-3:#475569;
+[hidden]{display:none!important}   /* o "escondido" vale mesmo em quem tem display próprio (24/11/2026) */
+:root{
+  --bg:#f4f5f9; --surface:#ffffff; --surface-2:#f8fafc; --line:#e2e8f0; --line-2:#cbd5e1;
+  --fg:#0f172a; --fg-2:#334155; --fg-3:#475569;
+  --accent:#4f46e5; --accent-fg:#ffffff; --accent-soft:#eef2ff; --accent-text:#4338ca;
+  --ok:#166534; --ok-bg:#f0fdf4; --ok-line:#86efac; --ok-dot:#16a34a;
+  --warn:#92400e; --warn-bg:#fffbeb; --warn-line:#fcd34d;
+  --bad:#b91c1c; --bad-bg:#fef2f2; --bad-line:#fca5a5;
+  --shadow:0 6px 18px rgba(15,23,42,.08);
+  --f:'DM Sans',-apple-system,'Segoe UI',Roboto,sans-serif; --mono:'DM Mono',ui-monospace,Menlo,Consolas,monospace; --r:12px;
 }
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:14px;}
-body{font-family:var(--font-main);background:var(--bg);color:var(--text-1);min-height:100vh;-webkit-font-smoothing:antialiased;}
-button{font-family:var(--font-main);cursor:pointer;}
-input{font-family:var(--font-main);}
-.hidden{display:none!important;}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0a0a0f; --surface:#0f0f17; --surface-2:#12121b; --line:#1e1e2e; --line-2:#2a2a3e;
+  --fg:#f1f5f9; --fg-2:#cbd5e1; --fg-3:#94a3b8;
+  --accent:#6366f1; --accent-fg:#ffffff; --accent-soft:#1e1b4b; --accent-text:#a5b4fc;
+  --ok:#86efac; --ok-bg:#07160d; --ok-line:#14532d; --ok-dot:#22c55e;
+  --warn:#fcd34d; --warn-bg:#1c1300; --warn-line:#5c4207;
+  --bad:#fca5a5; --bad-bg:#1c0a0a; --bad-line:#7f1d1d;
+  --shadow:0 8px 24px rgba(0,0,0,.45); color-scheme:dark;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--f);font-size:15px;-webkit-tap-highlight-color:transparent}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+.ic{width:18px;height:18px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+h1{margin:0;font-size:22px;font-weight:700;line-height:1.2}
+p{margin:0}
+.muted{color:var(--fg-3);font-size:13px;line-height:1.45}
+.mono{font-family:var(--mono)}
+.btn{height:48px;padding:0 16px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--surface);color:var(--fg-2);font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.full{width:100%}
+.btn.peq{height:38px;padding:0 14px;font-size:14px;border-radius:10px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label,.rot{font-size:13px;font-weight:600;color:var(--fg-2)}
+.campo input,.campo textarea{border-radius:var(--r);border:1px solid var(--line-2);background:var(--surface);padding:0 12px;font-size:16px;width:100%}
+.campo input{height:48px}
+.campo textarea{padding:10px 12px;resize:vertical}
+.aviso{display:flex;gap:9px;align-items:flex-start;padding:10px 12px;border-radius:10px;font-size:13px;line-height:1.45}
+.aviso.bad{background:var(--bad-bg);border:1px solid var(--bad-line);color:var(--bad)}
+.aviso.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn)}
+.aviso.info{background:var(--surface-2);border:1px solid var(--line-2);color:var(--fg-2)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 
-.wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-.card{width:100%;max-width:420px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px 24px;}
-.titulo{font-size:16px;font-weight:700;text-align:center;margin-bottom:2px;}
-.sub{font-size:12px;color:var(--text-3);text-align:center;margin-bottom:22px;}
-.placa-badge{display:block;text-align:center;font-size:26px;font-weight:700;font-family:var(--font-mono);letter-spacing:3px;background:var(--bg);border:2px solid var(--border-mid);border-radius:10px;padding:10px;margin-bottom:16px;}
-.form-label{display:block;font-size:11px;font-weight:500;color:var(--text-2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;}
-.form-group{margin-bottom:14px;}
-.form-input{width:100%;padding:11px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);font-size:14px;outline:none;}
-.form-input:focus{border-color:var(--accent);}
-.btn{padding:11px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;border:none;cursor:pointer;width:100%;}
-.btn-primary{background:var(--accent);color:#fff;}
-.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
-.btn-ghost{background:transparent;color:var(--text-2);border:1px solid var(--border);}
-.erro-box{margin-top:12px;padding:10px 12px;background:var(--red-soft);border:1px solid rgba(248,113,113,.25);border-radius:var(--radius-sm);color:var(--red);font-size:12px;text-align:center;}
+.centro{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px max(16px,env(safe-area-inset-right,0px)) 24px max(16px,env(safe-area-inset-left,0px))}
+.caixa{width:100%;max-width:400px;display:flex;flex-direction:column;gap:18px}
+.caixa .logo{height:52px;width:auto;align-self:center}
+.cab-login{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.placa{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:2px;padding:6px 16px;border-radius:10px;border:2px solid var(--fg);background:var(--surface)}
+.sucesso{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+.sucesso .ic-grande{width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+.sucesso .ic-grande.ok{background:var(--ok-bg);color:var(--ok-dot);border:1px solid var(--ok-line)}
+.sucesso .ic-grande.dif{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.resumo{width:100%;display:flex;flex-direction:column;gap:6px;text-align:left}
+.resumo div{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-radius:10px;background:var(--surface);border:1px solid var(--line);font-size:14px}
 
-.app{display:none;flex-direction:column;min-height:100vh;}
-.app.ativo{display:flex;}
-.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:12px 16px;position:sticky;top:0;z-index:10;}
-.header-top{display:flex;justify-content:space-between;align-items:center;gap:10px;}
-.header-titulo{font-size:14px;font-weight:700;font-family:var(--font-mono);letter-spacing:1px;}
-.header-sub{font-size:11px;color:var(--text-3);}
-.header-nome{font-size:11px;color:var(--accent-text);}
-.progresso-bar{height:5px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden;}
-.progresso-fill{height:100%;background:var(--green);transition:width .3s ease;}
-.progresso-txt{font-size:10px;color:var(--text-3);margin-top:4px;}
+.app{min-height:100vh;display:flex;flex-direction:column}
+.topo{position:sticky;top:0;z-index:10;background:var(--surface);border-bottom:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px))}
+.topo-l{display:flex;align-items:center;gap:10px;max-width:760px;margin:0 auto}
+.topo-l img{height:24px;width:auto}
+.topo-l .t{display:flex;flex-direction:column;flex:1;min-width:0}
+.topo-l .t small{font-size:11px;color:var(--fg-3);font-weight:600;letter-spacing:.3px}
+.topo-l .t b{font-size:16px;font-weight:700;font-family:var(--mono);letter-spacing:1px}
+.btn-ic{width:42px;height:42px;border-radius:999px;border:1px solid var(--line-2);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--fg-2);flex-shrink:0}
+.progresso{max-width:760px;margin:10px auto 0;display:flex;flex-direction:column;gap:6px}
+.progresso .barra{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.progresso .barra i{display:block;height:100%;background:var(--ok-dot);border-radius:99px;transition:width .3s ease}
+.progresso .txt{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--fg-3);font-weight:600}
+.wrap{width:100%;max-width:760px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right,0px)) 110px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px}
+.item-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.item-card.contado{border-color:var(--ok-line);background:var(--ok-bg)}
+.item-card.divergente{border-color:var(--warn-line);background:var(--warn-bg)}
+.item-card .tx{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.item-nome{font-size:15px;font-weight:600}
+.item-cod{font-size:12px;color:var(--fg-3)}
+.item-status{font-size:13px;font-weight:600;color:var(--fg-3)}
+.item-status.ok{color:var(--ok)}
+.item-status.dif{color:var(--warn)}
+.empty{text-align:center;padding:28px 12px;color:var(--fg-3);font-size:14px;border:1px dashed var(--line-2);border-radius:var(--r)}
+.rodape{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.rodape .in{max-width:760px;margin:0 auto}
 
-.lista{flex:1;overflow-y:auto;padding:10px 12px 90px;}
-.item-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
-.item-card.contado{border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.04);}
-.item-card.divergente{border-color:rgba(251,191,36,.35);background:rgba(251,191,36,.04);}
-.item-nome{font-size:13px;font-weight:600;}
-.item-cod{font-size:10px;color:var(--text-3);font-family:var(--font-mono);}
-.item-status{font-size:10px;color:var(--text-3);margin-top:2px;}
-.item-status.ok{color:var(--green);font-weight:600;}
-.item-status.dif{color:var(--yellow);font-weight:600;}
-.item-btn{padding:8px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;border:none;background:var(--accent);color:#fff;white-space:nowrap;}
-
-.footer{position:fixed;bottom:0;left:0;right:0;background:var(--bg-card);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:10px;}
-.footer .btn{width:auto;flex:1;}
-.empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:12px;}
-
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
-.modal-overlay.hidden{display:none;}
-.modal-box{width:100%;max-width:420px;background:var(--bg-card);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:24px;border:1px solid var(--border);border-bottom:none;max-height:92vh;overflow-y:auto;}
-.modal-item-nome{font-size:14px;font-weight:700;margin-bottom:4px;}
-.modal-item-cod{font-size:11px;color:var(--text-3);margin-bottom:18px;}
-.qtd-input{width:100%;padding:14px;font-size:22px;text-align:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-1);margin-bottom:14px;}
-.serial-tag{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:12px;margin-bottom:6px;}
-.serial-tag.fora{border-color:rgba(251,191,36,.4);color:var(--yellow);}
-.serial-x{background:none;border:none;color:var(--red);font-size:14px;}
-
-.tela-final{display:none;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;}
-.tela-final.ativo{display:flex;}
-.resumo-linha{display:flex;justify-content:space-between;gap:10px;width:100%;max-width:420px;padding:8px 10px;border-bottom:1px solid var(--border);font-size:12px;}
-</style>
-
-<style id="gcaIconesCss">
-/* Ícones (20/10/2026): no lugar dos emojis, ícones Lucide (ISC) embutidos — sprite #gcaIcones */
-svg[class^="ic"]{width:1.1em;height:1.1em;flex-shrink:0;vertical-align:-0.18em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
-.ic-vermelho{color:#ef4444}.ic-amarelo{color:#eab308}.ic-verde{color:#22c55e}.ic-azul{color:#3b82f6}.ic-cinza{color:#94a3b8}.ic-estrela{color:#f59e0b}
+.folha-fundo{position:fixed;inset:0;background:rgba(2,6,23,.55);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.folha{width:100%;max-width:560px;max-height:94%;overflow-y:auto;background:var(--surface);border-radius:18px 18px 0 0;padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:12px}
+.folha .alca{width:40px;height:5px;border-radius:99px;background:var(--line-2);align-self:center}
+.previsto{display:flex;align-items:baseline;gap:8px;padding:10px 12px;border-radius:var(--r);background:var(--accent-soft)}
+.previsto b{font-size:28px;color:var(--accent-text);font-variant-numeric:tabular-nums}
+.previsto span{font-size:13px;color:var(--fg-2)}
+.qtd{display:flex;align-items:center;gap:10px}
+.qtd button{width:56px;height:56px;border-radius:var(--r);border:1px solid var(--line-2);background:var(--surface-2);font-size:26px;font-weight:600;color:var(--fg-2)}
+.qtd input{flex:1;min-width:0;height:56px;border-radius:var(--r);border:2px solid var(--accent);background:var(--surface);text-align:center;font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.bip{width:100%;height:56px;font-size:20px;letter-spacing:1px;text-align:center;font-family:var(--mono);text-transform:uppercase;background:var(--surface);border:2px solid var(--accent);border-radius:var(--r)}
+.serial-tag{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface-2);font-family:var(--mono);font-size:14px;font-weight:600}
+.serial-tag.fora{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn)}
+.serial-x{height:32px;min-width:32px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--bad);display:inline-flex;align-items:center;justify-content:center}
+.fotos{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.foto-mini{position:relative}
+.foto-mini img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line-2);display:block}
+.foto-mini button{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:999px;border:none;background:var(--bad);color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
+.btn-foto{display:inline-flex;align-items:center;gap:7px;height:46px;padding:0 14px;border-radius:10px;border:1px dashed var(--accent);color:var(--accent-text);font-size:14px;font-weight:600;cursor:pointer;background:transparent}
+.btn-foto input{display:none}
+.foto-final{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface-2)}
+.foto-final.feita{border-color:var(--ok-line);background:var(--ok-bg)}
+.foto-final img{width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:1px solid var(--line-2)}
+@media (min-width:960px){.folha-fundo{align-items:center}.folha{border-radius:18px}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
-<svg id="gcaIcones" xmlns="http://www.w3.org/2000/svg" style="display:none"><symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/> <path d="m16 9-5.5 5.5L8 12"/></symbol><symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/> <path d="M12 9v4"/> <path d="M12 17h.01"/></symbol><symbol id="i-truck" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/> <path d="M15 18H9"/> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/> <circle cx="17" cy="18" r="2"/> <circle cx="7" cy="18" r="2"/></symbol></svg>
 
-<!-- LOGIN -->
-<div class="wrap" id="telaLogin">
-  <div class="card">
-    <div class="titulo"><svg class=ic aria-hidden=true><use href=#i-truck></use></svg> Conferência da Viatura</div>
-    <div class="sub" id="loginSub">Carregando...</div>
-    <div class="placa-badge" id="loginPlaca">—</div>
-    <div class="form-group">
-      <label class="form-label">Matrícula</label>
-      <input class="form-input" id="loginMatricula" placeholder="Sua matrícula" autocomplete="off" inputmode="numeric">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Senha</label>
-      <input class="form-input" id="loginSenha" type="password" placeholder="Sua senha" autocomplete="off">
-    </div>
-    <button class="btn btn-primary" id="loginBtn" onclick="fazerLogin()">Entrar</button>
-    <div id="loginErro" class="erro-box hidden"></div>
-  </div>
-</div>
+<!-- ENTRAR -->
+<main class="centro" id="telaLogin">
+  <form class="caixa" id="formLogin" autocomplete="on">
+    <img class="logo" src="./logo-gca.png" alt="GCA">
+    <div class="cab-login"><h1>Conferência da viatura</h1><span class="placa" id="loginPlaca">—</span><p class="muted" id="loginSub">Carregando...</p></div>
+    <div class="campo"><label for="loginMatricula">Matrícula</label><input id="loginMatricula" name="username" autocomplete="username" inputmode="numeric" required></div>
+    <div class="campo"><label for="loginSenha">Senha</label><input id="loginSenha" name="password" type="password" autocomplete="current-password" required></div>
+    <div id="loginErro" class="aviso bad hidden" role="alert"></div>
+    <button class="btn pri full" type="submit" id="loginBtn" style="height:54px;font-size:16px">Entrar</button>
+    <p class="muted" style="text-align:center">É o mesmo acesso do portal de solicitação. Sem acesso? Fale com o almoxarifado.</p>
+  </form>
+</main>
 
 <!-- CONFERÊNCIA -->
-<div class="app" id="telaApp">
-  <div class="header">
-    <div class="header-top">
-      <div>
-        <div class="header-titulo" id="appPlaca">—</div>
-        <div class="header-sub" id="appSub">Confira o que está na viatura</div>
-      </div>
-      <div class="header-nome" id="appNome">—</div>
+<div class="app hidden" id="telaApp">
+  <header class="topo">
+    <div class="topo-l"><img src="./logo-gca.png" alt="GCA">
+      <div class="t"><small>Conferência da carga</small><b id="appPlaca">—</b></div>
+      <button class="btn-ic" id="btnAtualizar" aria-label="Atualizar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg></button>
     </div>
-    <div class="progresso-bar"><div class="progresso-fill" id="progressoFill" style="width:0%"></div></div>
-    <div class="progresso-txt" id="progressoTxt">0 de 0 conferidos</div>
+    <div class="progresso"><div class="barra"><i id="progressoFill" style="width:0%"></i></div><div class="txt"><span id="progressoTxt">0 de 0 conferidos</span><span id="appNome"></span></div></div>
+  </header>
+  <div class="wrap">
+    <p class="muted" style="font-size:12px">Confira item a item. Se a quantidade não bater, tire a foto do que encontrou. No fim, a foto da viatura e de todos os itens juntos.</p>
+    <div id="listaItens"></div>
   </div>
-  <div class="lista" id="listaItens"></div>
-  <div class="footer">
-    <button class="btn btn-ghost" onclick="carregarItens()">↻ Atualizar</button>
-    <button class="btn btn-primary" onclick="finalizar()"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> Finalizar conferência</button>
-  </div>
+  <div class="rodape"><div class="in"><button class="btn pri full" id="btnFinalizar" style="height:52px"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Finalizar conferência</button></div></div>
 </div>
 
-<!-- TELA FINAL -->
-<div class="tela-final" id="telaFinal">
-  <div style="font-size:48px;margin-bottom:12px" id="finalIcone"><svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg></div>
-  <div style="font-size:18px;font-weight:700;margin-bottom:8px" id="finalTitulo">Conferência finalizada!</div>
-  <div style="font-size:13px;color:var(--text-2);margin-bottom:16px" id="finalResumo">—</div>
-  <div id="finalDivergencias" style="width:100%;max-width:420px;margin-bottom:18px"></div>
-  <div style="font-size:11px;color:var(--text-3)">O almoxarifado vai resolver as diferenças. Pode fechar esta página.</div>
-</div>
+<!-- FIM -->
+<main class="centro hidden" id="telaFinal">
+  <div class="caixa sucesso">
+    <span class="ic-grande" id="finalIcone"></span>
+    <h1 id="finalTitulo">—</h1>
+    <p class="muted" id="finalResumo">—</p>
+    <div class="resumo" id="finalDivergencias"></div>
+    <p class="muted" style="font-size:12px">O almoxarifado confere as diferenças no GCA. Pode fechar esta página.</p>
+  </div>
+</main>
 
-<!-- MODAL CONTAR -->
-<div class="modal-overlay hidden" id="modalContar">
-  <div class="modal-box">
-    <div class="modal-item-nome" id="modalItemNome">—</div>
-    <div class="modal-item-cod" id="modalItemCod">—</div>
-
-    <div id="modalQtdArea">
-      <label class="form-label">Quantidade encontrada na viatura</label>
-      <input class="qtd-input" id="qtdInput" type="number" min="0" inputmode="decimal" placeholder="0">
+<!-- CONFERIR UM ITEM -->
+<div class="folha-fundo hidden" id="modalContar">
+  <div class="folha" role="dialog" aria-modal="true" aria-labelledby="modalItemNome">
+    <span class="alca" aria-hidden="true"></span>
+    <div><b style="font-size:17px" id="modalItemNome">—</b><p class="muted" id="modalItemCod">—</p></div>
+    <div class="previsto"><b id="modalPrevisto">0</b><span id="modalPrevistoTxt">previsto na viatura</span></div>
+    <div id="modalQtdArea" class="campo"><label for="qtdInput">Quantidade encontrada</label>
+      <div class="qtd"><button type="button" id="qtdMenos" aria-label="Menos um">−</button><input id="qtdInput" inputmode="decimal" autocomplete="off" placeholder="0"><button type="button" id="qtdMais" aria-label="Mais um">+</button></div></div>
+    <div id="modalSerialArea" class="campo hidden"><label for="serialInput">Leia ou digite o serial de cada peça</label>
+      <input class="bip" id="serialInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Serial + Enter">
+      <div id="serialLista" style="display:flex;flex-direction:column;gap:6px"></div>
+      <span class="muted" id="serialResumo">Nenhum serial lido</span></div>
+    <div id="fotosArea" class="campo hidden">
+      <div class="aviso warn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><span><b>Não bate com o previsto.</b> Tire a foto do que foi encontrado (obrigatória).</span></div>
+      <div class="fotos" id="fotosItem"></div>
     </div>
-
-    <div id="modalSerialArea" class="hidden">
-      <label class="form-label">Leia ou digite o serial de cada peça</label>
-      <input class="form-input" id="serialInput" placeholder="Serial + Enter" autocomplete="off" style="margin-bottom:10px">
-      <div id="serialLista"></div>
-      <div style="font-size:11px;color:var(--text-3);margin:6px 0 14px" id="serialResumo">Nenhum serial lido</div>
-    </div>
-
-    <div id="modalErro" class="erro-box hidden"></div>
-    <div style="display:flex;gap:10px;margin-top:6px">
-      <button class="btn btn-ghost" style="flex:1" onclick="fecharModal()">Cancelar</button>
-      <button class="btn btn-primary" style="flex:1" onclick="confirmarContagem()">Confirmar</button>
-    </div>
+    <div id="modalErro" class="aviso bad hidden" role="alert"></div>
+    <div class="grid2"><button class="btn" type="button" id="btnCancelarItem">Cancelar</button><button class="btn pri" type="button" id="btnConfirmarItem">Confirmar</button></div>
   </div>
 </div>
 
+<!-- FINALIZAR: FOTOS DO FIM -->
+<div class="folha-fundo hidden" id="modalFinalizar">
+  <div class="folha" role="dialog" aria-modal="true" aria-labelledby="finTitulo">
+    <span class="alca" aria-hidden="true"></span>
+    <b style="font-size:17px" id="finTitulo">Fotos para finalizar</b>
+    <div id="finFaltam" class="aviso bad hidden" role="alert"></div>
+    <div class="foto-final" id="boxFotoViatura"><span class="rot">Foto da viatura *</span><div id="fotoViaturaArea"></div></div>
+    <div class="foto-final" id="boxFotoItens"><span class="rot">Foto de todos os itens juntos *</span><div id="fotoItensArea"></div></div>
+    <div class="campo"><label for="obsFinal">Observação <span style="font-weight:400;color:var(--fg-3)">(opcional)</span></label><textarea id="obsFinal" rows="2" maxlength="500" placeholder="Ex.: cone quebrado ficou na base"></textarea></div>
+    <div id="finErro" class="aviso bad hidden" role="alert"></div>
+    <div class="grid2"><button class="btn" type="button" id="btnFinVoltar">Voltar</button><button class="btn pri" type="button" id="btnFinSim">Finalizar</button></div>
+  </div>
+</div>
+
+<script src="carimbo-foto.js"></script>
 <script>
 const API = 'https://gca-backend-production.up.railway.app';
 
@@ -171,15 +211,27 @@ const par = (nome) => new URLSearchParams(location.search).get(nome) || '';
 const PLACA = par('placa').toUpperCase();
 const UNIDADE = par('unidade');
 const CHAVE = 'conf_vtr_' + UNIDADE + '_' + PLACA;
-let TOKEN_SESSAO = sessionStorage.getItem(CHAVE) || '';
-let NOME_SESSAO = sessionStorage.getItem(CHAVE + '_nome') || '';
+let TOKEN_SESSAO = '', NOME_SESSAO = '';
+try { TOKEN_SESSAO = sessionStorage.getItem(CHAVE) || ''; NOME_SESSAO = sessionStorage.getItem(CHAVE + '_nome') || ''; } catch {}
+const $ = (id) => document.getElementById(id);
 let _itens = [];
 let _itemAtual = null;
 let _seriaisLidos = [];
+let _fotosItem = [];          // [{ caminho, url }] do item aberto
+let _fotoViatura = null, _fotoItens = null;   // { caminho, url } das fotos do fim (ficam enquanto a página estiver aberta)
+let _enviandoFoto = false;
 
+const IC = {
+  ok: '<path d="M20 6 9 17l-5-5"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  alerta: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+};
+const ic = (n, s) => `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"${s ? ` style="width:${s}px;height:${s}px"` : ''}>${IC[n] || ''}</svg>`;
 function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+const nomeFilial = () => UNIDADE.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
 async function api(path, opts = {}) {
   try {
@@ -189,72 +241,71 @@ async function api(path, opts = {}) {
     });
     return await res.json().catch(() => ({ ok: false, erro: 'Erro de resposta' }));
   } catch (err) {
-    return { ok: false, erro: 'Erro de conexão: ' + err.message };
+    return { ok: false, erro: 'Sem conexão com o servidor (internet?). Tente de novo.' };
   }
 }
+function mostrar(id, msg) { const el = $(id); el.textContent = msg || ''; el.classList.toggle('hidden', !msg); }
 
 async function iniciar() {
-  const sub = document.getElementById('loginSub');
+  const sub = $('loginSub');
   if (!PLACA || !UNIDADE) {
-    sub.textContent = 'QR inválido — peça ajuda ao almoxarifado.';
-    document.getElementById('loginBtn').disabled = true;
+    sub.textContent = 'QR inválido: peça ajuda ao almoxarifado.';
+    $('loginBtn').disabled = true;
     return;
   }
-  document.getElementById('loginPlaca').textContent = PLACA;
-  document.title = 'GCA — Conferência ' + PLACA;
+  $('loginPlaca').textContent = PLACA;
+  document.title = 'GCA Conferência ' + PLACA;
   const info = await fetch(`${API}/conferencia-viatura/info?placa=${encodeURIComponent(PLACA)}&unidade=${encodeURIComponent(UNIDADE)}`)
     .then(r => r.json()).catch(() => null);
   if (!info?.ok) {
     sub.textContent = info?.erro || 'Não foi possível abrir esta viatura.';
-    document.getElementById('loginBtn').disabled = true;
+    $('loginBtn').disabled = true;
     return;
   }
-  sub.textContent = [info.modelo, info.tipo, info.base].filter(Boolean).join(' · ') || 'Entre com seu crachá para conferir';
-  if (TOKEN_SESSAO) { abrirApp(); }
+  sub.textContent = [info.modelo, info.tipo, info.base ? 'base ' + info.base : ''].filter(Boolean).join(' · ') || 'Entre com seu crachá para conferir';
+  if (TOKEN_SESSAO) abrirApp();
 }
 
 async function fazerLogin() {
-  const erro = document.getElementById('loginErro');
-  const btn = document.getElementById('loginBtn');
-  const matricula = document.getElementById('loginMatricula').value.trim();
-  const senha = document.getElementById('loginSenha').value;
-  if (!matricula || !senha) { erro.textContent = 'Preencha matrícula e senha'; erro.classList.remove('hidden'); return; }
-  btn.disabled = true; btn.textContent = 'Entrando...'; erro.classList.add('hidden');
+  const btn = $('loginBtn');
+  const matricula = $('loginMatricula').value.trim();
+  const senha = $('loginSenha').value;
+  if (!matricula || !senha) { mostrar('loginErro', 'Preencha matrícula e senha.'); return; }
+  btn.disabled = true; btn.textContent = 'Entrando...'; mostrar('loginErro', '');
   const res = await fetch(`${API}/conferencia-viatura/login`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ placa: PLACA, unidade: UNIDADE, matricula, senha }),
-  }).then(r => r.json()).catch(() => ({ ok: false, erro: 'Erro de conexão' }));
+  }).then(r => r.json()).catch(() => ({ ok: false, erro: 'Sem conexão com o servidor (internet?).' }));
   btn.disabled = false; btn.textContent = 'Entrar';
-  if (!res.ok) { erro.textContent = res.erro || 'Não foi possível entrar'; erro.classList.remove('hidden'); return; }
+  if (!res.ok) { mostrar('loginErro', res.erro || 'Não foi possível entrar.'); return; }
   TOKEN_SESSAO = res.token; NOME_SESSAO = res.nome || '';
-  sessionStorage.setItem(CHAVE, TOKEN_SESSAO);
-  sessionStorage.setItem(CHAVE + '_nome', NOME_SESSAO);
+  try { sessionStorage.setItem(CHAVE, TOKEN_SESSAO); sessionStorage.setItem(CHAVE + '_nome', NOME_SESSAO); } catch {}
+  // O navegador oferece guardar matrícula e senha (fica no gerenciador de senhas dele, nunca no sistema)
+  try { if (window.PasswordCredential && navigator.credentials?.store) navigator.credentials.store(new PasswordCredential({ id: matricula, password: senha, name: `${matricula} (GCA)` })).catch(() => {}); } catch {}
   abrirApp();
 }
 
 async function abrirApp() {
-  document.getElementById('telaLogin').style.display = 'none';
-  document.getElementById('telaApp').classList.add('ativo');
-  document.getElementById('appPlaca').textContent = PLACA;
-  document.getElementById('appNome').textContent = NOME_SESSAO;
+  $('telaLogin').classList.add('hidden');
+  $('telaApp').classList.remove('hidden');
+  $('appPlaca').textContent = PLACA;
+  $('appNome').textContent = NOME_SESSAO;
   const ini = await api('/conferencia-viatura/iniciar', { method: 'POST' });
   if (!ini.ok) { sairSessao(ini.erro); return; }
   await carregarItens();
 }
 
 function sairSessao(msg) {
-  sessionStorage.removeItem(CHAVE);
+  try { sessionStorage.removeItem(CHAVE); } catch {}
   TOKEN_SESSAO = '';
-  document.getElementById('telaApp').classList.remove('ativo');
-  document.getElementById('telaLogin').style.display = 'flex';
-  const erro = document.getElementById('loginErro');
-  erro.textContent = msg || 'Faça login novamente';
-  erro.classList.remove('hidden');
+  $('telaApp').classList.add('hidden');
+  $('telaLogin').classList.remove('hidden');
+  mostrar('loginErro', msg || 'Faça login novamente.');
 }
 
 async function carregarItens() {
-  const lista = document.getElementById('listaItens');
-  lista.innerHTML = '<div class="empty">Carregando...</div>';
+  const lista = $('listaItens');
+  if (!_itens.length) lista.innerHTML = '<div class="empty">Carregando...</div>';
   const res = await api('/conferencia-viatura/itens');
   if (!res.ok) { sairSessao(res.erro); return; }
   _itens = res.itens || [];
@@ -262,143 +313,208 @@ async function carregarItens() {
 }
 
 function render() {
-  const lista = document.getElementById('listaItens');
+  const lista = $('listaItens');
   if (!_itens.length) {
-    lista.innerHTML = '<div class="empty">Esta viatura está sem material na carga.</div>';
-    document.getElementById('progressoTxt').textContent = '0 de 0 conferidos';
+    lista.innerHTML = '<div class="empty">Esta viatura está sem material na carga. Só falta a foto da viatura para finalizar.</div>';
+    $('progressoTxt').textContent = '0 de 0 conferidos';
+    $('progressoFill').style.width = '100%';
     return;
   }
   const contados = _itens.filter(i => i.contado !== null).length;
-  document.getElementById('progressoFill').style.width = Math.round((contados / _itens.length) * 100) + '%';
-  document.getElementById('progressoTxt').textContent = `${contados} de ${_itens.length} conferidos`;
-
-  lista.innerHTML = _itens.map(i => {
+  $('progressoFill').style.width = Math.round((contados / _itens.length) * 100) + '%';
+  $('progressoTxt').textContent = `${contados} de ${_itens.length} conferidos`;
+  lista.innerHTML = `<div style="display:flex;flex-direction:column;gap:8px">${_itens.map(i => {
     const feito = i.contado !== null;
-    const dif = feito ? Number(i.contado) - Number(i.esperado) : 0;
-    const classe = !feito ? '' : (dif === 0 && i.status === 'OK' ? 'contado' : 'divergente');
+    const classe = !feito ? '' : (i.status === 'OK' ? 'contado' : 'divergente');
+    const nFotos = (i.fotos || []).length;
     const situacao = !feito
-      ? `<div class="item-status">Previsto: ${i.esperado}${(i.seriais_esperados || []).length ? ` · ${i.seriais_esperados.length} serial(is)` : ''}</div>`
+      ? `<span class="item-status">Previsto: ${i.esperado}${(i.seriais_esperados || []).length ? ` · ${i.seriais_esperados.length} serial(is)` : ''}</span>`
       : (i.status === 'OK'
-        ? `<div class="item-status ok">✓ Conferido: ${i.contado}</div>`
-        : `<div class="item-status dif"><svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg> Previsto ${i.esperado} · encontrado ${i.contado}</div>`);
+        ? `<span class="item-status ok">${ic('ok', 15)} Conferido: ${i.contado}</span>`
+        : `<span class="item-status dif">${ic('alerta', 15)} Previsto ${i.esperado} · encontrado ${i.contado}${nFotos ? ` · ${nFotos} foto${nFotos > 1 ? 's' : ''}` : ''}</span>`);
     return `<div class="item-card ${classe}">
-      <div style="flex:1">
-        <div class="item-nome">${escHtml(i.item_descricao || i.item_id)}</div>
-        <div class="item-cod">${escHtml(i.codigo_item || '—')} ${escHtml(i.un_med || '')}</div>
-        ${situacao}
-      </div>
-      <button class="item-btn" onclick="abrirModal('${escHtml(i.item_id)}')">${feito ? 'Refazer' : 'Conferir'}</button>
+      <span class="tx"><span class="item-nome">${escHtml(i.item_descricao || i.item_id)}</span>
+        <span class="item-cod">${escHtml(i.codigo_item || '—')}${i.un_med ? ' · ' + escHtml(i.un_med) : ''}</span>${situacao}</span>
+      <button class="btn peq ${feito ? '' : 'pri'}" data-item="${escHtml(i.item_id)}">${feito ? 'Refazer' : 'Conferir'}</button>
     </div>`;
-  }).join('');
+  }).join('')}</div>`;
 }
 
+// ── Conferir um item ──
 function abrirModal(itemId) {
   _itemAtual = _itens.find(i => i.item_id === itemId);
   if (!_itemAtual) return;
-  _seriaisLidos = [..._itemAtual.seriais_encontrados || []];
-  document.getElementById('modalItemNome').textContent = _itemAtual.item_descricao || _itemAtual.item_id;
-  document.getElementById('modalItemCod').textContent = `${_itemAtual.codigo_item || '—'} · previsto ${_itemAtual.esperado}`;
-  document.getElementById('modalErro').classList.add('hidden');
-
+  _seriaisLidos = [...(_itemAtual.seriais_encontrados || [])];
+  _fotosItem = (_itemAtual.fotos || []).map(f => ({ ...f }));
+  $('modalItemNome').textContent = _itemAtual.item_descricao || _itemAtual.item_id;
+  $('modalItemCod').textContent = `${_itemAtual.codigo_item || '—'}${_itemAtual.un_med ? ' · ' + _itemAtual.un_med : ''}`;
+  $('modalPrevisto').textContent = _itemAtual.esperado;
+  mostrar('modalErro', '');
   const temSerial = (_itemAtual.seriais_esperados || []).length > 0;
-  document.getElementById('modalQtdArea').classList.toggle('hidden', temSerial);
-  document.getElementById('modalSerialArea').classList.toggle('hidden', !temSerial);
-  if (temSerial) {
-    document.getElementById('serialInput').value = '';
-    renderSeriais();
-    setTimeout(() => document.getElementById('serialInput').focus(), 100);
-  } else {
-    const campo = document.getElementById('qtdInput');
-    campo.value = _itemAtual.contado !== null ? _itemAtual.contado : '';
-    setTimeout(() => campo.focus(), 100);
-  }
-  document.getElementById('modalContar').classList.remove('hidden');
+  $('modalPrevistoTxt').textContent = temSerial ? `previsto na viatura · ${_itemAtual.seriais_esperados.length} serial(is)` : 'previsto na viatura';
+  $('modalQtdArea').classList.toggle('hidden', temSerial);
+  $('modalSerialArea').classList.toggle('hidden', !temSerial);
+  if (temSerial) { $('serialInput').value = ''; renderSeriais(); setTimeout(() => $('serialInput').focus(), 100); }
+  else { $('qtdInput').value = _itemAtual.contado !== null ? String(_itemAtual.contado).replace('.', ',') : ''; setTimeout(() => $('qtdInput').focus(), 100); }
+  atualizarFotosArea();
+  $('modalContar').classList.remove('hidden');
 }
-
-function fecharModal() {
-  document.getElementById('modalContar').classList.add('hidden');
-  _itemAtual = null;
+function fecharModal() { $('modalContar').classList.add('hidden'); _itemAtual = null; }
+const lerQtd = () => { const v = $('qtdInput').value.trim().replace(',', '.'); return v === '' ? NaN : Number(v); };
+function passoQtd(d) { const a = lerQtd(); $('qtdInput').value = String(Math.max(0, (isNaN(a) ? 0 : a) + d)).replace('.', ','); mostrar('modalErro', ''); atualizarFotosArea(); }
+// Diferença com o previsto (a mesma conta do servidor): quantidade, ou seriais que não batem
+function temDiferenca() {
+  if (!_itemAtual) return false;
+  const esperados = _itemAtual.seriais_esperados || [];
+  if (esperados.length) return !(_seriaisLidos.length === esperados.length && _seriaisLidos.every(s => esperados.includes(s)));
+  const q = lerQtd();
+  return !isNaN(q) && q !== Number(_itemAtual.esperado);
+}
+function atualizarFotosArea() {
+  const dif = temDiferenca();
+  $('fotosArea').classList.toggle('hidden', !dif);
+  $('fotosItem').innerHTML = _fotosItem.map((f, k) => `<span class="foto-mini">${f.url ? `<img src="${escHtml(f.url)}" alt="Foto ${k + 1}">` : `<span class="btn-foto" style="width:72px;height:72px;justify-content:center">${ic('camera', 22)}</span>`}<button type="button" data-tirar-foto="${k}" aria-label="Tirar a foto ${k + 1}">${ic('x', 14)}</button></span>`).join('')
+    + (_fotosItem.length < 5 ? `<label class="btn-foto">${ic('camera')} ${_enviandoFoto ? 'Enviando...' : _fotosItem.length ? 'Mais uma foto' : 'Tirar foto *'}<input type="file" accept="image/*" capture="environment" data-foto-item="1" ${_enviandoFoto ? 'disabled' : ''}></label>` : '');
 }
 
 function lerSerial(valor) {
   const serial = String(valor || '').trim().toUpperCase();
   if (!serial) return;
-  if (_seriaisLidos.includes(serial)) {
-    mostrarErroModal('Este serial já foi lido.');
-    return;
-  }
+  if (_seriaisLidos.includes(serial)) { mostrar('modalErro', 'Este serial já foi lido.'); return; }
   _seriaisLidos.push(serial);
-  document.getElementById('serialInput').value = '';
-  document.getElementById('modalErro').classList.add('hidden');
+  $('serialInput').value = '';
+  mostrar('modalErro', '');
   renderSeriais();
 }
-
-function tirarSerial(serial) {
-  _seriaisLidos = _seriaisLidos.filter(s => s !== serial);
-  renderSeriais();
-}
-
+function tirarSerial(serial) { _seriaisLidos = _seriaisLidos.filter(s => s !== serial); renderSeriais(); }
 function renderSeriais() {
   const esperados = _itemAtual?.seriais_esperados || [];
-  document.getElementById('serialLista').innerHTML = _seriaisLidos.map(s => `
+  $('serialLista').innerHTML = _seriaisLidos.map(s => `
     <div class="serial-tag ${esperados.includes(s) ? '' : 'fora'}">
       <span>${escHtml(s)}${esperados.includes(s) ? '' : ' · não é desta viatura'}</span>
-      <button class="serial-x" onclick="tirarSerial('${escHtml(s)}')">✕</button>
+      <button type="button" class="serial-x" data-tirar-serial="${escHtml(s)}" aria-label="Tirar ${escHtml(s)}">${ic('x', 15)}</button>
     </div>`).join('');
   const faltando = esperados.filter(s => !_seriaisLidos.includes(s));
-  document.getElementById('serialResumo').innerHTML = _seriaisLidos.length
-    ? `${_seriaisLidos.length} de ${esperados.length} lido(s)${faltando.length ? ` · falta: ${escHtml(faltando.join(', '))}` : ' · tudo conferido'}`
-    : `Nenhum serial lido — previsto ${esperados.length}`;
+  $('serialResumo').textContent = _seriaisLidos.length
+    ? `${_seriaisLidos.length} de ${esperados.length} lido(s)${faltando.length ? ` · falta: ${faltando.join(', ')}` : ' · tudo conferido'}`
+    : `Nenhum serial lido · previsto ${esperados.length}`;
+  atualizarFotosArea();
 }
 
-function mostrarErroModal(msg) {
-  const e = document.getElementById('modalErro');
-  e.textContent = msg;
-  e.classList.remove('hidden');
+// Foto: reduzida e com o carimbo de data e hora (o mesmo das outras fotos do sistema); vai direto ao servidor
+async function tirarFoto(arq, titulo) {
+  await window.gcaCarimbo.sincronizar(API);
+  const c = await window.gcaCarimbo.desenhar(arq, { max: 1600, filial: nomeFilial(), titulo });
+  const dataUrl = c.toDataURL('image/jpeg', 0.8);
+  const r = await api('/conferencia-viatura/foto', { method: 'POST', body: JSON.stringify({ dataUrl }) });
+  if (!r.ok) throw new Error(r.erro || 'Não foi possível enviar a foto.');
+  const mini = document.createElement('canvas'), e = Math.min(1, 320 / Math.max(c.width, c.height));
+  mini.width = Math.round(c.width * e); mini.height = Math.round(c.height * e); mini.getContext('2d').drawImage(c, 0, 0, mini.width, mini.height);
+  return { caminho: r.caminho, url: mini.toDataURL('image/jpeg', 0.75) };
+}
+async function fotoDoItem(arq) {
+  if (!arq || _enviandoFoto || !_itemAtual) return;
+  _enviandoFoto = true; atualizarFotosArea();
+  try { _fotosItem.push(await tirarFoto(arq, `Conferência ${PLACA} · ${_itemAtual.item_descricao || ''}`)); mostrar('modalErro', ''); }
+  catch (e) { mostrar('modalErro', e.message || 'Não foi possível ler a foto.'); }
+  _enviandoFoto = false; atualizarFotosArea();
 }
 
 async function confirmarContagem() {
   if (!_itemAtual) return;
   const temSerial = (_itemAtual.seriais_esperados || []).length > 0;
   const corpo = { item_id: _itemAtual.item_id };
-  if (temSerial) {
-    corpo.seriais = _seriaisLidos;
-    corpo.contado = _seriaisLidos.length;
-  } else {
-    const qtd = Number(document.getElementById('qtdInput').value);
-    if (!Number.isFinite(qtd) || qtd < 0) { mostrarErroModal('Informe a quantidade encontrada (zero ou mais).'); return; }
+  if (temSerial) { corpo.seriais = _seriaisLidos; corpo.contado = _seriaisLidos.length; }
+  else {
+    const qtd = lerQtd();
+    if (!Number.isFinite(qtd) || qtd < 0) { mostrar('modalErro', 'Informe a quantidade encontrada (zero ou mais).'); return; }
     corpo.contado = qtd;
   }
+  const dif = temDiferenca();
+  if (dif && !_fotosItem.length) { mostrar('modalErro', 'Não bate com o previsto: tire a foto do que foi encontrado.'); return; }
+  if (_enviandoFoto) { mostrar('modalErro', 'Espere a foto terminar de enviar.'); return; }
+  corpo.fotos = dif ? _fotosItem.map(f => f.caminho) : [];
+  const btn = $('btnConfirmarItem'); btn.disabled = true;
   const res = await api('/conferencia-viatura/contar', { method: 'POST', body: JSON.stringify(corpo) });
-  if (!res.ok) { mostrarErroModal(res.erro || 'Erro ao gravar'); return; }
+  btn.disabled = false;
+  if (!res.ok) { mostrar('modalErro', res.erro || 'Não foi possível gravar.'); return; }
+  // guarda as miniaturas desta tela no item (a lista recarregada traz o link do servidor)
   fecharModal();
   await carregarItens();
 }
 
-async function finalizar() {
+// ── Finalizar: as fotos do fim ──
+function renderFotoFinal(area, box, foto, chave, titulo) {
+  $(box).classList.toggle('feita', !!foto);
+  $(area).innerHTML = foto
+    ? `<img src="${escHtml(foto.url)}" alt="${escHtml(titulo)}"><button type="button" class="btn peq" data-refazer="${chave}">${ic('camera', 16)} Tirar outra</button>`
+    : `<label class="btn-foto">${ic('camera')} ${_enviandoFoto === chave ? 'Enviando...' : 'Tirar foto'}<input type="file" accept="image/*" capture="environment" data-foto-final="${chave}"></label>`;
+}
+function renderFotosFim() {
+  renderFotoFinal('fotoViaturaArea', 'boxFotoViatura', _fotoViatura, 'viatura', 'Foto da viatura');
+  $('boxFotoItens').classList.toggle('hidden', !_itens.length);
+  renderFotoFinal('fotoItensArea', 'boxFotoItens', _fotoItens, 'itens', 'Foto de todos os itens');
+}
+async function fotoFinal(chave, arq) {
+  if (!arq || _enviandoFoto) return;
+  _enviandoFoto = chave; renderFotosFim(); mostrar('finErro', '');
+  try {
+    const f = await tirarFoto(arq, chave === 'viatura' ? `Conferência ${PLACA} · viatura` : `Conferência ${PLACA} · todos os itens`);
+    if (chave === 'viatura') _fotoViatura = f; else _fotoItens = f;
+  } catch (e) { mostrar('finErro', e.message || 'Não foi possível ler a foto.'); }
+  _enviandoFoto = false; renderFotosFim();
+}
+function abrirFinalizar() {
   const faltam = _itens.filter(i => i.contado === null);
-  if (faltam.length && !confirm(`Ainda faltam ${faltam.length} material(is) para conferir. Finalizar assim mesmo não é possível — quer voltar e conferir?`)) return;
-  const res = await api('/conferencia-viatura/finalizar', { method: 'POST' });
-  if (!res.ok) { alert(res.erro || 'Erro ao finalizar'); return; }
-  document.getElementById('telaApp').classList.remove('ativo');
-  document.getElementById('telaFinal').classList.add('ativo');
+  mostrar('finFaltam', faltam.length ? `Ainda faltam ${faltam.length} material(is) para conferir: ${faltam.slice(0, 4).map(i => i.item_descricao).join(', ')}${faltam.length > 4 ? '...' : ''}.` : '');
+  $('btnFinSim').disabled = !!faltam.length;
+  mostrar('finErro', '');
+  renderFotosFim();
+  $('modalFinalizar').classList.remove('hidden');
+}
+async function finalizar() {
+  if (!_fotoViatura) { mostrar('finErro', 'Tire a foto da viatura.'); return; }
+  if (_itens.length && !_fotoItens) { mostrar('finErro', 'Tire uma foto de todos os itens juntos.'); return; }
+  if (_enviandoFoto) { mostrar('finErro', 'Espere a foto terminar de enviar.'); return; }
+  const btn = $('btnFinSim'); btn.disabled = true;
+  const res = await api('/conferencia-viatura/finalizar', { method: 'POST', body: JSON.stringify({ observacao: $('obsFinal').value, foto_viatura: _fotoViatura.caminho, foto_itens: _fotoItens?.caminho || null }) });
+  btn.disabled = false;
+  if (!res.ok) { mostrar('finErro', res.erro || 'Não foi possível finalizar.'); return; }
+  $('modalFinalizar').classList.add('hidden');
+  $('telaApp').classList.add('hidden');
+  $('telaFinal').classList.remove('hidden');
   const temDif = res.divergentes > 0;
-  document.getElementById('finalIcone').innerHTML = temDif ? '<svg class=ic aria-hidden=true><use href=#i-triangle-alert></use></svg>' : '<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg>';
-  document.getElementById('finalTitulo').textContent = temDif ? 'Conferência com diferenças' : 'Tudo certo na viatura!';
-  document.getElementById('finalResumo').textContent = temDif
-    ? `${res.divergentes} de ${res.total} material(is) com diferença`
-    : `${res.total} material(is) conferidos, tudo batendo`;
-  document.getElementById('finalDivergencias').innerHTML = (res.resumo || []).map(d => `
-    <div class="resumo-linha">
-      <span>${escHtml(d.item)}</span>
-      <span style="color:${d.diferenca < 0 ? 'var(--red)' : 'var(--yellow)'}">${d.diferenca > 0 ? '+' : ''}${d.diferenca} (previsto ${d.esperado}, achou ${d.contado})</span>
-    </div>`).join('');
+  $('finalIcone').className = 'ic-grande ' + (temDif ? 'dif' : 'ok');
+  $('finalIcone').innerHTML = temDif ? ic('alerta', 30) : `<svg class="ic" style="width:30px;height:30px;stroke-width:3" viewBox="0 0 24 24" aria-hidden="true">${IC.ok}</svg>`;
+  $('finalTitulo').textContent = temDif ? 'Conferência com diferenças' : 'Tudo certo na viatura';
+  $('finalResumo').textContent = temDif ? `${res.divergentes} de ${res.total} material(is) com diferença.` : `${res.total} material(is) conferidos, tudo batendo.`;
+  $('finalDivergencias').innerHTML = (res.resumo || []).map(d => `<div><span>${escHtml(d.item)}</span><b style="color:${d.diferenca < 0 ? 'var(--bad)' : 'var(--warn)'};white-space:nowrap">${d.diferenca > 0 ? '+' : ''}${d.diferenca} (previsto ${d.esperado}, achou ${d.contado})</b></div>`).join('');
+  try { sessionStorage.removeItem(CHAVE); } catch {}
 }
 
-document.getElementById('loginSenha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
-document.getElementById('serialInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') { e.preventDefault(); lerSerial(e.target.value); }
+// ── Eventos ──
+$('formLogin').addEventListener('submit', (e) => { e.preventDefault(); fazerLogin(); });
+$('listaItens').addEventListener('click', (e) => { const b = e.target.closest('[data-item]'); if (b) abrirModal(b.dataset.item); });
+$('btnAtualizar').addEventListener('click', carregarItens);
+$('btnFinalizar').addEventListener('click', abrirFinalizar);
+$('btnCancelarItem').addEventListener('click', fecharModal);
+$('btnConfirmarItem').addEventListener('click', confirmarContagem);
+$('qtdMenos').addEventListener('click', () => passoQtd(-1));
+$('qtdMais').addEventListener('click', () => passoQtd(1));
+$('qtdInput').addEventListener('input', () => { mostrar('modalErro', ''); atualizarFotosArea(); });
+$('qtdInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); confirmarContagem(); } });
+$('serialInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); lerSerial(e.target.value); } });
+$('serialLista').addEventListener('click', (e) => { const b = e.target.closest('[data-tirar-serial]'); if (b) tirarSerial(b.dataset.tirarSerial); });
+$('fotosItem').addEventListener('click', (e) => { const b = e.target.closest('[data-tirar-foto]'); if (b) { _fotosItem.splice(Number(b.dataset.tirarFoto), 1); atualizarFotosArea(); } });
+$('fotosItem').addEventListener('change', (e) => { const i = e.target.closest('[data-foto-item]'); if (i && i.files?.[0]) { const arq = i.files[0]; i.value = ''; fotoDoItem(arq); } });
+$('modalFinalizar').addEventListener('change', (e) => { const i = e.target.closest('[data-foto-final]'); if (i && i.files?.[0]) { const arq = i.files[0]; i.value = ''; fotoFinal(i.dataset.fotoFinal, arq); } });
+$('modalFinalizar').addEventListener('click', (e) => {
+  const r = e.target.closest('[data-refazer]');
+  if (r) { if (r.dataset.refazer === 'viatura') _fotoViatura = null; else _fotoItens = null; renderFotosFim(); }
+  if (e.target.id === 'modalFinalizar') $('modalFinalizar').classList.add('hidden');
 });
+$('btnFinVoltar').addEventListener('click', () => $('modalFinalizar').classList.add('hidden'));
+$('btnFinSim').addEventListener('click', finalizar);
 iniciar();
 </script>
 </body>
