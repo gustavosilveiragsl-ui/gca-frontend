@@ -39404,7 +39404,7 @@ function dslRenderDetalhe() {
   document.getElementById('modalDsl')?.remove();
   const m = document.createElement('div');
   m.className = 'modal-overlay'; m.id = 'modalDsl';
-  m.innerHTML = `<div class="modal-box" style="max-width:920px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dslTitulo">
+  m.innerHTML = `<div class="modal-box modal-alto" style="max-width:920px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dslTitulo">
     <div class="modal-header">
       <div style="min-width:0"><div class="modal-title" id="dslTitulo">${dslIc('user-x')} Desligamento · ${escHtml(d.colaborador_nome || '—')}</div>
         <div style="font-size:11px;color:var(--text-3)">${escHtml(d.matricula || '—')} · ${escHtml(d.funcao || '—')} · desligamento em ${dslData(d.data_desligamento)} · ${d.origem === 'GCA' ? 'feito no GCA' : 'comunicado pelo portal'} por ${escHtml(d.solicitante_nome || '—')} · ${dslSituacaoTag(d.situacao)}</div></div>
@@ -39588,7 +39588,7 @@ function dslNovo(colabId) {
   document.getElementById('modalDslNovo')?.remove();
   const m = document.createElement('div');
   m.className = 'modal-overlay'; m.id = 'modalDslNovo';
-  m.innerHTML = `<div class="modal-box" style="max-width:880px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dnTitulo">
+  m.innerHTML = `<div class="modal-box modal-alto" style="max-width:880px;width:100%" role="dialog" aria-modal="true" aria-labelledby="dnTitulo">
     <div class="modal-header"><div><div class="modal-title" id="dnTitulo">${dslIc('user-x')} Novo desligamento</div>
       <div style="font-size:11px;color:var(--text-3)">O colaborador está no armazém: registre o que ele devolve (com foto) e o que não devolve, ele assina aqui e você confere em seguida.</div></div>
       <button class="modal-close" onclick="dslNovoFechar()" aria-label="Fechar">×</button></div>
