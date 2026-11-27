@@ -235,10 +235,11 @@ input,select,textarea{font-family:var(--font-main);}
 .pb-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 /* Calendário das solicitações (17/11/2026) */
 .scal-box{max-width:1180px;width:100%}
-.scal-feitas{--scal-c:#3987e5}.scal-atendidas{--scal-c:#14b8a6}.scal-finalizadas{--scal-c:#22c55e}.scal-canceladas{--scal-c:#ef4444}.scal-fila{--scal-c:#f59e0b}
+.scal-anterior{--scal-c:#94a3b8}.scal-feitas{--scal-c:#3987e5}.scal-atendidas{--scal-c:#14b8a6}.scal-finalizadas{--scal-c:#22c55e}.scal-canceladas{--scal-c:#ef4444}.scal-fila{--scal-c:#f59e0b}
 .scal-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .scal-mes{font-size:17px;font-weight:700;min-width:180px;text-align:center}
-.scal-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.scal-kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:10px}
+@media(max-width:1100px){.scal-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
 .scal-kpi{border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 10px;background:var(--bg)}
 .scal-kpi .r{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);display:flex;align-items:center;gap:6px}
 .scal-kpi .r::before,.scal-dia .l::before,.scal-tag::before{content:'';flex:none;width:8px;height:8px;border-radius:2px;background:var(--scal-c)}
@@ -15919,15 +15920,20 @@ function scalRender() {
       <button class="btn btn-ghost" onclick="scalExcelMes()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel do mês</button>
     </div>
     <div class="scal-kpis">
-      ${kpi('feitas', 'Feitas no mês', t.feitas)}${kpi('atendidas', 'Atendidas no mês', t.atendidas)}${kpi('finalizadas', 'Finalizadas no mês', t.finalizadas, 'com assinatura')}
-      ${kpi('canceladas', 'Canceladas no mês', t.canceladas, t.canceladas_prazo ? `${pbNum(t.canceladas_prazo)} pelo prazo` : '')}
+      ${kpi('anterior', 'Veio do mês anterior', t.veio_mes_anterior || 0, `na fila no fim de ${SCAL_MESES[(m + 10) % 12]}`)}
+      ${kpi('feitas', 'Feitas no mês', t.feitas)}
+      ${kpi('atendidas', 'Atendidas no mês', t.atendidas, t.atendidas_de_antes ? `${pbNum(t.atendidas - t.atendidas_de_antes)} feitas no mês · ${pbNum(t.atendidas_de_antes)} de antes` : '')}
+      ${kpi('finalizadas', 'Finalizadas no mês', t.finalizadas, 'com assinatura')}
+      ${kpi('canceladas', 'Canceladas no mês', t.canceladas, [t.canceladas_prazo ? `${pbNum(t.canceladas_prazo)} pelo prazo` : '', t.canceladas_de_antes ? `${pbNum(t.canceladas_de_antes)} de antes` : ''].filter(Boolean).join(' · '))}
       ${kpi('fila', mesAtual ? 'Na fila agora' : 'Na fila no fim do mês', ultimoDia ? ultimoDia.aguardando : 0, 'pendentes e visualizados')}
     </div>
     <details class="scal-ajuda"><summary>O que cada número quer dizer</summary><ul>
+      <li><b>Veio do mês anterior:</b> pedidos que estavam na fila no fim do mês anterior (feitos antes e ainda não atendidos nem cancelados).</li>
       <li><b>Feitas:</b> pedidos abertos naquele dia (no portal ou no GCA).</li>
-      <li><b>Atendidas:</b> pedidos atendidos naquele dia, não importa quando foram feitos.</li>
+      <li><b>Atendidas:</b> pedidos atendidos naquele dia, não importa quando foram feitos. Por isso o mês pode ter mais atendidas do que feitas: o que veio do mês anterior também é atendido.</li>
       <li><b>Finalizadas:</b> pedidos cuja assinatura aconteceu naquele dia.</li>
-      <li><b>Canceladas:</b> canceladas naquele dia — pelo prazo (automático), porque o atendimento foi cancelado, ou por alguém.</li>
+      <li><b>Canceladas:</b> pedidos cancelados naquele dia (pelo prazo, porque o atendimento foi cancelado, ou por alguém) e que continuam cancelados.</li>
+      <li><b>A conta do mês:</b> veio do mês anterior + feitas − atendidas − canceladas dá a fila de agora (a diferença, quando há, são pedidos cancelados depois de atendidos).</li>
       <li><b>Fila:</b> pedidos que, à meia-noite daquele dia, ainda não tinham sido atendidos nem cancelados. Hoje é a fila de agora.</li>
       <li>Um pedido que mudou de armazém conta no armazém novo. Clique num dia para ver os pedidos (com Excel).</li>
     </ul></details>
@@ -16015,6 +16021,8 @@ function scalExcelMes() {
   if (!r) return;
   const linhas = r.dias.filter(d => !d.futuro).map(d => ({ dia: formatarData(d.dia), semana: SCAL_SEMANA_LONGA[scalDow(d.dia)], feitas: d.feitas, atendidas: d.atendidas,
     finalizadas: d.finalizadas, canceladas: d.canceladas, prazo: d.canceladas_prazo, fila: d.aguardando }));
+  // Primeira linha: o que veio do mês anterior (a fila no fim dele)
+  linhas.unshift({ dia: 'Veio do mês anterior', semana: '', feitas: '', atendidas: '', finalizadas: '', canceladas: '', prazo: '', fila: r.total.veio_mes_anterior || 0 });
   gcaExportarExcel(`Calendario_solicitacoes_${r.mes}`, linhas, [{ key: 'dia', label: 'Dia' }, { key: 'semana', label: 'Dia da semana' }, { key: 'feitas', label: 'Feitas' },
     { key: 'atendidas', label: 'Atendidas' }, { key: 'finalizadas', label: 'Finalizadas' }, { key: 'canceladas', label: 'Canceladas' }, { key: 'prazo', label: 'Canceladas pelo prazo' },
     { key: 'fila', label: 'Fila no fim do dia' }]);
