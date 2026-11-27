@@ -487,6 +487,18 @@ input,select,textarea{font-family:var(--font-main);}
 .dsl-campos{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;font-size:11px;color:var(--text-2)}
 .dsl-campos label{display:flex;flex-direction:column;gap:4px}.dsl-campos .form-input{min-width:150px}
 .dsl-seriais{font-size:11px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}.dsl-seriais label{flex-direction:row;align-items:center;gap:4px}
+/* Destino separado (27/11/2026): uma linha por destino dentro do item */
+.dsl-partes{display:grid;gap:8px;margin-top:8px}
+.dsl-parte{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;font-size:11px;color:var(--text-2);padding-top:8px;border-top:1px dashed var(--border)}
+.dsl-parte:first-child{border-top:0;padding-top:0}
+.dsl-parte label{display:flex;flex-direction:column;gap:4px}.dsl-parte .dsl-rec{width:110px}.dsl-parte .dsl-dest{min-width:170px}
+.dsl-parte .dsl-seriais{flex-basis:100%}
+.dsl-parte-est{align-self:center;font-size:11px;font-weight:600;color:var(--text-1);padding:3px 8px;border:1px solid var(--border);border-radius:999px}
+.dsl-parte-tirar{align-self:center;padding:5px 8px}
+.dsl-parte:first-child .dsl-parte-tirar{display:none}
+.dsl-partes-pe{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:11px;color:var(--text-3)}
+.dsl-soma.ruim{color:var(--red);font-weight:600}
+.dsl-estq{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}.dsl-estq label{display:flex;flex-direction:column;gap:4px}.dsl-estq .form-input{width:96px;min-width:0}
 .dsl-seg{display:flex;gap:6px;flex-wrap:wrap}.dsl-seg button{flex:1;min-width:96px;padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-2);font-size:12px;cursor:pointer}
 .dsl-seg button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-text);font-weight:600}
 .dsl-fotos-ed{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.dsl-foto{position:relative}.dsl-foto img{width:64px;height:64px;object-fit:cover;border-radius:6px;border:1px solid var(--border);display:block}
@@ -39377,15 +39389,83 @@ function dslLinhaDevolvido(it, editar) {
   return `<div class="dsl-item"${editar ? ` data-chave="${escHtml(it.chave)}"` : ''}>
     <div class="dsl-item-top">
       <div style="min-width:0;flex:1"><div style="font-weight:600;font-size:12px">${escHtml(it.descricao)}</div>
-        <div style="font-size:11px;color:var(--text-3)">${dslOrigem(it)} · devolveu ${dslQtd(it.qtd_devolvida)} de ${dslQtd(it.qtd)} · estado ${escHtml(DSL_ESTADOS[it.estado] || '—')}${(it.seriais_devolvidos || []).length ? ` · seriais ${escHtml(it.seriais_devolvidos.join(', '))}` : ''}</div></div>
+        <div style="font-size:11px;color:var(--text-3)">${dslOrigem(it)} · devolveu ${dslQtd(it.qtd_devolvida)} de ${dslQtd(it.qtd)} · estado ${escHtml(dslEstadosTxt(it))}${(it.seriais_devolvidos || []).length ? ` · seriais ${escHtml(it.seriais_devolvidos.join(', '))}` : ''}</div></div>
       ${fotos.length ? `<div class="dsl-fotos">${fotos.map((u, i) => `<a href="${escHtml(u)}" target="_blank" rel="noopener"><img src="${escHtml(u)}" alt="Foto ${i + 1} de ${escHtml(it.descricao)}"></a>`).join('')}</div>` : ''}
     </div>
-    ${editar ? `<div class="dsl-campos">
-      <label>Recebido <input type="number" class="form-input dsl-rec" min="0" max="${it.qtd_devolvida}" step="any" value="${it.qtd_devolvida}" aria-label="Quantidade recebida de ${escHtml(it.descricao)}"></label>
-      <label>Destino <select class="form-input dsl-dest" aria-label="Destino de ${escHtml(it.descricao)}"><option value="">Escolha...</option>${Object.entries(DSL_DESTINOS).map(([v, t]) => `<option value="${v}"${v === padrao ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-      ${(it.seriais || []).length ? `<div class="dsl-seriais">Seriais que chegaram: ${it.seriais.map(s => `<label><input type="checkbox" class="dsl-ser" value="${escHtml(s)}"${(it.seriais_devolvidos || []).includes(s) ? ' checked' : ''}> ${escHtml(s)}</label>`).join(' ')}</div>` : ''}
-    </div>` : (it.recebido !== undefined ? `<div style="font-size:11px;color:var(--text-2);margin-top:4px">Recebido ${dslQtd(it.recebido)}${it.destino ? ' → ' + escHtml(DSL_DESTINOS[it.destino] || it.destino) : ''}${it.divergencia > 0 ? ` · <b style="color:#f59e0b">faltou ${dslQtd(it.divergencia)} (fica com o supervisor)</b>` : ''}</div>` : '')}
+    ${editar ? `<div class="dsl-partes">${dslPartesIniciais(it, padrao).map(pt => dslParteHtml(it, pt)).join('')}</div>
+      <div class="dsl-partes-pe" style="margin-top:8px">${it.qtd_devolvida > 1 || (it.seriais || []).length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" onclick="dslSepararParte(this)">${dslIc('plus')} Separar em outro destino</button>` : ''}
+        <span class="dsl-soma">${dslSomaTxt(it.qtd_devolvida, it.qtd_devolvida)}</span></div>`
+      : (it.recebido !== undefined ? `<div style="font-size:11px;color:var(--text-2);margin-top:4px">Recebido ${dslQtd(it.recebido)}${dslDestinosTxt(it) ? ' → ' + escHtml(dslDestinosTxt(it)) : ''}${it.divergencia > 0 ? ` · <b style="color:#f59e0b">faltou ${dslQtd(it.divergencia)} (fica com o supervisor)</b>` : ''}</div>` : '')}
   </div>`;
+}
+// ── Estado e destino por quantidade (27/11/2026): "das 2 botas, 1 boa e 1 ruim" ──
+// Estados marcados na devolução: [{ estado, qtd }] (desligamento antigo: um estado para tudo)
+function dslEstadosDe(it) {
+  if (Array.isArray(it.estados) && it.estados.length) return it.estados;
+  return it.estado && DSL_ESTADOS[it.estado] ? [{ estado: it.estado, qtd: it.qtd_devolvida }] : [];
+}
+function dslEstadosTxt(it) {
+  const l = dslEstadosDe(it);
+  if (!l.length) return '—';
+  return l.length === 1 ? DSL_ESTADOS[l[0].estado] : l.map(e => `${dslQtd(e.qtd)} ${String(DSL_ESTADOS[e.estado] || e.estado).toLowerCase()}`).join(', ');
+}
+function dslDestinosTxt(it) {
+  const l = Array.isArray(it.destinos) && it.destinos.length ? it.destinos : it.destino && DSL_DESTINOS[it.destino] ? [{ destino: it.destino, qtd: it.recebido }] : [];
+  return l.map(x => `${l.length > 1 ? dslQtd(x.qtd) + ' ' : ''}${DSL_DESTINOS[x.destino] || x.destino}`).join(', ');
+}
+// Conferência: uma linha por estado marcado (o bom já vai para o estoque); um estado só = uma linha
+function dslPartesIniciais(it, padrao) {
+  const est = dslEstadosDe(it);
+  if (est.length > 1) return est.map((e, i) => ({ qtd: e.qtd, estado: e.estado, destino: e.estado === 'BOM' ? 'ESTOQUE' : '', seriais: i === 0 ? (it.seriais_devolvidos || []) : [] }));
+  return [{ qtd: it.qtd_devolvida, estado: '', destino: padrao, seriais: it.seriais_devolvidos || [] }];
+}
+function dslParteHtml(it, pt) {
+  return `<div class="dsl-parte">
+    <label>Recebido <input type="number" class="form-input dsl-rec" min="0" max="${it.qtd_devolvida}" step="any" value="${pt.qtd}" aria-label="Quantidade recebida de ${escHtml(it.descricao)}" oninput="dslAtualizarSoma(this)"></label>
+    <label>Destino <select class="form-input dsl-dest" aria-label="Destino de ${escHtml(it.descricao)}"><option value="">Escolha...</option>${Object.entries(DSL_DESTINOS).map(([v, t]) => `<option value="${v}"${v === pt.destino ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+    ${pt.estado ? `<span class="dsl-parte-est" title="Estado marcado na devolução">${escHtml(DSL_ESTADOS[pt.estado] || pt.estado)}</span>` : ''}
+    <button type="button" class="btn btn-ghost btn-sm dsl-parte-tirar" onclick="dslTirarParte(this)" aria-label="Tirar esta linha (a quantidade volta para a primeira)" title="Tirar esta linha">${dslIc('x')}</button>
+    ${(it.seriais || []).length ? `<div class="dsl-seriais">Seriais${it.qtd_devolvida > 1 ? ' desta linha' : ' que chegaram'}: ${it.seriais.map(s => `<label><input type="checkbox" class="dsl-ser" value="${escHtml(s)}"${(pt.seriais || []).includes(s) ? ' checked' : ''} onchange="dslSerialUnico(this)"> ${escHtml(s)}</label>`).join(' ')}</div>` : ''}
+  </div>`;
+}
+const dslSomaTxt = (soma, total) => `Recebido ${dslQtd(soma)} de ${dslQtd(total)}`;
+function dslItemDaLinha(el) {
+  const box = el.closest('.dsl-item[data-chave]');
+  return { box, it: box ? (_dslAtual?.itens || []).find(x => x.chave === box.dataset.chave) : null };
+}
+const dslNum = (v) => { const n = Number(String(v ?? '').trim().replace(',', '.')); return Number.isFinite(n) ? n : NaN; };
+function dslAtualizarSoma(el) {
+  const { box, it } = dslItemDaLinha(el);
+  if (!box || !it) return;
+  const soma = Math.round([...box.querySelectorAll('.dsl-rec')].reduce((s, i) => s + (dslNum(i.value) || 0), 0) * 1000) / 1000;
+  const sp = box.querySelector('.dsl-soma');
+  if (sp) { sp.textContent = dslSomaTxt(soma, it.qtd_devolvida) + (soma > it.qtd_devolvida ? ' — passou do devolvido' : soma < it.qtd_devolvida ? ' — o que faltar fica com o supervisor' : ''); sp.classList.toggle('ruim', soma !== it.qtd_devolvida); }
+}
+// Nova linha: tira 1 da linha que tem mais (2 botas no estoque → 1 no estoque + 1 a escolher)
+function dslSepararParte(btn) {
+  const { box, it } = dslItemDaLinha(btn);
+  if (!box || !it) return;
+  const lista = box.querySelector('.dsl-partes');
+  const maior = [...lista.querySelectorAll('.dsl-rec')].sort((a, b) => (dslNum(b.value) || 0) - (dslNum(a.value) || 0))[0];
+  let qtd = 0;
+  if (maior && (dslNum(maior.value) || 0) >= 2) { maior.value = Math.round(((dslNum(maior.value) || 0) - 1) * 1000) / 1000; qtd = 1; }
+  lista.insertAdjacentHTML('beforeend', dslParteHtml(it, { qtd, estado: '', destino: '', seriais: [] }));
+  lista.lastElementChild.querySelector('.dsl-dest')?.focus();
+  dslAtualizarSoma(btn);
+}
+function dslTirarParte(btn) {
+  const linha = btn.closest('.dsl-parte'), lista = btn.closest('.dsl-partes');
+  if (!linha || !lista || linha === lista.firstElementChild) return;
+  const primeira = lista.firstElementChild.querySelector('.dsl-rec');
+  primeira.value = Math.round(((dslNum(primeira.value) || 0) + (dslNum(linha.querySelector('.dsl-rec').value) || 0)) * 1000) / 1000;
+  linha.querySelectorAll('.dsl-ser:checked').forEach(c => { const igual = [...lista.firstElementChild.querySelectorAll('.dsl-ser')].find(x => x.value === c.value); if (igual) igual.checked = true; });
+  linha.remove();
+  dslAtualizarSoma(primeira);
+}
+// Um serial vai para um destino só: marcar numa linha desmarca nas outras do mesmo item
+function dslSerialUnico(cb) {
+  if (!cb.checked) return;
+  cb.closest('.dsl-partes')?.querySelectorAll('.dsl-ser').forEach(x => { if (x !== cb && x.value === cb.value) x.checked = false; });
 }
 function dslLinhaNaoDevolvido(it) {
   return `<div class="dsl-item"><div class="dsl-item-top">
@@ -39447,11 +39527,18 @@ async function dslFinalizar() {
     for (const el of document.querySelectorAll('#modalDsl .dsl-item[data-chave]')) {
       const it = (d.itens || []).find(x => x.chave === el.dataset.chave);
       if (!it) continue;
-      const rec = Number(el.querySelector('.dsl-rec')?.value);
-      if (!(rec >= 0 && rec <= it.qtd_devolvida)) return dslErro('dslErro', `${it.descricao}: o recebido vai de 0 a ${dslQtd(it.qtd_devolvida)}.`);
-      const destino = el.querySelector('.dsl-dest')?.value || '';
-      if (rec > 0 && !destino) return dslErro('dslErro', `${it.descricao}: escolha o destino (estoque, laudo ou descarte).`);
-      itens.push({ chave: it.chave, recebido: rec, destino, seriais: [...el.querySelectorAll('.dsl-ser:checked')].map(c => c.value) });
+      // Uma linha por destino (27/11/2026)
+      const partes = [];
+      for (const ln of el.querySelectorAll('.dsl-parte')) {
+        const q = dslNum(ln.querySelector('.dsl-rec')?.value);
+        if (!(q >= 0)) return dslErro('dslErro', `${it.descricao}: o recebido vai de 0 a ${dslQtd(it.qtd_devolvida)}.`);
+        const destino = ln.querySelector('.dsl-dest')?.value || '';
+        if (q > 0 && !destino) return dslErro('dslErro', `${it.descricao}: escolha o destino${el.querySelectorAll('.dsl-parte').length > 1 ? ' de cada linha' : ''} (estoque, laudo ou descarte).`);
+        partes.push({ recebido: q, destino, seriais: [...ln.querySelectorAll('.dsl-ser:checked')].map(c => c.value) });
+      }
+      const rec = Math.round(partes.reduce((s, x) => s + x.recebido, 0) * 1000) / 1000;
+      if (rec > it.qtd_devolvida) return dslErro('dslErro', `${it.descricao}: recebido ${dslQtd(rec)}, mas foram devolvidos só ${dslQtd(it.qtd_devolvida)}.`);
+      itens.push({ chave: it.chave, recebido: rec, partes });
     }
     armazem_id = document.getElementById('dslArmRec')?.value || '';
     if (!armazem_id) return dslErro('dslErro', 'Escolha o armazém que está recebendo.');
@@ -39502,8 +39589,8 @@ function dslTermoPDF() {
   const linhas = itens.map(it => `<tr>
     <td>${escHtml(it.descricao)}<div style="font-size:9px;color:#6b7280">${it.origem === 'DOTACAO' ? 'Dotação (sem registro de entrega)' : it.fora_dotacao ? 'Ficha (fora da dotação)' : 'Ficha'}${(it.seriais_devolvidos || []).length ? ' · seriais ' + escHtml(it.seriais_devolvidos.join(', ')) : ''}</div></td>
     <td style="text-align:center">${dslQtd(it.qtd)}</td>
-    <td style="text-align:center">${dslQtd(it.qtd_devolvida)}${it.qtd_devolvida > 0 ? `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_ESTADOS[it.estado] || '')}</div>` : ''}</td>
-    ${finalizado ? `<td style="text-align:center">${it.recebido !== undefined ? dslQtd(it.recebido) + (it.destino ? `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_DESTINOS[it.destino] || '')}</div>` : '') : '—'}</td>` : ''}
+    <td style="text-align:center">${dslQtd(it.qtd_devolvida)}${it.qtd_devolvida > 0 ? `<div style="font-size:9px;color:#6b7280">${escHtml(dslEstadosTxt(it))}</div>` : ''}</td>
+    ${finalizado ? `<td style="text-align:center">${it.recebido !== undefined ? dslQtd(it.recebido) + (dslDestinosTxt(it) ? `<div style="font-size:9px;color:#6b7280">${escHtml(dslDestinosTxt(it))}</div>` : '') : '—'}</td>` : ''}
     <td style="text-align:center">${it.falta > 0 ? dslQtd(it.falta) + `<div style="font-size:9px;color:#6b7280">${escHtml(DSL_MOTIVOS[it.motivo] || '')}</div>` : '—'}</td>
     <td style="text-align:right">${it.falta > 0 ? (it.isento ? 'Isento' : it.sem_preco ? 'sem preço' : dslMoeda(it.valor_desconto)) : '—'}</td>
   </tr>`).join('');
@@ -39666,7 +39753,9 @@ function dnItemHtml(m) {
     </div>
     ${dev ? `<div class="dsl-campos">
       ${r.situacao === 'PARTE' ? `<label>Quantos devolveu * <input type="number" class="form-input" min="0" max="${m.qtd}" step="any" value="${escHtml(r.qtd_devolvida)}" oninput="dnCampo('${k}','qtd_devolvida',this.value)"></label>` : ''}
-      <label>Estado * <select class="form-input" onchange="dnCampo('${k}','estado',this.value)"><option value="">Escolha...</option>${Object.entries(DSL_ESTADOS).map(([s, t]) => `<option value="${s}"${r.estado === s ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label>Estado * <select class="form-input" onchange="dnCampo('${k}','estado',this.value,true)"><option value="">Escolha...</option>${Object.entries(DSL_ESTADOS).map(([s, t]) => `<option value="${s}"${r.estado === s ? ' selected' : ''}>${t}</option>`).join('')}${m.qtd > 1 ? `<option value="VARIOS"${r.estado === 'VARIOS' ? ' selected' : ''}>Estados diferentes</option>` : ''}</select></label>
+      ${r.estado === 'VARIOS' ? `<div class="dsl-estq" role="group" aria-label="Quantos em cada estado">${Object.entries(DSL_ESTADOS).map(([s, t]) => `<label>${t} <input type="number" class="form-input" min="0" step="any" inputmode="decimal" value="${escHtml(r.estados?.[s] ?? '')}" oninput="dnEstadoQtd('${k}','${s}',this.value)"></label>`).join('')}
+        <span class="dsl-soma dn-soma${dnSomaEstados(m, r).ok ? '' : ' ruim'}">${dnSomaEstados(m, r).txt}</span></div>` : ''}
       ${(m.seriais || []).length ? `<div class="dsl-seriais">Seriais devolvidos: ${m.seriais.map(s => `<label><input type="checkbox"${r.seriais.includes(s) ? ' checked' : ''} onchange="dnSerial('${k}','${escJs(s)}',this.checked)"> ${escHtml(s)}</label>`).join(' ')}</div>` : ''}
       <div class="dsl-fotos-ed">${r.fotos.map((f, i) => `<span class="dsl-foto"><img src="${f.thumb}" alt="Foto ${i + 1} de ${escHtml(m.descricao)}"><button type="button" aria-label="Tirar a foto ${i + 1}" onclick="dnFotoTirar('${k}',${i})">${dslIc('x')}</button></span>`).join('')}
         ${r.fotos.length < 5 ? `<label class="btn btn-ghost dsl-btn-foto" data-no-guard="1">${dslIc('camera')} ${r.fotos.length ? 'Mais uma foto' : 'Foto *'}<input type="file" accept="image/*" capture="environment" hidden onchange="dnFoto('${k}',this)"></label>` : ''}</div>
@@ -39698,9 +39787,22 @@ function dnCampo(chave, campo, valor, redesenhar) {
   const r = _dn?.resp[chave];
   if (!r) return;
   r[campo] = valor;
-  if (campo === 'situacao' && valor === 'NAO') { r.fotos = []; r.estado = ''; }
+  if (campo === 'situacao' && valor === 'NAO') { r.fotos = []; r.estado = ''; r.estados = {}; }
   if (redesenhar) dnRedesenharItem(chave);
   else { if (campo === 'qtd_devolvida') { const m = (_dn.material?.itens || []).find(x => x.chave === chave); const box = document.querySelector(`#modalDslNovo [data-dn="${CSS.escape(chave)}"] .dsl-valor`); if (m && box && !r.isentar && m.valor_un > 0) box.innerHTML = `Desconto: <b>${dslMoeda(dnValor(m, r).valor)}</b>`; } dnTotal(); }
+}
+// Estados diferentes (27/11/2026): quantos em cada estado; a soma tem que dar o devolvido
+const dnDevolvido = (m, r) => r.situacao === 'SIM' ? m.qtd : r.situacao === 'PARTE' ? (dslNum(r.qtd_devolvida) || 0) : 0;
+function dnSomaEstados(m, r) {
+  const soma = Math.round(Object.keys(DSL_ESTADOS).reduce((s, e) => s + (dslNum(r.estados?.[e]) || 0), 0) * 1000) / 1000, dev = dnDevolvido(m, r);
+  return { ok: soma === dev && dev > 0, txt: `Soma ${dslQtd(soma)} de ${dslQtd(dev)}` };
+}
+function dnEstadoQtd(chave, estado, valor) {
+  const r = _dn?.resp[chave], m = (_dn?.material?.itens || []).find(x => x.chave === chave);
+  if (!r || !m) return;
+  (r.estados ||= {})[estado] = valor;
+  const sp = document.querySelector(`#modalDslNovo [data-dn="${CSS.escape(chave)}"] .dn-soma`);
+  if (sp) { const s = dnSomaEstados(m, r); sp.textContent = s.txt; sp.classList.toggle('ruim', !s.ok); }
 }
 function dnSerial(chave, serial, marcado) {
   const r = _dn?.resp[chave];
@@ -39766,8 +39868,9 @@ async function dnEnviar() {
     if (!r.situacao) return dslErro('dnErro2', `${m.descricao}: diga se foi devolvido.`);
     if ((r.situacao === 'SIM' || r.situacao === 'PARTE') && !r.fotos.length) return dslErro('dnErro2', `${m.descricao}: tire a foto do que foi devolvido.`);
     if ((r.situacao === 'SIM' || r.situacao === 'PARTE') && !r.estado) return dslErro('dnErro2', `${m.descricao}: diga o estado.`);
+    if ((r.situacao === 'SIM' || r.situacao === 'PARTE') && r.estado === 'VARIOS' && !dnSomaEstados(m, r).ok) return dslErro('dnErro2', `${m.descricao}: a soma dos estados tem que dar ${dslQtd(dnDevolvido(m, r))}.`);
     if ((r.situacao === 'PARTE' || r.situacao === 'NAO') && !r.motivo) return dslErro('dnErro2', `${m.descricao}: diga por que não foi devolvido.`);
-    itens.push({ chave: m.chave, situacao: r.situacao, qtd_devolvida: r.qtd_devolvida, estado: r.estado, seriais: r.seriais, fotos: r.fotos.map(f => f.caminho),
+    itens.push({ chave: m.chave, situacao: r.situacao, qtd_devolvida: r.qtd_devolvida, estado: r.estado, estados: r.estado === 'VARIOS' ? r.estados : undefined, seriais: r.seriais, fotos: r.fotos.map(f => f.caminho),
       motivo: r.motivo, motivo_texto: r.motivo_texto, isentar: r.isentar, justificativa: r.justificativa });
   }
   const sem = document.getElementById('dnSemAss').checked;

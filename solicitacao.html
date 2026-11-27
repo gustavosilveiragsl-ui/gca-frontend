@@ -184,6 +184,11 @@ p{margin:0}
 .item .ok-dot{width:26px;height:26px;border-radius:999px;background:var(--ok-dot);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .lin-campo{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .lin-campo > .rot{font-size:12px;color:var(--fg-2);width:72px;font-weight:600}
+/* Desligamento: quantos em cada estado (27/11/2026) */
+.ds-estq{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.ds-estq label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--fg-2)}
+.ds-estq .sel-inline{min-width:0;width:100%}
+.ds-soma{font-size:12px;color:var(--fg-3)}.ds-soma.ruim{color:var(--bad);font-weight:600}.ds-soma.ok{color:var(--ok);font-weight:600}
 .tam{min-width:44px;height:40px;padding:0 8px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--fg-2);font-weight:600;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
 .tam small{font-size:10px;font-weight:600;color:var(--fg-3)}
 .tam[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
@@ -1527,10 +1532,22 @@ function dsValor(m, r) {
   return { falta, valor: falta > 0 && !r.isentar ? falta * (Number(m.valor_un) || 0) : 0 };
 }
 const dsTotal = () => { const d = S.desl; return (d?.mat?.itens || []).reduce((s, m, i) => s + dsValor(m, d.resp[i]).valor, 0); };
+// Estados diferentes (27/11/2026): "das 2 botas, 1 boa e 1 danificada" — a soma tem que dar o devolvido
+const dsDevolvido = (m, r) => r.situacao === 'SIM' ? m.qtd : r.situacao === 'PARTE' ? (numBR(r.qtd_devolvida) || 0) : 0;
+function dsSomaEstados(m, r) {
+  const soma = Math.round(Object.keys(S.deslOp?.estados || {}).reduce((s, e) => s + (numBR(r.estados?.[e]) || 0), 0) * 1000) / 1000, dev = dsDevolvido(m, r);
+  return { ok: dev > 0 && soma === dev, txt: `Soma ${qtdBR(soma)} de ${qtdBR(dev)}` };
+}
+function dsEstadosTxt(m, r) {
+  const est = S.deslOp?.estados || {};
+  if (r.estado !== 'VARIOS') return est[r.estado] || '';
+  return Object.entries(est).filter(([e]) => numBR(r.estados?.[e]) > 0).map(([e, t]) => `${qtdBR(numBR(r.estados[e]))} ${t.toLowerCase()}`).join(', ');
+}
 function dsPronto(m, r) {
   if (!r.situacao) return false;
   const dev = r.situacao === 'SIM' || r.situacao === 'PARTE', nao = r.situacao === 'PARTE' || r.situacao === 'NAO';
   if (dev && (!r.fotos.length || !r.estado)) return false;
+  if (dev && r.estado === 'VARIOS' && !dsSomaEstados(m, r).ok) return false;
   if (r.situacao === 'PARTE' && !(numBR(r.qtd_devolvida) > 0 && numBR(r.qtd_devolvida) < m.qtd)) return false;
   if (nao && (!r.motivo || (r.motivo === 'OUTRO' && !r.motivo_texto.trim()) || (r.isentar && r.justificativa.trim().length < 5))) return false;
   return true;
@@ -1576,7 +1593,9 @@ function dsItem(m, i) {
   return `<div class="item${dsPronto(m, r) ? ' pronto' : ''}" data-ds="${i}"><div class="cab" style="cursor:default"><span class="tx"><b>${esc(m.descricao)}</b><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${tag}<span class="sub">${qtdBR(m.qtd)} ${esc(m.un_med || 'UN')} · ${Number(m.valor_un) > 0 ? brl(m.valor_un) + ' cada' : 'sem preço no cadastro'}</span></span>${(m.seriais || []).length ? `<span class="sub">Seriais: ${esc(m.seriais.join(', '))}</span>` : ''}</span>${dsPronto(m, r) ? `<span class="ok-dot">${ic('check', 15, 'stroke-width="3"')}</span>` : ''}</div>
     <div class="corpo"><div class="seg" role="group" aria-label="${esc(m.descricao)} foi devolvido?">${[['SIM', 'Devolveu'], ['PARTE', 'Parte'], ['NAO', 'Não devolveu']].filter(([s]) => s !== 'PARTE' || m.qtd > 1).map(([s, t]) => `<button data-a="dsSit" data-v="${i}|${s}" aria-pressed="${r.situacao === s}">${t}</button>`).join('')}</div>
       ${dev ? `${r.situacao === 'PARTE' ? `<div class="lin-campo"><span class="rot">Devolveu</span><input type="number" inputmode="decimal" class="sel-inline" style="max-width:120px" id="dsDev${i}" min="0" max="${m.qtd}" step="any" data-i="dsDev" data-k="${i}" value="${esc(r.qtd_devolvida)}" aria-label="Quantos devolveu"></div>` : ''}
-        <div class="lin-campo"><span class="rot">Estado</span><select class="sel-inline" id="dsEst${i}" data-i="dsEst" data-k="${i}" aria-label="Estado"><option value="">Escolha...</option>${Object.entries(op.estados || {}).map(([s, t]) => `<option value="${esc(s)}"${r.estado === s ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
+        <div class="lin-campo"><span class="rot">Estado</span><select class="sel-inline" id="dsEst${i}" data-i="dsEst" data-k="${i}" aria-label="Estado"><option value="">Escolha...</option>${Object.entries(op.estados || {}).map(([s, t]) => `<option value="${esc(s)}"${r.estado === s ? ' selected' : ''}>${esc(t)}</option>`).join('')}${m.qtd > 1 ? `<option value="VARIOS"${r.estado === 'VARIOS' ? ' selected' : ''}>Estados diferentes</option>` : ''}</select></div>
+        ${r.estado === 'VARIOS' ? `<div class="ds-estq" role="group" aria-label="Quantos em cada estado">${Object.entries(op.estados || {}).map(([s, t]) => `<label>${esc(t)}<input type="number" inputmode="decimal" class="sel-inline" min="0" step="any" id="dsEstQ${i}_${esc(s)}" data-i="dsEstQ" data-k="${i}" data-e="${esc(s)}" value="${esc(r.estados?.[s] ?? '')}"></label>`).join('')}</div>
+          <span class="ds-soma ${dsSomaEstados(m, r).ok ? 'ok' : 'ruim'}">${dsSomaEstados(m, r).txt}</span>` : ''}
         ${(m.seriais || []).length ? `<div class="lin-campo"><span class="rot">Seriais</span>${m.seriais.map(s => `<label class="check"><input type="checkbox" data-i="dsSerial" data-k="${i}" data-s="${esc(s)}"${r.seriais.includes(s) ? ' checked' : ''}> ${esc(s)}</label>`).join('')}</div>` : ''}
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">${r.fotos.map((f, j) => `<span class="foto-mini"><img src="${esc(f.thumb)}" alt="Foto ${j + 1} de ${esc(m.descricao)}"><button data-a="dsTirarFoto" data-v="${i}|${j}" aria-label="Tirar a foto ${j + 1}">${ic('x', 14)}</button></span>`).join('')}${r.fotos.length < (op.max_fotos || 5) ? `<label class="btn-foto">${ic('camera', 18)} ${d.fotoLendo === i ? 'Enviando...' : r.fotos.length ? 'Mais uma foto' : 'Tirar foto *'}<input type="file" accept="image/*" capture="environment" data-i="dsFoto" data-k="${i}" ${d.fotoLendo >= 0 ? 'disabled' : ''}></label>` : ''}</div>` : ''}
       ${nao ? `<div class="lin-campo"><span class="rot">Motivo</span><select class="sel-inline" id="dsMot${i}" data-i="dsMot" data-k="${i}" aria-label="Por que não devolveu"><option value="">Por que não devolveu...</option>${Object.entries(op.motivos || {}).map(([s, t]) => `<option value="${esc(s)}"${r.motivo === s ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>
@@ -1610,6 +1629,7 @@ function dsValidar() {
     if (!r.situacao) return `${n}: diga se foi devolvido.`;
     if (r.situacao === 'PARTE') { const q = numBR(r.qtd_devolvida); if (!(q > 0 && q < m.qtd)) return `${n}: informe quanto foi devolvido (menos que ${qtdBR(m.qtd)}).`; }
     if (r.situacao !== 'NAO' && !r.estado) return `${n}: diga o estado.`;
+    if (r.situacao !== 'NAO' && r.estado === 'VARIOS' && !dsSomaEstados(m, r).ok) return `${n}: a soma dos estados tem que dar ${qtdBR(dsDevolvido(m, r))}.`;
     if (r.situacao !== 'NAO' && !r.fotos.length) return `${n}: tire a foto do que foi devolvido.`;
     if (r.situacao !== 'SIM' && !r.motivo) return `${n}: diga por que não foi devolvido.`;
     if (r.motivo === 'OUTRO' && !r.motivo_texto.trim()) return `${n}: escreva o motivo.`;
@@ -1625,7 +1645,7 @@ function dsAssinar() {
     chave: 'ds3', topo: topo({ voltar: 'dsP2', passo: 'Desligamento · passo 3 de 3', titulo: 'Conferir e assinar' }),
     corpo: `<p class="muted">Mostre ao colaborador antes de ele assinar.</p>
       <div class="cartao"><b>${esc(c.nome)} · ${esc(c.matricula || '—')}</b><span class="muted" style="margin-top:-8px">Desligamento em ${dataBR(d.data)}</span>
-        <div><b style="font-size:13px">Devolve agora</b> <span class="muted">(fica com você até a entrega no ${esc(armCap(d.arm))})</span>${devolve.length ? devolve.map(([m, r]) => `<div class="kv"><span>${esc(m.descricao)}</span><span>${qtdBR(r.situacao === 'SIM' ? m.qtd : numBR(r.qtd_devolvida))}</span></div>`).join('') : '<div class="muted">nada</div>'}</div>
+        <div><b style="font-size:13px">Devolve agora</b> <span class="muted">(fica com você até a entrega no ${esc(armCap(d.arm))})</span>${devolve.length ? devolve.map(([m, r]) => `<div class="kv"><span>${esc(m.descricao)}${r.estado === 'VARIOS' ? `<span class="muted" style="display:block;font-size:12px">${esc(dsEstadosTxt(m, r))}</span>` : ''}</span><span>${qtdBR(r.situacao === 'SIM' ? m.qtd : numBR(r.qtd_devolvida))}</span></div>`).join('') : '<div class="muted">nada</div>'}</div>
         <div><b style="font-size:13px">Não devolve</b>${naoDev.length ? naoDev.map(([m, r]) => `<div class="kv"><span>${esc(m.descricao)} (${qtdBR(dsValor(m, r).falta)})</span><span>${r.isentar ? 'sem desconto' : Number(m.valor_un) > 0 ? brl(dsValor(m, r).valor) : 'sem preço'}</span></div>`).join('') : '<div class="muted">nada</div>'}</div></div>
       ${t > 0 ? `<div class="aviso bad" role="alert">${ic('alerta', 17)}<span><b>${brl(t)}</b> serão descontados à vista, na rescisão. A assinatura abaixo vale também para a Autorização de Descontos.</span></div>` : `<div class="aviso ok">${ic('check', 17)}<span>Sem desconto.</span></div>`}
       ${d.semAss ? `<div class="campo"><label for="dsJustA">Por que ele não vai assinar *</label><textarea id="dsJustA" data-i="dsJustA" rows="2" maxlength="500" placeholder="Ex.: recusou-se a assinar">${esc(d.justA)}</textarea></div>
@@ -1666,7 +1686,7 @@ async function dsVerMaterial() {
   if (S.desl !== d) return;
   if (!r?.ok) { d.erro = r?.erro || 'Não foi possível carregar o material.'; return; }
   d.mat = r;
-  d.resp = (r.itens || []).map(m => ({ situacao: '', qtd_devolvida: '', estado: '', seriais: [...(m.seriais || [])], fotos: [], motivo: '', motivo_texto: '', isentar: false, justificativa: '' }));
+  d.resp = (r.itens || []).map(m => ({ situacao: '', qtd_devolvida: '', estado: '', estados: {}, seriais: [...(m.seriais || [])], fotos: [], motivo: '', motivo_texto: '', isentar: false, justificativa: '' }));
   d.passo = 2;
 }
 async function dsFoto(i, arq) {
@@ -1707,7 +1727,7 @@ async function dsEnviar() {
   const d = S.desl;
   if (!d || d.enviando) return;
   d.erro = '';
-  const itens = (d.mat.itens || []).map((m, i) => { const r = d.resp[i]; return { chave: m.chave, situacao: r.situacao, qtd_devolvida: String(r.qtd_devolvida).replace(',', '.'), estado: r.estado, seriais: r.seriais, fotos: r.fotos.map(f => f.caminho), motivo: r.motivo, motivo_texto: r.motivo_texto, isentar: r.isentar, justificativa: r.justificativa }; });
+  const itens = (d.mat.itens || []).map((m, i) => { const r = d.resp[i]; return { chave: m.chave, situacao: r.situacao, qtd_devolvida: String(r.qtd_devolvida).replace(',', '.'), estado: r.estado, estados: r.estado === 'VARIOS' ? r.estados : undefined, seriais: r.seriais, fotos: r.fotos.map(f => f.caminho), motivo: r.motivo, motivo_texto: r.motivo_texto, isentar: r.isentar, justificativa: r.justificativa }; });
   const corpo = { colaborador_id: d.colab.id, data_desligamento: d.data, armazem_id: d.arm, itens, chave_envio: d.chave, obs: d.obs };
   if (d.semAss) {
     if (d.justA.trim().length < 10) { d.erro = 'Escreva por que ele não vai assinar (pelo menos 10 letras).'; return; }
@@ -2309,7 +2329,7 @@ const acoes = {
   dsSit: (v) => {
     const [i, s] = v.split('|'); const r = S.desl.resp[Number(i)]; if (!r) return;
     r.situacao = s; S.desl.erro = '';
-    if (s === 'NAO') { r.fotos = []; r.estado = ''; r.qtd_devolvida = ''; }
+    if (s === 'NAO') { r.fotos = []; r.estado = ''; r.estados = {}; r.qtd_devolvida = ''; }
     if (s === 'SIM') { r.motivo = ''; r.motivo_texto = ''; r.isentar = false; r.justificativa = ''; r.qtd_devolvida = ''; }
   },
   dsTirarFoto: (v) => { const [i, j] = v.split('|').map(Number); S.desl.resp[i]?.fotos.splice(j, 1); },
@@ -2366,8 +2386,15 @@ document.addEventListener('input', (ev) => {
     if (k === 'dsObs') { d.obs = v; return; }
     if (k === 'dsTest') { d.test = v; d.testNome = ''; d.testErro = ''; atualizarDicaTest(); clearTimeout(_testTimer); _testTimer = setTimeout(conferirTestemunha, 600); return; }
     const i = Number(el.dataset.k), r = d.resp?.[i], mt = d.mat?.itens?.[i];
+    if (r && k === 'dsEstQ') {
+      (r.estados ||= {})[el.dataset.e] = v;
+      const sm = el.closest('.item')?.querySelector('.ds-soma');
+      if (sm) { const x = dsSomaEstados(mt, r); sm.textContent = x.txt; sm.className = 'ds-soma ' + (x.ok ? 'ok' : 'ruim'); }
+      el.closest('.item')?.classList.toggle('pronto', dsPronto(mt, r)); return;
+    }
     if (r && (k === 'dsDev' || k === 'dsJust' || k === 'dsMotTxt')) {
       if (k === 'dsDev') r.qtd_devolvida = v; else if (k === 'dsJust') r.justificativa = v; else r.motivo_texto = v;
+      if (k === 'dsDev') { const sm = el.closest('.item')?.querySelector('.ds-soma'); if (sm) { const x = dsSomaEstados(mt, r); sm.textContent = x.txt; sm.className = 'ds-soma ' + (x.ok ? 'ok' : 'ruim'); } }
       const box = el.closest('.item')?.querySelector('.ds-valor');
       if (box && !r.isentar && Number(mt.valor_un) > 0) box.innerHTML = `Desconto: <b>${brl(dsValor(mt, r).valor)}</b>`;
       el.closest('.item')?.classList.toggle('pronto', dsPronto(mt, r));
