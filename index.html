@@ -12917,7 +12917,12 @@ function limparMobilizar() {
 // ═══════════════════════════════════════════
 // INICIAR / CANCELAR ATENDIMENTO
 // ═══════════════════════════════════════════
-async function iniciarAtendimento() {
+async function iniciarAtendimento(opcoes = {}) {
+  // Atendimento pelo balcão esquece o pedido do atendimento anterior (27/11/2026). Antes, depois de
+  // atender um pedido, os atendimentos seguintes do balcão (outras pessoas) saíam ligados a ele até a
+  // página ser recarregada — no Maranhão, 7 pessoas ficaram penduradas no pedido do Luiz Polvoa.
+  // Só o atenderSolicitacao chama com { daSolicitacao: true }.
+  if (!opcoes || opcoes.daSolicitacao !== true) { window._solicitacaoAtendimento = null; ATEND.solicitacaoId = null; }
   // Se TODOS os armazéns que esta pessoa pode usar estão em contagem, não há de onde tirar
   // material — avisa aqui em vez de deixar montar o atendimento pra falhar no fim. Se só
   // alguns estão, segue: ela ainda pode separar dos outros.
@@ -12983,7 +12988,9 @@ function cancelarAtendimento() {
 
 function resetarAtendimento() {
   clearInterval(ATEND.cronometro);
-  Object.assign(ATEND, { ativo:false, id:null, inicio:null, cronometro:null, segundos:0, colab:null, itens:[], linkGerado:null, tokenGerado:null });
+  Object.assign(ATEND, { ativo:false, id:null, inicio:null, cronometro:null, segundos:0, colab:null, itens:[], linkGerado:null, tokenGerado:null,
+    solicitacaoId:null, solicitacoesExtras:[], complementoDe:null, complementoInfo:null });
+  window._solicitacaoAtendimento = null;   // o próximo atendimento não herda o pedido deste (27/11/2026)
   document.getElementById('atendEstadoInicial').classList.remove('hidden');
   document.getElementById('atendEmAndamento').classList.add('hidden');
   document.getElementById('atendColabBusca').value = '';
@@ -16668,8 +16675,8 @@ async function atenderSolicitacao(id, btnEl) {
     // Aguarda a view montar
     await new Promise(r => setTimeout(r, 350));
 
-    // ── 1. Inicia o atendimento PRIMEIRO (zera o estado) ──
-    if (!await iniciarAtendimento()) return;
+    // ── 1. Inicia o atendimento PRIMEIRO (zera o estado; mantém este pedido) ──
+    if (!await iniciarAtendimento({ daSolicitacao: true })) return;
     await new Promise(r => setTimeout(r, 200));
     // Juntar pedidos (item 6)
     if (junta.modo === 'complemento') { ATEND.complementoDe = junta.pendente.id; ATEND.complementoInfo = junta.pendente; }
