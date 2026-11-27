@@ -6275,6 +6275,7 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
           <button id="indTabEnel" onclick="indAba('enel')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-zap></use></svg> <span class="nome-conc">Concessionária</span> / Materiais</button>
           <button id="indTabMateriais" onclick="indAba('materiais')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-package></use></svg> Solicitações</button>
           <button id="indTabForaPrazo" onclick="indAba('foraprazo')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-alarm-clock></use></svg> Fora do Prazo</button>
+          <button id="indTabMobDesl" onclick="indAba('mobdesl')" style="padding:10px 20px;font-size:13px;font-weight:600;border:none;background:transparent;color:var(--text-3);border-bottom:2px solid transparent;cursor:pointer"><svg class=ic aria-hidden=true><use href=#i-users></use></svg> Mobilizações e desligamentos</button>
         </div>
 
         <div id="indLoading" style="text-align:center;padding:60px;display:none">
@@ -6295,6 +6296,11 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
         <!-- SOLICITAÇÕES DE MATERIAIS -->
         <div id="indSecMateriais" style="display:none">
           <div id="indMateriaisContent"><div class="empty-state"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-package></use></svg></div><div class="es-title">Selecione o período e clique em Buscar</div></div></div>
+        </div>
+
+        <!-- MOBILIZAÇÕES E DESLIGAMENTOS (27/11/2026) -->
+        <div id="indSecMobDesl" style="display:none">
+          <div id="indMobDeslContent"><div class="empty-state"><div class="es-icon"><svg class=ic aria-hidden=true><use href=#i-users></use></svg></div><div class="es-title">Carregando...</div></div></div>
         </div>
 
         <!-- FORA DO PRAZO -->
@@ -9750,10 +9756,11 @@ function pbAbaOperacao(el) {
 async function pbAbaPessoas(el) {
   el.innerHTML = '<div class="pb-carregando"><div class="spinner" style="margin:0 auto 12px"></div>Carregando pessoas e usuários…</div>';
   const chave = `${PB.de}|${PB.ate}|${PB.filial}`;
-  if (!PB.pessoas || PB.pessoas._chave !== chave) {
-    const res = await api(`/painel-brasil/pessoas?${pbQuery({ filial: PB.filial })}`);
+  if (!PB.pessoas || PB.pessoas._chave !== chave || !PB.mobDesl || PB.mobDesl._chave !== chave) {
+    const [res, md] = await Promise.all([api(`/painel-brasil/pessoas?${pbQuery({ filial: PB.filial })}`), api(`/painel-brasil/mob-desl?${pbQuery({ filial: PB.filial })}`)]);
     if (!res?.ok) { el.innerHTML = `<div class="pb-vazio">${escHtml(res?.erro || 'Erro ao carregar')}</div>`; return; }
     PB.pessoas = { ...res, _chave: chave };
+    PB.mobDesl = md?.ok ? { ...md, _chave: chave } : { _erro: md?.erro || 'Erro ao carregar as mobilizações e desligamentos', _chave: chave };
     if (PB.aba !== 'pessoas') return;
   }
   const d = PB.pessoas;
@@ -9765,7 +9772,8 @@ async function pbAbaPessoas(el) {
       <div style="min-width:0"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(x[rotulo])}</div><div class="pb-rank-barra"><i style="width:${(x[campo] || 0) / max * 100}%"></i></div></div>
       <span class="pb-rank-v">${fmt(x[campo])}</span></div>`).join('') || '<div class="pb-vazio">Sem dados.</div>'}</div>`;
   };
-  el.innerHTML = `
+  el.innerHTML = `${pbMobDeslHtml()}
+    <div class="pb-secao" style="margin-top:22px">Colaboradores e usuários</div>
     <div class="pb-kpis" style="grid-template-columns:repeat(4,1fr)">
       ${pbKpi('Colaboradores ativos', pbNum(d.colaboradores.total_ativos), `${pbNum(d.colaboradores.por_filial.reduce((t, x) => t + x.inativos, 0))} inativos no cadastro`, '', '', 0)}
       ${pbKpi('Usuários do sistema', pbNum(d.usuarios.total), 'com acesso a estas filiais', '', 'pbUsuariosLista()', 1)}
@@ -9783,6 +9791,42 @@ async function pbAbaPessoas(el) {
         { limite: 20, vazio: 'Nenhum acesso registrado no período. O registro de acessos começou a contar a partir da publicação do Painel Brasil.', rodape: pbPessoasRodape('acessos') })}</div>
     </div>`;
 }
+// ── Mobilizações e desligamentos no período (27/11/2026, lista do usuário, ponto 6). O servidor junta os
+// módulos novos com o que havia antes: admissão do cadastro e devolução com motivo "Demissão". ──
+const PB_MD_COLUNAS = [{ key: 'data', label: 'Data', tipo: 'data' }, { key: 'filial', label: 'Filial' }, { key: 'nome', label: 'Colaborador' }, { key: 'matricula', label: 'Matrícula' },
+  { key: 'funcao', label: 'Função' }, { key: 'origem', label: 'De onde vem' }, { key: 'detalhe', label: 'Detalhe' }];
+const pbMesCurto = (mes) => { const n = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']; return `${n[Number(mes.slice(5, 7)) - 1]}/${mes.slice(0, 4)}`; };
+function pbMobDeslHtml() {
+  const md = PB.mobDesl || {};
+  if (md._erro) return `<div class="pb-secao">Mobilizações e desligamentos</div><div class="pb-vazio">${escHtml(md._erro)}</div>`;
+  const orig = (o, ordem) => ordem.map(([k, t]) => `${pbNum(o?.[k] || 0)} ${t}`).join(' · ');
+  const dif = md.mobilizacoes.total - md.desligamentos.total;
+  const obs = [md.cadastro?.sem_admissao ? `${pbNum(md.cadastro.sem_admissao)} ${md.cadastro.sem_admissao === 1 ? 'colaborador está' : 'colaboradores estão'} sem data de admissão no cadastro` : '',
+    md.cadastro?.admissao_invalida ? `${pbNum(md.cadastro.admissao_invalida)} com a data de admissão num formato que não deu para ler` : ''].filter(Boolean).join('; ');
+  return `<div class="pb-secao" id="pbMobDesl">Mobilizações e desligamentos</div>
+    <div class="pb-kpis" style="grid-template-columns:repeat(3,1fr)">
+      ${pbKpi('Mobilizações', pbNum(md.mobilizacoes.total), orig(md.mobilizacoes.por_origem, [['Mobilização pelo portal', 'pelo portal'], ['Admissão no cadastro', 'pela admissão no cadastro']]), '', md.mobilizacoes.total ? "pbMobDeslLista('mob')" : '', 0)}
+      ${pbKpi('Desligamentos', pbNum(md.desligamentos.total), orig(md.desligamentos.por_origem, [['Desligamento (módulo)', 'pelo módulo'], ['Devolução com motivo Demissão', 'por devolução "Demissão"']]), '', md.desligamentos.total ? "pbMobDeslLista('desl')" : '', 1)}
+      ${pbKpi('Diferença no período', (dif > 0 ? '+' : '') + pbNum(dif), 'mobilizações menos desligamentos', '', '', 2)}
+    </div>
+    <div class="pb-grid3" style="margin-top:16px">
+      <div><div class="pb-secao">Por filial</div>${pbTabela([{ key: 'filial', label: 'Filial' }, { key: 'mobilizacoes', label: 'Mobilizações' }, { key: 'desligamentos', label: 'Desligamentos' }],
+        md.por_filial, { vazio: 'Nenhuma filial.' })}</div>
+      <div><div class="pb-secao">Por função</div>${pbTabela([{ key: 'funcao', label: 'Função' }, { key: 'mobilizacoes', label: 'Mobilizações' }, { key: 'desligamentos', label: 'Desligamentos' }],
+        md.por_funcao || [], { vazio: 'Nada neste período.', altura: 320 })}</div>
+      <div><div class="pb-secao">Mês a mês</div>${pbTabela([{ key: 'mes_txt', label: 'Mês' }, { key: 'mobilizacoes', label: 'Mobilizações' }, { key: 'desligamentos', label: 'Desligamentos' }, { key: 'diferenca', label: 'Diferença' }],
+        md.por_mes.map(m => ({ ...m, mes_txt: pbMesCurto(m.mes), diferenca: m.mobilizacoes - m.desligamentos })), { vazio: 'Nada neste período.' })}</div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);line-height:1.5;margin-top:8px">Antes dos módulos novos, a mobilização conta pela <b>data de admissão</b> do cadastro e o desligamento pela <b>devolução com motivo "Demissão"</b>. A mesma pessoa não conta duas vezes. Quem saiu sem devolução registrada no GCA não aparece, porque o cadastro não guarda a data da saída.${obs ? ` Atenção: ${escHtml(obs)} — as mobilizações antigas dessas pessoas não entram.` : ''}</div>`;
+}
+function pbMobDeslLista(tipo) {
+  const md = PB.mobDesl;
+  if (!md || md._erro) return;
+  const sec = (t, l) => ({ titulo: t, colunas: PB_MD_COLUNAS, linhas: l });
+  pbGaveta(tipo === 'mob' ? 'Mobilizações' : 'Desligamentos', pbTituloEscopo(),
+    tipo === 'mob' ? [sec('Mobilizações', md.mobilizacoes.lista), sec('Desligamentos', md.desligamentos.lista)] : [sec('Desligamentos', md.desligamentos.lista), sec('Mobilizações', md.mobilizacoes.lista)]);
+}
+
 // "Quem mais movimenta" e "Quem mais acessa": a aba mostra 20; "ver todos" abre a gaveta e o Excel baixa a lista inteira (16/10/2026)
 const PB_PESSOAS = {
   movimentacoes: { titulo: 'Quem mais movimenta', arquivo: 'Quem_mais_movimenta', colunas: [{ key: 'usuario', label: 'Usuário' }, { key: 'filiais', label: 'Filiais' }, { key: 'atendimentos', label: 'Atendimentos' },
@@ -36280,6 +36324,9 @@ function indAba(aba) {
   document.getElementById('indSecEnel').style.display      = aba==='enel'      ? '' : 'none';
   document.getElementById('indSecMateriais').style.display = aba==='materiais' ? '' : 'none';
   document.getElementById('indSecForaPrazo').style.display  = aba==='foraprazo'? '' : 'none';
+  document.getElementById('indSecMobDesl').style.display    = aba==='mobdesl'  ? '' : 'none';
+  const md=document.getElementById('indTabMobDesl');
+  md.style.color=aba==='mobdesl'?'var(--accent-text)':'var(--text-3)'; md.style.borderBottomColor=aba==='mobdesl'?'var(--accent)':'transparent';
   const e=document.getElementById('indTabEpi'), n=document.getElementById('indTabEnel'), m=document.getElementById('indTabMateriais'), f=document.getElementById('indTabForaPrazo');
   e.style.color=aba==='epi'?'var(--accent-text)':'var(--text-3)'; e.style.borderBottomColor=aba==='epi'?'var(--accent)':'transparent';
   n.style.color=aba==='enel'?'var(--accent-text)':'var(--text-3)'; n.style.borderBottomColor=aba==='enel'?'var(--accent)':'transparent';
@@ -36287,6 +36334,79 @@ function indAba(aba) {
   f.style.color=aba==='foraprazo'?'var(--accent-text)':'var(--text-3)'; f.style.borderBottomColor=aba==='foraprazo'?'var(--accent)':'transparent';
   setTimeout(()=>Object.values(_indCharts).forEach(c=>c?.resize?.()),50);
   if (aba === 'foraprazo' && !_indForaPrazoData) carregarIndForaPrazo();
+  if (aba === 'mobdesl' && !_indMobDeslData) carregarIndMobDesl();
+}
+
+// ── Mobilizações e desligamentos da filial (27/11/2026, pedido do usuário): a mesma conta do Painel Brasil,
+// com a divisão por função. Antes dos módulos: admissão do cadastro e devolução com motivo "Demissão". ──
+let _indMobDeslData = null;
+async function carregarIndMobDesl() {
+  const el = document.getElementById('indMobDeslContent');
+  el.innerHTML = '<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto 16px"></div><div style="color:var(--text-3)">Contando...</div></div>';
+  const de = document.getElementById('indDe')?.value || '', ate = document.getElementById('indAte')?.value || '';
+  const r = await api(`/indicadores/mob-desl?de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`);
+  if (!r?.ok) { el.innerHTML = `<div class="empty-state"><div class="es-title">${escHtml(r?.erro || 'Erro ao carregar')}</div></div>`; return; }
+  _indMobDeslData = r;
+  indRenderMobDesl();
+}
+const IND_MD_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+function indRenderMobDesl() {
+  const r = _indMobDeslData, el = document.getElementById('indMobDeslContent');
+  if (!r || !el) return;
+  const n = (v) => Number(v || 0).toLocaleString('pt-BR');
+  const dif = r.mobilizacoes.total - r.desligamentos.total;
+  const po = (o, k) => n(o?.[k] || 0);
+  const barra = (v, max, cor) => indHtml(`<span style="display:inline-flex;align-items:center;gap:8px;min-width:120px"><b style="min-width:22px;text-align:right">${n(v)}</b><i style="display:block;height:6px;border-radius:3px;background:${cor};width:${max ? Math.max(v ? 3 : 0, Math.round(v / max * 90)) : 0}px"></i></span>`);
+  const maxF = Math.max(1, ...r.por_funcao.map(f => Math.max(f.mobilizacoes, f.desligamentos)));
+  const obs = [r.cadastro?.sem_admissao ? `${n(r.cadastro.sem_admissao)} ${r.cadastro.sem_admissao === 1 ? 'colaborador está' : 'colaboradores estão'} sem data de admissão no cadastro` : '',
+    r.cadastro?.admissao_invalida ? `${n(r.cadastro.admissao_invalida)} com a data de admissão num formato que não deu para ler` : ''].filter(Boolean).join('; ');
+  const linha = (e) => [formatarData(e.data), e.nome || '—', e.matricula || '—', e.funcao || '—', e.origem, e.detalhe || ''];
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:20px">
+      ${indKpi(n(r.mobilizacoes.total), 'Mobilizações', '#22c55e', `${po(r.mobilizacoes.por_origem, 'Mobilização pelo portal')} pelo portal · ${po(r.mobilizacoes.por_origem, 'Admissão no cadastro')} pela admissão`)}
+      ${indKpi(n(r.desligamentos.total), 'Desligamentos', '#f87171', `${po(r.desligamentos.por_origem, 'Desligamento (módulo)')} pelo módulo · ${po(r.desligamentos.por_origem, 'Devolução com motivo Demissão')} por devolução "Demissão"`)}
+      ${indKpi((dif > 0 ? '+' : '') + n(dif), 'Diferença', 'var(--accent-text)', 'mobilizações menos desligamentos')}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px;margin-bottom:14px">
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Por função</div>
+        ${r.por_funcao.length ? `<div style="max-height:360px;overflow:auto">${indTabela(['Função', 'Mobilizações', 'Desligamentos'], r.por_funcao.map(f => [f.funcao, barra(f.mobilizacoes, maxF, '#22c55e'), barra(f.desligamentos, maxF, '#f87171')]))}</div>`
+          : '<div style="color:var(--text-3);font-size:12px">Nada neste período.</div>'}
+      </div>
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Mês a mês</div>
+        <div style="max-height:360px;overflow:auto">${indTabela(['Mês', 'Mobilizações', 'Desligamentos', 'Diferença'], r.por_mes.map(m => [`${IND_MD_MESES[Number(m.mes.slice(5, 7)) - 1]}/${m.mes.slice(0, 4)}`, n(m.mobilizacoes), n(m.desligamentos), n(m.mobilizacoes - m.desligamentos)]))}</div>
+      </div>
+    </div>
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px">Quem entrou e quem saiu</div>
+        <button class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:4px 10px" onclick="indMobDeslExcel()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
+      </div>
+      <div style="display:grid;grid-template-columns:minmax(0,1fr);gap:18px">
+        <div><div style="font-size:12px;font-weight:700;color:#22c55e;margin-bottom:6px">Mobilizações (${n(r.mobilizacoes.total)})</div>
+          <div style="max-height:320px;overflow:auto">${r.mobilizacoes.lista.length ? indTabela(['Data', 'Colaborador', 'Matrícula', 'Função', 'De onde vem', 'Detalhe'], r.mobilizacoes.lista.map(linha)) : '<div style="color:var(--text-3);font-size:12px">Nenhuma.</div>'}</div></div>
+        <div><div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px">Desligamentos (${n(r.desligamentos.total)})</div>
+          <div style="max-height:320px;overflow:auto">${r.desligamentos.lista.length ? indTabela(['Data', 'Colaborador', 'Matrícula', 'Função', 'De onde vem', 'Detalhe'], r.desligamentos.lista.map(linha)) : '<div style="color:var(--text-3);font-size:12px">Nenhum.</div>'}</div></div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-3);line-height:1.5;margin-top:10px">Antes dos módulos novos, a mobilização conta pela <b>data de admissão</b> do cadastro e o desligamento pela <b>devolução com motivo "Demissão"</b>. A mesma pessoa não conta duas vezes. Quem saiu sem devolução registrada no GCA não aparece, porque o cadastro não guarda a data da saída.${obs ? ` Atenção: ${escHtml(obs)} — as mobilizações antigas dessas pessoas não entram.` : ''}</div>`;
+}
+function indMobDeslExcel() {
+  const r = _indMobDeslData;
+  if (!r) return;
+  const lst = (l) => [['Data', 'Colaborador', 'Matrícula', 'Função', 'De onde vem', 'Detalhe'], ...l.map(e => [formatarData(e.data), e.nome, e.matricula, e.funcao, e.origem, e.detalhe])];
+  gcaCarregarSheetJS(() => {
+    const wb = XLSX.utils.book_new();
+    const aba = (nome, linhas, larguras) => { const ws = XLSX.utils.aoa_to_sheet(linhas); ws['!cols'] = larguras.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, nome); };
+    aba('Por função', [['Função', 'Mobilizações', 'Desligamentos'], ...r.por_funcao.map(f => [f.funcao, f.mobilizacoes, f.desligamentos])], [36, 14, 14]);
+    aba('Mês a mês', [['Mês', 'Mobilizações', 'Desligamentos', 'Diferença'], ...r.por_mes.map(m => [m.mes.split('-').reverse().join('/'), m.mobilizacoes, m.desligamentos, m.mobilizacoes - m.desligamentos])], [10, 14, 14, 11]);
+    aba('Mobilizações', lst(r.mobilizacoes.lista), [12, 36, 12, 28, 26, 34]);
+    aba('Desligamentos', lst(r.desligamentos.lista), [12, 36, 12, 28, 30, 30]);
+    const nome = `mobilizacoes_desligamentos_${r.de.split('-').reverse().join('-')}_a_${r.ate.split('-').reverse().join('-')}.xlsx`;
+    XLSX.writeFile(wb, nome);
+    toast(`${escHtml(nome)} gerado!`, 'success', 3000);
+  });
 }
 
 let _indForaPrazoData = null;
@@ -36499,6 +36619,8 @@ async function carregarIndicadores() {
   _indData=data; indRenderizarTudo();
   _indForaPrazoData = null; // força recarregar com o novo período na próxima vez que abrir a aba
   if (document.getElementById('indSecForaPrazo').style.display !== 'none') carregarIndForaPrazo();
+  _indMobDeslData = null;
+  if (document.getElementById('indSecMobDesl').style.display !== 'none') carregarIndMobDesl();
 }
 
 function indFmt(seg){if(!seg)return'—';const m=Math.floor(seg/60),s=seg%60;return m>0?`${m}min ${s}s`:`${s}s`;}
