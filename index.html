@@ -4916,7 +4916,8 @@ tr.dot2-editando td{background:color-mix(in srgb,var(--c) 10%,transparent)}
               <div style="display:flex;gap:8px">
                 <input id="cmBuscaSerialInput" class="form-input" placeholder="Número de série..." onkeydown="if(event.key==='Enter')cmBuscarSerial()">
                 <button class="btn btn-ghost" onclick="cmBuscarSerial()">Buscar</button>
-                <button class="btn btn-ghost" onclick="exportarMedidores()"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg> Excel</button>
+                <button class="btn btn-ghost" onclick="exportarMedidores()" title="Excel da aba aberta, com o filtro"><svg class=ic aria-hidden=true><use href=#i-inbox></use></svg> Excel</button>
+                <button class="btn btn-ghost" onclick="cmExcelCompleto(this)" style="white-space:nowrap" title="Todos os medidores (estoque, campo e instalados) com todas as informações e o resumo"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel completo</button>
               </div>
             </div>
           </div>
@@ -12638,7 +12639,7 @@ function isdExcel() {
     aba('Filtros', filtros, [18, 70]);
     const nome = `saida_${String(d.base).replace(/[^\w]+/g, '_').slice(0, 40)}_${d.periodo.meses}meses.xlsx`;
     XLSX.writeFile(wb, nome);
-    toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${escHtml(nome)} gerado!`, 'success', 3000);
+    toast(`${escHtml(nome)} gerado!`, 'success', 3000);
   });
 }
 
@@ -21320,6 +21321,53 @@ async function logAbrirRomaneio(viagemId, grupoId, janela) {
   }
 }
 
+// ── Excel da viagem (27/11/2026, pedido do usuário): resumo, atendimentos (assinado ou não) e itens ──
+const LOG_SIT_CARGA = { AGUARDANDO_COLETA: 'Aguardando coleta', EM_TRANSITO: 'Em trânsito', ENTREGUE: 'Entregue', CANCELADO: 'Cancelado' };
+async function logExcelViagem(viagemId, btn) {
+  if (btn) btn.disabled = true;
+  try {
+    const r = await api(`/logistica/viagens/${encodeURIComponent(viagemId)}/planilha`);
+    if (!r?.ok) { toast(r?.erro || 'Erro ao montar o Excel da viagem', 'error'); return; }
+    const quando = (iso) => iso ? new Date(iso).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    const dia = (d) => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '';
+    const cancelado = (a) => String(a.status || '').toUpperCase() === 'CANCELADO';
+    const sitAtd = (a) => cancelado(a) ? 'Cancelado' : a.assinado ? 'Assinado' : 'Falta assinar';
+    const todos = r.cargas.flatMap(c => c.atendimentos.map(a => ({ c, a })));
+    const validos = todos.filter(x => !cancelado(x.a));
+    const nAss = validos.filter(x => x.a.assinado).length;
+    const conta = (c) => { const v = c.atendimentos.filter(a => !cancelado(a)); return [v.length, v.filter(a => a.assinado).length, v.filter(a => !a.assinado).length]; };
+    const transp = (c) => [c.transportador, c.transportador_tipo === 'EMPRESA' && c.motorista ? `motorista ${c.motorista}` : '', c.placa_veiculo ? `placa ${c.placa_veiculo}` : ''].filter(Boolean).join(' · ');
+    const resumo = [
+      ['Viagem', r.viagem.id], ['Filial', r.filial], ['Criada em', quando(r.viagem.criado_em)], ['Criada por', r.viagem.criado_por], [],
+      ['Cargas (destinos)', r.cargas.length], ['Atendimentos', validos.length], ['Assinados', nAss], ['Falta assinar', validos.length - nAss],
+      ...(todos.length > validos.length ? [['Atendimentos cancelados', todos.length - validos.length]] : []), [],
+      ['Destino', 'Saiu de', 'Transportador', 'Situação da carga', 'Montada em', 'Coleta', 'Entrega', 'Atendimentos', 'Assinados', 'Falta assinar'],
+      ...r.cargas.map(c => [c.destino, c.origem, transp(c), LOG_SIT_CARGA[c.status] || c.status, quando(c.criado_em), quando(c.coletado_em),
+        c.status === 'CANCELADO' ? `cancelada ${quando(c.cancelado_em)}` : quando(c.entregue_em), ...conta(c)]),
+    ];
+    const atendimentos = [['Destino', 'Situação da carga', 'Atendimento', 'Data', 'Para', 'Colaborador', 'Matrícula', 'Função', 'Placa', 'Retirado por', 'Itens', 'Assinado', 'Assinado em', 'Situação', 'Atendido por', 'Pedido'],
+      ...todos.map(({ c, a }) => [c.destino, LOG_SIT_CARGA[c.status] || c.status, a.id, dia(a.data), a.para, a.nome, a.matricula, a.funcao, a.placa, a.retirado_por, a.qtd_itens,
+        cancelado(a) ? '—' : a.assinado ? 'Sim' : 'Não', quando(a.assinado_em), sitAtd(a), a.atendido_por, a.solicitacao])];
+    const itens = [['Destino', 'Atendimento', 'Colaborador', 'Placa', 'Item', 'Código', 'Quantidade', 'Motivo', 'Assinado'],
+      ...todos.flatMap(({ c, a }) => a.itens.map(i => [c.destino, a.id, a.nome, a.placa, i.descricao, i.codigo, i.quantidade, i.motivo, cancelado(a) ? 'Cancelado' : a.assinado ? 'Sim' : 'Não']))];
+    gcaCarregarSheetJS(() => {
+      const wb = XLSX.utils.book_new();
+      const aba = (nome, linhas, larguras, filtroDesde) => {
+        const ws = XLSX.utils.aoa_to_sheet(linhas);
+        ws['!cols'] = larguras.map(w => ({ wch: w }));
+        if (filtroDesde != null && linhas.length > filtroDesde + 1) ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: filtroDesde, c: 0 }, e: { r: linhas.length - 1, c: linhas[filtroDesde].length - 1 } }) };
+        XLSX.utils.book_append_sheet(wb, ws, nome);
+      };
+      aba('Resumo', resumo, [24, 26, 34, 18, 17, 17, 20, 13, 11, 13], resumo.findIndex(l => l[0] === 'Destino'));
+      aba('Atendimentos', atendimentos, [24, 18, 24, 11, 12, 34, 11, 24, 10, 26, 7, 9, 17, 14, 22, 22], 0);
+      aba('Itens', itens, [24, 24, 34, 10, 40, 12, 11, 24, 10], 0);
+      const nome = `viagem_${dia(String(r.viagem.criado_em || '').slice(0, 10)).replace(/\//g, '-')}_${String(r.viagem.id).replace(/[^\w-]+/g, '_')}.xlsx`;
+      XLSX.writeFile(wb, nome);
+      toast(`${escHtml(nome)} gerado!`, 'success', 3000);
+    });
+  } finally { if (btn) btn.disabled = false; }
+}
+
 // ═══════════════════════════════════════════
 // ITEM 7, PARTE 1 (12/11/2026) — aviso de carga para o transporte
 //   • fila com urgentes primeiro, marca de urgente e resumo por base (clique filtra a base)
@@ -22287,6 +22335,7 @@ function renderLogViagens() {
         <div style="font-size:12px;color:var(--text-3)">${v.criado_em ? formatarData(v.criado_em.slice(0,10)) : ''} · criado por ${escHtml(v.criado_por||'—')}</div>
         <div style="display:flex;align-items:center;gap:6px">
           ${(v.grupos||[]).some(g => g.status !== 'CANCELADO') ? `<button class="row-action" onclick="logAbrirRomaneio('${escJs(v.id)}')" title="Romaneio de carga: uma folha por destino, para imprimir e ir junto da carga"><svg class=ic aria-hidden=true><use href=#i-printer></use></svg> Imprimir romaneio</button>` : ''}
+          <button class="row-action" onclick="logExcelViagem('${escJs(v.id)}', this)" title="Excel da viagem: resumo, atendimentos (assinado ou não) e itens"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
           ${(v.grupos||[]).some(g => g.status === 'AGUARDANDO_COLETA') && temPermissao('logistica_editar_viagem') ? `<button class="row-action" onclick="logAbrirIncluir('${escJs(v.id)}')" title="Incluir atendimentos da fila nesta viagem (antes da coleta)"><svg class=ic aria-hidden=true><use href=#i-package-plus></use></svg> Incluir atendimentos</button>` : ''}
           ${viagemBadge(v)}
         </div>
@@ -34758,6 +34807,57 @@ function exportarMedidores() {
     { key:'dias_restantes',  label:'Dias Restantes' },
     { key:'os',              label:'OS / TdC' },
   ]);
+}
+
+// ── Excel completo dos medidores (27/11/2026, pedido do usuário): todos, de todas as situações, com todas
+// as informações, e o resumo por situação, modelo e equipe. Não depende da aba aberta nem do filtro. ──
+async function cmExcelCompleto(btn) {
+  if (btn) { btn.disabled = true; btn.dataset.txt = btn.innerHTML; btn.textContent = 'Montando...'; }
+  try {
+    const r = await api('/enel/medidores');
+    if (!r?.ok) { toast(r?.erro || 'Erro ao carregar os medidores', 'error'); return; }
+    const lista = r.data || [];
+    if (!lista.length) { toast('Nenhum medidor cadastrado nesta filial', 'warn'); return; }
+    const dia = (d) => d ? String(d).slice(0, 10).split('-').reverse().join('/') : '';
+    const instalado = (m) => m.status_atual === 'INSTALADO';
+    const emCampo = (m) => !instalado(m) && String(m.localizacao || '').startsWith('ATENDIMENTO_ENEL');
+    const ondeEsta = (m) => instalado(m) ? 'Instalado' : m.localizacao === 'ESTOQUE' ? 'Estoque' : emCampo(m) ? 'Em campo (equipe)' : (txtConc(m.localizacao) || '—');
+    const bloqueio = (m) => instalado(m) ? '' : m.bloqueadoEquipe ? 'Bloqueado na equipe (mais de 10 dias)' : m.bloqueadoGlobal ? 'Bloqueado no estoque (mais de 50 dias)' : '';
+    const linhas = [['Número de série', 'Modelo', 'Código do material', 'Onde está', 'Situação', 'Bloqueio', 'Equipe', 'Entrada no estoque', 'Dias desde a entrada',
+      'Entregue à equipe', 'Dias com a equipe', 'Instalação', 'OS / TdC', 'Tipo do TdC', 'Situação anterior', 'Marcado por', 'Observação'],
+      ...lista.map(m => [m.numero_serie || '', m.material_descricao || '', m.id_material || '', ondeEsta(m), txtConc(m.status_atual) || '', bloqueio(m), m.equipe_atual || '',
+        dia(m.data_entrada), instalado(m) ? '' : (m.diasEstoque ?? ''), dia(m.data_entrega_equipe), emCampo(m) ? (m.diasEquipe ?? '') : '',
+        m.data_hora_instalacao ? formatarData(m.data_hora_instalacao) : dia(m.data_instalacao), m.os_instalacao || '', m.tipo_tdc || '',
+        txtConc(m.status_pre) || '', m.marcado_por || '', m.obs || ''])];
+    // Resumo
+    const porOnde = {}, porModelo = {}, porEquipe = {};
+    for (const m of lista) {
+      const o = ondeEsta(m); porOnde[o] = (porOnde[o] || 0) + 1;
+      const md = (porModelo[m.material_descricao || '—'] ||= { estoque: 0, campo: 0, instalados: 0, outros: 0, bloqueados: 0 });
+      if (instalado(m)) md.instalados++; else if (m.localizacao === 'ESTOQUE') md.estoque++; else if (emCampo(m)) md.campo++; else md.outros++;
+      if (bloqueio(m)) md.bloqueados++;
+      if (emCampo(m)) { const e = (porEquipe[m.equipe_atual || '—'] ||= { qtd: 0, bloq: 0 }); e.qtd++; if (m.bloqueadoEquipe) e.bloq++; }
+    }
+    const ordem = (o) => Object.entries(o).sort((a, b) => String(a[0]).localeCompare(String(b[0]), 'pt-BR'));
+    const resumo = [['Filial', getNomeUnidade(GCA.unidade)], ['Gerado em', new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })], ['Total de medidores', lista.length], [],
+      ['Onde está', 'Quantidade'], ...ordem(porOnde), [],
+      ['Modelo', 'Estoque', 'Em campo', 'Instalados', 'Outros', 'Bloqueados', 'Total'],
+      ...ordem(porModelo).map(([md, x]) => [md, x.estoque, x.campo, x.instalados, x.outros, x.bloqueados, x.estoque + x.campo + x.instalados + x.outros]), [],
+      ['Equipe (em campo)', 'Medidores', 'Bloqueados na equipe'], ...ordem(porEquipe).map(([e, x]) => [e, x.qtd, x.bloq])];
+    gcaCarregarSheetJS(() => {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(linhas);
+      ws['!cols'] = [18, 36, 16, 18, 22, 34, 18, 14, 10, 14, 10, 18, 16, 14, 18, 18, 40].map(w => ({ wch: w }));
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: linhas.length - 1, c: linhas[0].length - 1 } }) };
+      XLSX.utils.book_append_sheet(wb, ws, 'Medidores');
+      const wr = XLSX.utils.aoa_to_sheet(resumo);
+      wr['!cols'] = [40, 12, 12, 12, 10, 12, 10].map(w => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, wr, 'Resumo');
+      const nome = `medidores_completo_${new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }).replace(/\//g, '-')}.xlsx`;
+      XLSX.writeFile(wb, nome);
+      toast(`${escHtml(nome)} gerado (${lista.length} medidores)!`, 'success', 3500);
+    });
+  } finally { if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.txt || 'Excel completo'; } }
 }
 
 // SUCATA
