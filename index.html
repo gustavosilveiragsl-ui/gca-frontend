@@ -914,6 +914,56 @@ body.mapa-tela-cheia-body{overflow:hidden;}
 .item-foto-cheia img{max-width:92vw;max-height:88vh;object-fit:contain;background:#fff;border-radius:var(--radius-lg)}
 .item-foto-cheia .modal-close{position:absolute;top:16px;right:16px}
 @media(max-width:700px){.item-modal-corpo{grid-template-columns:minmax(0,1fr)}.item-modal-foto img,.item-modal-semfoto{width:100%;height:auto;aspect-ratio:1/1;max-width:320px;margin:0 auto}.item-modal-campos{grid-template-columns:1fr 1fr}}
+/* Saída do item (27/11/2026): quanto sai por mês, com todos os tamanhos juntos */
+.isd{margin-top:20px;border-top:1px solid var(--border);padding-top:16px}
+.isd-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.isd-tit{font-size:15px;font-weight:700;color:var(--text-1);display:flex;align-items:center;gap:6px}
+.isd-sub{font-size:11px;color:var(--text-3);margin-top:2px}
+.isd-filtros{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.isd-seg{display:inline-flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.isd-seg button{background:transparent;border:0;padding:6px 10px;font-size:11px;font-weight:600;color:var(--text-2);cursor:pointer;font-family:inherit}
+.isd-seg button+button{border-left:1px solid var(--border)}
+.isd-seg button.on{background:var(--accent);color:#fff}
+.isd-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.isd-kpi{border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;background:var(--bg-card);min-width:0}
+.isd-kpi .rot{font-size:10px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--text-3)}
+.isd-kpi .val{font-size:20px;font-weight:700;color:var(--text-1);margin-top:3px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.isd-kpi .val small{font-size:11px;font-weight:600;color:var(--text-3);margin-left:3px}
+.isd-kpi .det{font-size:11px;color:var(--text-3);margin-top:2px}
+.isd-kpi.hero{border-color:var(--accent)}
+.isd-kpi.hero .val{font-size:26px;color:var(--accent-text)}
+.isd-tams{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
+.isd-tams .btn{padding:4px 10px;font-size:11px}
+.isd-graf{height:150px;margin-top:14px;padding-top:22px;border-bottom:1px solid var(--border)}
+.isd-area{position:relative;display:flex;align-items:flex-end;gap:6px;height:100%}
+.isd-col{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+.isd-barra{width:100%;max-width:46px;background:var(--accent);border-radius:4px 4px 0 0}
+.isd-col.parcial .isd-barra{opacity:.5}
+.isd-col:hover .isd-barra{filter:brightness(1.18)}
+.isd-col:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% - 18px);left:50%;transform:translateX(-50%);white-space:pre;z-index:2;background:var(--bg-card);color:var(--text-1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 9px;font-size:11px;line-height:1.45;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none}
+.isd-col.ini:hover::after{left:0;transform:none}
+.isd-col.fim:hover::after{left:auto;right:0;transform:none}
+.isd-media{position:absolute;left:0;right:0;border-top:1.5px dashed var(--text-3);pointer-events:none;z-index:1}
+.isd-media span{position:absolute;right:0;bottom:3px;font-size:10px;font-weight:600;color:var(--text-2);background:var(--bg-card);padding:0 4px;border-radius:3px}
+.isd-eixo{display:flex;gap:6px;margin-top:5px}
+.isd-eixo div{flex:1;min-width:0;text-align:center;font-size:10px;color:var(--text-3);line-height:1.35}
+.isd-eixo b{display:block;font-size:12px;color:var(--text-1);font-variant-numeric:tabular-nums}
+.isd-tabs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:18px}
+.isd-tabs.uma{grid-template-columns:minmax(0,1fr)}
+.isd-tab-tit{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--text-2);margin-bottom:6px}
+.isd-tab table{width:100%;border-collapse:collapse;font-size:12px}
+.isd-tab th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;color:var(--text-3);text-align:left;padding:6px 8px;border-bottom:1px solid var(--border)}
+.isd-tab td{padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-1)}
+.isd-tab tr.clic{cursor:pointer}
+.isd-tab tr.clic:hover td{background:var(--bg-hover)}
+.isd-tab tr.sel td{background:var(--accent-soft)}
+.isd-tab tr.tot td{font-weight:700;border-bottom:0}
+.isd-num{text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+.isd-pct{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.isd-pct i{display:block;height:6px;border-radius:3px;background:var(--accent);min-width:2px}
+.isd-vazio{padding:22px;text-align:center;font-size:12px;color:var(--text-3);border:1px dashed var(--border);border-radius:var(--radius-md);margin-top:14px}
+.isd-nota{font-size:11px;color:var(--text-3);margin-top:12px;line-height:1.5}
+@media(max-width:700px){.isd-kpis{grid-template-columns:1fr 1fr}.isd-tabs{grid-template-columns:minmax(0,1fr)}.isd-area,.isd-eixo{gap:3px}.isd-kpi.hero .val{font-size:22px}.isd-tab th,.isd-tab td{padding:6px 4px}.isd-tab th{letter-spacing:0}.isd-pct i{display:none}}
 .item-card-nome{font-size:11px;font-weight:500;color:var(--text-1);line-height:1.3}
 .item-card-cat{font-size:10px;color:var(--text-3);margin-top:2px}
 .item-card-check{position:absolute;top:6px;right:6px;width:18px;height:18px;background:var(--accent);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
@@ -12379,8 +12429,9 @@ function abrirModalItem(id) {
     ['Requer ensaio (NR10)', item.requer_ensaio ? 'Sim' : 'Não'],
     ['Possui série', item.possui_serie ? 'Sim' : 'Não'],
   ];
+  const verSaidas = temPermissao('consulta_itens') || temPermissao('cadastrar_itens');
   overlay.innerHTML = `
-    <div class="modal-box item-modal">
+    <div class="modal-box item-modal modal-alto">
       <div class="modal-header">
         <div style="min-width:0">
           <div class="modal-title" style="font-size:18px">${escHtml(item.descricao)}</div>
@@ -12393,7 +12444,8 @@ function abrirModalItem(id) {
         </div>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
       </div>
-      <div class="modal-body item-modal-corpo">
+      <div class="modal-body">
+      <div class="item-modal-corpo">
         <div class="item-modal-foto">
           ${item.img
             ? `<img src="${escHtml(item.img)}" alt="${escHtml(item.descricao)}" title="Clique para ampliar" onclick="abrirFotoItem(this.src)">
@@ -12409,6 +12461,8 @@ function abrirModalItem(id) {
           ${item.descricao_longa ? `<div class="item-modal-campo" style="grid-column:1/-1"><div class="rot">Descrição</div><div class="val" style="font-weight:500;white-space:pre-wrap">${escHtml(item.descricao_longa)}</div></div>` : ''}
         </div>
       </div>
+      ${verSaidas ? '<div class="isd" id="isdSecao"><div style="padding:18px;text-align:center"><div class="spinner"></div></div></div>' : ''}
+      </div>
       <div class="modal-footer">
         ${temPermissao('ver_ca') || temPermissao('gerenciar_ca') || temPermissao('analisar_ca') ? `<button class="btn btn-ghost" onclick="this.closest('.modal-overlay').remove();itemAbrirGestaoCa('${escJs(item.id)}')"><svg class=ic aria-hidden=true><use href=#i-shield-check></use></svg> CAs</button>` : ''}
         ${temPermissao('cadastrar_itens') ? `<button class="btn btn-ghost" onclick="abrirFichaTecnica('${escJs(item.id)}')"><svg class=ic aria-hidden=true><use href=#i-pencil></use></svg> Ficha técnica</button>` : ''}
@@ -12417,6 +12471,163 @@ function abrirModalItem(id) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
+  if (verSaidas) { _isd = { itemId: item.id, meses: 6, armazem: '', tam: '*', dados: null, pedido: 0 }; isdCarregar(); }
+}
+
+// ── Saída do item (27/11/2026): quanto sai por mês, com todos os tamanhos juntos ──
+// Pedido do usuário: "qual a nossa média de saída da capa de chuva, de todos os tamanhos?".
+// A conta é do servidor (GET /itens/:id/saidas); aqui só se escolhe o período, o armazém e o tamanho.
+let _isd = null;
+const ISD_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const ISD_MESES_LONGO = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const isdN = (n) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const isdMesLongo = (mes) => `${ISD_MESES_LONGO[Number(mes.slice(5, 7)) - 1]} de ${mes.slice(0, 4)}`;
+const isdData = (d) => d ? d.split('-').reverse().join('/') : '';
+const isdTamRotulo = (t) => t === '' ? 'Sem tamanho' : t;
+
+async function isdCarregar() {
+  const el = document.getElementById('isdSecao');
+  if (!el || !_isd) return;
+  const pedido = ++_isd.pedido;
+  const corpo = document.getElementById('isdCorpo');
+  if (corpo) corpo.style.opacity = '.5';
+  const q = new URLSearchParams({ meses: _isd.meses, armazem: _isd.armazem });
+  const r = await api(`/itens/${encodeURIComponent(_isd.itemId)}/saidas?${q}`);
+  if (!_isd || pedido !== _isd.pedido || !document.getElementById('isdSecao')) return;   // janela fechada ou outro filtro já escolhido
+  if (!r?.ok) {
+    el.innerHTML = `<div class="isd-vazio">${escHtml(r?.erro || 'Não foi possível carregar as saídas do item.')}</div>`;
+    return;
+  }
+  _isd.dados = r;
+  if (_isd.tam !== '*' && !r.por_tamanho.some(t => t.tamanho === _isd.tam)) _isd.tam = '*';
+  isdRender();
+}
+
+function isdFiltro(campo, valor) {
+  if (!_isd) return;
+  _isd[campo] = campo === 'meses' ? Number(valor) : valor;
+  if (campo === 'tam') isdRender(); else isdCarregar();
+}
+
+// Números da escolha (todos os tamanhos ou um): saída, média, maior mês, estoque, motivos
+function isdResumo(d, tam) {
+  const doMes = (m) => tam === '*' ? m.total : (m.tamanhos[tam] || 0);
+  const t = tam === '*' ? null : d.por_tamanho.find(x => x.tamanho === tam);
+  const total = t ? t.total : d.total;
+  const media = t ? t.media_mes : d.media_mes;
+  const saldo = t ? t.saldo : d.saldo;
+  const meses = d.por_mes.map(m => ({ ...m, valor: doMes(m) }));
+  const maior = meses.filter(m => m.valor > 0).sort((a, b) => b.valor - a.valor || a.mes.localeCompare(b.mes))[0] || null;
+  const motivos = d.por_motivo.map(mo => ({ motivo: mo.motivo, total: tam === '*' ? mo.total : (mo.tamanhos[tam] || 0) }))
+    .filter(mo => mo.total > 0).sort((a, b) => b.total - a.total);
+  return { total, media, saldo, meses, maior, motivos, cobertura: media > 0 ? Math.round(saldo / media * 10) / 10 : null,
+    pessoas: t ? t.pessoas : d.pessoas, viaturas: t ? null : d.viaturas };
+}
+
+function isdRender() {
+  const el = document.getElementById('isdSecao');
+  if (!el || !_isd?.dados) return;
+  const d = _isd.dados, tam = _isd.tam, un = escHtml(d.item.un || 'UN');
+  const variosTam = d.por_tamanho.length > 1;
+  const s = isdResumo(d, tam);
+  const qual = tam === '*' ? (variosTam ? `todos os ${d.por_tamanho.length} tamanhos` : 'este item') : `tamanho ${escHtml(isdTamRotulo(tam))}`;
+  const per = d.periodo;
+  const primeiroMes = d.por_mes[0].mes, ultimoMes = d.por_mes[d.por_mes.length - 1].mes;
+  const quem = [s.pessoas ? `${s.pessoas} ${s.pessoas === 1 ? 'pessoa' : 'pessoas'}` : '', s.viaturas ? `${s.viaturas} ${s.viaturas === 1 ? 'viatura' : 'viaturas'}` : ''].filter(Boolean).join(' · ');
+
+  // Gráfico: uma barra por mês; a linha tracejada é a média por mês
+  const max = Math.max(1, s.media, ...s.meses.map(m => m.valor));
+  const colunas = s.meses.map((m, i) => {
+    const alt = m.valor > 0 ? Math.max(3, Math.round(m.valor / max * 100)) : 0;
+    const dica = `${isdMesLongo(m.mes)}\n${isdN(m.valor)} ${d.item.un || 'UN'}${m.sem_historico ? '\nantes do 1º lançamento da filial' : m.parcial ? '\nmês incompleto' : ''}`;
+    return `<div class="isd-col${m.parcial ? ' parcial' : ''}${i === 0 ? ' ini' : i === s.meses.length - 1 ? ' fim' : ''}" data-tip="${escHtml(dica)}" role="img" aria-label="${escHtml(dica.replace(/\n/g, ': '))}">
+      ${alt ? `<div class="isd-barra" style="height:${alt}%"></div>` : ''}</div>`;
+  }).join('');
+  const linhaMedia = s.media > 0 ? `<div class="isd-media" style="bottom:${Math.min(100, s.media / max * 100).toFixed(1)}%"><span>média ${isdN(s.media)}</span></div>` : '';
+  const eixo = s.meses.map(m => `<div>${ISD_MESES[Number(m.mes.slice(5, 7)) - 1]}${m.parcial ? '*' : ''}<b>${m.sem_historico ? '—' : isdN(m.valor)}</b></div>`).join('');
+
+  const tabTam = variosTam ? `<div class="isd-tab"><div class="isd-tab-tit">Por tamanho</div><table>
+      <tr><th>Tamanho</th><th class="isd-num">Saída</th><th class="isd-num">Por mês</th><th class="isd-num">%</th><th class="isd-num">Estoque</th></tr>
+      ${d.por_tamanho.map(t => `<tr class="clic${tam === t.tamanho ? ' sel' : ''}" onclick="isdFiltro('tam', ${escHtml(JSON.stringify(tam === t.tamanho ? '*' : t.tamanho))})" title="Ver só este tamanho">
+        <td><b>${escHtml(isdTamRotulo(t.tamanho))}</b></td><td class="isd-num">${isdN(t.total)}</td><td class="isd-num">${isdN(t.media_mes)}</td>
+        <td class="isd-num"><span class="isd-pct">${isdN(t.pct)}%<i style="width:${Math.round(t.pct * 0.5)}px"></i></span></td><td class="isd-num">${isdN(t.saldo)}</td></tr>`).join('')}
+      <tr class="tot"><td>Total</td><td class="isd-num">${isdN(d.total)}</td><td class="isd-num">${isdN(d.media_mes)}</td><td class="isd-num">100%</td><td class="isd-num">${isdN(d.saldo)}</td></tr>
+    </table></div>` : '';
+  const totMot = s.motivos.reduce((a, m) => a + m.total, 0);
+  const tabMot = `<div class="isd-tab"><div class="isd-tab-tit">Por motivo${tam === '*' ? '' : ` · ${escHtml(isdTamRotulo(tam))}`}</div><table>
+      <tr><th>Motivo</th><th class="isd-num">Saída</th><th class="isd-num">%</th></tr>
+      ${s.motivos.map(m => { const p = totMot ? m.total / totMot * 100 : 0; return `<tr><td>${escHtml(m.motivo)}</td><td class="isd-num">${isdN(m.total)}</td>
+        <td class="isd-num"><span class="isd-pct">${isdN(p)}%<i style="width:${Math.round(p * 0.5)}px"></i></span></td></tr>`; }).join('')
+        || '<tr><td colspan="3" style="color:var(--text-3)">Sem saída no período</td></tr>'}
+    </table></div>`;
+
+  const comeco = per.inicio > per.de ? ` A filial começou a lançar em ${isdData(per.inicio)}: a média conta a partir desse dia.` : '';
+  el.innerHTML = `
+    <div class="isd-cab">
+      <div><div class="isd-tit"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Saída do item</div>
+        <div class="isd-sub">${escHtml(d.base)} · ${qual} · ${isdData(per.de)} a ${isdData(per.ate)} (${per.dias} dias)${d.armazem ? ` · ${escHtml((d.armazens.find(a => a.id === d.armazem) || {}).nome || '')}` : ''}</div></div>
+      <div class="isd-filtros">
+        <div class="isd-seg" role="group" aria-label="Período">${[3, 6, 12].map(n => `<button type="button" class="${_isd.meses === n ? 'on' : ''}" onclick="isdFiltro('meses', ${n})">${n} meses</button>`).join('')}</div>
+        ${d.armazens.length > 1 ? `<select class="form-input" id="isdArmazem" style="width:auto;max-width:200px;font-size:11px;padding:5px 8px" onchange="isdFiltro('armazem', this.value)" aria-label="Armazém">
+          <option value="">Todos os armazéns</option>${d.armazens.map(a => `<option value="${escHtml(a.id)}"${a.id === d.armazem ? ' selected' : ''}>${escHtml(a.nome)}</option>`).join('')}</select>` : ''}
+        <button class="btn btn-ghost btn-sm" type="button" onclick="isdExcel()"><svg class=ic aria-hidden=true><use href=#i-chart-column></use></svg> Excel</button>
+      </div>
+    </div>
+    <div id="isdCorpo">
+      <div class="isd-kpis">
+        <div class="isd-kpi hero"><div class="rot">Média por mês</div><div class="val">${isdN(s.media)}<small>${un}</small></div><div class="det">${qual}</div></div>
+        <div class="isd-kpi"><div class="rot">Saída no período</div><div class="val">${isdN(s.total)}<small>${un}</small></div><div class="det">${quem || 'ninguém recebeu'}</div></div>
+        <div class="isd-kpi"><div class="rot">Maior mês</div><div class="val">${s.maior ? isdN(s.maior.valor) : '—'}${s.maior ? `<small>${un}</small>` : ''}</div><div class="det">${s.maior ? isdMesLongo(s.maior.mes) : 'sem saída'}</div></div>
+        <div class="isd-kpi"><div class="rot">Em estoque hoje</div><div class="val">${isdN(s.saldo)}<small>${un}</small></div><div class="det">${s.cobertura != null ? `dá para ~${isdN(s.cobertura)} ${s.cobertura === 1 ? 'mês' : 'meses'}` : 'sem saída para comparar'}</div></div>
+      </div>
+      ${variosTam ? `<div class="isd-tams" role="group" aria-label="Tamanho">
+        <button type="button" class="btn ${tam === '*' ? 'btn-primary' : 'btn-ghost'}" onclick="isdFiltro('tam', '*')">Todos os tamanhos</button>
+        ${d.por_tamanho.map(t => `<button type="button" class="btn ${tam === t.tamanho ? 'btn-primary' : 'btn-ghost'}" onclick="isdFiltro('tam', ${escHtml(JSON.stringify(t.tamanho))})">${escHtml(isdTamRotulo(t.tamanho))}</button>`).join('')}
+      </div>` : ''}
+      ${s.total > 0 ? `<div class="isd-graf"><div class="isd-area">${linhaMedia}${colunas}</div></div><div class="isd-eixo">${eixo}</div>`
+        : `<div class="isd-vazio">Nenhuma saída ${tam === '*' ? 'deste item' : 'deste tamanho'} de ${isdMesLongo(primeiroMes)} a ${isdMesLongo(ultimoMes)}.</div>`}
+      <div class="isd-tabs${variosTam ? '' : ' uma'}">${tabTam}${tabMot}</div>
+      <div class="isd-nota">Conta as entregas (para pessoas e viaturas), a saída avulsa e o descarte ou envio para laudo NR10. Não conta ajuste de inventário nem transferência entre armazéns.
+        Média por mês = saída do período ÷ ${per.dias} dias × 30,4${s.meses.some(m => m.parcial) ? '; * mês incompleto' : ''}.${comeco}</div>
+    </div>`;
+}
+
+function isdExcel() {
+  const d = _isd?.dados;
+  if (!d) return;
+  const tams = d.por_tamanho.map(t => t.tamanho);
+  const varios = tams.length > 1;
+  const mesTxt = (m) => `${ISD_MESES[Number(m.slice(5, 7)) - 1]}/${m.slice(0, 4)}`;
+  const porMes = [['Mês', ...(varios ? tams.map(isdTamRotulo) : []), 'Total', 'Observação'],
+    ...d.por_mes.map(m => [mesTxt(m.mes), ...(varios ? tams.map(t => m.tamanhos[t] || 0) : []), m.total,
+      m.sem_historico ? 'antes do 1º lançamento da filial' : m.parcial ? 'mês incompleto' : ''])];
+  const porTam = [['Tamanho', 'Item', 'Saída no período', 'Média por mês', '% da saída', 'Pessoas', 'Estoque hoje'],
+    ...d.por_tamanho.map(t => [isdTamRotulo(t.tamanho), t.descricao, t.total, t.media_mes, t.pct / 100, t.pessoas, t.saldo]),
+    ['Total', d.base, d.total, d.media_mes, 1, d.pessoas, d.saldo]];
+  const porMot = [['Motivo', ...(varios ? tams.map(isdTamRotulo) : []), 'Total'],
+    ...d.por_motivo.map(mo => [mo.motivo, ...(varios ? tams.map(t => mo.tamanhos[t] || 0) : []), mo.total])];
+  const arm = d.armazem ? ((d.armazens.find(a => a.id === d.armazem) || {}).nome || d.armazem) : 'Todos os armazéns';
+  const filtros = [['Item', d.base], ['Filial', getNomeUnidade(GCA.unidade)], ['Armazém', arm],
+    ['Período', `${isdData(d.periodo.de)} a ${isdData(d.periodo.ate)}`], ['Dias contados', d.periodo.dias],
+    ['Média por mês', d.media_mes], ['Saída no período', d.total], ['Estoque hoje', d.saldo], [],
+    ['Como conta', 'Entregas (pessoas e viaturas), saída avulsa, descarte e envio para laudo NR10. Sem ajuste de inventário e sem transferência entre armazéns.'],
+    ['Média por mês', `saída do período ÷ ${d.periodo.dias} dias × 30,4`]];
+  gcaCarregarSheetJS(() => {
+    const wb = XLSX.utils.book_new();
+    const aba = (nome, linhas, larguras) => {
+      const ws = XLSX.utils.aoa_to_sheet(linhas);
+      ws['!cols'] = larguras.map(w => ({ wch: w }));
+      if (nome === 'Por tamanho') for (let r = 1; r < linhas.length; r++) { const c = ws[XLSX.utils.encode_cell({ r, c: 4 })]; if (c) c.z = '0.0%'; }
+      XLSX.utils.book_append_sheet(wb, ws, nome);
+    };
+    aba('Mês a mês', porMes, [12, ...(varios ? tams.map(() => 9) : []), 10, 30]);
+    if (varios) aba('Por tamanho', porTam, [14, 40, 16, 14, 11, 10, 13]);
+    aba('Por motivo', porMot, [36, ...(varios ? tams.map(() => 9) : []), 10]);
+    aba('Filtros', filtros, [18, 70]);
+    const nome = `saida_${String(d.base).replace(/[^\w]+/g, '_').slice(0, 40)}_${d.periodo.meses}meses.xlsx`;
+    XLSX.writeFile(wb, nome);
+    toast(`<svg class=ic aria-hidden=true><use href=#i-circle-check></use></svg> ${escHtml(nome)} gerado!`, 'success', 3000);
+  });
 }
 
 // ── Ficha técnica do item (modelo do cliente) ──
