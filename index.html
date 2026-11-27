@@ -15700,6 +15700,7 @@ async function abrirModalSolicitacao(id) {
     'PRIORIDADE_ALTERADA':   gcaSit('Prioridade alterada pelo almoxarifado', 'laranja', 'siren'),
     'ARMAZEM_ALTERADO':      gcaSit('Pedido mudou de armazém', 'ceu', 'warehouse'),
     'PEDIDO_JUNTADO':        gcaSit('Outro pedido entrou no mesmo atendimento', 'teal', 'merge'),
+    'ATENDIMENTO_CANCELADO': gcaSit('Um atendimento deste pedido foi cancelado (o pedido segue com os outros)', 'vermelho', 'x'),
   };
 
   document.getElementById('solModalBody').innerHTML = `
@@ -15786,7 +15787,8 @@ async function abrirModalSolicitacao(id) {
   // FINALIZADO/CANCELADO: só Fechar
   const podeAtender  = ['PENDENTE','VISUALIZADO'].includes(s.status);
   const podeEditar   = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('editar_solicitacao');
-  const podeCancelar = !['FINALIZADO','CANCELADO'].includes(s.status) && temPermissao('alterar_status_sol');
+  // Só antes de atender (27/11/2026): depois, cancela-se o atendimento, que devolve o material e cancela o pedido
+  const podeCancelar = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('alterar_status_sol');
   const podeAjustar  = ['PENDENTE','VISUALIZADO'].includes(s.status) && temPermissao('alterar_prioridade_sol');
 
   // Verifica assinatura pendente do colaborador
